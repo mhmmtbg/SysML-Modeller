@@ -10,7 +10,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 
 - **9 SysML diyagram türü:** Blok Tanım (BDD), İç Blok (IBD), Use Case, Aktivite, Gereksinim, Durum Makinesi, Sıralama (Sequence), Parametrik, Paket
 - **Gereksinim yönetimi:**
-  - Sistem ve alt sistem gereksinimleri için düzenlenebilir tablo: ID, başlık, metin, seviye, doğrulama yöntemi (Test / Analiz / Muayene / Gösterim), müşteri ister no ve isteri
+  - Sistem ve alt sistem gereksinimleri için düzenlenebilir tablo: ID, başlık, metin, seviye, **alt sistem adı**, doğrulama yöntemi (Test / Analiz / Muayene / Gösterim), müşteri ister no ve isteri; sistem / alt sistem adına göre filtreleme
   - İstenen kadar özel özellik (attribute) ekleme, çıkarma ve yeniden adlandırma; sütun gizleme
   - Sistem → alt sistem türetme (Derive), model elemanı ve fonksiyon karşılama (Satisfy), test doğrulama (Verify) izlenebilirliği
   - **İzlenebilirlik matrisi:** sistem × alt sistem, gereksinim × fonksiyon, gereksinim × blok, test, use case; hücreye tıklayarak ilişki kurma
@@ -24,6 +24,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 - **İç içe diyagramlar:**
   - Çift tıklamayla alt diyagrama geçilir: bloktan IBD'ye, aksiyondan çağırdığı aktiviteye, use case'ten akışına.
   - ◀ ▶ düğmeleriyle önceki ve sonraki diyagrama dönülür.
+- **Engelden kaçan bağlantılar:** Bağlantılar elemanların üzerinden geçmez, aynı kenara gelenler ayrı noktalara dağılır.
 - **Otomatik düzen:** Diyagram türüne göre hiyerarşik, akış, kulvarlı, aktörler-solda, ızgara, dairesel ve "toparla" düzenleri; hizalama ve dağıtma araçları
 - **İkon kütüphanesi:** 10 kategoride 200'ü aşkın ikon (otomotiv, havacılık ve uzay, bilgisayar, savunma, enerji, sensör ve haberleşme, mekanik, yazılım, organizasyon, genel)
 - **Dışa aktarma:** Diyagramlar SysML çerçevesiyle PNG/SVG olarak indirilebilir veya panoya resim olarak kopyalanıp Word/PowerPoint'e yapıştırılabilir.

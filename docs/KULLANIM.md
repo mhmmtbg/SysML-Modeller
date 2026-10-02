@@ -60,7 +60,10 @@ Paneller arasındaki ayırıcılar sürüklenerek boyutlandırılabilir.
   - `Ctrl+A`: tümünü seçme
 - **Taşıma:** Sürükleyin; ızgaraya oturur, `Alt` basılıyken ızgarasız taşınır. Ok tuşları 10 px (`Shift` ile 1 px) taşır.
 - **Boyutlandırma:** Seçili şeklin köşe tutamaklarını sürükleyin.
-- **Bağlantı rotası:** Seçili dik açılı bağlantının ortasındaki mavi tutamak sürüklenir. Sağ tık → *Düz çizgi yap* / *Rotayı sıfırla*.
+- **Bağlantı rotası:**
+  - Bağlantılar otomatik olarak elemanların etrafından dolaşır. Aynı kenara gelen bağlantılar ayrı noktalara dağıtılır, paralel hatlar üst üste binmez.
+  - Düz çizgili bağlantılar (use case, durum makinesi, not bağlantısı) bir elemanı keserse dik açılı olarak etrafından dolaşır.
+  - Elle ayar: seçili bağlantının ortasındaki mavi tutamak sürüklenir. Sağ tık → *Rotayı sıfırla* otomatik rotaya döndürür.
 - **Ad düzenleme:**
   - `F2` ya da `Alt`+çift tık ad düzenler.
   - Alt diyagramı olmayan elemanlarda düz çift tık da ad düzenler.
@@ -167,7 +170,9 @@ Araç çubuğundaki **Gereksinimler ▾** menüsü üç görünüm açar. Bunlar
 
 - **+ Sistem gereksinimi / + Alt sistem gereksinimi:**
   - Yeni satır ekler; ID otomatik verilir (varsayılan `SYS-001`, `SUB-001`).
-  - Gereksinimler ağaçta *Gereksinimler → Sistem / Alt Sistem Gereksinimleri* paketlerine yerleşir.
+  - Alt sistem gereksinimi eklerken **alt sistem adı** sorulur. Mevcut alt sistemlerden birine tıklayın ya da yeni bir ad yazın; listede modeldeki blok adları da önerilir.
+  - Gereksinimler ağaçta *Gereksinimler → Sistem Gereksinimleri* ve *Gereksinimler → Alt Sistem Gereksinimleri → <alt sistem adı>* paketlerine yerleşir. Alt sistem adı değişince gereksinim ilgili pakete taşınır.
+- **Alt sistem adı:** Tablodaki *Alt Sistem* sütunundan veya Özellikler panelinden değiştirilir. Bir sistem gereksinimini *Alt Sistem* seviyesine almak da adı sorar.
 - **Düzenleme:**
   - Hücreye tıklayıp yazın. `Enter` kaydeder ve alt satıra geçer, `Shift+Enter` satır içinde yeni satır açar, `Esc` vazgeçer.
   - Seviye açılır listeden değiştirilir; değişince ID'yi yeniden numaralandırmayı sorar.
@@ -182,7 +187,10 @@ Araç çubuğundaki **Gereksinimler ▾** menüsü üç görünüm açar. Bunlar
 
   Her hücredeki **+** düğmesi arama yapılabilen bir seçim penceresi açar. İşaretleyip *Uygula* deyince ilişkiler kurulur, işareti kaldırınca silinir.
   - Test seçiminde *+ Yeni test durumu* ile doğrudan test oluşturulabilir.
-- **Filtreler:** Seviye, arama (ID, metin, ister no, özellik değerleri), *Yalnız eksikler*. Başlığa tıklamak sütuna göre sıralar.
+- **Filtreler:**
+  - Seviye listesi: *Tüm gereksinimler*, *Sistem gereksinimleri*, *Tüm alt sistemler* ve her alt sistem adıyla ayrı seçenek (ör. *Alt sistem: Kontrol Birimi*). Adı girilmemiş alt sistem gereksinimleri için de ayrı seçenek çıkar.
+  - Arama (ID, metin, ister no, özellik değerleri) ve *Yalnız eksikler*.
+  - Başlığa tıklamak sütuna göre sıralar.
 - **Özellikler paneli:** Satıra tıklanınca gereksinimin tüm alanları ve izlenebilirliği Özellikler panelinde de açılır.
 
 #### Sütunlar ve özel özellikler
@@ -211,8 +219,8 @@ Araç çubuğundaki **Gereksinimler ▾** menüsü üç görünüm açar. Bunlar
 
 ![Matris](images/izlenebilirlik-matrisi.png)
 
-- **Satırlar:** sistem / alt sistem / tüm gereksinimler.
-- **Sütunlar:** alt sistem veya sistem gereksinimleri, fonksiyonlar, bloklar, tüm model elemanları, test durumları, use case'ler.
+- **Satırlar:** sistem / alt sistem / tüm gereksinimler veya tek bir alt sistemin gereksinimleri.
+- **Sütunlar:** alt sistem veya sistem gereksinimleri, tek bir alt sistem, fonksiyonlar, bloklar, tüm model elemanları, test durumları, use case'ler.
 - **İlişki türü:** *Otomatik* seçiliyken gereksinim × gereksinim için **Derive**, test için **Verify**, diğerleri için **Satisfy** kullanılır. İsterseniz türü elle seçin.
 - **Hücreye tıklamak** ilişkiyi kurar veya kaldırır (`Ctrl+Z` ile geri alınır).
 - **Kırmızı satır/sütun başlığı:** Hiç ilişkisi olmayan eleman. *Yalnız boş satırlar* yalnızca bunları gösterir.
@@ -247,7 +255,7 @@ Araç çubuğundaki **Gereksinimler ▾** menüsü üç görünüm açar. Bunlar
 1. **⤓ Excel'den aktar** ile `.xlsx` veya `.csv` dosyası seçin (CSV'de `;`, `,` veya sekme ayracı ve Türkçe Windows kodlaması otomatik tanınır).
 2. Birden fazla sayfa varsa sayfayı, gerekirse başlık satırını seçin.
 3. Her Excel sütunu için aktarılacağı alanı kontrol edin. Başlıklar otomatik eşleşir; örneğin *"Gereksinim No"* → ID, *"Müşteri İster No"* → müşteri ister no, *"Üst Gereksinim"* → Derive. Eşleşmeyen sütunlar **yeni özellik** olarak eklenir; istemediğiniz sütunu *Yok say* yapın.
-4. Dosyada seviye sütunu yoksa varsayılan seviyeyi seçin. Seviye değerinde *alt/sub/birim* geçiyorsa **Alt Sistem** sayılır.
+4. Dosyada seviye sütunu yoksa varsayılan seviyeyi seçin. Seviye değerinde *alt/sub/birim* geçiyorsa **Alt Sistem** sayılır. *Alt Sistem* / *Birim* / *Subsystem* başlıklı sütun alt sistem adı olarak aktarılır; alt sistem adı dolu olan satırlar seviye belirtilmemişse alt sistem gereksinimi sayılır.
 5. *Aynı ID'yi güncelle* işaretliyse mevcut gereksinimler güncellenir, yeniler eklenir.
 
 İlişki sütunları:
@@ -292,7 +300,7 @@ Dışa aktarılan dosya tekrar içe aktarılabilir. Ortak ID'ler güncellenir ve
 | **Hepsi** | **Toparla:** Yerleşimi bozmadan çakışmaları giderir ve ızgaraya oturtur. |
 
 - Düzen kısa bir animasyonla uygulanır ve tek `Ctrl+Z` ile geri alınır.
-- Notlar, bağlı oldukları elemanın hizasında diyagramın sağına dizilir.
+- Notlar, bağlı oldukları elemanın hemen yanındaki boş yere (sağ, sol, üst veya alt) yerleşir; yer yoksa diyagramın sağına dizilir.
 - **Hizala / dağıt** (en az iki şekil seçiliyken; menüde ve sağ tıkta): sola, sağa, üste, alta hizala; yatay/dikey ortala; yatay/dikey eşit dağıt; aynı boyuta getir.
 
 ## 7. İkonlar

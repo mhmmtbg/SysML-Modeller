@@ -1118,22 +1118,30 @@ function placeValues(d, geo, tops, centerTo){
   vals.forEach(s => { const a = geo.get(s.id); centerTo(s, x + a.w / 2, bottom + 60 + a.h / 2); x += a.w + 30; });
 }
 function placeCommentShapes(d, geo, comments, moveTo){
-  const others = topShapes(d).filter(s => kindOfSh(s) !== 'Comment');
+  const others = topShapes(d).filter(s => kindOfSh(s) !== 'Comment' && !['Partition','Subject'].includes(kindOfSh(s)));
   if(!others.length) return;
-  const right = Math.max(...others.map(s => geo.get(s.id).x + geo.get(s.id).w)) + 60;
-  const topY = Math.min(...others.map(s => geo.get(s.id).y));
-  const des = comments.map(c => {
+  const placed = others.map(s => geo.get(s.id));
+  const free = r => !placed.some(o => r.x < o.x + o.w + 18 && o.x < r.x + r.w + 18 && r.y < o.y + o.h + 18 && o.y < r.y + r.h + 18);
+  const right = Math.max(...placed.map(o => o.x + o.w)) + 50, top = Math.min(...placed.map(o => o.y));
+  let colY = top;
+  comments.forEach(c => {
+    const a = geo.get(c.id), w = a.w, h = a.h;
     const ed = d.edges.find(x => edgeKind(x) === 'Anchor' && (x.s === c.id || x.t === c.id));
     const o = ed && shapeOf(d, ed.s === c.id ? ed.t : ed.s);
-    if(o){ const a = geo.get(topOf(d, o).id); return a.y + a.h / 2; }
-    return 1e6;
+    let pos = null;
+    if(o){
+      const t = geo.get(topOf(d, o).id), G2 = 40;
+      const cands = [
+        {x:t.x + t.w + G2, y:t.y + t.h / 2 - h / 2}, {x:t.x - G2 - w, y:t.y + t.h / 2 - h / 2},
+        {x:t.x + t.w / 2 - w / 2, y:t.y - G2 - h}, {x:t.x + t.w / 2 - w / 2, y:t.y + t.h + G2},
+        {x:t.x + t.w + G2, y:t.y - h - 10}, {x:t.x + t.w + G2, y:t.y + t.h + 10}, {x:t.x - G2 - w, y:t.y - h - 10}, {x:t.x - G2 - w, y:t.y + t.h + 10}
+      ];
+      for(let k = 1; k <= 4 && !pos; k++) for(const p of cands){ const q = {x:p.x + (p.x > t.x ? 1 : -1) * (k - 1) * 60, y:p.y, w, h}; if(free(q)){ pos = q; break; } }
+    }
+    if(!pos){ pos = {x:right, y:colY, w, h}; colY += h + 20; }
+    moveTo(c, snapv(pos.x), snapv(pos.y));
+    placed.push(geo.get(c.id));
   });
-  const idx = comments.map((_, i) => i).sort((a, b) => des[a] - des[b]);
-  let lastY = topY;
-  const dv = idx.map(i => des[i] >= 1e6 ? (lastY += 1) : (lastY = des[i]));
-  const sizes = idx.map(i => geo.get(comments[i].id).h);
-  const r = packLine(dv, sizes, 20);
-  idx.forEach((i, k) => { const a = geo.get(comments[i].id); moveTo(comments[i], right, Math.max(topY, r[k] - a.h / 2)); });
 }
 function arrangeAllPorts(d, geo, dir){
   topShapes(d).forEach(P => {
@@ -1400,7 +1408,8 @@ function drawShape(sh, e, d, SM, exp){
       b += T(rows, x + 7, yy + 15, {anchor:'start', size:11.5});
       yy += 15 + (rows.length - 1) * 14.6 + 8;
       const lvl = reqLevel(e);
-      b += `<rect x="${x + W - 58}" y="${y + 4}" width="54" height="14" rx="7" fill="${lvl === 'Sistem' ? '#e8d9f5' : '#d9ecf7'}"/>` + T(lvl === 'Sistem' ? 'Sistem' : 'Alt sist.', x + W - 31, y + 14.5, {size:9.5, fill:'#444'});
+      const tg = lvl === 'Sistem' ? 'Sistem' : (e.subsys ? String(e.subsys).slice(0, 18) : 'Alt sistem'), tgw = tw(tg, false, 9.5) + 14;
+      b += `<rect x="${x + W - tgw - 4}" y="${y + 4}" width="${tgw}" height="14" rx="7" fill="${lvl === 'Sistem' ? '#e8d9f5' : '#d9ecf7'}"/>` + T(tg, x + W - 4 - tgw / 2, y + 14.5, {size:9.5, fill:'#444'});
       const needH = Math.ceil((yy - y + 2) / G) * G; if(sh.h < needH) sh.h = needH;
       s = `<rect x="${x}" y="${y}" width="${W}" height="${sh.h}" fill="${fill}" ${SW}/>` + b;
       break;
@@ -1589,7 +1598,118 @@ function straight(A, B){
   const ta = clipT(A, dx, dy), tb = clipT(B, -dx, -dy);
   return [{x:A.cx + dx * ta, y:A.cy + dy * ta}, {x:B.cx - dx * tb, y:B.cy - dy * tb}];
 }
-function edgeGeom(S, T2, ed){
+/* ---- engelden kaçan dik açılı bağlantı yönlendirici ---- */
+function segHitsRect(a, b, r, pad){
+  const x0 = r.x + pad, x1 = r.x + r.w - pad, y0 = r.y + pad, y1 = r.y + r.h - pad;
+  if(x1 <= x0 || y1 <= y0) return false;
+  const dx = b.x - a.x, dy = b.y - a.y; if(!dx && !dy) return false;
+  let t0 = 0, t1 = 1;
+  const P = [-dx, dx, -dy, dy], Q = [a.x - x0, x1 - a.x, a.y - y0, y1 - a.y];
+  for(let i = 0; i < 4; i++){
+    if(P[i] === 0){ if(Q[i] < 0) return false; }
+    else { const t = Q[i] / P[i]; if(P[i] < 0){ if(t > t1) return false; if(t > t0) t0 = t; } else { if(t < t0) return false; if(t < t1) t1 = t; } }
+  }
+  return t1 - t0 > 1e-6;
+}
+function routeCtx(d, SM){
+  const shapes = d.shapes.filter(s => { const e = E(s.el); return e && !s.parent && !['Partition','Subject','Lifeline'].includes(e.kind); });
+  const xs = [], ys = [];
+  shapes.forEach(s => { xs.push(s.x - 20, s.x + s.w + 20); ys.push(s.y - 20, s.y + s.h + 20); });
+  return {d, SM, obs:shapes, xs, ys, routed:[]};
+}
+function endInfo(sh, other, ctx){
+  const e = E(sh.el), par = sh.parent && ctx.SM.get(sh.parent);
+  const ocx = other.x + other.w / 2, ocy = other.y + other.h / 2, cx = sh.x + sh.w / 2, cy = sh.y + sh.h / 2;
+  if(par && e && (e.kind === 'Port' || e.kind === 'Param')){
+    const sd = portSide(sh, par);
+    const pt = {l:{x:sh.x, y:cy, nx:-1, ny:0}, r:{x:sh.x + sh.w, y:cy, nx:1, ny:0}, t:{x:cx, y:sh.y, nx:0, ny:-1}, b:{x:cx, y:sh.y + sh.h, nx:0, ny:1}}[sd];
+    return [Object.assign({pen:0}, pt)];
+  }
+  const b = bx(sh), out = [];
+  const vx = ocx - cx, vy = ocy - cy, L = Math.hypot(vx, vy) || 1;
+  const fr = b.f === 'r' ? [0.5, 0.3, 0.7] : [0.5];
+  [['l', -1, 0], ['r', 1, 0], ['t', 0, -1], ['b', 0, 1]].forEach(([sd, nx, ny]) => {
+    const dot = (nx * vx + ny * vy) / L, sp = dot < -0.2 ? 160 : dot < 0.25 ? 45 : 0;
+    fr.forEach(f => {
+      let x, y;
+      if(nx){ y = sh.y + sh.h * f; x = b.f === 'r' ? (nx < 0 ? sh.x : sh.x + sh.w) : sideX(b, y, nx); }
+      else { x = sh.x + sh.w * f; y = b.f === 'r' ? (ny < 0 ? sh.y : sh.y + sh.h) : sideY(b, x, ny); }
+      out.push({x, y, nx, ny, pen:sp + (f === 0.5 ? 0 : 10)});
+    });
+  });
+  return out;
+}
+function simplifyPath(p){
+  const q = [];
+  p.forEach(pt => { const l = q[q.length - 1]; if(!l || Math.abs(l.x - pt.x) > 0.01 || Math.abs(l.y - pt.y) > 0.01) q.push({x:pt.x, y:pt.y}); });
+  for(let i = q.length - 2; i > 0; i--){ const a = q[i - 1], b = q[i], c = q[i + 1]; if((Math.abs(a.x - b.x) < 0.01 && Math.abs(b.x - c.x) < 0.01) || (Math.abs(a.y - b.y) < 0.01 && Math.abs(b.y - c.y) < 0.01)) q.splice(i, 1); }
+  return q;
+}
+function pathCost(p, ctx, S, T2){
+  let c = 0;
+  for(let i = 0; i < p.length - 1; i++){
+    const a = p[i], b = p[i + 1];
+    c += Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+    for(const r of ctx.obs){
+      if(r === S || r === T2){ if(segHitsRect(a, b, r, 2)) c += 900; }
+      else if(segHitsRect(a, b, r, 2)) c += 1400;
+      else if(segHitsRect(a, b, r, -8)) c += 60;
+    }
+    const hz = Math.abs(a.y - b.y) < 0.01;
+    for(const g of ctx.routed){
+      const gh = Math.abs(g.a.y - g.b.y) < 0.01;
+      if(hz === gh){
+        const k1 = hz ? a.y : a.x, k2 = hz ? g.a.y : g.a.x;
+        if(Math.abs(k1 - k2) < 7){
+          const lo = Math.max(Math.min(hz ? a.x : a.y, hz ? b.x : b.y), Math.min(hz ? g.a.x : g.a.y, hz ? g.b.x : g.b.y));
+          const hi = Math.min(Math.max(hz ? a.x : a.y, hz ? b.x : b.y), Math.max(hz ? g.a.x : g.a.y, hz ? g.b.x : g.b.y));
+          if(hi - lo > 6) c += 250 + (hi - lo) * 2;
+        }
+      } else {
+        const H = hz ? [a, b] : [g.a, g.b], V = hz ? [g.a, g.b] : [a, b];
+        const hy = H[0].y, vx = V[0].x;
+        if(vx > Math.min(H[0].x, H[1].x) + 1 && vx < Math.max(H[0].x, H[1].x) - 1 && hy > Math.min(V[0].y, V[1].y) + 1 && hy < Math.max(V[0].y, V[1].y) - 1) c += 14;
+      }
+    }
+  }
+  return c + (p.length - 2) * 30;
+}
+function routeOrtho(S, T2, ctx){
+  const A0 = endInfo(S, T2, ctx), B0 = endInfo(T2, S, ctx);
+  const best3 = arr => arr.slice().sort((a, b) => a.pen - b.pen).slice(0, 9);
+  const As = best3(A0), Bs = best3(B0);
+  const ST = 16;
+  let best = null, bestC = Infinity;
+  const BA = bx(S), BB = bx(T2);
+  const ovx = [Math.max(S.x, T2.x) + 6, Math.min(S.x + S.w, T2.x + T2.w) - 6], ovy = [Math.max(S.y, T2.y) + 6, Math.min(S.y + S.h, T2.y + T2.h) - 6];
+  const direct = [];
+  if(!S.parent && !T2.parent){
+    if(ovx[1] - ovx[0] > 4 && (T2.y >= S.y + S.h || S.y >= T2.y + T2.h)){ const x = snapv((ovx[0] + ovx[1]) / 2) === snapv((ovx[0] + ovx[1]) / 2) ? (ovx[0] + ovx[1]) / 2 : 0, dn = T2.y >= S.y + S.h ? 1 : -1; direct.push([{x, y:sideY(BA, x, dn)}, {x, y:sideY(BB, x, -dn)}]); }
+    if(ovy[1] - ovy[0] > 4 && (T2.x >= S.x + S.w || S.x >= T2.x + T2.w)){ const y = (ovy[0] + ovy[1]) / 2, dn = T2.x >= S.x + S.w ? 1 : -1; direct.push([{x:sideX(BA, y, dn), y}, {x:sideX(BB, y, -dn), y}]); }
+  }
+  direct.forEach(p => { const c = pathCost(p, ctx, S, T2) - 15; if(c < bestC){ bestC = c; best = p; } });
+  for(const a of As) for(const b of Bs){
+    const s0 = {x:a.x + a.nx * ST, y:a.y + a.ny * ST}, s1 = {x:b.x + b.nx * ST, y:b.y + b.ny * ST};
+    const mxs = [(s0.x + s1.x) / 2].concat(ctx.xs.filter(v => v > Math.min(s0.x, s1.x) - 140 && v < Math.max(s0.x, s1.x) + 140)).sort((u, v) => Math.abs(u - (s0.x + s1.x) / 2) - Math.abs(v - (s0.x + s1.x) / 2)).slice(0, 6);
+    const mys = [(s0.y + s1.y) / 2].concat(ctx.ys.filter(v => v > Math.min(s0.y, s1.y) - 140 && v < Math.max(s0.y, s1.y) + 140)).sort((u, v) => Math.abs(u - (s0.y + s1.y) / 2) - Math.abs(v - (s0.y + s1.y) / 2)).slice(0, 6);
+    const joins = [[{x:s1.x, y:s0.y}], [{x:s0.x, y:s1.y}]];
+    mxs.forEach(m => joins.push([{x:m, y:s0.y}, {x:m, y:s1.y}]));
+    mys.forEach(m => joins.push([{x:s0.x, y:m}, {x:s1.x, y:m}]));
+    for(const j of joins){
+      const raw = [{x:a.x, y:a.y}, s0].concat(j, [s1, {x:b.x, y:b.y}]);
+      const n1 = raw[2], dx0 = n1.x - s0.x, dy0 = n1.y - s0.y;
+      if(dx0 * a.nx + dy0 * a.ny < -0.01) continue;
+      const pl = raw[raw.length - 3], dx1 = s1.x - pl.x, dy1 = s1.y - pl.y;
+      if(dx1 * b.nx + dy1 * b.ny > 0.01) continue;
+      const p = simplifyPath(raw);
+      if(p.length < 2) continue;
+      const c = pathCost(p, ctx, S, T2) + a.pen + b.pen;
+      if(c < bestC){ bestC = c; best = p; }
+    }
+  }
+  return best;
+}
+function edgeGeom(S, T2, ed, ctx){
   const ek = edgeKind(ed);
   if(isMsg(ek)){
     const y = ed.y != null ? ed.y : Math.max(S.y, T2.y) + 70, xs = S.x + S.w / 2, xt = T2.x + T2.w / 2;
@@ -1601,11 +1721,23 @@ function edgeGeom(S, T2, ed){
     return [{x, y:y - 10}, {x:x + 34, y:y - 10}, {x:x + 34, y:y + 12}, {x:x + 1, y:y + 12}];
   }
   const A = bx(S), B = bx(T2);
-  if(ed.route === 'straight') return straight(A, B);
+  if(ctx && ed.mx == null && ed.my == null){
+    let r = null;
+    if(ed.route === 'straight'){
+      const st = straight(A, B);
+      const pS = S.parent && ctx.SM.get(S.parent), pT = T2.parent && ctx.SM.get(T2.parent);
+      if(!ctx.obs.some(o => o !== S && o !== T2 && o !== pS && o !== pT && segHitsRect(st[0], st[1], o, 2))) r = st;
+    }
+    if(!r) r = routeOrtho(S, T2, ctx);
+    if(r){ for(let i = 0; i < r.length - 1; i++) ctx.routed.push({a:r[i], b:r[i + 1]}); return r; }
+  }
+  if(ed.route === 'straight' && ed.mx == null && ed.my == null) return straight(A, B);
   let hd = 0, hg = 0, vd = 0, vg = 0;
   if(B.x >= A.x + A.w){ hd = 1; hg = B.x - A.x - A.w; } else if(A.x >= B.x + B.w){ hd = -1; hg = A.x - B.x - B.w; }
   if(B.y >= A.y + A.h){ vd = 1; vg = B.y - A.y - A.h; } else if(A.y >= B.y + B.h){ vd = -1; vg = A.y - B.y - B.h; }
-  const mode = hd && (!vd || hg >= vg) ? 'h' : (vd ? 'v' : 's');
+  let mode = hd && (!vd || hg >= vg) ? 'h' : (vd ? 'v' : 's');
+  if(ed.mx != null){ mode = 'h'; if(!hd) hd = B.cx >= A.cx ? 1 : -1; }
+  else if(ed.my != null){ mode = 'v'; if(!vd) vd = B.cy >= A.cy ? 1 : -1; }
   if(mode === 's') return straight(A, B);
   if(mode === 'h'){
     const lo = Math.max(A.y, B.y), hi = Math.min(A.y + A.h, B.y + B.h);
@@ -1655,7 +1787,8 @@ function drawEdge(d, ed, SM, pts, exp){
     if(pts.length === 4) s += T(lab.join(' '), a.x + 50, a.y + 4, {anchor:'start', size:11, halo:1});
     else s += T(lab.join(' '), (a.x + b.x) / 2, a.y - 6, {size:11, halo:1});
   } else if(lab.length){
-    const a = n === 4 ? pts[1] : pts[0], b = n === 4 ? pts[2] : pts[1];
+    let li = 0, lm = -1; for(let i = 0; i < n - 1; i++){ const L = Math.abs(pts[i].x - pts[i + 1].x) + Math.abs(pts[i].y - pts[i + 1].y) + (i > 0 && i < n - 2 ? 20 : 0); if(L > lm){ lm = L; li = i; } }
+    const a = pts[li], b = pts[li + 1];
     const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, vert = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
     s += vert ? T(lab.join(' '), mx + 6, my + 4, {anchor:'start', size:11, halo:1}) : T(lab.join(' '), mx, my - 6, {size:11, halo:1});
   }
@@ -1692,10 +1825,12 @@ function diagramSVG(d, exp){
     if(e.kind === 'Actor'){ grow(sh.x - 30, sh.y); grow(sh.x + sh.w + 30, sh.y + sh.h + 14); }
   });
   let edges = '';
-  d.edges.forEach(ed => {
+  const rctx = routeCtx(d, SM);
+  const ord = d.edges.slice().sort((a, b) => (edgeKind(a) === 'Anchor') - (edgeKind(b) === 'Anchor'));
+  ord.forEach(ed => {
     const S = SM.get(ed.s), T2 = SM.get(ed.t); if(!S || !T2) return;
     if(ed.el && !E(ed.el)) return;
-    const pts = edgeGeom(S, T2, ed); ed._pts = pts;
+    const pts = edgeGeom(S, T2, ed, rctx); ed._pts = pts;
     pts.forEach(p => grow(p.x, p.y));
     edges += drawEdge(d, ed, SM, pts, exp);
   });
@@ -2618,14 +2753,15 @@ const propsEl = $('#props');
 propsEl.addEventListener('change', ev => {
   const t = ev.target, tg = propTarget();
   if(t.dataset.f && tg.el){
+    if(t.dataset.f === 'level' && tg.el.kind === 'Requirement'){ changeLevel(tg.el, t.value); return; }
     snap();
     const f = t.dataset.f; let v = t.value;
     if(['type', 'behavior', 'represents', 'link'].includes(f) && !v) v = null;
     if(f === 'shared') v = !!v;
-    if(f === 'level' && tg.el.kind === 'Requirement' && v !== tg.el.level && confirm('Gereksinim kimliği yeni seviyeye göre yeniden numaralandırılsın mı?')) tg.el.reqId = nextReqId(v);
     if(f.startsWith('attr:')){ tg.el.attrs = tg.el.attrs || {}; tg.el.attrs[f.slice(5)] = v; afterChange(); return; }
     if(f === 'name' && tg.el.kind !== 'Comment') v = v.trim();
     tg.el[f] = v;
+    if(f === 'subsys' && tg.el.kind === 'Requirement'){ tg.el.subsys = String(v).trim(); relocateReq(tg.el); }
     if(f === 'behavior' && v && !tg.el.name) tg.el.name = E(v).name;
     if(f === 'type' && v && (tg.el.kind === 'Part' || tg.el.kind === 'ConstraintProp')){ Object.values(M.els).forEach(d => { if(d.kind === 'Diagram' && (d.dtype === 'ibd' || d.dtype === 'par')) d.shapes.filter(s => s.el === tg.el.id && !s.parent).forEach(s => showPorts(d, s)); }); }
     afterChange(); return;
@@ -2659,6 +2795,7 @@ const STD_COLS = [
   {key:'name', label:'Başlık', w:24},
   {key:'text', label:'Gereksinim Metni', w:60},
   {key:'level', label:'Seviye', w:12},
+  {key:'subsys', label:'Alt Sistem', w:18},
   {key:'verif', label:'Doğrulama Yöntemi', w:18},
   {key:'srcNo', label:'Müşteri İster No', w:16},
   {key:'srcText', label:'Müşteri İsteri', w:40}
@@ -2687,7 +2824,35 @@ function nextReqId(level){
 }
 function findOrMkPkg(owner, name){ let p = kidsOf(owner).find(e => e.kind === 'Package' && e.name === name); if(!p) p = mk('Package', owner, {name}); return p.id; }
 function reqHome(pkgId){ return pkgId === M.rootId ? findOrMkPkg(M.rootId, 'Gereksinimler') : pkgId; }
-function reqPkgFor(level){ const top = findOrMkPkg(M.rootId, 'Gereksinimler'); return findOrMkPkg(top, level === 'Alt Sistem' ? 'Alt Sistem Gereksinimleri' : 'Sistem Gereksinimleri'); }
+function reqPkgFor(level, subsys){
+  const top = findOrMkPkg(M.rootId, 'Gereksinimler');
+  if(level !== 'Alt Sistem') return findOrMkPkg(top, 'Sistem Gereksinimleri');
+  const alt = findOrMkPkg(top, 'Alt Sistem Gereksinimleri');
+  return subsys && String(subsys).trim() ? findOrMkPkg(alt, String(subsys).trim()) : alt;
+}
+function subsystems(){ return [...new Set(allReqs().filter(r => reqLevel(r) !== 'Sistem' && r.subsys && String(r.subsys).trim()).map(r => String(r.subsys).trim()))].sort((a, b) => a.localeCompare(b, 'tr')); }
+function relocateReq(r){
+  const o = E(r.owner), top = kidsOf(M.rootId).find(e => e.kind === 'Package' && e.name === 'Gereksinimler');
+  if(!o || !top) return;
+  const auto = o.id === top.id || o.owner === top.id || (E(o.owner) && E(o.owner).owner === top.id && E(o.owner).name === 'Alt Sistem Gereksinimleri');
+  if(auto) r.owner = reqPkgFor(reqLevel(r), r.subsys);
+}
+function askSubsys(title, def, cb, oncancel){
+  const box = $('#modalBox');
+  box.style.width = 'min(460px, 94vw)'; box.style.maxWidth = 'none';
+  const names = [...new Set(subsystems().concat(Object.values(M.els).filter(e => e.kind === 'Block').map(b => b.name)))].sort((a, b) => a.localeCompare(b, 'tr'));
+  box.innerHTML = `<h2>${esc(title)}</h2><p class="muted" style="margin:0 0 8px">Bu gereksinim hangi alt sisteme ait? Listeden seçin veya yeni bir ad yazın.</p>
+    <div class="icbar"><input id="ssq" list="ssl" value="${esc(def || '')}" placeholder="ör. Güç Birimi, Kontrol Birimi, Yazılım"><datalist id="ssl">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist></div>
+    ${subsystems().length ? `<div class="iccats">${subsystems().map(n => `<span class="chip" data-ss="${esc(n)}">${esc(n)}</span>`).join('')}</div>` : ''}
+    <p style="text-align:right;margin:10px 0 0"><button class="pbtn" id="sscancel">Vazgeç</button> <button class="pbtn pri" id="ssok">Tamam</button></p>`;
+  $('#modal').style.display = 'flex';
+  const inp = $('#ssq'); inp.focus(); inp.select();
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null; };
+  const cancel = () => { close(); if(oncancel) oncancel(); };
+  const ok = () => { const v = inp.value.trim(); if(!v){ inp.style.borderColor = '#c0392b'; inp.focus(); return; } close(); cb(v); };
+  inp.onkeydown = ev => { ev.stopPropagation(); if(ev.key === 'Enter'){ ev.preventDefault(); setTimeout(ok, 0); } if(ev.key === 'Escape') cancel(); };
+  box.onclick = ev => { const c = ev.target.closest('[data-ss]'); if(c){ inp.value = c.dataset.ss; ok(); return; } if(ev.target.id === 'sscancel') cancel(); if(ev.target.id === 'ssok') ok(); };
+}
 function relIdx(){ const idx = {}; for(const k in M.els){ const e = M.els[k]; if(e.src && e.tgt && KIND[e.kind] && KIND[e.kind].rel) (idx[e.kind] = idx[e.kind] || []).push(e); } return idx; }
 function trace(r, idx){
   idx = idx || relIdx();
@@ -2776,6 +2941,7 @@ function reqPropsHTML(el, pf){
   const c = reqCfg(); let h = '';
   h += pf('Gereksinim ID', `<input data-f="reqId" value="${esc(el.reqId || '')}">`);
   h += pf('Seviye', `<select data-f="level"><option${reqLevel(el) === 'Sistem' ? ' selected' : ''}>Sistem</option><option${reqLevel(el) !== 'Sistem' ? ' selected' : ''}>Alt Sistem</option></select>`);
+  if(reqLevel(el) !== 'Sistem') h += pf('Alt sistem', `<input data-f="subsys" list="sslp" value="${esc(el.subsys || '')}" placeholder="Alt sistem adı"><datalist id="sslp">${subsystems().map(n => `<option value="${esc(n)}">`).join('')}</datalist>`);
   h += pf('Gereksinim metni', `<textarea data-f="text" style="min-height:84px">${esc(el.text || '')}</textarea>`);
   h += pf('Doğrulama', verifChips(el.verif, el.id));
   h += pf('Müşteri ister no', `<input data-f="srcNo" value="${esc(el.srcNo || '')}">`);
@@ -2805,7 +2971,7 @@ function renderView(){
   if(v.dataset.v !== ST.cur){ v.dataset.v = ST.cur; v.innerHTML = `<div class="vbar"></div><div class="vbody"></div>`; renderViewBar(); }
   const body = v.querySelector('.vbody');
   const st = body.scrollTop, sl = body.scrollLeft;
-  if(ST.cur === '@reqtable') body.innerHTML = reqTableHTML();
+  if(ST.cur === '@reqtable'){ refreshLvlSelect(); body.innerHTML = reqTableHTML(); }
   else if(ST.cur === '@matrix') body.innerHTML = matrixHTML();
   else body.innerHTML = coverageHTML();
   body.scrollTop = st; body.scrollLeft = sl;
@@ -2818,25 +2984,38 @@ function renderViewBar(){
   const xl = `<span class="vsep"></span><button class="vb" data-va="import">⤓ Excel'den aktar</button><button class="vb" data-va="export">⤒ Excel'e aktar</button>`;
   if(ST.cur === '@reqtable'){
     bar.innerHTML = `<button class="vb pri" data-va="addSys">+ Sistem gereksinimi</button><button class="vb pri2" data-va="addSub">+ Alt sistem gereksinimi</button>
-      <span class="vsep"></span><select data-vf="lvl"><option value="all">Tüm seviyeler</option><option value="Sistem">Sistem</option><option value="Alt Sistem">Alt Sistem</option></select>
+      <span class="vsep"></span><select data-vf="lvl">${lvlOptions()}</select>
       <input data-vf="q" placeholder="Ara (ID, metin, ister no…)" value="${esc(RV.q)}"><label class="vchk"><input type="checkbox" data-vf="gaps"${RV.gaps ? ' checked' : ''}> Yalnız eksikler</label>
       <span class="vsep"></span><button class="vb" data-va="cols">☰ Sütunlar / özellikler</button>${xl}`;
-    bar.querySelector('[data-vf="lvl"]').value = RV.lvl;
+    const ls = bar.querySelector('[data-vf="lvl"]'); ls.value = RV.lvl; if(ls.value !== RV.lvl){ RV.lvl = 'all'; ls.value = 'all'; }
   } else if(ST.cur === '@matrix'){
     const so = (sel, opts) => opts.map(([k, t]) => `<option value="${k}"${sel === k ? ' selected' : ''}>${t}</option>`).join('');
-    bar.innerHTML = `<label>Satırlar <select data-mf="rows">${so(MX.rows, MSETS.filter(x => x[2]).map(x => [x[0], x[1]]))}</select></label>
-      <label>Sütunlar <select data-mf="cols">${so(MX.cols, MSETS.map(x => [x[0], x[1]]))}</select></label>
+    bar.innerHTML = `<label>Satırlar <select data-mf="rows">${so(MX.rows, msetList().filter(x => x[2]).map(x => [x[0], x[1]]))}</select></label>
+      <label>Sütunlar <select data-mf="cols">${so(MX.cols, msetList().map(x => [x[0], x[1]]))}</select></label>
       <label>İlişki <select data-mf="rel">${so(MX.rel, [['auto','Otomatik'], ['DeriveReqt','Derive'], ['Satisfy','Satisfy'], ['Verify','Verify'], ['Refine','Refine'], ['Trace','Trace']])}</select></label>
       <label class="vchk"><input type="checkbox" data-mf="empty"${MX.empty ? ' checked' : ''}> Yalnız boş satırlar</label>${xl}`;
   } else {
     bar.innerHTML = `<label class="vchk"><input type="checkbox" data-cf="gaps"${CV.gaps ? ' checked' : ''}> Yalnız eksikleri göster</label><button class="vb" data-va="matrix">İzlenebilirlik matrisine git</button>${xl}`;
   }
 }
+function lvlOptions(){
+  const ss = subsystems(), noName = allReqs().some(r => reqLevel(r) !== 'Sistem' && !(r.subsys && String(r.subsys).trim()));
+  return `<option value="all">Tüm gereksinimler</option><option value="Sistem">Sistem gereksinimleri</option><option value="Alt Sistem">Tüm alt sistemler</option>` +
+    (ss.length || noName ? `<optgroup label="Alt sistemler">${ss.map(n => `<option value="sub:${esc(n)}">Alt sistem: ${esc(n)}</option>`).join('')}${noName ? '<option value="sub:">Alt sistem: (adı girilmemiş)</option>' : ''}</optgroup>` : '');
+}
+function lvlMatch(r, lvl){
+  if(lvl === 'all') return true;
+  if(lvl === 'Sistem') return reqLevel(r) === 'Sistem';
+  if(lvl === 'Alt Sistem') return reqLevel(r) !== 'Sistem';
+  if(lvl.startsWith('sub:')) return reqLevel(r) !== 'Sistem' && String(r.subsys || '').trim() === lvl.slice(4);
+  return true;
+}
+function refreshLvlSelect(){ const ls = document.querySelector('#view [data-vf="lvl"]'); if(ls){ const h = lvlOptions(); if(ls.dataset.h !== h){ ls.innerHTML = h; ls.dataset.h = h; ls.value = RV.lvl; if(ls.value !== RV.lvl){ RV.lvl = 'all'; ls.value = 'all'; } } } }
 function cellVal(r, key){ if(key.startsWith('attr:')) return (r.attrs || {})[key.slice(5)] || ''; return r[key] == null ? '' : String(r[key]); }
 function reqTableHTML(){
   const cols = visCols(), idx = relIdx();
   let rs = allReqs();
-  if(RV.lvl !== 'all') rs = rs.filter(r => reqLevel(r) === RV.lvl);
+  rs = rs.filter(r => lvlMatch(r, RV.lvl));
   const q = RV.q.toLocaleLowerCase('tr').trim();
   if(q) rs = rs.filter(r => [r.reqId, r.name, r.text, r.srcNo, r.srcText].concat(Object.values(r.attrs || {})).join(' ').toLocaleLowerCase('tr').includes(q));
   const T0 = new Map(rs.map(r => { const t = trace(r, idx); return [r.id, {t, c:covStatus(r, t)}]; }));
@@ -2852,6 +3031,7 @@ function reqTableHTML(){
       const k = col.key;
       if(k === 'level') h += `<td><select data-r="${r.id}" data-c="level"><option${reqLevel(r) === 'Sistem' ? ' selected' : ''}>Sistem</option><option${reqLevel(r) !== 'Sistem' ? ' selected' : ''}>Alt Sistem</option></select></td>`;
       else if(k === 'verif') h += `<td>${verifChips(r.verif, r.id)}</td>`;
+      else if(k === 'subsys' && reqLevel(r) === 'Sistem') h += `<td class="muted" style="text-align:center">—</td>`;
       else if(k === '_parents') h += `<td>${chips(t.parents, r.id, 'parent')}</td>`;
       else if(k === '_children') h += `<td>${chips(t.children, r.id, 'child')}</td>`;
       else if(k === '_satisfy') h += `<td>${chips(t.elems, r.id, 'elem')}</td>`;
@@ -2874,7 +3054,8 @@ const MSETS = [
   ['tests', 'Test durumları', 0, () => Object.values(M.els).filter(e => e.kind === 'TestCase').sort(sortEls)],
   ['ucs', 'Use case\'ler', 0, () => Object.values(M.els).filter(e => e.kind === 'UseCase').sort(sortEls)]
 ];
-const mset = k => (MSETS.find(x => x[0] === k) || MSETS[0])[3]();
+function msetList(){ return MSETS.slice(0, 3).concat(subsystems().map(n => ['sub:' + n, 'Alt sistem: ' + n, 1, () => allReqs().filter(r => reqLevel(r) !== 'Sistem' && String(r.subsys || '').trim() === n)]), MSETS.slice(3)); }
+const mset = k => (msetList().find(x => x[0] === k) || MSETS[0])[3]();
 function mxRel(row, col){
   let kind = MX.rel;
   const rq = row.kind === 'Requirement', cq = col.kind === 'Requirement';
@@ -2897,8 +3078,9 @@ function matrixHTML(){
   const rowCnt = new Map(rows0.map(r => [r.id, cols.reduce((n, c) => n + (has(r, c) ? 1 : 0), 0)]));
   const rows = MX.empty ? rows0.filter(r => !rowCnt.get(r.id)) : rows0;
   const colCnt = cols.map(c => rows0.reduce((n, r) => n + (has(r, c) ? 1 : 0), 0));
-  const lab = e => e.kind === 'Requirement' ? (e.reqId || '') + ' ' + (e.name || '') : elDesc(e);
-  let h = `<table class="mx"><thead><tr><th class="mxc">${esc(MSETS.find(x => x[0] === MX.rows)[1])} ↓ / ${esc(MSETS.find(x => x[0] === MX.cols)[1])} →</th>`;
+  const lab = e => e.kind === 'Requirement' ? (e.reqId || '') + ' ' + (e.name || '') + (reqLevel(e) !== 'Sistem' && e.subsys ? ' [' + e.subsys + ']' : '') : elDesc(e);
+  const ml = k => (msetList().find(x => x[0] === k) || MSETS[0])[1];
+  let h = `<table class="mx"><thead><tr><th class="mxc">${esc(ml(MX.rows))} ↓ / ${esc(ml(MX.cols))} →</th>`;
   cols.forEach((c, j) => { h += `<th class="mxh${colCnt[j] ? '' : ' zero'}" title="${esc(lab(c) + (c.text ? '\n' + c.text : ''))}"><div><span>${esc(lab(c).slice(0, 42))}</span></div></th>`; });
   h += `<th class="mxh tot"><div><span>Toplam</span></div></th></tr></thead><tbody>`;
   rows.forEach(r => {
@@ -2947,7 +3129,7 @@ function coverageHTML(){
     if(!list.length) return s + `<div class="muted" style="margin:0 0 14px">${CV.gaps ? 'Eksik yok 🎉' : 'Kayıt yok'}</div>`;
     s += `<table class="rt cvt"><thead><tr><th>ID</th><th>Gereksinim</th>${sys ? '<th>Alt Sistem Gereksinimleri</th>' : '<th>Üst Gereksinim</th>'}<th>Model Elemanları</th><th>Fonksiyonlar</th><th>Doğrulama</th><th>Test</th><th>Durum</th><th>Eksikler</th></tr></thead><tbody>`;
     list.forEach(({r, t, c}) => {
-      s += `<tr data-row="${r.id}" class="${ST.tsel === r.id ? 'sel' : ''}"><td style="white-space:nowrap"><a class="lnk" data-goto="${r.id}"><b>${esc(r.reqId || '')}</b></a></td><td class="cvtx">${esc(r.name || '')}${r.text ? `<div class="muted">${esc(r.text.slice(0, 140))}</div>` : ''}</td>
+      s += `<tr data-row="${r.id}" class="${ST.tsel === r.id ? 'sel' : ''}"><td style="white-space:nowrap"><a class="lnk" data-goto="${r.id}"><b>${esc(r.reqId || '')}</b></a></td><td class="cvtx">${!sys && r.subsys ? `<span class="chip2">${esc(r.subsys)}</span> ` : ''}${esc(r.name || '')}${r.text ? `<div class="muted">${esc(r.text.slice(0, 140))}</div>` : ''}</td>
         <td>${nl(sys ? t.children : t.parents)}</td><td>${nl(t.elems)}</td><td>${nl(t.funcs)}</td><td>${r.verif ? esc(r.verif) : '<span class="miss">—</span>'}</td><td>${nl(t.verifyBy)}</td>
         <td><span class="cov cov-${c.st}">${c.st}</span></td><td class="gapt">${c.gaps.map(esc).join('<br>')}</td></tr>`;
     });
@@ -2966,7 +3148,14 @@ function coverageHTML(){
     const va = t.closest('[data-va]');
     if(va){
       const a = va.dataset.va;
-      if(a === 'addSys' || a === 'addSub'){ const lvl = a === 'addSys' ? 'Sistem' : 'Alt Sistem'; snap(); const r = mk('Requirement', reqPkgFor(lvl), {level:lvl, name:''}); ST.tsel = r.id; RV.q = ''; if(RV.lvl !== 'all' && RV.lvl !== lvl) RV.lvl = 'all'; pendingFocus = [r.id, 'name']; renderViewBar(); afterChange(); const b = $('#view .vbody'); b.scrollTop = b.scrollHeight; }
+      if(a === 'addSys' || a === 'addSub'){
+        const add = (lvl, ss) => {
+          snap(); const r = mk('Requirement', reqPkgFor(lvl, ss), {level:lvl, name:'', subsys:ss || ''}); ST.tsel = r.id; RV.q = '';
+          if(RV.lvl !== 'all' && !(lvl === 'Sistem' ? RV.lvl === 'Sistem' : (RV.lvl === 'Alt Sistem' || RV.lvl === 'sub:' + ss))) RV.lvl = 'all';
+          pendingFocus = [r.id, 'name']; renderViewBar(); afterChange(); const b = $('#view .vbody'); b.scrollTop = b.scrollHeight;
+        };
+        if(a === 'addSys') add('Sistem'); else askSubsys('Yeni alt sistem gereksinimi', RV.lvl.startsWith('sub:') ? RV.lvl.slice(4) : '', ss => add('Alt Sistem', ss));
+      }
       if(a === 'import') importReqs();
       if(a === 'export') exportReqsXlsx();
       if(a === 'cols') columnManager();
@@ -2990,7 +3179,7 @@ function coverageHTML(){
   });
   V.addEventListener('change', ev => {
     const t = ev.target;
-    if(t.dataset.c === 'level'){ const r = E(t.dataset.r); if(r){ snap(); r.level = t.value; if(confirm('Gereksinim kimliği yeni seviyeye göre yeniden numaralandırılsın mı?')) r.reqId = nextReqId(t.value); afterChange(); } return; }
+    if(t.dataset.c === 'level'){ const r = E(t.dataset.r); if(r) changeLevel(r, t.value); return; }
     if(t.dataset.vf === 'lvl'){ RV.lvl = t.value; renderView(); }
     if(t.dataset.vf === 'gaps'){ RV.gaps = t.checked; renderView(); }
     if(t.dataset.mf){ const k = t.dataset.mf; MX[k] = t.type === 'checkbox' ? t.checked : t.value; renderView(); }
@@ -3008,10 +3197,12 @@ function coverageHTML(){
   V.addEventListener('focusout', ev => {
     const t = ev.target; if(!t.classList || !t.classList.contains('ce')) return;
     const r = E(t.dataset.r); if(!r) return;
-    const k = t.dataset.c, v = t.innerText.replace(/ /g, ' ').replace(/\n+$/, '');
+    const k = t.dataset.c; let v = t.innerText.replace(/\u00a0/g, ' ').replace(/\n+$/, '').replace(/^\n+/, '');
+    if(!['text', 'srcText'].includes(k)) v = v.replace(/\s*\n\s*/g, ' ');
     if(v === cellVal(r, k)) return;
     snap();
-    if(k.startsWith('attr:')){ r.attrs = r.attrs || {}; r.attrs[k.slice(5)] = v; } else r[k] = k === 'reqId' ? v.trim() : v;
+    if(k.startsWith('attr:')){ r.attrs = r.attrs || {}; r.attrs[k.slice(5)] = v; } else r[k] = (k === 'reqId' || k === 'subsys') ? v.trim() : v;
+    if(k === 'subsys') relocateReq(r);
     setTimeout(() => { const a = document.activeElement; if(a && a.dataset && a.dataset.c && a.dataset.r) pendingFocus = [a.dataset.r, a.dataset.c]; afterChange(); }, 0);
   });
   $('#props').addEventListener('click', ev => {
@@ -3019,6 +3210,11 @@ function coverageHTML(){
     const tp = ev.target.closest('[data-trpick]'); if(tp) pickTrace(tp.dataset.rid, tp.dataset.trpick);
   });
 })();
+function changeLevel(r, lvl){
+  const fin = ss => { snap(); r.level = lvl; if(lvl === 'Alt Sistem') r.subsys = ss; if(confirm('Gereksinim kimliği yeni seviyeye göre yeniden numaralandırılsın mı?')) r.reqId = nextReqId(lvl); relocateReq(r); afterChange(); };
+  if(lvl === 'Alt Sistem' && !(r.subsys && String(r.subsys).trim())) askSubsys('Alt sistem adı — ' + (r.reqId || ''), '', fin, () => afterChange());
+  else fin(r.subsys);
+}
 function markSelRow(){ document.querySelectorAll('#view tr[data-row]').forEach(tr => tr.classList.toggle('sel', tr.dataset.row === ST.tsel)); }
 
 /* ---------- column / attribute manager ---------- */
@@ -3268,7 +3464,7 @@ async function importReqs(){
   if(!sheets.length) return toast('Dosyada veri bulunamadı');
   importDialog(sheets, file.name);
 }
-const IMP_TARGETS = [['', '— Yok say —'], ['reqId', 'Gereksinim ID'], ['name', 'Başlık'], ['text', 'Gereksinim metni'], ['level', 'Seviye (Sistem / Alt Sistem)'], ['verif', 'Doğrulama yöntemi'], ['srcNo', 'Müşteri ister no'], ['srcText', 'Müşteri isteri'], ['_parents', 'Üst gereksinim ID(ler)i → Derive'], ['_satisfy', 'Karşılayan model elemanı adları → Satisfy'], ['_funcs', 'Fonksiyon adları → Satisfy'], ['_verifyBy', 'Doğrulayan test adları → Verify'], ['new', '+ Yeni özellik olarak ekle']];
+const IMP_TARGETS = [['', '— Yok say —'], ['reqId', 'Gereksinim ID'], ['name', 'Başlık'], ['text', 'Gereksinim metni'], ['level', 'Seviye (Sistem / Alt Sistem)'], ['subsys', 'Alt sistem adı'], ['verif', 'Doğrulama yöntemi'], ['srcNo', 'Müşteri ister no'], ['srcText', 'Müşteri isteri'], ['_parents', 'Üst gereksinim ID(ler)i → Derive'], ['_satisfy', 'Karşılayan model elemanı adları → Satisfy'], ['_funcs', 'Fonksiyon adları → Satisfy'], ['_verifyBy', 'Doğrulayan test adları → Verify'], ['new', '+ Yeni özellik olarak ekle']];
 const asciiTr = x => String(x || '').toLocaleLowerCase('tr').replace(/[çğıöşüâîû]/g, c => ({'ç':'c','ğ':'g','ı':'i','ö':'o','ş':'s','ü':'u','â':'a','î':'i','û':'u'}[c])).replace(/\s+/g, ' ').trim();
 function guessTarget(h){
   const n = asciiTr(h);
@@ -3277,6 +3473,7 @@ function guessTarget(h){
   const attr = reqCfg().attrs.find(a => asciiTr(a.label) === n); if(attr) return 'attr:' + attr.key;
   if(has('musteri', 'kaynak', 'source', 'customer', 'ister no') || n === 'ister') return /(^|\s)(no|numara|id|kimlik)\.?$/.test(n) || has(' no ', 'no.') ? 'srcNo' : 'srcText';
   if(has('kapsama', 'durum', 'status', 'alt sistem gereksinimleri', 'children')) return '';
+  if((has('alt sistem', 'altsistem', 'subsystem', 'birim', 'unit') && !has('gereksinim', 'requirement')) || n === 'alt sistem') return 'subsys';
   if(has('ust ', 'ust gereksinim', 'parent', 'turetildi', 'derived from')) return '_parents';
   if(has('karsilayan', 'satisf', 'model eleman')) return '_satisfy';
   if(has('fonksiyon', 'function')) return '_funcs';
@@ -3349,10 +3546,12 @@ function doImport(rows, hr, map, defLevel, update){
   data.forEach(row => {
     const get = k => { const i = map.indexOf(k); return i < 0 ? undefined : String(row[i] == null ? '' : row[i]).trim(); };
     const id = get('reqId');
-    const lvl = parseLevel(get('level'), defLevel);
+    const ssv = get('subsys');
+    const lvl = parseLevel(get('level'), ssv ? 'Alt Sistem' : defLevel);
     let r = id && update ? byId.get(id) : null;
     if(r) updated++;
-    else { r = mk('Requirement', reqPkgFor(lvl), {level:lvl, name:'', reqId:id || undefined}); if(!id) r.reqId = nextReqId(lvl); byId.set(String(r.reqId), r); added++; }
+    else { r = mk('Requirement', reqPkgFor(lvl, ssv), {level:lvl, name:'', reqId:id || undefined, subsys:ssv || ''}); if(!id) r.reqId = nextReqId(lvl); byId.set(String(r.reqId), r); added++; }
+    if(ssv !== undefined && ssv !== r.subsys){ r.subsys = ssv; if(ssv && r.level !== 'Alt Sistem' && !get('level')) r.level = 'Alt Sistem'; relocateReq(r); }
     if(get('level') !== undefined && get('level') !== '') { if(r.level !== lvl){ r.level = lvl; const tgtPkg = reqPkgFor(lvl); const o = E(r.owner); if(o && /Gereksinimleri$/.test(o.name)) r.owner = tgtPkg; } }
     ['name', 'text', 'srcNo', 'srcText'].forEach(k => { const v = get(k); if(v !== undefined) r[k] = v; });
     if(get('verif') !== undefined) r.verif = parseVerif(get('verif'));
@@ -3632,7 +3831,7 @@ function showHelp(){
   </table>
   <h3>Gereksinim yönetimi (Gereksinimler ▾)</h3>
   <table>
-  <tr><td>Gereksinim tablosu</td><td>Sistem ve alt sistem gereksinimlerini ekleyin, hücreye tıklayıp düzenleyin. Doğrulama yöntemi T/A/M/G (Test, Analiz, Muayene, Gösterim) düğmeleriyle. İzlenebilirlik sütunlarındaki <b>+</b> ile üst gereksinim, alt gereksinim, karşılayan model elemanı, fonksiyon ve test bağlanır.</td></tr>
+  <tr><td>Gereksinim tablosu</td><td>Sistem ve alt sistem gereksinimlerini ekleyin (alt sistem eklerken alt sistem adı sorulur; filtrede alt sistemler adlarıyla listelenir), hücreye tıklayıp düzenleyin. Doğrulama yöntemi T/A/M/G (Test, Analiz, Muayene, Gösterim) düğmeleriyle. İzlenebilirlik sütunlarındaki <b>+</b> ile üst gereksinim, alt gereksinim, karşılayan model elemanı, fonksiyon ve test bağlanır.</td></tr>
   <tr><td>Sütunlar / özellikler</td><td>Sütunları gizleyin/gösterin, özel özellik (attribute) ekleyin/silin/yeniden adlandırın, ID öneklerini ayarlayın. Görünen sütunlar Excel'e aktarılır.</td></tr>
   <tr><td>İzlenebilirlik matrisi</td><td>Satır/sütun kümeleri: sistem, alt sistem, fonksiyonlar, bloklar, model elemanları, testler, use case'ler. Hücreye tıklayınca ilişki kurulur/kaldırılır. Kırmızı başlıklar ilişkisiz satır/sütunlardır.</td></tr>
   <tr><td>Kapsama analizi</td><td>Karşılanmayan sistem gereksinimleri, yetim alt sistem gereksinimleri, doğrulama yöntemi olmayanlar, gereksinime izlenmeyen bloklar/fonksiyonlar; yüzde göstergeleri.</td></tr>
@@ -3749,6 +3948,7 @@ function demo(){
   const A3 = RQ('Alt Sistem', 'SUB-003', 'Sensör veri hızı', 'Sensör birimi veriyi en az 50 Hz ile kontrol birimine iletmelidir.', 'Test', '', '');
   const A4 = RQ('Alt Sistem', 'SUB-004', 'Durum mesajı', 'Kontrol birimi durum mesajını 1 Hz ile yayınlamalıdır.', '', '', '', 'Düşük');
   const A5 = RQ('Alt Sistem', 'SUB-005', 'Bakım arayüzü', 'Kontrol birimi bakım için seri arayüz sağlamalıdır.', 'Muayene', '', '', 'Düşük');
+  [[A1, 'Güç Birimi'], [A2, 'Kontrol Birimi'], [A3, 'Sensör Birimi'], [A4, 'Kontrol Birimi'], [A5, 'Kontrol Birimi']].forEach(([r, n]) => { r.subsys = n; r.owner = reqPkgFor('Alt Sistem', n); });
   [[A1, S1], [A2, S2], [A3, S2], [A4, S3]].forEach(([x, y]) => addRel('DeriveReqt', x.id, y.id));
   addRel('Satisfy', gb.id, A1.id); addRel('Satisfy', kb.id, A2.id); addRel('Satisfy', sb.id, A3.id); addRel('Satisfy', sys.id, S4.id);
   addRel('Satisfy', act.id, S2.id); addRel('Satisfy', E(n2.el).id, A2.id); addRel('Satisfy', E(n4.el).id, A4.id);
