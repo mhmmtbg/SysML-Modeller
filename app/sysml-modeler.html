@@ -248,7 +248,7 @@ const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const G = 10, FF = 'Segoe UI, Arial, sans-serif';
-const STROKE = '#3a3a3a';
+const STROKE = '#3a3a3a', STROKE0 = STROKE;
 
 /* ================= META ================= */
 const KIND = {
@@ -272,6 +272,7 @@ const KIND = {
   Join:{tr:'Eşzamanlama (Join)',ic:'▬',col:'#222',w:120,h:6},
   Object:{tr:'Nesne Düğümü',ic:'O',col:'#4f7f9e',w:130,h:44},
   Partition:{tr:'Kulvar',ic:'║',col:'#6c7a89',w:250,h:480},
+  PartitionH:{tr:'Kulvar (yatay)',ic:'═',col:'#6c7a89',w:640,h:170,pseudo:1},
   Comment:{tr:'Not',ic:'✎',col:'#a89a3a',w:170,h:60},
   Requirement:{tr:'Gereksinim',en:'Requirement',ic:'R',col:'#8e44ad',w:230,h:110},
   TestCase:{tr:'Test Durumu',en:'TestCase',ic:'TC',col:'#27ae60',w:170,h:60},
@@ -322,6 +323,7 @@ const DT = {
 };
 DT.bdd.shapes = ['Block','ConstraintBlock','Package','Actor','Comment'];
 DT.bdd.rels = DT.bdd.rels.slice(0, -1).concat(['Allocate','Anchor']);
+DT.act.shapes = DT.act.shapes.map(k => k === 'Partition' ? ['Partition', 'PartitionH'] : [k]).flat();
 DT.act.rels = DT.act.rels.slice(0, -1).concat(['Allocate','Anchor']);
 const OWN = {
   Model:['Package','Block','ConstraintBlock','Actor','UseCase','Subject','Activity','StateMachine','Interaction','Requirement','TestCase','Comment'],
@@ -641,7 +643,7 @@ const undoStack = [], redoStack = [];
 const clean = (k, v) => (k === '_pts' || k === '_rm' || k === '_num' || k === '_seqMsgs') ? undefined : v;
 const E = id => (id && M.els[id]) || null;
 const cur = () => E(ST.cur);
-function snap(){ markDirty(); undoStack.push(JSON.stringify(M)); if(undoStack.length > 150) undoStack.shift(); redoStack.length = 0; }
+function snap(){ if(ST.batch) return; markDirty(); undoStack.push(JSON.stringify(M)); if(undoStack.length > 150) undoStack.shift(); redoStack.length = 0; }
 function undo(){ if(!undoStack.length) return toast('Geri alınacak işlem yok'); markDirty(); redoStack.push(JSON.stringify(M)); M = JSON.parse(undoStack.pop()); afterLoad(); }
 function redo(){ if(!redoStack.length) return; markDirty(); undoStack.push(JSON.stringify(M)); M = JSON.parse(redoStack.pop()); afterLoad(); }
 function afterLoad(){
@@ -1068,8 +1070,9 @@ function layoutDiagram(d, mode){
     const dir = mode === 'lr' ? 'LR' : 'TB';
     const nodes = tops.filter(s => { const k = kindOfSh(s); return k !== 'Comment' && k !== 'Partition' && !(d.dtype === 'ibd' && k === 'Value'); });
     if(d.dtype === 'act') nodes.forEach(s => { const k = kindOfSh(s); if(k === 'Fork' || k === 'Join'){ const a = g(s.id), Lg = Math.max(a.w, a.h, 80), t = Math.min(a.w, a.h); if(dir === 'TB'){ a.w = Lg; a.h = t; } else { a.w = t; a.h = Lg; } } });
-    const parts = d.dtype === 'act' && dir === 'TB' ? tops.filter(s => kindOfSh(s) === 'Partition').sort((a, b) => a.x - b.x) : [];
-    if(d.dtype === 'act' && dir === 'LR' && tops.some(s => kindOfSh(s) === 'Partition')) toast('Kulvarlar dikey olduğundan soldan sağa düzende kulvarlar yerinde bırakıldı.');
+    const allP = tops.filter(s => kindOfSh(s) === 'Partition');
+    const parts = d.dtype === 'act' ? allP.filter(s => dir === 'TB' ? !s.horiz : s.horiz).sort((a, b) => dir === 'TB' ? a.x - b.x : a.y - b.y) : [];
+    if(d.dtype === 'act' && allP.length && allP.length !== parts.length) toast(dir === 'TB' ? 'Yatay kulvarlar için "soldan sağa" düzenini kullanın; yön uymayan kulvarlar yerinde bırakıldı.' : 'Dikey kulvarlar için "yukarıdan aşağı" düzenini kullanın; yön uymayan kulvarlar yerinde bırakıldı.');
     const nodeSet = new Set(nodes.map(s => s.id));
     const eg = layoutEdges(d, nodeSet);
     const gap = d.dtype === 'ibd' ? {gapMain:130, gapCross:60} : d.dtype === 'act' ? {gapMain:45, gapCross:50} : {gapMain:80, gapCross:40};
@@ -1077,12 +1080,12 @@ function layoutDiagram(d, mode){
       const v = C0(s); const a = g(s.id); v.w = a.w; v.h = a.h;
       if(parts.length){
         let li = parts.findIndex(P => v.cx >= P.x && v.cx <= P.x + P.w && v.cy >= P.y && v.cy <= P.y + P.h);
-        if(li < 0){ let bd = Infinity; parts.forEach((P, k) => { const dd = Math.abs(P.x + P.w / 2 - v.cx); if(dd < bd){ bd = dd; li = k; } }); }
+        if(li < 0){ let bd = Infinity; parts.forEach((P, k) => { const dd = dir === 'TB' ? Math.abs(P.x + P.w / 2 - v.cx) : Math.abs(P.y + P.h / 2 - v.cy); if(dd < bd){ bd = dd; li = k; } }); }
         v.lane = li;
       }
       return v;
     });
-    const opts = Object.assign({dir, alignStart:d.dtype !== 'act', lanes:parts.map((_, i) => i), lanePad:parts.length ? 30 : 0, laneMin:parts.length ? 200 : 0}, gap);
+    const opts = Object.assign({dir, alignStart:d.dtype !== 'act', lanes:parts.map((_, i) => i), lanePad:parts.length ? 30 : 0, laneMin:parts.length ? (dir === 'TB' ? 200 : 130) : 0}, gap);
     if(d.dtype === 'ibd' || d.dtype === 'par') arrangeAllPorts(d, geo, dir);
     let r = layered(mkN(), eg, opts);
     r.pos.forEach((p, id) => centerTo(shapeOf(d, id), p.cx, p.cy));
@@ -1094,10 +1097,14 @@ function layoutDiagram(d, mode){
       arrangeAllPorts(d, geo, dir);
       if(d.dtype === 'ibd') placeValues(d, geo, tops, centerTo);
     }
-    if(parts.length){
+    if(parts.length && dir === 'TB'){
       const ys = nodes.map(s => [g(s.id).y, g(s.id).y + g(s.id).h]);
       const y0 = Math.min(...ys.map(v => v[0])), y1 = Math.max(...ys.map(v => v[1]));
       parts.forEach((P, k) => { const lb = r.laneBox[k]; const a = g(P.id); a.x = lb.start; a.w = lb.size; a.y = y0 - 58; a.h = (y1 - y0) + 88; });
+    } else if(parts.length){
+      const xs = nodes.map(s => [g(s.id).x, g(s.id).x + g(s.id).w]);
+      const x0 = Math.min(...xs.map(v => v[0])), x1 = Math.max(...xs.map(v => v[1]));
+      parts.forEach((P, k) => { const lb = r.laneBox[k]; const a = g(P.id); a.y = lb.start; a.h = lb.size; a.x = x0 - 68; a.w = (x1 - x0) + 98; });
     }
   }
   if(placeComments && comments.length) placeCommentShapes(d, geo, comments, moveTo);
@@ -1316,7 +1323,8 @@ function layoutMenuItems(){
 
 /* ================= TEXT ================= */
 const mctx = document.createElement('canvas').getContext('2d');
-function tw(s, bold, size){ mctx.font = (bold ? 'bold ' : '') + (size || 12) + 'px ' + FF; return mctx.measureText(s).width; }
+let FSC = 1;
+function tw(s, bold, size){ mctx.font = (bold ? 'bold ' : '') + ((size || 12) * FSC) + 'px ' + FF; return mctx.measureText(s).width; }
 function wrap(s, maxW, bold, size){
   const out = [];
   String(s == null ? '' : s).split('\n').forEach(para => {
@@ -1337,20 +1345,20 @@ function wrap(s, maxW, bold, size){
 }
 function T(lines, x, y, o){
   o = o || {}; if(!Array.isArray(lines)) lines = [lines];
-  const sz = o.size || 12, lh = o.lh || Math.round(sz * 1.27);
+  const sz = (o.size || 12) * FSC, lh = o.lh ? o.lh * FSC : Math.round(sz * 1.27);
   let s = `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-family="${FF}" font-size="${sz}" text-anchor="${o.anchor || 'middle'}" fill="${o.fill || '#151515'}"` +
     (o.bold ? ' font-weight="bold"' : '') + (o.italic ? ' font-style="italic"' : '') +
     (o.halo ? ' stroke="#ffffff" stroke-width="3" stroke-linejoin="round" paint-order="stroke"' : '') + '>';
   lines.forEach((l, i) => { s += `<tspan x="${x.toFixed(1)}" dy="${i ? lh : 0}">${esc(l)}</tspan>`; });
   return s + '</text>';
 }
-function Tc(lines, cx, cy, o){ o = o || {}; const sz = o.size || 12, lh = o.lh || Math.round(sz * 1.27); return T(lines, cx, cy - (lines.length - 1) * lh / 2 + sz * 0.36, o); }
+function Tc(lines, cx, cy, o){ o = o || {}; const sz = (o.size || 12) * FSC, lh = o.lh ? o.lh * FSC : Math.round(sz * 1.27); return T(lines, cx, cy - (lines.length - 1) * lh / 2 + sz * 0.36, o); }
 
 /* ================= SHAPE DRAWING ================= */
 function drawShape(sh, e, d, SM, exp){
   const x = sh.x, y = sh.y, k = e.kind;
   const fill = sh.fill || FILL[k] || '#fff';
-  const SW = `stroke="${STROKE}" stroke-width="1.2"`;
+  const SW = `stroke="${sh.stroke || STROKE}" stroke-width="${sh.stroke ? 1.6 : 1.2}"`;
   let s = '';
   switch(k){
     case 'Block': {
@@ -1360,10 +1368,11 @@ function drawShape(sh, e, d, SM, exp){
       const refs = ch.filter(c => c.kind === 'Part' && c.shared).map(partLabel);
       const vals = ch.filter(c => c.kind === 'Value').map(valLabel);
       const ports = ch.filter(c => c.kind === 'Port').map(portLabel);
-      if(parts.length) comps.push(['parts', parts]);
-      if(refs.length) comps.push(['references', refs]);
-      if(vals.length) comps.push(['values', vals]);
-      if(ports.length) comps.push(['ports', ports]);
+      const hd = sh.hide || {};
+      if(parts.length && !hd.parts) comps.push(['parts', parts]);
+      if(refs.length && !hd.references) comps.push(['references', refs]);
+      if(vals.length && !hd.values) comps.push(['values', vals]);
+      if(ports.length && !hd.ports) comps.push(['ports', ports]);
       let needW = 0; comps.forEach(c => c[1].forEach(t => { needW = Math.max(needW, tw(t) + 16); }));
       if(sh.w < needW) sh.w = Math.ceil(needW / G) * G;
       const io = iconOf(e), large = io && io.mode === 'large', top = y + (large ? 42 : 0);
@@ -1558,8 +1567,13 @@ function drawShape(sh, e, d, SM, exp){
     }
     case 'Fork': case 'Join': s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="#222" stroke="#222"/>`; break;
     case 'Partition': {
-      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/><rect x="${x}" y="${y}" width="${sh.w}" height="28" fill="#eef1f5" ${SW}/>`;
       const rep = e.represents && E(e.represents) ? ' : ' + typeName(e.represents) : '';
+      if(sh.horiz){
+        s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/><rect x="${x}" y="${y}" width="28" height="${sh.h}" fill="#eef1f5" ${SW}/>`;
+        s += `<g transform="rotate(-90 ${x + 14} ${y + sh.h / 2})">` + Tc(wrap(e.name + rep, sh.h - 12, true).slice(0, 1), x + 14, y + sh.h / 2, {bold:1}) + '</g>';
+        break;
+      }
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/><rect x="${x}" y="${y}" width="${sh.w}" height="28" fill="#eef1f5" ${SW}/>`;
       s += Tc(wrap(e.name + rep, sh.w - 12, true).slice(0, 1), x + sh.w / 2, y + 14, {bold:1});
       break;
     }
@@ -1750,7 +1764,8 @@ function edgeGeom(S, T2, ed, ctx){
   const sy = sideY(A, A.cx, vd), ty = sideY(B, B.cx, -vd), my = ed.my != null ? ed.my : snapv((sy + ty) / 2);
   return [{x:A.cx, y:sy}, {x:A.cx, y:my}, {x:B.cx, y:my}, {x:B.cx, y:ty}];
 }
-function head(type, p, q, sc){
+function head(type, p, q, sc, col){
+  const STROKE = col || STROKE0;
   sc = sc || 1;
   const dx = p.x - q.x, dy = p.y - q.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
   const P = (a, b) => (p.x - ux * a * sc + nx * b * sc).toFixed(1) + ',' + (p.y - uy * a * sc + ny * b * sc).toFixed(1);
@@ -1770,10 +1785,11 @@ function drawEdge(d, ed, SM, pts, exp){
   const dstr = 'M' + pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' L');
   let s = `<g data-eid="${ed.id}">`;
   if(!exp) s += `<path d="${dstr}" fill="none" stroke="#000" stroke-opacity="0" stroke-width="12" pointer-events="stroke"/>`;
-  s += `<path d="${dstr}" fill="none" stroke="${STROKE}" stroke-width="${st.dash === 2 ? 1 : 1.2}"${st.dash ? ' stroke-dasharray="' + (st.dash === 2 ? '3 3' : '6 4') + '"' : ''}/>`;
+  const ec = ed.stroke || STROKE;
+  s += `<path d="${dstr}" fill="none" stroke="${ec}" stroke-width="${st.dash === 2 ? 1 : (ed.stroke ? 1.6 : 1.2)}"${st.dash ? ' stroke-dasharray="' + (st.dash === 2 ? '3 3' : '6 4') + '"' : ''}/>`;
   const n = pts.length;
-  if(st.tgt) s += head(st.tgt, pts[n - 1], pts[n - 2]);
-  if(st.src) s += head(st.src, pts[0], pts[1]);
+  if(st.tgt) s += head(st.tgt, pts[n - 1], pts[n - 2], 1, ec);
+  if(st.src) s += head(st.src, pts[0], pts[1], 1, ec);
   const lab = [];
   if(st.st) lab.push(st.st);
   if(isMsg(kind)){ lab.push((ed._num ? ed._num + ': ' : '') + (r && r.name ? r.name : '')); }
@@ -1803,6 +1819,10 @@ function drawEdge(d, ed, SM, pts, exp){
 
 /* ================= DIAGRAM RENDER ================= */
 function diagramSVG(d, exp){
+  FSC = d.fs || 1;
+  try { return diagramSVG0(d, exp); } finally { FSC = 1; }
+}
+function diagramSVG0(d, exp){
   const SM = new Map(d.shapes.map(s => [s.id, s]));
   if(d.dtype === 'sd'){
     const msgs = d.edges.filter(ed => isMsg(edgeKind(ed))).sort((a, b) => (a.y || 0) - (b.y || 0));
@@ -1887,6 +1907,11 @@ function selSVG(d){
     if(!ST.sel.has(ed.id) || !ed._pts) return;
     const p = ed._pts;
     s += `<path d="M${p.map(q => q.x + ',' + q.y).join(' L')}" fill="none" stroke="#2d7ff9" stroke-width="${3 / z}" stroke-opacity=".55" pointer-events="none"/>`;
+    if(!isMsg(edgeKind(ed)) && ST.sel.size === 1){
+      const r0 = 5.5 / z;
+      s += `<circle data-ep="s" data-epe="${ed.id}" cx="${p[0].x}" cy="${p[0].y}" r="${r0}" fill="#fff" stroke="#2d7ff9" stroke-width="${sw}" style="cursor:crosshair"><title>Sürükleyip başka elemana bırakın</title></circle>`;
+      s += `<circle data-ep="t" data-epe="${ed.id}" cx="${p[p.length - 1].x}" cy="${p[p.length - 1].y}" r="${r0}" fill="#fff" stroke="#2d7ff9" stroke-width="${sw}" style="cursor:crosshair"><title>Sürükleyip başka elemana bırakın</title></circle>`;
+    }
     if(isMsg(edgeKind(ed))){
       const mx = p.length === 4 ? p[1].x : (p[0].x + p[1].x) / 2, my = p[0].y;
       s += `<rect data-mid="${ed.id}" x="${mx - hs / 2}" y="${my - hs / 2}" width="${hs}" height="${hs}" fill="#2d7ff9" stroke="#fff" stroke-width="${sw / 2}" style="cursor:ns-resize"/>`;
@@ -1915,7 +1940,7 @@ function renderTree(){
   const row = (e, depth, has, open) => {
     const k = KIND[e.kind];
     const kd = e.kind === 'Diagram' ? '' : (k.rel ? k.tr : (e.kind === 'Part' && e.type ? '' : ''));
-    h += `<div class="tr${ST.tsel === e.id ? ' sel' : ''}" data-id="${e.id}" draggable="${e.id !== M.rootId}" style="padding-left:${depth * 14 + 4}px">` +
+    h += `<div class="tr${ST.tsel === e.id || ST.tmulti.has(e.id) ? ' sel' : ''}" data-id="${e.id}" draggable="${e.id !== M.rootId}" style="padding-left:${depth * 14 + 4}px">` +
       `<span class="tw" data-tog="${e.id}">${has ? (open ? '▾' : '▸') : ''}</span>${icon(e)}<span class="nm">${esc(treeName(e))}</span>${kd ? `<span class="kd">${esc(kd)}</span>` : ''}</div>`;
   };
   const rec = (id, depth) => {
@@ -2021,6 +2046,9 @@ tree.addEventListener('click', ev => {
   const t = ev.target.closest('[data-tog]');
   if(t){ const id = t.dataset.tog; ST.exp.has(id) ? ST.exp.delete(id) : ST.exp.add(id); renderTree(); persistSoon(); return; }
   const r = ev.target.closest('.tr[data-id]'); if(!r) return;
+  if(ev.ctrlKey || ev.metaKey){ const id = r.dataset.id; if(ST.tmulti.has(id)) ST.tmulti.delete(id); else { if(!ST.tmulti.size && ST.tsel) ST.tmulti.add(ST.tsel); ST.tmulti.add(id); } }
+  else if(ev.shiftKey && ST.tsel){ const rows = [...tree.querySelectorAll('.tr[data-id]')].map(x => x.dataset.id); const a = rows.indexOf(ST.tsel), b = rows.indexOf(r.dataset.id); if(a >= 0 && b >= 0){ ST.tmulti = new Set(rows.slice(Math.min(a, b), Math.max(a, b) + 1)); } }
+  else ST.tmulti = new Set();
   ST.tsel = r.dataset.id;
   const d = cur();
   if(d){ ST.sel = new Set(d.shapes.filter(s => s.el === ST.tsel).map(s => s.id).concat(d.edges.filter(x => x.el === ST.tsel).map(x => x.id))); }
@@ -2044,7 +2072,8 @@ tree.addEventListener('contextmenu', ev => {
 tree.addEventListener('dragstart', ev => {
   const r = ev.target.closest('.tr[data-id]'); if(!r) return;
   ST.dragEl = r.dataset.id;
-  ev.dataTransfer.setData('text/plain', 'el:' + r.dataset.id);
+  if(ST.tmulti.size > 1 && ST.tmulti.has(r.dataset.id)){ ev.dataTransfer.setData('text/plain', 'els:' + [...ST.tmulti].join(',')); ST.dragEl = null; }
+  else ev.dataTransfer.setData('text/plain', 'el:' + r.dataset.id);
   ev.dataTransfer.effectAllowed = 'copyMove';
 });
 tree.addEventListener('dragend', () => { ST.dragEl = null; tree.querySelectorAll('.drop').forEach(x => x.classList.remove('drop')); });
@@ -2123,6 +2152,7 @@ function palIcon(k){
     case 'Join': s = `<rect x="3" y="7" width="20" height="4" fill="#222"/><path d="M7,1 V7 M19,1 V7 M13,11 V17" ${sw}/>`; break;
     case 'Object': s = `<rect x="2" y="4" width="22" height="10" fill="#fff" ${sw}/>`; break;
     case 'Partition': s = `<rect x="2" y="1" width="22" height="16" fill="#fff" ${sw}/><line x1="2" y1="5" x2="24" y2="5" ${sw}/><line x1="13" y1="1" x2="13" y2="17" ${sw}/>`; break;
+    case 'PartitionH': s = `<rect x="2" y="1" width="22" height="16" fill="#fff" ${sw}/><line x1="6" y1="1" x2="6" y2="17" ${sw}/><line x1="2" y1="9" x2="24" y2="9" ${sw}/>`; break;
     case 'Comment': s = `<path d="M3,2 H19 L23,6 V16 H3 Z M19,2 V6 H23" fill="#fffde9" ${sw}/>`; break;
     case 'Requirement': s = `<rect x="2" y="2" width="22" height="14" fill="#f6efff" ${sw}/><line x1="2" y1="7" x2="24" y2="7" ${sw}/><path d="M5 10h12M5 13h9" stroke="#8e44ad" stroke-width="1"/>`; break;
     case 'TestCase': s = `<rect x="2" y="3" width="22" height="12" rx="4" fill="#eafaf0" ${sw}/><path d="M8 9l3 3 6-6" fill="none" stroke="#27ae60" stroke-width="1.4"/>`; break;
@@ -2213,12 +2243,16 @@ function placeNew(kind, p, target){
     ST.sel = new Set([sh.id]); ST.tsel = port.id; afterChange(); editShape(sh);
     return;
   }
+  let horiz = false;
+  if(kind === 'PartitionH'){ kind = 'Partition'; horiz = true; }
   snap();
   const e = mk(kind, ownerFor(kind, d));
   if(kind === 'Comment') e.name = 'Not';
   let w = k.w || 120, h = k.h || 60, yy = snapv(p.y - h / 2);
   if(kind === 'Lifeline'){ const ll = d.shapes.filter(s => E(s.el) && E(s.el).kind === 'Lifeline'); if(ll.length){ yy = Math.min(...ll.map(s => s.y)); h = Math.max(...ll.map(s => s.h)); } }
+  if(horiz){ w = 640; h = 170; yy = snapv(p.y - h / 2); }
   const sh = addShape(d, e.id, snapv(p.x - w / 2), yy, w, h);
+  if(horiz) sh.horiz = true;
   if(CONT.has(kind)){ d.shapes.splice(d.shapes.indexOf(sh), 1); d.shapes.unshift(sh); }
   ST.sel = new Set([sh.id]); ST.tsel = e.id;
   revealInTree(e.id); afterChange();
@@ -2258,7 +2292,7 @@ function dropExisting(id, p, target){
     autoEdges(d, sh);
   } else {
     const ex = d.shapes.find(s => s.el === id && !s.parent);
-    if(ex){ undoStack.pop(); ST.sel = new Set([ex.id]); renderDiagram(); renderProps(); return toast('Bu eleman diyagramda zaten var.'); }
+    if(ex){ if(!ST.batch) undoStack.pop(); ST.sel = new Set([ex.id]); renderDiagram(); renderProps(); return toast('Bu eleman diyagramda zaten var.'); }
     if((e.kind === 'Part' || e.kind === 'Value') && e.owner !== d.owner) toast('Uyarı: bu part/value, diyagramın bağlam bloğuna ait değil.');
     const k = KIND[e.kind];
     sh = addShape(d, id, snapv(p.x - (k.w || 120) / 2), snapv(p.y - (k.h || 60) / 2));
@@ -2300,6 +2334,8 @@ svgEl.addEventListener('mousedown', ev => {
   const p = cpt(ev), t = ev.target;
   const h = t.closest('[data-h]');
   if(h){ const sh = shapeOf(d, h.dataset.hs); drag = {type:'resize', h:h.dataset.h, sh, o:{x:sh.x, y:sh.y, w:sh.w, h:sh.h}, kids:d.shapes.filter(s => s.parent === sh.id), start:p, snapped:false}; return; }
+  const ep = t.closest('[data-ep]');
+  if(ep){ const ed = d.edges.find(x => x.id === ep.dataset.epe); if(ed){ drag = {type:'reconn', ed, end:ep.dataset.ep}; return; } }
   const mh = t.closest('[data-mid]');
   if(mh){ const ed = d.edges.find(x => x.id === mh.dataset.mid); const pts = ed._pts; drag = {type:'mid', ed, ax:isMsg(edgeKind(ed)) ? 'msg' : (Math.abs(pts[1].x - pts[2].x) < 0.5 ? 'x' : 'y'), snapped:false}; return; }
   const sg = t.closest('[data-sid]'), eg = t.closest('[data-eid]');
@@ -2382,6 +2418,11 @@ window.addEventListener('mousemove', ev => {
     ovl.innerHTML = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="rgba(45,127,249,.08)" stroke="#2d7ff9" stroke-width="${1 / d.z}" stroke-dasharray="${4 / d.z}"/>`;
     return;
   }
+  if(drag.type === 'reconn'){
+    const fx = drag.ed._pts[drag.end === 's' ? drag.ed._pts.length - 1 : 0];
+    ovl.innerHTML = `<line x1="${fx.x}" y1="${fx.y}" x2="${p.x}" y2="${p.y}" stroke="#2d7ff9" stroke-width="${1.5 / d.z}" stroke-dasharray="${5 / d.z}" pointer-events="none"/>`;
+    return;
+  }
   if(drag.type === 'link'){
     const s = drag.s;
     ovl.innerHTML = `<line x1="${s.x + s.w / 2}" y1="${s.y + s.h / 2}" x2="${p.x}" y2="${p.y}" stroke="#2d7ff9" stroke-width="${1.5 / d.z}" stroke-dasharray="${5 / d.z}" pointer-events="none"/>`;
@@ -2401,6 +2442,7 @@ window.addEventListener('mouseup', ev => {
     }
     renderDiagram(); renderProps(); return;
   }
+  if(dr.type === 'reconn'){ const tsh = shapeAt(ev); if(tsh) reconnectEdge(d, dr.ed, dr.end, tsh); else renderDiagram(); return; }
   if(dr.type === 'link'){
     const tsh = shapeAt(ev);
     const kind = ST.tool && ST.tool.kind;
@@ -2452,6 +2494,9 @@ svgEl.addEventListener('contextmenu', ev => {
     it.push({t:'Diyagram bağla (hiperlink)…', f:() => linkMenu(e, ev.clientX, ev.clientY)});
     if(ST.sel.size > 1){ it.push({h:'Hizala / dağıt'}); layoutMenuItems().filter(x => x.f && x.dis === false).forEach(x => it.push(x)); }
     it.push('-');
+    it.push({t:'Kopyala', k:'Ctrl+C', f:() => copySel()});
+    it.push({t:'Çoğalt (yeni eleman)', k:'Ctrl+D', f:() => duplicateSel()});
+    it.push({t:'Etki analizi…', f:() => impactAnalysis(e.id)});
     it.push({t:'Öne getir', f:() => { snap(); reorder(d, true); afterChange(); }});
     it.push({t:'Arkaya gönder', f:() => { snap(); reorder(d, false); afterChange(); }});
     it.push('-');
@@ -2471,6 +2516,8 @@ svgEl.addEventListener('contextmenu', ev => {
     if(ed.el) it.push({t:'Modelden sil', k:'Del', f:() => delSelectedModel()});
   } else {
     it.push({t:'Tümünü seç', k:'Ctrl+A', f:() => { ST.sel = new Set(d.shapes.map(s => s.id)); renderDiagram(); }});
+    if(ST.clip){ it.push({t:'Yapıştır', k:'Ctrl+V', f:() => { ST.mouse = cpt(ev); pasteClip(false); }}); it.push({t:'Yeni eleman olarak yapıştır', k:'Ctrl+Shift+V', f:() => { ST.mouse = cpt(ev); pasteClip(true); }}); }
+    it.push({t:'Model içinde ara…', k:'Ctrl+F', f:searchModel});
     it.push({t:'Ekrana sığdır', f:fit});
     it.push({h:'Otomatik düzen'});
     LAYOUTS[d.dtype].forEach(([m, t]) => it.push({t, f:() => runLayout(m)}));
@@ -2582,9 +2629,160 @@ wrapEl.addEventListener('drop', ev => {
   const data = ev.dataTransfer.getData('text/plain') || '';
   const p = cpt(ev), target = shapeAt(ev);
   if(data.startsWith('pal:')) placeNew(data.slice(4), p, target);
+  else if(data.startsWith('els:')) dropMany(data.slice(4).split(','), p, target);
   else if(data.startsWith('el:')) dropExisting(data.slice(3), p, target);
   ST.dragEl = null;
 });
+
+/* ================= PHASE 1: CLIPBOARD, SEARCH, MULTI-DROP, RECONNECT ================= */
+ST.clip = null; ST.tmulti = new Set(); ST.mouse = null;
+svgEl.addEventListener('mousemove', ev => { if(cur()) ST.mouse = cpt(ev); });
+function copySel(){
+  const d = cur(); if(!d) return false;
+  const tops = d.shapes.filter(s => ST.sel.has(s.id) && !s.parent);
+  if(!tops.length) return false;
+  const set = new Set(tops.map(s => s.id));
+  d.shapes.forEach(s => { if(s.parent && set.has(s.parent)) set.add(s.id); });
+  const shapes = d.shapes.filter(s => set.has(s.id)).map(s => JSON.parse(JSON.stringify(s)));
+  const edges = d.edges.filter(ed => set.has(ed.s) && set.has(ed.t) && !isMsg(edgeKind(ed))).map(ed => ({el:ed.el, kind:ed.kind, s:ed.s, t:ed.t, route:ed.route, stroke:ed.stroke}));
+  ST.clip = {from:d.id, dtype:d.dtype, shapes, edges};
+  toast(tops.length + ' şekil kopyalandı');
+  return true;
+}
+function cloneSubtree(id, owner, map){
+  const e = E(id); if(!e) return null;
+  const c = JSON.parse(JSON.stringify(e));
+  c.id = uid(); c.owner = owner;
+  if(c.kind === 'Requirement'){ c.reqId = nextReqId(reqLevel(c)); }
+  else if(c.name && !map.size) c.name = uniqName(c.name + ' kopya', owner);
+  M.els[c.id] = c; map.set(id, c.id);
+  kidsOf(id).filter(k => k.kind !== 'Diagram' && !KIND[k.kind].rel && k.id !== c.id).forEach(k => cloneSubtree(k.id, c.id, map));
+  return c;
+}
+function pasteClip(forceCopy){
+  const d = cur(), C = ST.clip; if(!d || !C) return toast('Pano boş');
+  const tops = C.shapes.filter(s => !s.parent);
+  const present = tops.some(s => d.shapes.some(x => x.el === s.el && !x.parent));
+  const copy = forceCopy || present;
+  const minX = Math.min(...tops.map(s => s.x)), minY = Math.min(...tops.map(s => s.y));
+  let ox, oy;
+  if(ST.mouse && !forceCopy && C.from !== d.id){ ox = snapv(ST.mouse.x) - minX; oy = snapv(ST.mouse.y) - minY; }
+  else { ox = 30; oy = 30; }
+  snap();
+  const emap = new Map(), smap = new Map(), skipped = [];
+  if(copy){
+    tops.forEach(s => {
+      const e = E(s.el); if(!e) return;
+      if(!canDrop(d, e)){ skipped.push(e); return; }
+      const owner = e.kind === 'Requirement' ? e.owner : (E(e.owner) ? e.owner : ownerFor(e.kind, d));
+      const m1 = new Map(); cloneSubtree(e.id, owner, m1); m1.forEach((v, k) => emap.set(k, v));
+    });
+  }
+  C.shapes.forEach(s => {
+    const parentNew = s.parent ? smap.get(s.parent) : null;
+    if(s.parent && !parentNew) return;
+    let el = s.el;
+    if(copy) el = emap.get(s.el) || (s.parent ? s.el : null);
+    if(!el || !E(el)) return;
+    if(!s.parent && !canDrop(d, E(el))) return;
+    const n = Object.assign(JSON.parse(JSON.stringify(s)), {id:uid(), el, x:s.x + ox, y:s.y + oy});
+    if(parentNew) n.parent = parentNew; else delete n.parent;
+    d.shapes.push(n); smap.set(s.id, n.id);
+  });
+  C.edges.forEach(ed => {
+    const S = smap.get(ed.s), T0 = smap.get(ed.t); if(!S || !T0) return;
+    let el = ed.el;
+    if(el && copy){
+      const r = E(el); if(!r) return;
+      const src = emap.get(r.src) || r.src, tgt = emap.get(r.tgt) || r.tgt;
+      if(src === r.src && tgt === r.tgt) return;
+      const nr = Object.assign(JSON.parse(JSON.stringify(r)), {id:uid(), src, tgt});
+      if(nr.sp) nr.sp = emap.get(nr.sp) || nr.sp; if(nr.tp) nr.tp = emap.get(nr.tp) || nr.tp;
+      if(nr.part){ delete nr.part; }
+      M.els[nr.id] = nr; el = nr.id;
+    }
+    if(el && d.edges.some(x => x.el === el)) return;
+    d.edges.push({id:uid(), el:el || null, kind:ed.kind, s:S, t:T0, route:ed.route, stroke:ed.stroke});
+  });
+  d.shapes.filter(s => [...smap.values()].includes(s.id)).forEach(s => autoEdges(d, s));
+  ST.sel = new Set([...smap.values()].filter(id => { const s = shapeOf(d, id); return s && !s.parent; }));
+  afterChange();
+  toast((copy ? 'Yeni eleman olarak yapıştırıldı' : 'Mevcut elemanlar bu diyagramda gösterildi') + (skipped.length ? ` · ${skipped.length} eleman bu diyagram türüne uygun değil` : ''));
+}
+function duplicateSel(){ if(copySel()) pasteClip(true); }
+
+/* ---- model içinde arama ---- */
+function searchModel(){
+  const box = $('#modalBox');
+  box.style.width = 'min(720px, 94vw)'; box.style.maxWidth = 'none';
+  box.innerHTML = `<h2>Model içinde ara</h2><div class="icbar"><input id="sq" placeholder="Ad, gereksinim ID, gereksinim metni, açıklama…"></div><div class="plist" id="sres"></div><p class="muted" style="margin:8px 0 0">Enter: ilk sonuca git · Sonuca tıklayınca ağaçta ve diyagramda gösterilir</p>`;
+  $('#modal').style.display = 'flex';
+  const q = $('#sq'); q.focus();
+  let res = [];
+  const draw = () => {
+    const v = asciiTr(q.value);
+    if(!v){ $('#sres').innerHTML = '<div class="muted" style="padding:8px">Aramak için yazın…</div>'; res = []; return; }
+    res = Object.values(M.els).filter(e => !KIND[e.kind] || !KIND[e.kind].rel ? true : !!e.name).map(e => {
+      const hay = [e.name, e.reqId, e.text, e.doc, e.srcNo, e.srcText, e.subsys, e.expr].concat(Object.values(e.attrs || {})).filter(Boolean).join(' ');
+      const a = asciiTr(hay), i = a.indexOf(v);
+      return i < 0 ? null : {e, score:(asciiTr(e.name || '') === v || asciiTr(e.reqId || '') === v ? 0 : asciiTr(e.name || '').startsWith(v) ? 1 : 2), snip:hay.slice(Math.max(0, i - 30), i + 70)};
+    }).filter(Boolean).sort((a, b) => a.score - b.score || nm(a.e).localeCompare(nm(b.e), 'tr')).slice(0, 150);
+    $('#sres').innerHTML = res.map((r, i) => `<div class="pli" data-sr="${i}">${icon(r.e)} <b>${esc(nm(r.e))}</b> <span class="muted">${esc(KIND[r.e.kind].tr)} · ${esc(pathOf(r.e.owner))}</span><em>${esc(r.snip)}</em></div>`).join('') || '<div class="muted" style="padding:8px">Sonuç yok</div>';
+  };
+  const go = r => {
+    $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null;
+    const e = r.e; ST.tsel = e.id; revealInTree(e.id);
+    const d0 = cur(), here = d0 && d0.shapes.find(s => s.el === e.id);
+    const dd = here ? d0 : diagramsShowing(e.id)[0];
+    if(e.kind === 'Diagram') openD(e.id);
+    else if(dd){ openD(dd.id); const d = cur(); ST.sel = new Set(d.shapes.filter(s => s.el === e.id).map(s => s.id)); const sh = d.shapes.find(s => s.el === e.id); if(sh){ const rr = svgEl.getBoundingClientRect(); d.vx = rr.width / 2 - (sh.x + sh.w / 2) * d.z; d.vy = rr.height / 2 - (sh.y + sh.h / 2) * d.z; } renderAll(); }
+    else if(e.kind === 'Requirement'){ openD('@reqtable'); ST.tsel = e.id; renderAll(); }
+    renderProps();
+  };
+  q.oninput = draw;
+  q.onkeydown = ev => { ev.stopPropagation(); if(ev.key === 'Escape'){ $('#modal').style.display = 'none'; box.onclick = null; } if(ev.key === 'Enter' && res[0]) go(res[0]); };
+  box.onclick = ev => { const it = ev.target.closest('[data-sr]'); if(it) go(res[+it.dataset.sr]); };
+  draw();
+}
+
+/* ---- ağaçta çoklu seçim ve toplu sürükleme ---- */
+function dropMany(ids, p, target){
+  const d = cur(); if(!d) return;
+  const ok = ids.map(E).filter(e => e && canDrop(d, e) && !d.shapes.some(s => s.el === e.id && !s.parent));
+  if(!ok.length) return toast('Seçili elemanlar bu diyagrama eklenemiyor veya zaten var');
+  snap(); ST.batch = true;
+  const added = [];
+  try {
+    const cols = Math.ceil(Math.sqrt(ok.length));
+    ok.forEach((e, i) => { dropExisting(e.id, {x:p.x + (i % cols) * 230, y:p.y + Math.floor(i / cols) * 150}, null); ST.sel.forEach(x => added.push(x)); });
+  } finally { ST.batch = false; }
+  ST.sel = new Set(added); afterChange();
+  toast(ok.length + ' eleman eklendi; aralarındaki ilişkiler otomatik çizildi');
+}
+
+/* ---- bağlantı ucunu yeniden bağlama ---- */
+function reconnectEdge(d, ed, end, tsh){
+  const keepSh = shapeOf(d, end === 's' ? ed.t : ed.s);
+  const S = end === 's' ? tsh : keepSh, T0 = end === 's' ? keepSh : tsh;
+  if(!S || !T0 || (end === 's' ? ed.s : ed.t) === tsh.id) return;
+  const kind = edgeKind(ed), a = E(S.el), b = E(T0.el);
+  const err = validate(kind, a, b, d); if(err) return toast(err);
+  snap();
+  ed[end] = tsh.id; delete ed.mx; delete ed.my;
+  if(ed.el){
+    const r = E(ed.el);
+    if(end === 's') r.src = a.id; else r.tgt = b.id;
+    if(kind === 'Connector' || kind === 'Binding'){ const ps = S.parent && shapeOf(d, S.parent), pt = T0.parent && shapeOf(d, T0.parent); r.sp = ps ? ps.el : null; r.tp = pt ? pt.el : null; }
+    if(r.part && E(r.part)){ const p = E(r.part); if(end === 't'){ p.type = b.id; } else { p.owner = a.id; } }
+    Object.values(M.els).forEach(dd => {
+      if(dd.kind !== 'Diagram' || dd === d) return;
+      const before = dd.edges.length;
+      dd.edges = dd.edges.filter(x => x.el !== r.id);
+      if(dd.edges.length !== before || dd.shapes.some(s => s.el === r.src || s.el === r.tgt)) dd.shapes.filter(s => s.el === r.src || s.el === r.tgt).forEach(s => autoEdges(dd, s));
+    });
+  }
+  afterChange(); toast('Bağlantı yeniden bağlandı');
+}
 
 /* ================= INLINE EDIT ================= */
 const inl = $('#inl');
@@ -2741,11 +2939,23 @@ function renderProps(){
   if(sh){
     h += `<div class="sub"><span>Görünüm</span></div>`;
     h += pf('Dolgu', `<input type="color" data-sf="fill" value="${sh.fill || (FILL[el.kind] && FILL[el.kind].startsWith('#') ? FILL[el.kind] : '#ffffff')}"> <button class="pbtn" data-resetfill="1">Varsayılan</button>`);
+    h += pf('Çizgi rengi', `<input type="color" data-sf="stroke" value="${sh.stroke || '#3a3a3a'}"> <button class="pbtn" data-resetstroke="1">Varsayılan</button>`);
+    if(el.kind === 'Block'){
+      const hd = sh.hide || {};
+      h += pf('Bölmeler', ['parts', 'references', 'values', 'ports'].map(c => `<label class="vchk" style="margin-right:8px"><input type="checkbox" data-shide="${c}"${hd[c] ? '' : ' checked'}> ${c}</label>`).join(''));
+    }
+    if(el.kind === 'Partition') h += pf('Yön', `<select data-sf="horiz"><option value="">Dikey</option><option value="1"${sh.horiz ? ' selected' : ''}>Yatay</option></select>`);
     h += pf('Konum/Boyut', `<span class="muted">${Math.round(sh.x)}, ${Math.round(sh.y)} · ${Math.round(sh.w)}×${Math.round(sh.h)}</span>`);
   }
   if(ed){
     h += `<div class="sub"><span>Görünüm</span></div>`;
     h += pf('Çizgi', `<select data-ef="route"><option value="ortho"${ed.route !== 'straight' ? ' selected' : ''}>Dik açılı</option><option value="straight"${ed.route === 'straight' ? ' selected' : ''}>Düz</option></select>`);
+    h += pf('Çizgi rengi', `<input type="color" data-ef="stroke" value="${ed.stroke || '#3a3a3a'}"> <button class="pbtn" data-resetestroke="1">Varsayılan</button>`);
+    if(ed.mx != null || ed.my != null) h += pf('', `<button class="pbtn" data-resetroute="1">Otomatik rotaya dön</button>`);
+  }
+  if(el && el.kind === 'Diagram'){
+    h += `<div class="sub"><span>Diyagram görünümü</span></div>`;
+    h += pf('Yazı boyutu', `<select data-f="fs">${[[0.9, '%90 (küçük)'], [1, '%100'], [1.15, '%115 (büyük)'], [1.3, '%130 (sunum)']].map(([v, t]) => `<option value="${v}"${(el.fs || 1) == v ? ' selected' : ''}>${t}</option>`).join('')}</select>`);
   }
   $('#props').innerHTML = h;
 }
@@ -2758,6 +2968,7 @@ propsEl.addEventListener('change', ev => {
     const f = t.dataset.f; let v = t.value;
     if(['type', 'behavior', 'represents', 'link'].includes(f) && !v) v = null;
     if(f === 'shared') v = !!v;
+    if(f === 'fs') v = parseFloat(v) || 1;
     if(f.startsWith('attr:')){ tg.el.attrs = tg.el.attrs || {}; tg.el.attrs[f.slice(5)] = v; afterChange(); return; }
     if(f === 'name' && tg.el.kind !== 'Comment') v = v.trim();
     tg.el[f] = v;
@@ -2766,8 +2977,9 @@ propsEl.addEventListener('change', ev => {
     if(f === 'type' && v && (tg.el.kind === 'Part' || tg.el.kind === 'ConstraintProp')){ Object.values(M.els).forEach(d => { if(d.kind === 'Diagram' && (d.dtype === 'ibd' || d.dtype === 'par')) d.shapes.filter(s => s.el === tg.el.id && !s.parent).forEach(s => showPorts(d, s)); }); }
     afterChange(); return;
   }
-  if(t.dataset.sf && tg.sh){ snap(); tg.sh.fill = t.value; afterChange(); return; }
-  if(t.dataset.ef && tg.ed){ snap(); tg.ed.route = t.value; afterChange(); }
+  if(t.dataset.sf && tg.sh){ snap(); const k = t.dataset.sf; if(k === 'horiz'){ tg.sh.horiz = !!t.value; if(tg.sh.horiz && tg.sh.w < tg.sh.h){ const w = tg.sh.w; tg.sh.w = tg.sh.h; tg.sh.h = w; } if(!tg.sh.horiz && tg.sh.h < tg.sh.w){ const w = tg.sh.w; tg.sh.w = tg.sh.h; tg.sh.h = w; } } else tg.sh[k] = t.value; afterChange(); return; }
+  if(t.dataset.shide && tg.sh){ snap(); tg.sh.hide = tg.sh.hide || {}; tg.sh.hide[t.dataset.shide] = !t.checked; afterChange(); return; }
+  if(t.dataset.ef && tg.ed){ snap(); tg.ed[t.dataset.ef] = t.value; afterChange(); }
 });
 propsEl.addEventListener('click', ev => {
   const t = ev.target;
@@ -2779,6 +2991,9 @@ propsEl.addEventListener('click', ev => {
   if(bt && bt.dataset.icpick){ const tg = propTarget(); if(tg.el){ const d = cur(); iconPicker(d && ST.sel.size > 1 ? iconTargets(d, tg.el) : [tg.el.id]); } return; }
   if(bt && bt.dataset.icclear){ const tg = propTarget(); if(tg.el){ snap(); delete tg.el.icon; delete tg.el.iconColor; afterChange(); } return; }
   if(bt && bt.dataset.iccol){ const tg = propTarget(); if(tg.el){ snap(); delete tg.el.iconColor; afterChange(); } return; }
+  if(t.dataset.resetstroke){ const tg = propTarget(); if(tg.sh){ snap(); delete tg.sh.stroke; afterChange(); } return; }
+  if(t.dataset.resetestroke){ const tg = propTarget(); if(tg.ed){ snap(); delete tg.ed.stroke; afterChange(); } return; }
+  if(t.dataset.resetroute){ const tg = propTarget(); if(tg.ed){ snap(); delete tg.ed.mx; delete tg.ed.my; afterChange(); } return; }
   if(t.dataset.resetfill){ const tg = propTarget(); if(tg.sh){ snap(); delete tg.sh.fill; afterChange(); } }
 });
 
@@ -3769,14 +3984,18 @@ document.addEventListener('keydown', ev => {
   if(c && (k === 'o' || k === 'O')){ ev.preventDefault(); openFile(); return; }
   if(k === 'Escape'){ if($('#modal').style.display === 'flex'){ $('#modal').style.display = 'none'; return; } setTool(null); ST.sel.clear(); hideMenu(); renderDiagram(); renderProps(); return; }
   const d = cur();
+  if(c && (k === 'f' || k === 'F')){ ev.preventDefault(); searchModel(); return; }
   if(ST.focus === 'tree'){
-    if(k === 'Delete' && ST.tsel && ST.tsel !== M.rootId){ snap(); delModel([ST.tsel]); afterChange(); }
+    if(k === 'Delete' && ST.tsel && ST.tsel !== M.rootId){ const ids = ST.tmulti.size > 1 ? [...ST.tmulti].filter(x => x !== M.rootId) : [ST.tsel]; if(ids.length > 1 && !confirm(ids.length + ' eleman modelden silinsin mi?')) return; snap(); delModel(ids); ST.tmulti = new Set(); afterChange(); }
     if(k === 'F2' && ST.tsel){ ev.preventDefault(); treeRename(ST.tsel); }
     if(k === 'Enter' && ST.tsel && E(ST.tsel) && E(ST.tsel).kind === 'Diagram') openD(ST.tsel);
     return;
   }
   if(!d) return;
   if(c && (k === 'a' || k === 'A')){ ev.preventDefault(); ST.sel = new Set(d.shapes.map(s => s.id)); renderDiagram(); renderProps(); return; }
+  if(c && (k === 'c' || k === 'C')){ if(copySel()) ev.preventDefault(); return; }
+  if(c && (k === 'v' || k === 'V')){ ev.preventDefault(); pasteClip(ev.shiftKey); return; }
+  if(c && (k === 'd' || k === 'D')){ ev.preventDefault(); duplicateSel(); return; }
   if(k === 'Delete'){
     if(!ST.sel.size) return; ev.preventDefault();
     if(ev.shiftKey){ snap(); removeFromDiagram(d, [...ST.sel]); afterChange(); } else delSelectedModel();

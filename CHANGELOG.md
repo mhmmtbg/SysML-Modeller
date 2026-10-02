@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.3.0 — 2026-10-03
+
+- Kopyala / yapıştır / çoğalt (`Ctrl+C`, `Ctrl+V`, `Ctrl+Shift+V`, `Ctrl+D`): aynı elemanı başka diyagramda gösterme veya yeni eleman olarak kopyalama; bloklar iç yapılarıyla birlikte kopyalanır
+- Model içinde arama (`Ctrl+F`): ad, gereksinim ID ve metni, açıklama ve özellik değerlerinde; sonuca tıklayınca ağaçta ve diyagramda gösterir
+- Model ağacında çoklu seçim (`Ctrl`/`Shift` + tık) ve seçili elemanları diyagrama tek seferde sürükleme
+- Bağlantı uçlarını başka elemana sürükleyerek yeniden bağlama
+- Görünüm: şekil ve bağlantı çizgi rengi, blok bölmelerini gizleme, diyagram yazı boyutu, elle rota sonrası "otomatik rotaya dön"
+- Aktivite diyagramında yatay kulvar; "soldan sağa" düzen yatay kulvarları kullanır
+
 ## v1.2.0 — 2026-10-02
 
 - Bağlantılar artık elemanların üzerinden geçmiyor: engelden kaçan dik açılı yönlendirici; aynı kenara gelen bağlantılar ayrı noktalara dağıtılıyor, üst üste binen hatlar ayrılıyor
