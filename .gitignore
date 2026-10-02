@@ -1,0 +1,10 @@
+# Derleme çıktıları (exe dosyası GitHub Releases üzerinden dağıtılır)
+dist/
+*.exe
+# Derleme sırasında app/ klasöründen kopyalanır
+desktop/app.html
+# Kullanıcı model dosyaları
+*.sysml
+*.sysml.json
+.DS_Store
+Thumbs.db

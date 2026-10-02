@@ -1,0 +1,2666 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>SysML Modelleyici</title>
+<style>
+:root{--bg:#e9edf2;--panel:#f7f8fa;--line:#c8cfd9;--acc:#2d7ff9;--txt:#1e2733;--mut:#6b7686}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font:13px "Segoe UI",Arial,sans-serif;color:var(--txt);background:var(--bg);overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh}
+#toolbar{display:flex;align-items:center;gap:3px;padding:5px 8px;background:#26364b;color:#fff;flex-wrap:wrap}
+#toolbar .brand{font-weight:600;margin-right:10px;letter-spacing:.3px}
+#toolbar button{background:#34475f;color:#fff;border:1px solid #46607f;border-radius:4px;padding:4px 9px;font:inherit;cursor:pointer}
+#toolbar button:hover{background:#41597a}
+#toolbar .sep{width:1px;height:20px;background:#4b5f7a;margin:0 5px}
+#toolbar #zoomLbl{min-width:44px;text-align:center;font-variant-numeric:tabular-nums}
+#main{flex:1;display:flex;min-height:0}
+#left{width:300px;min-width:180px;display:flex;flex-direction:column;background:var(--panel)}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:#dde3ea;border-bottom:1px solid var(--line);font-weight:600;font-size:12px;color:#334}
+.ph button{border:1px solid var(--line);background:#fff;border-radius:3px;font-size:11px;padding:1px 6px;cursor:pointer}
+#treeBox{flex:1.3;min-height:60px;overflow:auto;padding:3px 0;outline:none}
+#hsplit{height:5px;cursor:row-resize;background:var(--line)}
+#vsplit{width:5px;cursor:col-resize;background:var(--line)}
+#propsBox{flex:1;min-height:60px;overflow:auto;display:flex;flex-direction:column}
+#props{padding:8px;overflow:auto}
+.tr{display:flex;align-items:center;gap:4px;padding:2px 6px 2px 0;white-space:nowrap;cursor:default;user-select:none}
+.tr:hover{background:#e6edf7}
+.tr.sel{background:#cfe0fb}
+.tr.drop{outline:2px dashed var(--acc);outline-offset:-2px}
+.tw{width:14px;text-align:center;color:#667;cursor:pointer;flex:none;font-size:10px}
+.ic{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:16px;padding:0 3px;border-radius:3px;font-size:10px;font-weight:700;color:#fff;flex:none}
+.nm{overflow:hidden;text-overflow:ellipsis}
+.kd{color:var(--mut);font-size:11px;margin-left:4px}
+.tr input{font:inherit;padding:0 3px;border:1px solid var(--acc);width:170px}
+.grp{color:var(--mut);font-style:italic}
+#palette{width:158px;background:var(--panel);border-right:1px solid var(--line);overflow:auto;flex:none}
+.pg{padding:6px 8px 2px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.4px}
+.pi{display:flex;align-items:center;gap:7px;margin:1px 5px;padding:4px 6px;border-radius:4px;cursor:grab;user-select:none;border:1px solid transparent}
+.pi:hover{background:#e3eaf4}
+.pi.on{background:#cfe0fb;border-color:var(--acc)}
+.pi svg{flex:none}
+.pnote{padding:10px;color:var(--mut);font-size:12px;line-height:1.5}
+#center{flex:1;display:flex;flex-direction:column;min-width:0}
+#tabs{display:flex;gap:1px;background:#d5dbe3;border-bottom:1px solid var(--line);min-height:30px;overflow-x:auto;flex:none}
+.tab{display:flex;align-items:center;gap:6px;padding:5px 8px 5px 10px;background:#e8ecf1;cursor:pointer;white-space:nowrap;border-top:2px solid transparent}
+.tab.cur{background:#fff;border-top-color:var(--acc)}
+.tab .x{color:#889;padding:0 3px;border-radius:3px}
+.tab .x:hover{background:#d8dde4;color:#c00}
+.tab .ti{font-size:10px;font-weight:700;color:#fff;border-radius:3px;padding:1px 4px}
+#canvasWrap{flex:1;position:relative;overflow:hidden;background:#fff}
+#canvasWrap.tool #svg{cursor:crosshair}
+#svg{width:100%;height:100%;display:block;user-select:none}
+#empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--mut);text-align:center;line-height:1.7;pointer-events:none;padding:30px}
+#inl{position:absolute;display:none;z-index:20;font:12px "Segoe UI",Arial,sans-serif;border:1.5px solid var(--acc);padding:3px 4px;resize:none;text-align:center;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+#status{display:flex;gap:16px;padding:3px 10px;background:#dde3ea;border-top:1px solid var(--line);font-size:11.5px;color:#445}
+#status .hint{margin-left:auto;color:var(--mut)}
+#ctx{position:fixed;display:none;z-index:100;background:#fff;border:1px solid #b9c2ce;box-shadow:0 4px 16px rgba(0,0,0,.18);border-radius:5px;padding:4px 0;min-width:200px;max-height:80vh;overflow:auto}
+#ctx .mi{padding:5px 14px;cursor:pointer;display:flex;justify-content:space-between;gap:20px}
+#ctx .mi:hover{background:#e3ecfa}
+#ctx .mi.dis{color:#aaa;pointer-events:none}
+#ctx .mh{padding:5px 12px 2px;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--mut);letter-spacing:.4px}
+#ctx .sep{height:1px;background:#e2e6eb;margin:4px 0}
+#ctx .k{color:#99a;font-size:11px}
+.pt{display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:8px;font-size:13px}
+.pf{display:grid;grid-template-columns:82px 1fr;gap:6px;align-items:center;margin-bottom:6px}
+.pf label{color:#556;font-size:12px}
+.pf input,.pf select,.pf textarea{font:inherit;font-size:12px;padding:3px 5px;border:1px solid #bfc8d3;border-radius:3px;width:100%;background:#fff}
+.pf textarea{min-height:54px;resize:vertical}
+.pf input[type=color]{padding:0;height:24px;width:48px}
+.lnk{color:var(--acc);cursor:pointer;text-decoration:none}
+.lnk:hover{text-decoration:underline}
+.sub{margin:10px 0 4px;font-weight:600;font-size:12px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e2e6eb;padding-top:8px}
+.sub button,.pbtn{border:1px solid #bfc8d3;background:#fff;border-radius:3px;font-size:11px;padding:2px 7px;cursor:pointer}
+.li{padding:2px 0 2px 6px;font-size:12px}
+.muted{color:var(--mut);font-size:12px}
+#modal{position:fixed;inset:0;background:rgba(20,30,45,.45);display:none;align-items:center;justify-content:center;z-index:200}
+#modal .box{background:#fff;border-radius:8px;max-width:720px;max-height:85vh;overflow:auto;padding:18px 22px;box-shadow:0 10px 40px rgba(0,0,0,.3);line-height:1.55}
+#modal h2{margin:0 0 8px;font-size:17px}
+#modal h3{margin:14px 0 4px;font-size:14px}
+#modal table{border-collapse:collapse;font-size:12.5px}
+#modal td{padding:2px 12px 2px 0;vertical-align:top}
+#modal kbd{background:#eef1f5;border:1px solid #c8cfd9;border-radius:3px;padding:0 4px;font-size:11.5px}
+.nat{display:none}
+.icbar{display:flex;gap:8px;align-items:center;margin:6px 0 8px}
+.icbar input{flex:1;font:inherit;padding:6px 9px;border:1px solid #bfc8d3;border-radius:5px}
+.iccats{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.chip{border:1px solid #cfd6df;background:#f5f7fa;border-radius:14px;padding:3px 10px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.chip i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.chip.on{background:#26364b;color:#fff;border-color:#26364b}
+.icgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;max-height:52vh;overflow:auto;padding:2px}
+.icb{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 4px 7px;border:1px solid #e0e5eb;border-radius:7px;background:#fff;cursor:pointer;font:11px "Segoe UI",Arial,sans-serif;color:#334;line-height:1.2;text-align:center}
+.icb:hover{border-color:var(--acc);background:#f0f6ff}
+.icb.on{border-color:var(--acc);box-shadow:0 0 0 2px rgba(45,127,249,.35)}
+.icprev{display:inline-flex;vertical-align:middle;margin-right:4px}
+.icsw{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.icsw b{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #c8cfd9}
+.icsw b.on{box-shadow:0 0 0 2px #26364b}
+#toast{position:fixed;bottom:34px;left:50%;transform:translateX(-50%);background:#26364b;color:#fff;padding:7px 14px;border-radius:5px;display:none;z-index:300;font-size:12.5px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="toolbar">
+    <span class="brand">SysML Modelleyici</span>
+    <button data-act="new" title="Yeni proje">Yeni</button>
+    <button data-act="open" title="JSON veya gömülü HTML model dosyası aç">Aç</button>
+    <button data-act="save" title="Modeli kaydet (Ctrl+S)">Kaydet</button>
+    <button data-act="saveAs" class="nat" title="Farklı kaydet (Ctrl+Shift+S)">Farklı kaydet</button>
+    <button data-act="saveHtml" title="Modeli içine gömülü HTML olarak kaydet (paylaşım için)">HTML olarak kaydet</button>
+    <span class="sep"></span>
+    <button data-act="navBack" title="Önceki diyagram (Alt+←)">◀</button>
+    <button data-act="navFwd" title="Sonraki diyagram (Alt+→)">▶</button>
+    <span class="sep"></span>
+    <button data-act="undo" title="Geri al (Ctrl+Z)">↶ Geri</button>
+    <button data-act="redo" title="Yinele (Ctrl+Y)">↷ İleri</button>
+    <span class="sep"></span>
+    <button data-act="png" title="Diyagramı PNG olarak indir">PNG</button>
+    <button data-act="svg" title="Diyagramı SVG olarak indir">SVG</button>
+    <button data-act="copy" title="Diyagramı panoya resim olarak kopyala">Panoya kopyala</button>
+    <span class="sep"></span>
+    <button data-act="zout" title="Uzaklaş">−</button>
+    <span id="zoomLbl">100%</span>
+    <button data-act="zin" title="Yakınlaş">+</button>
+    <button data-act="fit" title="Diyagramı ekrana sığdır">Sığdır</button>
+    <button data-act="grid" title="Izgara göster/gizle">Izgara</button>
+    <span class="sep"></span>
+    <button data-act="layoutMenu" title="Otomatik düzen ve hizalama (Ctrl+Shift+L)">Düzen ▾</button>
+    <button data-act="iconMenu" title="Seçili blok/part/aktöre ikon ata">İkon</button>
+    <span class="sep"></span>
+    <button data-act="help">Yardım</button>
+  </div>
+  <div id="main">
+    <div id="left">
+      <div class="ph"><span>Model Ağacı</span><span><button data-act="expandAll" title="Tümünü aç">+</button> <button data-act="collapseAll" title="Tümünü kapat">−</button></span></div>
+      <div id="treeBox" tabindex="0"><div id="tree"></div></div>
+      <div id="hsplit"></div>
+      <div id="propsBox"><div class="ph"><span>Özellikler</span></div><div id="props"></div></div>
+    </div>
+    <div id="vsplit"></div>
+    <div id="palette"></div>
+    <div id="center">
+      <div id="tabs"></div>
+      <div id="canvasWrap">
+        <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="empty"></div>
+        <textarea id="inl" rows="1"></textarea>
+      </div>
+    </div>
+  </div>
+  <div id="status"><span id="stDiag"></span><span id="stCount"></span><span class="hint" id="stHint"></span></div>
+</div>
+<div id="ctx"></div>
+<div id="modal"><div class="box" id="modalBox"></div></div>
+<div id="toast"></div>
+<input type="file" id="fileIn" accept=".sysml,.json,.html,.htm" style="display:none">
+<script type="application/json" id="embedded-model"></script>
+<script>
+'use strict';
+const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+const LSK = 'sysml-modeler-v1';
+const $ = s => document.querySelector(s);
+const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const G = 10, FF = 'Segoe UI, Arial, sans-serif';
+const STROKE = '#3a3a3a';
+
+/* ================= META ================= */
+const KIND = {
+  Model:{tr:'Model',en:'Model',ic:'M',col:'#5b6b82'},
+  Package:{tr:'Paket',en:'Package',ic:'P',col:'#b08a2e',w:180,h:110},
+  Block:{tr:'Blok',en:'Block',ic:'B',col:'#3d7bd9',w:170,h:80},
+  Part:{tr:'Part',ic:'pt',col:'#2e9e6a',w:170,h:80},
+  Value:{tr:'Value Property',ic:'v',col:'#8a5cc2',w:150,h:36},
+  Port:{tr:'Port',ic:'▫',col:'#d9772e',w:16,h:16},
+  Actor:{tr:'Aktör',ic:'A',col:'#c2416b',w:60,h:90},
+  UseCase:{tr:'Use Case',ic:'U',col:'#2e8fa3',w:150,h:70},
+  Subject:{tr:'Sistem Sınırı',ic:'S',col:'#5f6b7a',w:320,h:380},
+  Activity:{tr:'Aktivite',en:'Activity',ic:'Ac',col:'#7a4fbf'},
+  Action:{tr:'Aksiyon',ic:'a',col:'#7a4fbf',w:140,h:50},
+  Initial:{tr:'Başlangıç Düğümü',ic:'●',col:'#333',w:24,h:24},
+  Final:{tr:'Aktivite Sonu',ic:'◉',col:'#333',w:26,h:26},
+  FlowFinal:{tr:'Akış Sonu',ic:'⊗',col:'#333',w:24,h:24},
+  Decision:{tr:'Karar',ic:'◇',col:'#555',w:36,h:36},
+  Merge:{tr:'Birleştirme',ic:'◇',col:'#555',w:36,h:36},
+  Fork:{tr:'Çatallanma (Fork)',ic:'▬',col:'#222',w:120,h:6},
+  Join:{tr:'Eşzamanlama (Join)',ic:'▬',col:'#222',w:120,h:6},
+  Object:{tr:'Nesne Düğümü',ic:'O',col:'#4f7f9e',w:130,h:44},
+  Partition:{tr:'Kulvar',ic:'║',col:'#6c7a89',w:250,h:480},
+  Comment:{tr:'Not',ic:'✎',col:'#a89a3a',w:170,h:60},
+  Diagram:{tr:'Diyagram',ic:'D',col:'#445'},
+  Association:{tr:'Association',rel:1},
+  Composition:{tr:'Composition',rel:1},
+  Aggregation:{tr:'Aggregation',rel:1},
+  Generalization:{tr:'Generalization',rel:1},
+  Dependency:{tr:'Dependency',rel:1},
+  Include:{tr:'Include',rel:1},
+  Extend:{tr:'Extend',rel:1},
+  ControlFlow:{tr:'Control Flow',rel:1},
+  ObjectFlow:{tr:'Object Flow',rel:1},
+  Connector:{tr:'Connector',rel:1},
+  Anchor:{tr:'Not Bağlantısı',rel:1}
+};
+const DT = {
+  bdd:{tr:'Blok Tanım Diyagramı (BDD)',col:'#3d7bd9',shapes:['Block','Package','Actor','Comment'],rels:['Composition','Aggregation','Association','Generalization','Dependency','Anchor']},
+  ibd:{tr:'İç Blok Diyagramı (IBD)',col:'#2e9e6a',shapes:['Part','Port','Value','Comment'],rels:['Connector','Dependency','Anchor']},
+  uc:{tr:'Use Case Diyagramı',col:'#2e8fa3',shapes:['Actor','UseCase','Subject','Comment'],rels:['Association','Include','Extend','Generalization','Dependency','Anchor']},
+  act:{tr:'Aktivite Diyagramı',col:'#7a4fbf',shapes:['Action','Initial','Final','FlowFinal','Decision','Merge','Fork','Join','Object','Partition','Comment'],rels:['ControlFlow','ObjectFlow','Dependency','Anchor']}
+};
+const OWN = {
+  Model:['Package','Block','Actor','UseCase','Subject','Activity','Comment'],
+  Package:['Package','Block','Actor','UseCase','Subject','Activity','Comment'],
+  Block:['Part','Value','Port','Activity','Comment'],
+  Part:['Port'],
+  Subject:['UseCase'],
+  UseCase:['Activity','Comment'],
+  Activity:['Action','Object','Partition','Initial','Final','FlowFinal','Decision','Merge','Fork','Join','Comment']
+};
+const BASE = {Package:'Paket',Block:'Blok',Part:'part',Value:'değer',Port:'p',Actor:'Aktör',UseCase:'Use Case',Subject:'Sistem',Activity:'Aktivite',Action:'Aksiyon',Object:'nesne',Partition:'Kulvar'};
+const RANK = ['Diagram','Package','Block','Subject','Actor','UseCase','Activity','Part','Value','Port','Partition','Action','Object','Initial','Decision','Merge','Fork','Join','Final','FlowFinal','Comment'];
+const ELL = new Set(['UseCase','Initial','Final','FlowFinal']);
+const DIA = new Set(['Decision','Merge']);
+const CONT = new Set(['Partition','Subject','Package']);
+const UNNAMED = new Set(['Initial','Final','FlowFinal','Fork','Join','Decision','Merge']);
+const ER = {
+  Association:{}, Composition:{src:'fd'}, Aggregation:{src:'hd'}, Generalization:{tgt:'tri'},
+  Dependency:{dash:1,tgt:'open'}, Include:{dash:1,tgt:'open',st:'«include»'}, Extend:{dash:1,tgt:'open',st:'«extend»'},
+  ControlFlow:{tgt:'open'}, ObjectFlow:{tgt:'open'}, Connector:{}, Anchor:{dash:2}
+};
+const FILL = {Block:'#fff8d8',Part:'#fff8d8',Value:'#f3eeff',Action:'#fff8d8',UseCase:'#fff8d8',Comment:'#fffde9',Subject:'#ffffff',Partition:'#ffffff',Object:'#ffffff',Package:'#f6eed6',Port:'#ffffff',Actor:'none'};
+
+/* ================= ICON LIBRARY ================= */
+const ICON_CATS = [
+  ['auto', 'Otomotiv', '#c0392b'],
+  ['aero', 'Havacılık ve Uzay', '#1f6fd1'],
+  ['comp', 'Bilgisayar ve Elektronik', '#6c3fc4'],
+  ['def', 'Savunma Sistemleri', '#5a6b24'],
+  ['energy', 'Enerji ve Güç', '#d18a00'],
+  ['sense', 'Sensör ve Haberleşme', '#0f8a8a'],
+  ['mech', 'Mekanik ve Üretim', '#5d6d7e'],
+  ['soft', 'Yazılım ve Veri', '#2e7d32'],
+  ['org', 'İnsan ve Organizasyon', '#b04f86'],
+  ['gen', 'Genel', '#37474f']
+];
+const ICON_CAT_COL = Object.fromEntries(ICON_CATS.map(c => [c[0], c[2]]));
+const ICONS = {};
+(function(){
+  const f = n => +n.toFixed(2);
+  const P = d => `<path d="${d}"/>`;
+  const C = (x, y, r, fill) => `<circle cx="${x}" cy="${y}" r="${r}"${fill ? ' fill="currentColor"' : ''}/>`;
+  const R = (x, y, w, h, r) => `<rect x="${x}" y="${y}" width="${w}" height="${h}"${r ? ` rx="${r}"` : ''}/>`;
+  const El = (cx, cy, rx, ry, rot) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"${rot ? ` transform="rotate(${rot} ${cx} ${cy})"` : ''}/>`;
+  const rot = (deg, inner, cx, cy) => `<g transform="rotate(${deg} ${cx == null ? 12 : cx} ${cy == null ? 12 : cy})">${inner}</g>`;
+  const rep = (n, fn) => Array.from({length:n}, (_, i) => fn(i)).join('');
+  const poly = pts => 'M' + pts.map(p => f(p[0]) + ' ' + f(p[1])).join(' L') + ' Z';
+  const gear = (cx, cy, R1, R2, n) => {
+    const pts = [];
+    for(let i = 0; i < n; i++){
+      const a = i / n * Math.PI * 2, s = Math.PI / n;
+      [[a - s * 0.55, R2], [a - s * 0.3, R1], [a + s * 0.3, R1], [a + s * 0.55, R2]].forEach(([b, r]) => pts.push([cx + r * Math.cos(b), cy + r * Math.sin(b)]));
+    }
+    return P(poly(pts));
+  };
+  const star = (cx, cy, R1, R2, n, off) => { const pts = []; for(let i = 0; i < n * 2; i++){ const a = (off || -Math.PI / 2) + i * Math.PI / n, r = i % 2 ? R2 : R1; pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return P(poly(pts)); };
+  const rays = (cx, cy, r1, r2, n) => P(Array.from({length:n}, (_, i) => { const a = i / n * Math.PI * 2; return `M${f(cx + r1 * Math.cos(a))} ${f(cy + r1 * Math.sin(a))}L${f(cx + r2 * Math.cos(a))} ${f(cy + r2 * Math.sin(a))}`; }).join(''));
+  const person = (cx, cy, s) => C(cx, cy - 4 * s, 3 * s) + P(`M${f(cx - 6 * s)} ${f(cy + 7 * s)}a${f(6 * s)} ${f(6 * s)} 0 0 1 ${f(12 * s)} 0`);
+  const D = (cat, id, name, svg) => { ICONS[id] = {id, cat, name, svg}; };
+
+  /* ---- Otomotiv ---- */
+  D('auto', 'car', 'Otomobil', P('M2.5 16v-3.2L5 8.5h8.5l3.6 4H20.5a1 1 0 0 1 1 1V16') + P('M9.2 16h5.6') + C(6.8, 16.5, 2.1) + C(17, 16.5, 2.1) + P('M6.2 12.5h10.5M11 8.5v4'));
+  D('auto', 'truck', 'Kamyon', R(2, 6, 12, 10, 1) + P('M14 9.5h4l3 3.5v3h-7z') + C(6, 17.5, 1.8) + C(17, 17.5, 1.8));
+  D('auto', 'bus', 'Otobüs', R(4, 3, 16, 15, 2.5) + P('M4 11h16M4 7h16') + C(8, 14.5, .9, 1) + C(16, 14.5, .9, 1) + P('M7 18v2.5M17 18v2.5'));
+  D('auto', 'engine', 'Motor', P('M5 9h3V7h6v2h2.5l2 2.5V17H16l-2 2H8v-2.5H5z') + P('M2.5 11v5M2.5 13.5H5M21.5 11v5M19 13.5h2.5M9 4h4M11 4v3'));
+  D('auto', 'wheel', 'Tekerlek', C(12, 12, 9.5) + C(12, 12, 6) + C(12, 12, 1.8) + rays(12, 12, 2.4, 6, 5));
+  D('auto', 'steering', 'Direksiyon', C(12, 12, 9) + C(12, 12, 2.6) + P('M3.4 10.5h6.1M14.5 10.5h6.1M12 14.6v6.3'));
+  D('auto', 'gearbox', 'Şanzıman', C(6, 6, 1.6) + C(12, 6, 1.6) + C(18, 6, 1.6) + C(6, 18, 1.6) + C(12, 18, 1.6) + P('M6 7.6v8.8M12 7.6v8.8M18 7.6V12H6'));
+  D('auto', 'brake', 'Fren Diski', C(12, 12, 9) + C(12, 12, 3) + C(12, 6.2, .7, 1) + C(17.4, 13.8, .7, 1) + C(6.6, 13.8, .7, 1) + P('M16.5 3.8a9.5 9.5 0 0 1 4 4.4l-3.4 1.6a6 6 0 0 0-2.2-2.6z'));
+  D('auto', 'speedo', 'Hız Göstergesi', P('M3.5 17a9 9 0 1 1 17 0') + P('M12 15l4.5-5.5') + C(12, 15, 1.3, 1) + P('M6.2 10.4l1.2.9M12 6.5V8M17.8 10.4l-1.2.9'));
+  D('auto', 'fuel', 'Yakıt Pompası', R(4, 4, 9, 17, 1) + R(6, 6.5, 5, 4, .5) + P('M3 21h11M13 9h2a2 2 0 0 1 2 2v6a1.5 1.5 0 0 0 3 0V8.5l-3-3'));
+  D('auto', 'evcharge', 'Elektrikli Şarj', R(4, 9, 11, 11, 2) + P('M7.5 9V5M11.5 9V5M10.5 11.5l-2.2 3.3h3l-2.1 3.2') + P('M15 14.5h3a2 2 0 0 0 2-2V5'));
+  D('auto', 'headlight', 'Far', P('M10.5 5.5a6.5 6.5 0 0 0 0 13H12v-13z') + P('M15 8h6.5M15 12h6.5M15 16h6.5'));
+  D('auto', 'piston', 'Piston', R(7, 3, 10, 8, 1.5) + P('M7 6h10M7 8.3h10M12 11v5') + C(12, 18, 2.5) + P('M12 20.5V22'));
+  D('auto', 'seat', 'Koltuk', P('M7 3.5h3a1 1 0 0 1 1 1V13h6.5a1.5 1.5 0 0 1 1.5 1.5V17H7.5A1.5 1.5 0 0 1 6 15.5v-11a1 1 0 0 1 1-1z') + P('M8 17v4M17 17v4'));
+  D('auto', 'oil', 'Yağlama', P('M3 10h4l2-2h5l6-2v3l-4 5H3z') + P('M7 10V7.5M5 7.5h4M20 12.5c0 1-.6 2-1.3 2s-1.2-1-1.2-2 1.2-2.5 1.2-2.5 1.3 1.5 1.3 2.5z'));
+  D('auto', 'abs', 'Kontrol Ünitesi (ECU)', R(4, 5, 16, 14, 2) + R(8, 9, 8, 6, 1) + P('M8 3v2M12 3v2M16 3v2M8 19v2M12 19v2M16 19v2'));
+  D('auto', 'tractor', 'İş Makinesi', P('M3 15V10h7l1-4h5v9') + C(7, 17, 3) + C(17.5, 18, 2) + P('M10 17h5.5M16 9h4v6h-1.5'));
+
+  /* ---- Havacılık ve Uzay ---- */
+  D('aero', 'plane', 'Uçak', P('M12 2c1 0 1.5 1 1.5 2.5V9l7.5 4.5V16l-7.5-2.5V18l2.5 2v1.5L12 20.5l-4 1V20l2.5-2v-4.5L3 16v-2.5L10.5 9V4.5C10.5 3 11 2 12 2z'));
+  D('aero', 'airliner', 'Yolcu Uçağı (yan)', P('M2.5 13.5l2-5h1.5l2 3.5h9a3 3 0 0 1 0 6H5.5a3 3 0 0 1-3-3z') + P('M10 12l2.5-6h2l-.5 6M12 17.5l2 3.5h2l-.5-3.5') + P('M17.5 13.5h1.5'));
+  D('aero', 'heli', 'Helikopter', P('M3.5 5h15M11 5v3') + P('M6.5 12.5a4.5 4.5 0 0 1 4.5-4.5h2a4.5 4.5 0 0 1 4.5 4.5v.5a3 3 0 0 1-3 3h-5A3 3 0 0 1 6.5 13z') + P('M17 11h5M21.5 9v4M7 20h10M9.5 16v4M14.5 16v4M11 8v4h5.8'));
+  D('aero', 'rocket', 'Roket', P('M12 2c3 3 4 7 4 11l-1.5 3.5h-5L8 13c0-4 1-8 4-11z') + C(12, 9, 1.6) + P('M8.2 12.5L5 15.5V19l4.2-2M15.8 12.5L19 15.5V19l-4.2-2M10.5 19.5L12 22l1.5-2.5'));
+  D('aero', 'satellite', 'Uydu', rot(-45, R(9.5, 8.5, 5, 7, 1) + R(2, 9.5, 5.5, 5, .5) + R(16.5, 9.5, 5.5, 5, .5) + P('M7.5 12h2M14.5 12h2M4.75 9.5v5M19.25 9.5v5M12 8.5V6') + P('M9.5 5.2a3 3 0 0 0 5 0')));
+  D('aero', 'shuttle', 'Uzay Aracı', P('M12 2c2 2 3.5 5 3.5 9v6l3.5 3v1.5H5V20l3.5-3v-6C8.5 7 10 4 12 2z') + P('M8.5 17h7M10 10h4M12 21v1.5'));
+  D('aero', 'capsule', 'Kapsül', P('M8.5 3.5h7L19 17H5z') + P('M5 17q7 4.5 14 0M10 8.5h4M12 3.5V2'));
+  D('aero', 'drone', 'İHA (Quadkopter)', C(5, 5, 3) + C(19, 5, 3) + C(5, 19, 3) + C(19, 19, 3) + R(9, 9, 6, 6, 1.5) + P('M7.1 7.1L9 9M16.9 7.1L15 9M7.1 16.9L9 15M16.9 16.9L15 15'));
+  D('aero', 'uav', 'İHA (Sabit Kanat)', P('M12 3c.8 0 1.2.8 1.2 2v4.5l8.3 2.5v1.8l-8.3-1.3V17l2.3 1.8v1.5L12 19.5l-3.5.8v-1.5l2.3-1.8v-4.5l-8.3 1.3V12l8.3-2.5V5c0-1.2.4-2 1.2-2z'));
+  D('aero', 'turbine', 'Jet Motoru', P('M8 5.5h8.5L21 9v6l-4.5 3.5H8') + El(8, 12, 3.2, 6.5) + C(8, 12, 1.4) + P('M8 5.5v13M16.5 5.5v13'));
+  D('aero', 'propeller', 'Pervane', C(12, 12, 1.8) + rep(3, i => rot(i * 120, P('M12 10.2C10.5 7 10.8 3 12 3s1.5 4 0 7.2'))));
+  D('aero', 'parachute', 'Paraşüt', P('M3 11a9 7.5 0 0 1 18 0') + P('M3 11q2.25-2 4.5 0t4.5 0 4.5 0 4.5 0') + P('M3 11l7.5 8M21 11l-7.5 8M7.5 11l3 8M16.5 11l-3 8') + R(10, 19, 4, 3, .5));
+  D('aero', 'planet', 'Gezegen', C(12, 12, 6) + El(12, 12, 10.5, 3.2, -20));
+  D('aero', 'orbit', 'Yörünge', C(12, 12, 2.6, 1) + El(12, 12, 10, 5, -25) + C(20.4, 8.3, 1.4, 1));
+  D('aero', 'solarpanel', 'Güneş Paneli', P('M4 4h16l1.5 10h-19z') + P('M2.5 9h19M9.3 4l-.8 10M14.7 4l.8 10M12 14v5M8 21h8'));
+  D('aero', 'telescope', 'Teleskop', P('M3.5 13.8l11.2-5.4 1.6 3.3-11.2 5.4z') + P('M14.7 8.4l3.6-1.8 1.6 3.3-3.6 1.8M11 15l-3 6.5M11 15l3 6.5M5 15.5l-1.2-2.5'));
+  D('aero', 'attitude', 'Uçuş Göstergesi', C(12, 12, 9) + P('M3 12.5h18') + P('M6.5 12h3l2.5 2.5L14.5 12h3') + P('M12 3v2'));
+  D('aero', 'altimeter', 'Altimetre', C(12, 12, 9) + rays(12, 12, 7, 8.5, 12) + P('M12 12l3.5-4.5M12 12l-1.5 5') + C(12, 12, 1, 1));
+  D('aero', 'runway', 'Pist / Kalkış', P('M2 20h20M5 17h3M10.5 17h3M16 17h3') + rot(-25, P('M12 4.5c.8 0 1.2.8 1.2 2v3l6 3.5v1.6l-6-2v3.4l1.8 1.5v1.2L12 17.8l-3 .9v-1.2l1.8-1.5v-3.4l-6 2V13l6-3.5v-3c0-1.2.4-2 1.2-2z'), 12, 10));
+  D('aero', 'groundstation', 'Yer İstasyonu', P('M5 9a8 8 0 0 0 10 10z') + P('M10 14l4.5-4.5') + C(15.5, 8.5, 1.3) + P('M18 3.5a3.5 3.5 0 0 1 2.5 2.5M17.5 1.5a6 6 0 0 1 5 5M8 19l-1.5 3h6L11 19'));
+  D('aero', 'astronaut', 'Astronot', C(12, 8, 5) + R(9, 6, 6, 3.5, 1.5) + P('M6 21v-3.5A4.5 4.5 0 0 1 10.5 13h3a4.5 4.5 0 0 1 4.5 4.5V21') + R(10, 16, 4, 3, .5));
+  D('aero', 'startracker', 'Yıldız Takipçisi', star(12, 12, 9.5, 4, 4, 0) + C(12, 12, 1.5, 1));
+
+  /* ---- Bilgisayar ve Elektronik ---- */
+  D('comp', 'monitor', 'Bilgisayar', R(3, 4, 18, 12, 1.5) + P('M8 20h8M12 16v4'));
+  D('comp', 'laptop', 'Dizüstü', R(5, 5, 14, 10, 1) + P('M2 18.5h20l-2-3.5H4z'));
+  D('comp', 'server', 'Sunucu', R(4, 3, 16, 7.5, 1) + R(4, 13.5, 16, 7.5, 1) + C(7.5, 6.75, .9, 1) + C(7.5, 17.25, .9, 1) + P('M11 6.75h5.5M11 17.25h5.5'));
+  D('comp', 'rack', 'Kabin / Rack', R(5, 2, 14, 20, 1) + P('M5 7h14M5 12h14M5 17h14') + C(8, 4.5, .6, 1) + C(8, 9.5, .6, 1) + C(8, 14.5, .6, 1) + C(8, 19.5, .6, 1));
+  D('comp', 'cpu', 'İşlemci', R(6.5, 6.5, 11, 11, 1.5) + R(9.5, 9.5, 5, 5, .5) + P([9, 12, 15].map(v => `M${v} 2.5v4M${v} 17.5v4M2.5 ${v}h4M17.5 ${v}h4`).join('')));
+  D('comp', 'chip', 'Entegre Devre', R(4, 6, 16, 12, 1) + P('M4 10.5a1.5 1.5 0 0 1 0 3') + P([7, 10, 13, 16].map(v => `M${v + 1} 3v3M${v + 1} 18v3`).join('')));
+  D('comp', 'fpga', 'FPGA', R(4, 4, 16, 16, 1.5) + rep(3, i => rep(3, j => R(7 + i * 3.7, 7 + j * 3.7, 2.4, 2.4, .3))));
+  D('comp', 'ram', 'Bellek (RAM)', R(2, 7, 20, 9, 1) + R(5, 9.5, 3, 4) + R(10.5, 9.5, 3, 4) + R(16, 9.5, 3, 4) + P('M5 16v2.5M8 16v2.5M11 16v2.5M14 16v2.5M17 16v2.5M20 16v2.5'));
+  D('comp', 'storage', 'Disk / Depolama', R(3, 6, 18, 12, 2) + P('M3 13h18') + C(17, 15.5, .9, 1) + C(14, 15.5, .9, 1));
+  D('comp', 'pcb', 'Devre Kartı', R(3, 3, 18, 18, 2) + P('M7 7h4v4h6M7 17v-3h3M17 7v3M14 17h3') + C(7, 7, 1) + C(17, 11, 1) + C(10, 14, 1) + C(17, 17, 1) + C(7, 17, 1) + C(17, 7, 1));
+  D('comp', 'network', 'Ağ', C(12, 5, 2.5) + C(5, 19, 2.5) + C(19, 19, 2.5) + P('M10.8 7.2L6.2 16.8M13.2 7.2l4.6 9.6M7.5 19h9'));
+  D('comp', 'switch', 'Ağ Anahtarı', R(2, 8, 20, 8, 1.5) + rep(5, i => R(4.5 + i * 3.2, 11, 2, 2.5, .3)) + P('M6 5l-2 3M18 5l2 3'));
+  D('comp', 'router', 'Yönlendirici', R(3, 12, 18, 7, 1.5) + C(7, 15.5, .9, 1) + C(10.5, 15.5, .9, 1) + P('M15 15.5h3M8 12V6M16 12V6') + P('M6 4a3 3 0 0 1 4 0M14 4a3 3 0 0 1 4 0'));
+  D('comp', 'cloud', 'Bulut', P('M7 18.5h10a4.5 4.5 0 0 0 .6-8.96A6 6 0 0 0 6.1 9.6 4.5 4.5 0 0 0 7 18.5z'));
+  D('comp', 'database', 'Veri Tabanı', P('M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3'));
+  D('comp', 'usb', 'Konnektör', P('M12 21.5V5M10 5l2-3 2 3zM12 15l-5-3V9M12 17l5-3v-3') + C(7, 7.8, 1.3) + R(16, 9, 2, 2));
+  D('comp', 'plug', 'Fiş / Bağlantı', P('M9 2.5v5M15 2.5v5M6 7.5h12v3.5a6 6 0 0 1-12 0zM12 17v4.5'));
+  D('comp', 'cable', 'Kablo Demeti', P('M2 7c5 0 5 10 10 10s5-10 10-10M2 12h20M2 17c5 0 5-10 10-10s5 10 10 10'));
+  D('comp', 'terminal', 'Terminal', R(2, 4, 20, 16, 2) + P('M6 9.5l3 2.5-3 2.5M12 15h5.5'));
+  D('comp', 'phone', 'Mobil Cihaz', R(7, 2, 10, 20, 2) + P('M11 18.5h2'));
+  D('comp', 'tablet', 'Tablet / Ekran', R(4, 3, 16, 18, 2) + P('M4 17h16') + C(12, 19, .7, 1));
+  D('comp', 'scope', 'Osiloskop', R(2, 4, 20, 16, 2) + P('M5 12.5h2l1.5-4 2 8 2-9 2 7 1.5-2H19'));
+  D('comp', 'ai', 'Yapay Zeka', C(5, 6, 1.7) + C(5, 12, 1.7) + C(5, 18, 1.7) + C(12, 9, 1.7) + C(12, 15, 1.7) + C(19, 12, 1.7) + P('M6.7 6.4l3.6 2.2M6.7 11.6l3.6-2.2M6.7 12.4l3.6 2.2M6.7 17.6l3.6-2.2M6.7 7.2l3.6 6.6M13.7 9.6l3.6 2M13.7 14.4l3.6-2'));
+  D('comp', 'resistor', 'Elektronik Bileşen', P('M2 12h4l1.5-3.5 2.5 7 2.5-7 2.5 7 1.5-3.5H22'));
+  D('comp', 'ic', 'Mikrodenetleyici', R(7, 3, 10, 18, 1) + C(12, 5.5, .8) + P([6.5, 10, 13.5, 17].map(v => `M4 ${v}h3M17 ${v}h3`).join('')));
+  D('comp', 'printer', 'Yazıcı', R(6, 3, 12, 5) + R(3, 8, 18, 9, 1.5) + R(6, 14, 12, 7) + C(17, 11, .8, 1));
+  D('comp', 'keyboard', 'Klavye / Giriş', R(2, 6, 20, 12, 2) + P('M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12'));
+
+  /* ---- Savunma ---- */
+  D('def', 'missile', 'Füze', rot(-45, P('M3.5 10.6h12.5l4.5 1.4-4.5 1.4H3.5z') + P('M5.5 10.6L3.5 7H6l3.3 3.6M5.5 13.4L3.5 17H6l3.3-3.6M3.5 12H1.5M13 10.6V8.8M13 13.4v1.8')));
+  D('def', 'cruise', 'Seyir Füzesi', P('M2 12h15.5a3 3 0 0 1 0 0l4 0-4 1.6H2z') + P('M2 12l-.5-3h2L5 12M9 12l2.5-4h1.5L12 12M9 13.6l1.5 3h1.5l-.5-3'));
+  D('def', 'tank', 'Tank', P('M2.5 15h19l-2 4.5H4.5z') + P('M7 15v-3.5h8l2 3.5') + P('M14.5 12.5H22') + C(7, 17.3, 1) + C(12, 17.3, 1) + C(17, 17.3, 1));
+  D('def', 'apc', 'Zırhlı Araç', P('M2 15V11l3-3h11l3 3h2.5v4z') + C(6, 17, 2) + C(12, 17, 2) + C(18, 17, 2) + P('M9 8V6h4v2M13 6.5h5'));
+  D('def', 'fighter', 'Savaş Uçağı', P('M12 2l1.5 5 7.5 7.2v2l-7.4-2.5L13 18.5l3 2V22l-4-1-4 1v-1.5l3-2-.6-4.8L3 16.2v-2L10.5 7z'));
+  D('def', 'ship', 'Savaş Gemisi', P('M2 15h20l-3 5H5z') + P('M6.5 15v-4h6v4M9.5 11V7h2.5v4M12 13h5v2M10.5 7V3.5M8.5 5h4'));
+  D('def', 'submarine', 'Denizaltı', P('M3 14.5a3 3 0 0 1 3-3h12l3.5 3-3.5 3H6a3 3 0 0 1-3-3z') + P('M9 11.5V8.5h4l1.2 3M11 8.5V5.5h2.2') + P('M21.5 12v5'));
+  D('def', 'shield', 'Kalkan', P('M12 2.5l8 3.3v6c0 5-3.4 8.8-8 10.2-4.6-1.4-8-5.2-8-10.2v-6z') + P('M12 2.5v19.5M4 11.5h16'));
+  D('def', 'target', 'Hedef / Nişangah', C(12, 12, 8) + C(12, 12, 3) + P('M12 1.5V6M12 18v4.5M1.5 12H6M18 12h4.5'));
+  D('def', 'radarscope', 'Radar Ekranı', C(12, 12, 9.5) + C(12, 12, 5.5) + C(12, 12, 1.5) + P('M12 12l6.7-6.7') + C(15.8, 9.5, 1, 1) + C(8, 15, .8, 1));
+  D('def', 'radar', 'Radar Anteni', P('M4 10a8 8 0 0 0 10 10z') + P('M9 15l5.5-5.5') + C(15.5, 8.5, 1.4) + P('M18.5 2.5a5 5 0 0 1 3 3M17.5 5.5a2 2 0 0 1 1 1M7 19.5L5 22h7l-2-2.5'));
+  D('def', 'sonar', 'Sonar', C(12, 12, 1.6, 1) + P('M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.2 5.2a9.6 9.6 0 0 0 0 13.6M18.8 5.2a9.6 9.6 0 0 1 0 13.6'));
+  D('def', 'jammer', 'Elektronik Harp', P('M12 21v-8M8 21h8') + P('M12.5 2.5L9.5 8h4l-3 5.5') + P('M6 5a8 8 0 0 0 0 9M18 5a8 8 0 0 1 0 9M3.5 3a11.5 11.5 0 0 0 0 13M20.5 3a11.5 11.5 0 0 1 0 13'));
+  D('def', 'cannon', 'Top / Obüs', C(8, 17, 3.5) + C(8, 17, .9, 1) + P('M9.5 14l10.5-6.5 1.4 2.4-10.4 6.3M3 21h10'));
+  D('def', 'laser', 'Lazer Sistemi', R(2, 9, 6, 6, 1) + P('M8 12h11M19 12l2.5 0M17.5 8.5l2-2M17.5 15.5l2 2M5 9V6.5'));
+  D('def', 'ammo', 'Mühimmat', [4, 10, 16].map(x => P(`M${x} 21V11.5c0-3 1-5 2-6.5 1 1.5 2 3.5 2 6.5V21zM${x} 14h4`)).join(''));
+  D('def', 'bomb', 'Bomba / Harp Başlığı', C(10, 14, 7) + P('M15 9l2-2') + P('M17.5 4.5l1-1M20 7l1.2-.6M19.5 4.5l.8-1.5'));
+  D('def', 'explosion', 'Patlama / Etki', star(12, 12, 10, 5, 9));
+  D('def', 'binoculars', 'Gözetleme', C(6.5, 16, 4) + C(17.5, 16, 4) + P('M6.5 12V6a2 2 0 0 1 4 0v4.5M17.5 12V6a2 2 0 0 0-4 0v4.5M10.5 11h3'));
+  D('def', 'nightvision', 'Gece Görüş', P('M3 9h18v6H3z') + C(8, 12, 2) + C(16, 12, 2) + P('M10 12h4M7 15l-1 4M17 15l1 4'));
+  D('def', 'helmet', 'Kask / Personel', P('M3.5 16a8.5 8.5 0 0 1 17 0z') + P('M2 16h20v2.5H2zM12 7.5V16'));
+  D('def', 'flag', 'Komuta / Bayrak', P('M5 21.5V3M5 4h12.5L15 8.5l2.5 4.5H5'));
+  D('def', 'chevron', 'Rütbe', P('M5 8.5l7-4 7 4M5 13.5l7-4 7 4M5 18.5l7-4 7 4'));
+  D('def', 'hq', 'Komuta Merkezi', P('M3 21.5h18M5 21.5V10l7-5 7 5v11.5M9.5 21.5v-6h5v6M12 5V1.5M12 1.5l3 1.2-3 1.2'));
+  D('def', 'mine', 'Mayın', C(12, 13, 6) + rays(12, 13, 6, 9, 8) + C(12, 13, 1.5, 1));
+  D('def', 'launcher', 'Fırlatıcı', P('M2 18.5h20') + C(5.5, 18.5, 1.8) + C(18.5, 18.5, 1.8) + P('M3.5 16.5h17') + rot(-25, R(7, 9, 13, 5, .5) + P('M7 11.5h13'), 9, 14));
+  D('def', 'drone-strike', 'Silahlı İHA', P('M12 4v14M3 10.5l9 2 9-2M8.5 18.5h7') + P('M7 12v3.5M17 12v3.5') + C(12, 4, 1.4));
+  D('def', 'crosshair', 'Atış Kontrol', R(3, 3, 18, 18, 3) + C(12, 12, 4.5) + P('M12 5v4M12 15v4M5 12h4M15 12h4'));
+
+  /* ---- Enerji ve Güç ---- */
+  D('energy', 'bolt', 'Elektrik', P('M13 2L4 14h7l-1 8 9-12h-7z'));
+  D('energy', 'battery', 'Batarya', R(2, 7, 18, 10, 2) + P('M22 10.5v3') + R(4.5, 9.5, 4, 5, .5) + R(9.5, 9.5, 4, 5, .5));
+  D('energy', 'carbattery', 'Akü', R(3, 7, 18, 13, 1.5) + P('M6.5 7V4.5h3V7M14.5 7V4.5h3V7M6.5 13.5h3M16 12v3M14.5 13.5h3'));
+  D('energy', 'sun', 'Güneş Enerjisi', C(12, 12, 4) + rays(12, 12, 6.5, 9.5, 8));
+  D('energy', 'wind', 'Rüzgar Türbini', P('M12 11.5v10.5M9 22h6') + C(12, 10, 1.4) + rep(3, i => rot(i * 120, P('M12 8.6C11.5 6 11.5 3 12.3 2c.8 1 1 3.5.2 6.6'), 12, 10)));
+  D('energy', 'atom', 'Nükleer', C(12, 12, 1.6, 1) + El(12, 12, 10, 4) + El(12, 12, 10, 4, 60) + El(12, 12, 10, 4, -60));
+  D('energy', 'flame', 'Yakıt / Yanma', P('M12 22c3.9 0 7-2.9 7-7 0-4.5-3.5-7-5-12.5C12.5 6 11 7.5 10 10 9 9 8.5 8 8.3 6.5 6.3 8.8 5 11.5 5 15c0 4.1 3.1 7 7 7z') + P('M12 22c-1.7 0-3-1.3-3-3 0-2 1.5-3 3-5.5 1.5 2.5 3 3.5 3 5.5 0 1.7-1.3 3-3 3z'));
+  D('energy', 'transformer', 'Transformatör', C(8.5, 12, 5.5) + C(15.5, 12, 5.5));
+  D('energy', 'generator', 'Jeneratör', C(12, 12, 9) + P('M7 12c1.4-3.8 3.6-3.8 5 0s3.6 3.8 5 0'));
+  D('energy', 'psu', 'Güç Kaynağı', R(3, 5, 18, 14, 2) + P('M10.5 8l-2.5 4h3.5l-2.5 4') + P('M14.5 10h3M16 8.5v3M14.5 14.5h3'));
+  D('energy', 'pulse', 'Sinyal / Hat', P('M2 12h4l2-5 4 10 2-5h8'));
+  D('energy', 'drop', 'Hidrolik / Sıvı', P('M12 2.5c3 4 6.5 7.5 6.5 11.5a6.5 6.5 0 0 1-13 0C5.5 10 9 6.5 12 2.5z'));
+  D('energy', 'thermo', 'Sıcaklık', P('M10 13.5V5a2 2 0 0 1 4 0v8.5a4 4 0 1 1-4 0z') + P('M12 9v7.5') + C(12, 17, 1.6, 1));
+  D('energy', 'snow', 'Soğutma', P('M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7') + P('M9.5 3.5L12 6l2.5-2.5M9.5 20.5L12 18l2.5 2.5M3 10.5l3.5-1-1-3.5M21 13.5l-3.5 1 1 3.5M3 13.5l3.5 1-1 3.5M21 10.5l-3.5-1 1-3.5'));
+  D('energy', 'fan', 'Fan', C(12, 12, 1.8) + rep(4, i => rot(i * 90, P('M12 10c-.6-2.8.3-5.6 2.6-6.6 1.2 2.2.3 5-2.6 6.6'))) + C(12, 12, 10));
+  D('energy', 'powerplug', 'Güç Fişi', P('M12 21.5V18M7 8h10v4a5 5 0 0 1-10 0zM9.5 8V3M14.5 8V3'));
+  D('energy', 'gauge', 'Ölçüm Göstergesi', C(12, 13, 8.5) + P('M12 13l4-4') + C(12, 13, 1.2, 1) + P('M6.5 13h1.5M16 13h1.5M12 7.5V9'));
+  D('energy', 'fuelcell', 'Yakıt Hücresi', R(4, 4, 16, 16, 2) + P('M8 4v16M12 4v16M16 4v16') + P('M2 9h2M20 15h2'));
+
+  /* ---- Sensör ve Haberleşme ---- */
+  D('sense', 'camera', 'Kamera', R(2, 7, 20, 13, 2) + C(12, 13.5, 4) + P('M8 7l1.5-3h5L16 7'));
+  D('sense', 'eo', 'Elektro-Optik', P('M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z') + C(12, 12, 3) + C(12, 12, 1, 1));
+  D('sense', 'ir', 'Termal / IR', P('M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z') + P('M12 9.5c1.5 1.4 1.5 3.6 0 5M10 8.5c-2 2-2 5 0 7') + P('M14 8.5c2 2 2 5 0 7'));
+  D('sense', 'gps', 'GPS / Konum', P('M12 22s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z') + C(12, 10, 2.5));
+  D('sense', 'compass', 'Pusula', C(12, 12, 9.5) + P('M15.5 8.5l-2 5-5 2 2-5z'));
+  D('sense', 'imu', 'IMU / Jiroskop', C(12, 12, 9) + El(12, 12, 9, 3.2) + El(12, 12, 3.2, 9) + C(12, 12, 1.5, 1));
+  D('sense', 'accel', 'İvmeölçer', P('M12 13V3M12 13l7.5 5M12 13l-7.5 5') + P('M10 5l2-2 2 2M17.2 18.8l2.3-.8-.5-2.4M7 18.8l-2.5-.8.6-2.4'));
+  D('sense', 'pressure', 'Basınç Sensörü', C(12, 10, 7) + P('M12 10l3-3') + C(12, 10, 1, 1) + P('M10 17v5h4v-5'));
+  D('sense', 'lidar', 'Lidar', R(8, 13, 8, 8, 2) + C(12, 17, 1.5) + P('M5.5 9.5a9 9 0 0 1 13 0M8 12a5.5 5.5 0 0 1 8 0M3 7a12.5 12.5 0 0 1 18 0'));
+  D('sense', 'antenna', 'Anten', P('M12 10v11.5M8 21.5h8') + C(12, 8, 1.6) + P('M8.5 4.5a5 5 0 0 0 0 7M15.5 4.5a5 5 0 0 1 0 7M5.5 2a8.5 8.5 0 0 0 0 12M18.5 2a8.5 8.5 0 0 1 0 12'));
+  D('sense', 'tower', 'Verici Kulesi', P('M12 9.5l-4.5 12.5M12 9.5l4.5 12.5M9 18h6M10.2 14h3.6') + C(12, 7.5, 1.6) + P('M8.5 4a5 5 0 0 0 0 7M15.5 4a5 5 0 0 1 0 7'));
+  D('sense', 'dish', 'Çanak Anten', P('M3.5 9a10 10 0 0 0 11.5 11.5z') + P('M9 15l6.5-6.5') + C(16.5, 7.5, 1.5) + P('M6 21h8'));
+  D('sense', 'radio', 'Telsiz', R(5, 8, 14, 14, 2) + P('M8 8l8-5.5') + C(12, 17, 2.8) + P('M8 11.5h8'));
+  D('sense', 'wifi', 'Kablosuz', P('M2 8.5a15 15 0 0 1 20 0M5 12a10.5 10.5 0 0 1 14 0M8.5 15.5a5.5 5.5 0 0 1 7 0') + C(12, 19, 1.2, 1));
+  D('sense', 'signal', 'Sinyal Gücü', R(3, 16, 3, 5, .5) + R(8, 12, 3, 9, .5) + R(13, 8, 3, 13, .5) + R(18, 3, 3, 18, .5));
+  D('sense', 'mic', 'Mikrofon', R(9, 2, 6, 12, 3) + P('M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8'));
+  D('sense', 'speaker', 'Hoparlör / Siren', P('M4 9h4l5-4v14l-5-4H4z') + P('M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11'));
+  D('sense', 'mail', 'Mesaj', R(3, 5, 18, 14, 2) + P('M3 7l9 6 9-6'));
+  D('sense', 'link', 'Veri Bağlantısı', P('M10 14a4 4 0 0 1 0-5.6l3-3a4 4 0 0 1 5.6 5.6l-1.5 1.5M14 10a4 4 0 0 1 0 5.6l-3 3a4 4 0 0 1-5.6-5.6l1.5-1.5'));
+  D('sense', 'satcom', 'Uydu Haberleşme', rot(-45, R(9.5, 9.5, 5, 5, .5) + R(3.5, 10.5, 4.5, 3) + R(16, 10.5, 4.5, 3) + P('M8 12h1.5M14.5 12H16'), 15, 9) + P('M3 14a7 7 0 0 0 7 7M3 18a3 3 0 0 0 3 3'));
+  D('sense', 'proximity', 'Yakınlık Sensörü', R(2, 9, 6, 6, 1) + P('M11 8a5.5 5.5 0 0 1 0 8M14.5 5.5a9 9 0 0 1 0 13M18 3a12.5 12.5 0 0 1 0 18'));
+  D('sense', 'humidity', 'Nem', P('M8 3c2 3 4 5 4 7.5a4 4 0 0 1-8 0C4 8 6 6 8 3zM16.5 10c1.5 2.3 3 3.8 3 5.8a3 3 0 0 1-6 0c0-2 1.5-3.5 3-5.8z'));
+
+  /* ---- Mekanik ve Üretim ---- */
+  D('mech', 'gear', 'Dişli', gear(12, 12, 10, 7.5, 9) + C(12, 12, 3));
+  D('mech', 'gears', 'Dişli Takımı', gear(8.5, 9, 6.5, 4.8, 8) + C(8.5, 9, 1.8) + gear(17, 17, 5, 3.6, 7) + C(17, 17, 1.3));
+  D('mech', 'wrench', 'Bakım', P('M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z'));
+  D('mech', 'tools', 'Takım Seti', P('M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z') + P('M3.5 3.5l3 1 6 6M17 15l4 4-2 2-4-4'));
+  D('mech', 'bolt', 'Cıvata', P('M8 3h8l2 3-2 3H8L6 6z') + P('M10 9v12h4V9M10 12.5h4M10 15.5h4M10 18.5h4'));
+  D('mech', 'spring', 'Yay / Süspansiyon', P('M8 2.5h8M12 2.5v2M7 6l10 2-10 2 10 2-10 2 10 2-10 0M12 18v3.5M8 21.5h8'));
+  D('mech', 'bearing', 'Rulman', C(12, 12, 9.5) + C(12, 12, 4) + rep(8, i => { const a = i / 8 * Math.PI * 2; return C(f(12 + 6.8 * Math.cos(a)), f(12 + 6.8 * Math.sin(a)), 1.4); }));
+  D('mech', 'cylinder', 'Hidrolik Silindir', R(2, 8, 12, 8, 1) + P('M14 12h7M21 9v6M5 8V6M11 8V6'));
+  D('mech', 'valve', 'Vana', P('M3 8v8l9-4zM21 8v8l-9-4zM12 12V5M8 5h8'));
+  D('mech', 'pump', 'Pompa', C(10, 13, 6.5) + P('M10 13l4.5-4.5M16.5 9.5h5v4.5M4.5 21.5h11l-1.2-3') + C(10, 13, 1.2, 1));
+  D('mech', 'robot', 'Robot Kol', P('M3.5 21.5h9M8 21.5v-4l4-6.5 6 2.5') + C(8, 17.5, 1.6) + C(12, 11, 1.6) + P('M18 13l3-2.5M18 13l3 2'));
+  D('mech', 'factory', 'Üretim Tesisi', P('M2 21.5V10l6 4v-4l6 4V5h3.5l1.5 16.5zM2 21.5h20M6 18h2M11 18h2'));
+  D('mech', 'hammer', 'Çekiç', P('M14 3.5l6.5 6.5-3 3-6.5-6.5zM12.5 8.5l-9.5 9.5 2.5 2.5 9.5-9.5'));
+  D('mech', 'ruler', 'Ölçü', rot(-45, R(1.5, 9, 21, 6, .8) + P('M5 9v2.5M8 9v3.5M11 9v2.5M14 9v3.5M17 9v2.5M20 9v3.5')));
+  D('mech', 'cube', '3B Parça', P('M12 2l9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10'));
+  D('mech', 'box', 'Paket / Kutu', P('M3 7.5l9-5 9 5v9l-9 5-9-5zM3 7.5l9 5 9-5M12 12.5v9M7.5 5l9 5'));
+  D('mech', 'conveyor', 'Konveyör', R(2, 14, 20, 5, 2.5) + C(5, 16.5, .9, 1) + C(12, 16.5, .9, 1) + C(19, 16.5, .9, 1) + R(4.5, 8, 5.5, 6, .5) + R(13, 9, 5, 5, .5));
+  D('mech', 'crane', 'Vinç', P('M6 21.5V3.5h14M6 7.5l4-4M17 3.5v6M14.5 9.5h5v3.5h-5zM3 21.5h6'));
+  D('mech', 'actuator', 'Aktüatör', R(3, 9, 8, 6, 1) + P('M11 12h6') + C(19, 12, 2) + P('M5 9V6h4v3M5 15v3h4v-3'));
+  D('mech', 'motor', 'Elektrik Motoru', R(3, 7, 13, 10, 2) + P('M16 10h2v4h-2M18 12h4M6 7V5.5M13 7V5.5M6 17v1.5M13 17v1.5'));
+  D('mech', 'hydraulic', 'Hidrolik Ünite', R(3, 10, 11, 11, 1) + P('M14 13h3v-5h4M14 18h5v-4') + P('M8.5 3c1.5 2 3 3.5 3 5a3 3 0 0 1-6 0c0-1.5 1.5-3 3-5z'));
+
+  /* ---- Yazılım ve Veri ---- */
+  D('soft', 'code', 'Yazılım', P('M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16'));
+  D('soft', 'doc', 'Doküman', P('M6 2h8l5 5v15H6zM14 2v5h5M9 13h7M9 17h7'));
+  D('soft', 'req', 'Gereksinim', P('M6 2h8l5 5v15H6zM14 2v5h5') + P('M8.5 14l2 2 4-4.5'));
+  D('soft', 'folder', 'Klasör', P('M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z'));
+  D('soft', 'flow', 'Algoritma', R(9, 2, 6, 4, .8) + P('M12 6v2.5M12 8.5l4 3.5-4 3.5-4-3.5zM8 12H5v6M16 12h3v6') + R(2, 18, 6, 4, .8) + R(16, 18, 6, 4, .8));
+  D('soft', 'chart', 'Analiz / Grafik', P('M3 3v18h18M7 15l4-4 3 3 6-6.5'));
+  D('soft', 'bars', 'Rapor', P('M3 21h18') + R(5, 12, 3, 9) + R(10.5, 7, 3, 14) + R(16, 3, 3, 18));
+  D('soft', 'table', 'Veri Tablosu', R(3, 4, 18, 16, 1.5) + P('M3 9h18M3 14h18M9 4v16'));
+  D('soft', 'layers', 'Katmanlar', P('M12 3l9 4.5-9 4.5-9-4.5zM3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5'));
+  D('soft', 'module', 'Modül / Bileşen', P('M4 7.5h4a2 2 0 1 1 4 0h4v4a2 2 0 1 1 0 4v4H4z'));
+  D('soft', 'api', 'Arayüz (API)', C(6, 12, 3) + P('M9 12h6') + P('M15 7v10M18 9v6'));
+  D('soft', 'bug', 'Hata / Test', El(12, 13.5, 5, 6.5) + P('M12 7v13M9.5 7.5L8 5M14.5 7.5L16 5M7 11H3M7 15.5H3.5M17 11h4M17 15.5h3.5M8 19l-2.5 2M16 19l2.5 2'));
+  D('soft', 'clock', 'Zaman / Saat', C(12, 12, 9.5) + P('M12 6.5V12l3.5 2.5'));
+  D('soft', 'window', 'Kullanıcı Arayüzü', R(3, 4, 18, 16, 2) + P('M3 8.5h18') + C(6, 6.25, .7, 1) + C(8.5, 6.25, .7, 1) + R(6, 11, 6, 6, .5) + P('M14.5 12h3.5M14.5 15h3.5'));
+  D('soft', 'search', 'Arama', C(10.5, 10.5, 6.5) + P('M15.5 15.5L21 21'));
+  D('soft', 'sync', 'Senkronizasyon', P('M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3M18 2.5v4.2h-4.2M6 21.5v-4.2h4.2'));
+  D('soft', 'key', 'Kriptografi / Anahtar', C(7.5, 15.5, 4.5) + P('M10.7 12.3L20 3M16.5 6.5l3 3M14 9l2 2'));
+  D('soft', 'lock', 'Güvenlik', R(5, 11, 14, 10, 2) + P('M8 11V7.5a4 4 0 0 1 8 0V11') + C(12, 16, 1.3, 1));
+  D('soft', 'cybershield', 'Siber Güvenlik', P('M12 2.5l8 3.3v6c0 5-3.4 8.8-8 10.2-4.6-1.4-8-5.2-8-10.2v-6z') + P('M8.5 12l2.5 2.5 4.5-5'));
+  D('soft', 'binary', 'Veri', P('M6 4v6M4.5 4H6M4.5 10h3') + R(11, 4, 4, 6, 2) + R(4, 14, 4, 6, 2) + P('M13 14v6M11.5 14H13M11.5 20h3') + P('M19 4v6M17.5 4H19M17.5 10h3') + R(17, 14, 4, 6, 2));
+  D('soft', 'sim', 'Simülasyon', R(2, 4, 20, 13, 2) + P('M10 8v5l4-2.5zM8 21h8M12 17v4'));
+  D('soft', 'model', 'Model (MBSE)', R(8.5, 2, 7, 5, 1) + R(2, 16, 7, 5, 1) + R(15, 16, 7, 5, 1) + P('M12 7v4.5M5.5 16v-4.5h13V16'));
+  D('soft', 'filter', 'Filtre / İşleme', P('M3 4h18l-7 8.5V19l-4 2v-8.5z'));
+
+  /* ---- İnsan ve Organizasyon ---- */
+  D('org', 'user', 'Kullanıcı', C(12, 8, 4) + P('M4 21a8 8 0 0 1 16 0'));
+  D('org', 'team', 'Ekip', person(12, 12, .85) + person(5, 13.5, .65) + person(19, 13.5, .65));
+  D('org', 'operator', 'Operatör', C(12, 9, 3.8) + P('M6.5 10a5.5 5.5 0 0 1 11 0M6.5 10v2.5M17.5 10v3l-3 2.5h-2') + P('M4.5 21.5a7.5 7.5 0 0 1 15 0'));
+  D('org', 'pilot', 'Pilot', P('M6.5 10a5.5 5.5 0 0 1 11 0v1.5h-11z') + R(7.5, 10, 9, 3, 1.5) + P('M8 13.5a4 4 0 0 0 8 0M4.5 21.5a7.5 7.5 0 0 1 15 0'));
+  D('org', 'engineer', 'Mühendis', P('M7 9.5a5 5 0 0 1 10 0zM5.5 9.5h13') + P('M8 11a4 4 0 0 0 8 0M4.5 21.5a7.5 7.5 0 0 1 15 0M12 4.5V3'));
+  D('org', 'customer', 'Müşteri / Paydaş', C(9, 8, 3.5) + P('M2.5 20a6.5 6.5 0 0 1 13 0') + P('M16 4.5a3.5 3.5 0 0 1 0 7M18 13.5a6.5 6.5 0 0 1 3.5 6.5'));
+  D('org', 'building', 'Kurum / Bina', R(5, 3, 14, 18.5, 1) + P('M9 7h1.5M13.5 7H15M9 11h1.5M13.5 11H15M9 15h1.5M13.5 15H15M10.5 21.5v-3h3v3M2.5 21.5h19'));
+  D('org', 'briefcase', 'Yönetim', R(3, 7, 18, 13, 2) + P('M8.5 7V5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v2M3 13h18'));
+  D('org', 'edu', 'Eğitim', P('M2 9l10-5 10 5-10 5zM6 11v5.5c3 2 9 2 12 0V11M22 9v5'));
+  D('org', 'checklist', 'Kontrol Listesi', P('M10 6h11M10 12h11M10 18h11M3 6l1.5 1.5L7.5 4.5M3 12l1.5 1.5 3-3M3 18l1.5 1.5 3-3'));
+  D('org', 'calendar', 'Takvim / Plan', R(3, 5, 18, 16, 2) + P('M3 10h18M8 3v4M16 3v4M7 14h2M11 14h2M15 14h2M7 17.5h2M11 17.5h2'));
+  D('org', 'handshake', 'Anlaşma / Arayüz', P('M2 12l4-4 4 2 3-2 3 1 6 3M2 12l5 5 2-1.5 2 1.5 2-1.5 2 1.5 4-4') + P('M10 10l3 3'));
+  D('org', 'medical', 'Sağlık / Medikal', R(3, 3, 18, 18, 3) + P('M12 7v10M7 12h10'));
+  D('org', 'logistics', 'Lojistik', P('M2 6h11v10H2zM13 9h4.5L21 12.5V16h-8') + C(6, 17.5, 1.8) + C(17, 17.5, 1.8));
+
+  /* ---- Genel ---- */
+  D('gen', 'star', 'Yıldız', star(12, 12.5, 9.5, 4.2, 5));
+  D('gen', 'warning', 'Uyarı', P('M12 3L2 20.5h20z') + P('M12 9.5v5') + C(12, 17.3, .9, 1));
+  D('gen', 'info', 'Bilgi', C(12, 12, 9.5) + P('M12 11v6') + C(12, 7.8, .9, 1));
+  D('gen', 'check', 'Onay', C(12, 12, 9.5) + P('M7.5 12.5l3 3 6-6.5'));
+  D('gen', 'error', 'Hata', C(12, 12, 9.5) + P('M8.5 8.5l7 7M15.5 8.5l-7 7'));
+  D('gen', 'bulb', 'Fikir', P('M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-4 11.6c.7.6 1 1.4 1 2.4v1.5h6v-1.5c0-1 .3-1.8 1-2.4A6.5 6.5 0 0 0 12 2.5z'));
+  D('gen', 'globe', 'Dünya / Küresel', C(12, 12, 9.5) + El(12, 12, 4, 9.5) + P('M2.5 12h19M4 7h16M4 17h16'));
+  D('gen', 'map', 'Harita', P('M3 6l6-2.5 6 2.5 6-2.5v14.5l-6 2.5-6-2.5-6 2.5zM9 3.5V18M15 6v14.5'));
+  D('gen', 'home', 'Ana Birim', P('M3 11l9-7.5 9 7.5M5.5 9v11.5h13V9M10 20.5v-6h4v6'));
+  D('gen', 'bell', 'Alarm', P('M6 16.5V11a6 6 0 0 1 12 0v5.5l2 2H4zM10 21h4'));
+  D('gen', 'tag', 'Etiket', P('M3 12V3.5h8.5L21 13l-8.5 8.5z') + C(7.5, 7.5, 1.5));
+  D('gen', 'sliders', 'Ayarlar', P('M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1') + C(15, 6, 2) + C(9, 12, 2) + C(17, 18, 2));
+  D('gen', 'heart', 'Sağlık Durumu', P('M12 20.5S3 15 3 8.8A4.8 4.8 0 0 1 12 6.4a4.8 4.8 0 0 1 9 2.4c0 6.2-9 11.7-9 11.7z') + P('M5.5 12h3l1.5-2.5 2 4 1.5-1.5h5'));
+  D('gen', 'power', 'Açma / Kapama', P('M12 2.5V11M6.8 5.5a8 8 0 1 0 10.4 0'));
+  D('gen', 'recycle', 'Döngü', P('M20 12a8 8 0 1 1-2.3-5.6M20 4v4.5h-4.5'));
+  D('gen', 'eye', 'Gözlem', P('M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z') + C(12, 12, 3));
+  D('gen', 'puzzle', 'Entegrasyon', P('M4 9h3.5a2 2 0 1 1 4 0H15v3.5a2 2 0 1 1 0 4V20H11.5a2 2 0 1 0-4 0H4z'));
+  D('gen', 'arrows', 'Hareket', P('M12 2v20M2 12h20M9 5l3-3 3 3M9 19l3 3 3-3M5 9l-3 3 3 3M19 9l3 3-3 3'));
+  D('gen', 'water', 'Deniz / Su', P('M2 8c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2M2 13c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2M2 18c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2'));
+  D('gen', 'mountain', 'Arazi', P('M2 20l7-12 4 6 3-4 6 10z'));
+})();
+function iconOf(e){
+  if(!e) return null;
+  if(e.icon && ICONS[e.icon]) return {ic:ICONS[e.icon], col:e.iconColor || ICON_CAT_COL[ICONS[e.icon].cat], mode:e.iconMode || 'corner'};
+  if((e.kind === 'Part' || e.kind === 'Object' || e.kind === 'Port') && e.type){ const t = E(e.type); if(t && t.icon && ICONS[t.icon]) return {ic:ICONS[t.icon], col:t.iconColor || ICON_CAT_COL[ICONS[t.icon].cat], mode:'corner'}; }
+  return null;
+}
+function iconSVG(ic, x, y, size, col){
+  const sw = Math.max(1.25, Math.min(2.2, size / 16)) * 24 / size;
+  return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${(size / 24).toFixed(4)})" fill="none" stroke="${col}" color="${col}" stroke-width="${sw.toFixed(2)}" stroke-linecap="round" stroke-linejoin="round">${ic.svg}</g>`;
+}
+function iconInline(ic, px, col, sw){ return `<svg width="${px}" height="${px}" viewBox="0 0 24 24" fill="none" stroke="${col}" color="${col}" stroke-width="${sw || 1.7}" stroke-linecap="round" stroke-linejoin="round">${ic.svg}</svg>`; }
+
+/* ================= STATE ================= */
+let M = null;
+const ST = {back:[], fwd:[], open:[], cur:null, sel:new Set(), tool:null, exp:new Set(), tsel:null, focus:'canvas', grid:true, space:false, dragEl:null};
+const undoStack = [], redoStack = [];
+const clean = (k, v) => (k === '_pts' || k === '_rm') ? undefined : v;
+const E = id => (id && M.els[id]) || null;
+const cur = () => E(ST.cur);
+function snap(){ markDirty(); undoStack.push(JSON.stringify(M)); if(undoStack.length > 150) undoStack.shift(); redoStack.length = 0; }
+function undo(){ if(!undoStack.length) return toast('Geri alınacak işlem yok'); markDirty(); redoStack.push(JSON.stringify(M)); M = JSON.parse(undoStack.pop()); afterLoad(); }
+function redo(){ if(!redoStack.length) return; markDirty(); undoStack.push(JSON.stringify(M)); M = JSON.parse(redoStack.pop()); afterLoad(); }
+function afterLoad(){
+  ST.open = ST.open.filter(id => E(id) && E(id).kind === 'Diagram');
+  if(!E(ST.cur)) ST.cur = ST.open[0] || null;
+  ST.sel.clear(); if(ST.tsel && !E(ST.tsel)) ST.tsel = null;
+  renderAll(); persist();
+}
+function afterChange(){ renderAll(); persist(); }
+
+/* ================= MODEL HELPERS ================= */
+function kidsOf(id){ const r = []; for(const k in M.els){ const e = M.els[k]; if(e.owner === id) r.push(e); } return r; }
+function nearestPkg(id){ let e = E(id); while(e && e.kind !== 'Package' && e.kind !== 'Model') e = E(e.owner); return e ? e.id : M.rootId; }
+function isAnc(a, b){ let e = E(b); while(e){ if(e.owner === a) return true; e = E(e.owner); } return false; }
+function lcFirst(s){ s = String(s || '').replace(/\s+/g, ''); return s ? s.charAt(0).toLocaleLowerCase('tr') + s.slice(1) : s; }
+function uniqName(base, owner){ const n = new Set(kidsOf(owner).map(e => e.name)); if(!n.has(base)) return base; let i = 2; while(n.has(base + i)) i++; return base + i; }
+function defName(kind, owner){ const b = BASE[kind]; if(!b) return ''; const n = new Set(kidsOf(owner).map(e => e.name)); let i = 1; while(n.has(b + i)) i++; return b + i; }
+function mk(kind, owner, props){ const e = Object.assign({id:uid(), kind, owner, name:defName(kind, owner), doc:''}, props || {}); M.els[e.id] = e; return e; }
+function elLabel(e){
+  if(!e) return '';
+  if(KIND[e.kind] && KIND[e.kind].rel){ const a = E(e.src), b = E(e.tgt); const ab = (a ? nm(a) : '?') + ' → ' + (b ? nm(b) : '?'); return e.name ? e.name + '  (' + ab + ')' : ab; }
+  if(e.kind === 'Comment') return (e.name || 'Not').split('\n')[0].slice(0, 40);
+  return nm(e);
+}
+function nm(e){ return e.name || ('(' + KIND[e.kind].tr + ')'); }
+function typeName(id){ const t = E(id); return t ? t.name : ''; }
+function partLabel(p){ return p.name + (p.type && E(p.type) ? ' : ' + typeName(p.type) : '') + (p.mult ? ' [' + p.mult + ']' : ''); }
+function valLabel(v){ return v.name + (v.vtype ? ' : ' + v.vtype : '') + (v.def ? ' = ' + v.def : ''); }
+function portLabel(p){ return (p.dir ? p.dir + ' ' : '') + p.name + (p.type && E(p.type) ? ' : ' + typeName(p.type) : ''); }
+function pathOf(id){ const a = []; let e = E(id); while(e){ a.unshift(e.name || KIND[e.kind].tr); e = E(e.owner); } return a.join(' ▸ '); }
+function canOwn(ownerKind, childKind, child){
+  if(childKind === 'Diagram'){
+    const dt = child && child.dtype;
+    if(dt === 'ibd') return ownerKind === 'Block';
+    if(dt === 'act') return ownerKind === 'Activity';
+    if(dt === 'uc') return ownerKind === 'Package' || ownerKind === 'Model';
+    return ['Package','Model','Block'].includes(ownerKind);
+  }
+  return (OWN[ownerKind] || []).includes(childKind);
+}
+function diagOpts(kind){
+  if(kind === 'Model' || kind === 'Package') return ['bdd','uc','act','ibd'];
+  if(kind === 'Block') return ['ibd','bdd','act'];
+  if(kind === 'Activity') return ['act'];
+  if(kind === 'UseCase') return ['act'];
+  return [];
+}
+function navTargets(e, excludeId){
+  if(!e) return [];
+  const out = [], add = d => { if(d && d.kind === 'Diagram' && d.id !== excludeId && !out.includes(d)) out.push(d); };
+  const owned = id => kidsOf(id).filter(x => x.kind === 'Diagram').sort(sortEls).forEach(add);
+  const behav = id => { owned(id); kidsOf(id).filter(x => x.kind === 'Activity').forEach(a => owned(a.id)); };
+  if(e.link) add(E(e.link));
+  if(e.kind === 'Diagram'){ add(e); return out; }
+  behav(e.id);
+  if((e.kind === 'Part' || e.kind === 'Object' || e.kind === 'Port') && e.type) behav(e.type);
+  if(e.kind === 'Action' && e.behavior) behav(e.behavior);
+  if(e.kind === 'Partition' && e.represents) behav(e.represents);
+  return out;
+}
+function diagramsShowing(id){ return Object.values(M.els).filter(d => d.kind === 'Diagram' && d.shapes.some(s => s.el === id)); }
+
+/* ================= DIAGRAM CORE ================= */
+const snapv = v => Math.round(v / G) * G;
+function shapeOf(d, sid){ return d.shapes.find(s => s.id === sid) || null; }
+function addShape(d, elId, x, y, w, h, parent){
+  const k = KIND[E(elId).kind];
+  const sh = {id:uid(), el:elId, x:Math.round(x), y:Math.round(y), w:w || k.w || 120, h:h || k.h || 60};
+  if(parent) sh.parent = parent;
+  d.shapes.push(sh); return sh;
+}
+function snapPort(sh, P, cx, cy){
+  const dl = Math.abs(cx - P.x), dr = Math.abs(cx - (P.x + P.w)), dt = Math.abs(cy - P.y), db = Math.abs(cy - (P.y + P.h));
+  const m = Math.min(dl, dr, dt, db), cl = (v, a, b) => Math.max(a, Math.min(b, v));
+  if(m === dl || m === dr){ cx = m === dl ? P.x : P.x + P.w; cy = cl(cy, P.y + sh.h / 2, P.y + P.h - sh.h / 2); }
+  else { cy = m === dt ? P.y : P.y + P.h; cx = cl(cx, P.x + sh.w / 2, P.x + P.w - sh.w / 2); }
+  sh.x = cx - sh.w / 2; sh.y = cy - sh.h / 2;
+}
+function portSide(sh, P){
+  const cx = sh.x + sh.w / 2, cy = sh.y + sh.h / 2;
+  const ds = [['l', Math.abs(cx - P.x)], ['r', Math.abs(cx - P.x - P.w)], ['t', Math.abs(cy - P.y)], ['b', Math.abs(cy - P.y - P.h)]];
+  ds.sort((a, b) => a[1] - b[1]); return ds[0][0];
+}
+function showPorts(d, P){
+  const p = E(P.el); if(!p) return [];
+  const ports = [...(p.type ? kidsOf(p.type) : []), ...kidsOf(p.id)].filter(e => e.kind === 'Port');
+  const existing = d.shapes.filter(s => s.parent === P.id);
+  const have = new Set(existing.map(s => s.el));
+  const todo = ports.filter(pt => !have.has(pt.id));
+  if(!todo.length) return [];
+  const cnt = {l:0, r:0};
+  existing.forEach(s => { const sd = portSide(s, P); if(sd === 'l' || sd === 'r') cnt[sd]++; });
+  const sideOf = pt => pt.dir === 'in' ? 'l' : 'r';
+  const need = {l:cnt.l, r:cnt.r}; todo.forEach(pt => need[sideOf(pt)]++);
+  P.h = Math.max(P.h, snapv(44 + Math.max(need.l, need.r) * 24));
+  const added = [];
+  todo.forEach(pt => {
+    const sd = sideOf(pt), sh = addShape(d, pt.id, 0, 0, 16, 16, P.id);
+    snapPort(sh, P, sd === 'l' ? P.x : P.x + P.w, P.y + 46 + cnt[sd]++ * 24);
+    added.push(sh);
+  });
+  added.forEach(sh => autoEdges(d, sh));
+  return added;
+}
+function findEnd(d, elId, partId){
+  return d.shapes.find(s => {
+    if(s.el !== elId) return false;
+    if(partId){ const P = s.parent && shapeOf(d, s.parent); return !!P && P.el === partId; }
+    return true;
+  }) || null;
+}
+function autoEdges(d, sh){
+  const allowed = DT[d.dtype].rels;
+  for(const k in M.els){
+    const r = M.els[k];
+    if(!KIND[r.kind].rel || !allowed.includes(r.kind)) continue;
+    if(r.src !== sh.el && r.tgt !== sh.el) continue;
+    if(d.edges.some(x => x.el === r.id)) continue;
+    const s = findEnd(d, r.src, r.sp), t = findEnd(d, r.tgt, r.tp);
+    if(s && t && s !== t) d.edges.push({id:uid(), el:r.id, s:s.id, t:t.id, route:d.dtype === 'uc' ? 'straight' : 'ortho'});
+  }
+}
+function newDiagramCore(ownerId, dtype, name){
+  let owner = E(ownerId);
+  if(dtype === 'ibd' && owner.kind !== 'Block') owner = mk('Block', nearestPkg(ownerId));
+  if(dtype === 'act' && owner.kind !== 'Activity') owner = mk('Activity', canOwn(owner.kind, 'Activity') ? owner.id : nearestPkg(ownerId), {name:(owner.kind === 'UseCase' || owner.kind === 'Block') ? owner.name : undefined});
+  if(dtype === 'act' && !owner.name) owner.name = defName('Activity', owner.owner);
+  if(dtype === 'uc' && owner.kind !== 'Package' && owner.kind !== 'Model') owner = E(nearestPkg(ownerId));
+  const d = mk('Diagram', owner.id, {name:name || (owner.name + ' ' + dtype.toUpperCase()), dtype, shapes:[], edges:[], vx:60, vy:70, z:1});
+  if(dtype === 'ibd') populateIBD(d);
+  return d;
+}
+function populateIBD(d){
+  const ch = kidsOf(d.owner);
+  const parts = ch.filter(e => e.kind === 'Part'), vals = ch.filter(e => e.kind === 'Value');
+  parts.forEach((p, i) => { const sh = addShape(d, p.id, 40 + (i % 3) * 320, 40 + Math.floor(i / 3) * 200, 200, 80); showPorts(d, sh); });
+  const y0 = 40 + Math.ceil(parts.length / 3) * 200;
+  vals.forEach((v, i) => addShape(d, v.id, 40 + (i % 4) * 190, y0 + Math.floor(i / 4) * 60, 160, 36));
+  d.shapes.slice().forEach(sh => autoEdges(d, sh));
+}
+function connect(d, kind, S, T){
+  const a = E(S.el), b = E(T.el);
+  const route = d.dtype === 'uc' ? 'straight' : 'ortho';
+  if(kind === 'Anchor'){ const ed = {id:uid(), el:null, kind:'Anchor', s:S.id, t:T.id, route:'straight'}; d.edges.push(ed); return ed; }
+  let owner;
+  if(kind === 'Connector') owner = d.owner;
+  else if(kind === 'ControlFlow' || kind === 'ObjectFlow') owner = (E(a.owner) && E(a.owner).kind === 'Activity') ? a.owner : d.owner;
+  else owner = nearestPkg(a.id);
+  const r = mk(kind, owner, {src:a.id, tgt:b.id, name:''});
+  if(kind === 'Connector'){
+    const ps = S.parent && shapeOf(d, S.parent), pt = T.parent && shapeOf(d, T.parent);
+    r.sp = ps ? ps.el : null; r.tp = pt ? pt.el : null;
+  }
+  if(kind === 'Composition' || kind === 'Aggregation'){
+    const p = mk('Part', a.id, {name:uniqName(lcFirst(b.name) || 'part', a.id), type:b.id});
+    if(kind === 'Aggregation') p.shared = true;
+    r.part = p.id;
+  }
+  const ed = {id:uid(), el:r.id, s:S.id, t:T.id, route};
+  d.edges.push(ed); return ed;
+}
+function validate(kind, a, b, d){
+  if(a.id === b.id && kind !== 'ControlFlow') return 'Bir eleman kendisine bağlanamaz.';
+  const K = [a.kind, b.kind];
+  if(kind === 'Anchor') return (a.kind === 'Comment' || b.kind === 'Comment') ? '' : 'Not bağlantısının bir ucu Not olmalı.';
+  if(K.includes('Comment')) return 'Notlar yalnızca "Not Bağlantısı" ile bağlanır.';
+  if(K.includes('Partition')) return 'Kulvarlar bağlantı ucu olamaz.';
+  switch(kind){
+    case 'Composition': case 'Aggregation': return (a.kind === 'Block' && b.kind === 'Block') ? '' : 'Composition/Aggregation iki Blok arasında olmalı.';
+    case 'Association':
+      if(d.dtype === 'uc') return (K.includes('Actor') && (K.includes('UseCase') || K.includes('Subject'))) ? '' : 'Use Case diyagramında Association, Aktör ile Use Case arasında olmalı.';
+      return K.every(k => k === 'Block' || k === 'Actor') ? '' : 'Association Blok/Aktör arasında olmalı.';
+    case 'Generalization': return a.kind === b.kind ? '' : 'Generalization aynı türdeki elemanlar arasında olmalı.';
+    case 'Include': case 'Extend': return (a.kind === 'UseCase' && b.kind === 'UseCase') ? '' : kind + ' iki Use Case arasında olmalı.';
+    case 'Connector': return K.every(k => ['Part','Port','Value'].includes(k)) ? '' : 'Connector part/port/value arasında olmalı.';
+    case 'ControlFlow': case 'ObjectFlow':
+      if(a.kind === 'Final' || a.kind === 'FlowFinal') return 'Bitiş düğümünden akış çıkamaz.';
+      if(b.kind === 'Initial') return 'Başlangıç düğümüne akış giremez.';
+      return '';
+    case 'Dependency': return '';
+  }
+  return '';
+}
+function delModel(ids){
+  const del = new Set();
+  const all = () => Object.values(M.els);
+  const add = id => {
+    if(!id || del.has(id) || !E(id) || id === M.rootId) return;
+    del.add(id); const e = E(id);
+    all().forEach(x => {
+      if(x.owner === id) add(x.id);
+      if(KIND[x.kind].rel && (x.src === id || x.tgt === id || x.sp === id || x.tp === id || x.part === id)) add(x.id);
+    });
+    if(e.part) add(e.part);
+  };
+  ids.forEach(add);
+  del.forEach(id => delete M.els[id]);
+  all().forEach(x => {
+    if(del.has(x.type)) x.type = null;
+    if(del.has(x.behavior)) x.behavior = null;
+    if(x.kind === 'Diagram') purgeDiagram(x);
+  });
+  ST.open = ST.open.filter(id => E(id));
+  if(!E(ST.cur)) ST.cur = ST.open[0] || null;
+  ST.sel.clear();
+  if(ST.tsel && !E(ST.tsel)) ST.tsel = null;
+}
+function purgeDiagram(d){
+  let changed = true;
+  while(changed){
+    const n = d.shapes.length;
+    const ids = new Set(d.shapes.map(s => s.id));
+    d.shapes = d.shapes.filter(s => E(s.el) && (!s.parent || ids.has(s.parent)));
+    changed = d.shapes.length !== n;
+  }
+  const ids = new Set(d.shapes.map(s => s.id));
+  d.edges = d.edges.filter(x => ids.has(x.s) && ids.has(x.t) && (x.el === null || x.el === undefined ? true : !!E(x.el)));
+}
+function removeFromDiagram(d, ids){
+  const rm = new Set(ids);
+  d.shapes.forEach(s => { if(rm.has(s.parent)) rm.add(s.id); });
+  d.shapes = d.shapes.filter(s => !rm.has(s.id));
+  d.edges = d.edges.filter(x => !rm.has(x.id));
+  purgeDiagram(d); ST.sel.clear();
+}
+
+/* ================= AUTO LAYOUT ================= */
+const LAYOUTS = {
+  bdd:[['tb','Hiyerarşik — yukarıdan aşağı'], ['lr','Hiyerarşik — soldan sağa'], ['grid','Izgara'], ['circle','Dairesel'], ['tidy','Toparla (çakışmaları gider, ızgaraya oturt)']],
+  ibd:[['lr','Akış — soldan sağa'], ['tb','Akış — yukarıdan aşağı'], ['grid','Izgara'], ['tidy','Toparla (çakışmaları gider, ızgaraya oturt)']],
+  uc:[['ucLeft','Aktörler solda, use case\'ler sınır içinde'], ['ucBoth','Aktörler iki yanda'], ['ucGrid','Use case ızgarası'], ['tidy','Toparla (çakışmaları gider, ızgaraya oturt)']],
+  act:[['tb','Akış — yukarıdan aşağı (kulvarlı)'], ['lr','Akış — soldan sağa'], ['tidy','Toparla (çakışmaları gider, ızgaraya oturt)']]
+};
+const topShapes = d => d.shapes.filter(s => !s.parent && E(s.el));
+const topOf = (d, sh) => (sh.parent && shapeOf(d, sh.parent)) || sh;
+const kindOfSh = sh => E(sh.el).kind;
+function packLine(des, size, gap){
+  const n = des.length; if(!n) return [];
+  const a = des.slice(), b = des.slice();
+  for(let i = 1; i < n; i++) a[i] = Math.max(des[i], a[i - 1] + (size[i - 1] + size[i]) / 2 + gap);
+  for(let i = n - 2; i >= 0; i--) b[i] = Math.min(des[i], b[i + 1] - (size[i] + size[i + 1]) / 2 - gap);
+  return a.map((v, i) => (v + b[i]) / 2);
+}
+/* Katmanlı (Sugiyama tarzı) yerleşim. N: [{id,w,h,cx,cy,lane?,minLayer?,fixed?}], Eg: [[a,b]] */
+function layered(N, Eg, o){
+  o = o || {};
+  const TB = o.dir !== 'LR', gm = o.gapMain == null ? 70 : o.gapMain, gc = o.gapCross == null ? 50 : o.gapCross;
+  const n = N.length, ix = new Map(N.map((v, i) => [v.id, i]));
+  const ms = v => TB ? v.h : v.w, cs = v => TB ? v.w : v.h, mc = v => TB ? v.cy : v.cx, cc = v => TB ? v.cx : v.cy;
+  const seen = new Set(), E0 = [];
+  Eg.forEach(([a, b]) => { const i = ix.get(a), j = ix.get(b); if(i == null || j == null || i === j) return; if(seen.has(i + ',' + j) || seen.has(j + ',' + i)) return; seen.add(i + ',' + j); E0.push([i, j]); });
+  const out = N.map(() => []), inn = N.map(() => []);
+  E0.forEach(([i, j]) => out[i].push(j));
+  const order = N.map((_, i) => i).sort((p, q) => mc(N[p]) - mc(N[q]) || cc(N[p]) - cc(N[q]));
+  const st = new Array(n).fill(0), rev = new Set(), indeg0 = new Array(n).fill(0);
+  E0.forEach(([, j]) => indeg0[j]++);
+  const dfs = v => { st[v] = 1; out[v].slice().sort((p, q) => cc(N[p]) - cc(N[q])).forEach(w => { if(st[w] === 1) rev.add(v + ',' + w); else if(!st[w]) dfs(w); }); st[v] = 2; };
+  order.filter(v => !indeg0[v]).forEach(v => { if(!st[v]) dfs(v); });
+  order.forEach(v => { if(!st[v]) dfs(v); });
+  out.forEach(a => a.length = 0);
+  E0.forEach(([i, j]) => { if(rev.has(i + ',' + j)) [i, j] = [j, i]; out[i].push(j); inn[j].push(i); });
+  const L = N.map(v => v.minLayer || 0), indeg = inn.map(a => a.length), q = [], topo = [];
+  N.forEach((v, i) => { if(!indeg[i]) q.push(i); });
+  while(q.length){ const v = q.shift(); topo.push(v); out[v].forEach(w => { L[w] = Math.max(L[w], L[v] + 1); if(--indeg[w] === 0) q.push(w); }); }
+  for(let k = topo.length - 1; k >= 0; k--){ const v = topo[k]; if(out[v].length && !N[v].fixed){ const m = Math.min(...out[v].map(w => L[w])) - 1; if(m > L[v]) L[v] = m; } }
+  const maxL = Math.max(0, ...L);
+  const layers = Array.from({length:maxL + 1}, () => []);
+  N.forEach((_, i) => layers[L[i]].push(i));
+  const lane = i => N[i].lane || 0;
+  layers.forEach(ly => ly.sort((p, q) => lane(p) - lane(q) || cc(N[p]) - cc(N[q])));
+  const pos = new Array(n);
+  const setPos = ly => ly.forEach((v, k) => pos[v] = k - (ly.length - 1) / 2);
+  layers.forEach(setPos);
+  for(let it = 0; it < 8; it++){
+    const down = it % 2 === 0;
+    (down ? layers : layers.slice().reverse()).forEach(ly => {
+      const bc = new Map();
+      ly.forEach(v => { const nb = down ? inn[v] : out[v]; bc.set(v, nb.length ? nb.reduce((s, w) => s + pos[w], 0) / nb.length : pos[v]); });
+      ly.sort((p, q) => lane(p) - lane(q) || bc.get(p) - bc.get(q));
+      setPos(ly);
+    });
+  }
+  const lsz = layers.map(ly => Math.max(0, ...ly.map(v => ms(N[v]))));
+  const lst = []; let acc = 0;
+  lsz.forEach((s, i) => { lst[i] = acc; acc += s + gm; });
+  const lanes = [...new Set((o.lanes || []).concat(N.map((_, i) => lane(i))))].sort((a, b) => a - b);
+  const C = new Array(n).fill(0);
+  layers.forEach(ly => lanes.forEach(ln => {
+    const g = ly.filter(v => lane(v) === ln); let x = 0;
+    g.forEach((v, k) => { if(k) x += (cs(N[g[k - 1]]) + cs(N[v])) / 2 + gc; C[v] = x; });
+    g.forEach(v => C[v] -= x / 2);
+  }));
+  const nbs = i => inn[i].concat(out[i]).filter(w => lane(w) === lane(i));
+  for(let it = 0; it < 14; it++){
+    (it % 2 ? layers.slice().reverse() : layers).forEach(ly => lanes.forEach(ln => {
+      const g = ly.filter(v => lane(v) === ln); if(!g.length) return;
+      const des = g.map(v => { const nb = nbs(v); return nb.length ? nb.reduce((s, w) => s + C[w], 0) / nb.length : C[v]; });
+      const r = packLine(des, g.map(v => cs(N[v])), gc);
+      g.forEach((v, k) => C[v] = r[k]);
+    }));
+  }
+  const laneBox = {}; let off = 0;
+  lanes.forEach(ln => {
+    let lo = Infinity, hi = -Infinity;
+    N.forEach((v, i) => { if(lane(i) === ln){ lo = Math.min(lo, C[i] - cs(v) / 2); hi = Math.max(hi, C[i] + cs(v) / 2); } });
+    if(!isFinite(lo)){ lo = 0; hi = 0; }
+    const pad = o.lanePad || 0, size = Math.max(o.laneMin || 0, hi - lo + 2 * pad);
+    const shift = off + (size - (hi - lo)) / 2 - lo;
+    N.forEach((_, i) => { if(lane(i) === ln) C[i] += shift; });
+    laneBox[ln] = {start:off, size}; off += size + (o.laneGap || 0);
+  });
+  const res = new Map();
+  N.forEach((v, i) => { const m = o.alignStart ? lst[L[i]] + ms(v) / 2 : lst[L[i]] + lsz[L[i]] / 2; res.set(v.id, TB ? {cx:C[i], cy:m} : {cx:m, cy:C[i]}); });
+  return {pos:res, laneBox, mainSize:Math.max(0, acc - gm), crossSize:off};
+}
+function layoutEdges(d, nodeSet){
+  const res = [];
+  d.edges.forEach(ed => {
+    const k = edgeKind(ed); if(k === 'Anchor') return;
+    const s0 = shapeOf(d, ed.s), t0 = shapeOf(d, ed.t); if(!s0 || !t0) return;
+    const S = topOf(d, s0), T2 = topOf(d, t0);
+    if(!nodeSet.has(S.id) || !nodeSet.has(T2.id) || S === T2) return;
+    let a = S.id, b = T2.id;
+    if(k === 'Generalization' || k === 'Extend') [a, b] = [b, a];
+    if(k === 'Connector'){ const da = E(s0.el).dir, db = E(t0.el).dir; if(da === 'in' || db === 'out') [a, b] = [b, a]; }
+    res.push([a, b, k]);
+  });
+  return res;
+}
+function layoutDiagram(d, mode){
+  const geo = new Map(d.shapes.map(s => [s.id, {x:s.x, y:s.y, w:s.w, h:s.h}]));
+  const g = id => geo.get(id);
+  const moveTo = (sh, nx, ny) => { const a = g(sh.id), dx = nx - a.x, dy = ny - a.y; a.x = nx; a.y = ny; d.shapes.forEach(c => { if(c.parent === sh.id){ const b = g(c.id); b.x += dx; b.y += dy; } }); };
+  const centerTo = (sh, cx, cy) => { const a = g(sh.id); moveTo(sh, Math.round(cx / 5) * 5 - a.w / 2, Math.round(cy / 5) * 5 - a.h / 2); };
+  const tops = topShapes(d);
+  if(!tops.length) return geo;
+  const ox = Math.min(...tops.map(s => s.x)), oy = Math.min(...tops.map(s => s.y));
+  const comments = tops.filter(s => kindOfSh(s) === 'Comment');
+  const C0 = s => ({id:s.id, w:g(s.id).w, h:g(s.id).h, cx:s.x + s.w / 2, cy:s.y + s.h / 2});
+  let placeComments = true;
+
+  if(mode === 'tidy'){
+    tidy(d, geo, tops); placeComments = false;
+  } else if(d.dtype === 'uc' && mode.startsWith('uc')){
+    layoutUC(d, geo, mode, moveTo, centerTo);
+  } else if(mode === 'grid' || mode === 'circle'){
+    const nodes = tops.filter(s => !['Comment','Partition','Subject'].includes(kindOfSh(s)) && !(d.dtype === 'ibd' && kindOfSh(s) === 'Value'));
+    if(mode === 'grid'){
+      const sorted = nodes.slice().sort((a, b) => Math.round(a.y / 120) - Math.round(b.y / 120) || a.x - b.x);
+      const cols = Math.max(1, Math.ceil(Math.sqrt(sorted.length * 1.4)));
+      const cw = Math.max(...sorted.map(s => g(s.id).w)) + 60;
+      let y = 0;
+      for(let r = 0; r * cols < sorted.length; r++){
+        const row = sorted.slice(r * cols, r * cols + cols), rh = Math.max(...row.map(s => g(s.id).h));
+        row.forEach((s, c) => centerTo(s, c * cw + cw / 2, y + rh / 2));
+        y += rh + 60;
+      }
+    } else {
+      const cx0 = nodes.reduce((t, s) => t + s.x + s.w / 2, 0) / nodes.length, cy0 = nodes.reduce((t, s) => t + s.y + s.h / 2, 0) / nodes.length;
+      const sorted = nodes.slice().sort((a, b) => Math.atan2(a.y + a.h / 2 - cy0, a.x + a.w / 2 - cx0) - Math.atan2(b.y + b.h / 2 - cy0, b.x + b.w / 2 - cx0));
+      const per = sorted.reduce((t, s) => t + Math.hypot(g(s.id).w, g(s.id).h) + 30, 0);
+      const maxDiag = Math.max(...sorted.map(s => Math.hypot(g(s.id).w, g(s.id).h)));
+      const R = Math.max(160, per / (2 * Math.PI), sorted.length > 1 ? (maxDiag + 40) / (2 * Math.sin(Math.PI / sorted.length)) : 0);
+      sorted.forEach((s, i) => { const a = -Math.PI / 2 + i / sorted.length * Math.PI * 2; centerTo(s, R * Math.cos(a), R * Math.sin(a)); });
+    }
+    if(d.dtype === 'ibd') placeValues(d, geo, tops, centerTo);
+  } else {
+    const dir = mode === 'lr' ? 'LR' : 'TB';
+    const nodes = tops.filter(s => { const k = kindOfSh(s); return k !== 'Comment' && k !== 'Partition' && !(d.dtype === 'ibd' && k === 'Value'); });
+    if(d.dtype === 'act') nodes.forEach(s => { const k = kindOfSh(s); if(k === 'Fork' || k === 'Join'){ const a = g(s.id), Lg = Math.max(a.w, a.h, 80), t = Math.min(a.w, a.h); if(dir === 'TB'){ a.w = Lg; a.h = t; } else { a.w = t; a.h = Lg; } } });
+    const parts = d.dtype === 'act' && dir === 'TB' ? tops.filter(s => kindOfSh(s) === 'Partition').sort((a, b) => a.x - b.x) : [];
+    if(d.dtype === 'act' && dir === 'LR' && tops.some(s => kindOfSh(s) === 'Partition')) toast('Kulvarlar dikey olduğundan soldan sağa düzende kulvarlar yerinde bırakıldı.');
+    const nodeSet = new Set(nodes.map(s => s.id));
+    const eg = layoutEdges(d, nodeSet);
+    const gap = d.dtype === 'ibd' ? {gapMain:130, gapCross:60} : d.dtype === 'act' ? {gapMain:45, gapCross:50} : {gapMain:80, gapCross:40};
+    const mkN = () => nodes.map(s => {
+      const v = C0(s); const a = g(s.id); v.w = a.w; v.h = a.h;
+      if(parts.length){
+        let li = parts.findIndex(P => v.cx >= P.x && v.cx <= P.x + P.w && v.cy >= P.y && v.cy <= P.y + P.h);
+        if(li < 0){ let bd = Infinity; parts.forEach((P, k) => { const dd = Math.abs(P.x + P.w / 2 - v.cx); if(dd < bd){ bd = dd; li = k; } }); }
+        v.lane = li;
+      }
+      return v;
+    });
+    const opts = Object.assign({dir, alignStart:d.dtype !== 'act', lanes:parts.map((_, i) => i), lanePad:parts.length ? 30 : 0, laneMin:parts.length ? 200 : 0}, gap);
+    if(d.dtype === 'ibd') arrangeAllPorts(d, geo, dir);
+    let r = layered(mkN(), eg, opts);
+    r.pos.forEach((p, id) => centerTo(shapeOf(d, id), p.cx, p.cy));
+    if(d.dtype === 'ibd'){
+      arrangeAllPorts(d, geo, dir);
+      const N2 = mkN(); N2.forEach(v => { const p = r.pos.get(v.id); v.cx = p.cx; v.cy = p.cy; });
+      r = layered(N2, eg, opts);
+      r.pos.forEach((p, id) => centerTo(shapeOf(d, id), p.cx, p.cy));
+      arrangeAllPorts(d, geo, dir);
+      placeValues(d, geo, tops, centerTo);
+    }
+    if(parts.length){
+      const ys = nodes.map(s => [g(s.id).y, g(s.id).y + g(s.id).h]);
+      const y0 = Math.min(...ys.map(v => v[0])), y1 = Math.max(...ys.map(v => v[1]));
+      parts.forEach((P, k) => { const lb = r.laneBox[k]; const a = g(P.id); a.x = lb.start; a.w = lb.size; a.y = y0 - 58; a.h = (y1 - y0) + 88; });
+    }
+  }
+  if(placeComments && comments.length) placeCommentShapes(d, geo, comments, moveTo);
+  // keep diagram where it was
+  const t2 = topShapes(d);
+  const mx = Math.min(...t2.map(s => g(s.id).x)), my = Math.min(...t2.map(s => g(s.id).y));
+  const dx = Math.round((ox - mx) / G) * G, dy = Math.round((oy - my) / G) * G;
+  geo.forEach(a => { a.x += dx; a.y += dy; });
+  return geo;
+}
+function placeValues(d, geo, tops, centerTo){
+  const vals = tops.filter(s => kindOfSh(s) === 'Value'); if(!vals.length) return;
+  const others = tops.filter(s => !['Value','Comment'].includes(kindOfSh(s)));
+  const bottom = others.length ? Math.max(...others.map(s => geo.get(s.id).y + geo.get(s.id).h)) : 0;
+  const left = others.length ? Math.min(...others.map(s => geo.get(s.id).x)) : 0;
+  let x = left;
+  vals.forEach(s => { const a = geo.get(s.id); centerTo(s, x + a.w / 2, bottom + 60 + a.h / 2); x += a.w + 30; });
+}
+function placeCommentShapes(d, geo, comments, moveTo){
+  const others = topShapes(d).filter(s => kindOfSh(s) !== 'Comment');
+  if(!others.length) return;
+  const right = Math.max(...others.map(s => geo.get(s.id).x + geo.get(s.id).w)) + 60;
+  const topY = Math.min(...others.map(s => geo.get(s.id).y));
+  const des = comments.map(c => {
+    const ed = d.edges.find(x => edgeKind(x) === 'Anchor' && (x.s === c.id || x.t === c.id));
+    const o = ed && shapeOf(d, ed.s === c.id ? ed.t : ed.s);
+    if(o){ const a = geo.get(topOf(d, o).id); return a.y + a.h / 2; }
+    return 1e6;
+  });
+  const idx = comments.map((_, i) => i).sort((a, b) => des[a] - des[b]);
+  let lastY = topY;
+  const dv = idx.map(i => des[i] >= 1e6 ? (lastY += 1) : (lastY = des[i]));
+  const sizes = idx.map(i => geo.get(comments[i].id).h);
+  const r = packLine(dv, sizes, 20);
+  idx.forEach((i, k) => { const a = geo.get(comments[i].id); moveTo(comments[i], right, Math.max(topY, r[k] - a.h / 2)); });
+}
+function arrangeAllPorts(d, geo, dir){
+  topShapes(d).forEach(P => {
+    const ports = d.shapes.filter(c => c.parent === P.id); if(!ports.length) return;
+    const a = geo.get(P.id), pcx = a.x + a.w / 2, pcy = a.y + a.h / 2;
+    const info = ports.map(pt => {
+      const peers = [];
+      d.edges.forEach(ed => { if(ed.s === pt.id || ed.t === pt.id){ const o = shapeOf(d, ed.s === pt.id ? ed.t : ed.s); if(o){ const b = geo.get(o.id); peers.push([b.x + b.w / 2, b.y + b.h / 2]); } } });
+      const e = E(pt.el);
+      let side;
+      if(peers.length){ const px = peers.reduce((t, p) => t + p[0], 0) / peers.length; side = Math.abs(px - pcx) < 1 ? (e.dir === 'in' ? 'l' : 'r') : (px > pcx ? 'r' : 'l'); }
+      else side = e.dir === 'in' ? 'l' : e.dir === 'out' ? 'r' : (geo.get(pt.id).x + 8 < pcx ? 'l' : 'r');
+      const key = peers.length ? peers.reduce((t, p) => t + p[1], 0) / peers.length : geo.get(pt.id).y;
+      return {pt, side, key};
+    });
+    const L = info.filter(i => i.side === 'l').sort((p, q) => p.key - q.key), R = info.filter(i => i.side === 'r').sort((p, q) => p.key - q.key);
+    a.h = Math.max(a.h, snapv(44 + Math.max(L.length, R.length) * 24));
+    const place = (arr, x) => { const span = arr.length * 24, y0 = a.y + Math.max(46, (a.h - span) / 2 + 12); arr.forEach((i, k) => { const b = geo.get(i.pt.id); b.x = x - b.w / 2; b.y = y0 + k * 24 - b.h / 2; }); };
+    place(L, a.x); place(R, a.x + a.w);
+  });
+}
+function tidy(d, geo, tops){
+  const movable = tops.filter(s => !['Subject','Partition','Package'].includes(kindOfSh(s)));
+  const sh = (s, dx, dy) => { const a = geo.get(s.id); a.x += dx; a.y += dy; d.shapes.forEach(c => { if(c.parent === s.id){ const b = geo.get(c.id); b.x += dx; b.y += dy; } }); };
+  movable.forEach(s => { const a = geo.get(s.id); sh(s, snapv(a.x) - a.x, snapv(a.y) - a.y); });
+  const M0 = 20;
+  for(let it = 0; it < 120; it++){
+    let moved = false;
+    for(let i = 0; i < movable.length; i++) for(let j = i + 1; j < movable.length; j++){
+      const A = geo.get(movable[i].id), B = geo.get(movable[j].id);
+      if(!(A.x < B.x + B.w + M0 && B.x < A.x + A.w + M0 && A.y < B.y + B.h + M0 && B.y < A.y + A.h + M0)) continue;
+      const ox = Math.min(A.x + A.w, B.x + B.w) - Math.max(A.x, B.x) + M0, oy = Math.min(A.y + A.h, B.y + B.h) - Math.max(A.y, B.y) + M0;
+      moved = true;
+      if(ox < oy){ const s = (A.x + A.w / 2 <= B.x + B.w / 2) ? 1 : -1, m = Math.ceil(ox / 2 / G) * G; sh(movable[i], -s * m, 0); sh(movable[j], s * m, 0); }
+      else { const s = (A.y + A.h / 2 <= B.y + B.h / 2) ? 1 : -1, m = Math.ceil(oy / 2 / G) * G; sh(movable[i], 0, -s * m); sh(movable[j], 0, s * m); }
+    }
+    if(!moved) break;
+  }
+  // containers grow to enclose what they contained before
+  tops.filter(s => ['Subject','Partition'].includes(kindOfSh(s))).forEach(Cs => {
+    const inside = movable.filter(s => { const cx = s.x + s.w / 2, cy = s.y + s.h / 2; return cx >= Cs.x && cx <= Cs.x + Cs.w && cy >= Cs.y && cy <= Cs.y + Cs.h; });
+    if(!inside.length) return;
+    const a = geo.get(Cs.id);
+    const x0 = Math.min(...inside.map(s => geo.get(s.id).x)) - 30, y0 = Math.min(...inside.map(s => geo.get(s.id).y)) - 50;
+    const x1 = Math.max(...inside.map(s => geo.get(s.id).x + geo.get(s.id).w)) + 30, y1 = Math.max(...inside.map(s => geo.get(s.id).y + geo.get(s.id).h)) + 30;
+    const nx = Math.min(a.x, x0), ny = Math.min(a.y, y0);
+    a.w = Math.max(a.x + a.w, x1) - nx; a.h = Math.max(a.y + a.h, y1) - ny; a.x = nx; a.y = ny;
+  });
+}
+function layoutUC(d, geo, mode, moveTo, centerTo){
+  const tops = topShapes(d), g = id => geo.get(id);
+  const actors = tops.filter(s => kindOfSh(s) === 'Actor'), ucs = tops.filter(s => kindOfSh(s) === 'UseCase');
+  const subs = tops.filter(s => kindOfSh(s) === 'Subject').sort((a, b) => a.y - b.y || a.x - b.x);
+  const grpOf = u => {
+    let k = subs.findIndex(S => E(S.el).id === E(u.el).owner);
+    if(k < 0){ const cx = u.x + u.w / 2, cy = u.y + u.h / 2; k = subs.findIndex(S => cx >= S.x && cx <= S.x + S.w && cy >= S.y && cy <= S.y + S.h); }
+    return k;
+  };
+  const groups = subs.map(S => ({S, u:[]})), free = {S:null, u:[]};
+  ucs.forEach(u => { let k = grpOf(u); if(k < 0 && subs.length === 1 && (!E(E(u.el).owner) || E(E(u.el).owner).kind !== 'Subject')) k = 0; (k < 0 ? free : groups[k]).u.push(u); });
+  if(free.u.length) groups.push(free);
+  const all = layoutEdges(d, new Set(tops.map(s => s.id)));
+  const ucSet = new Set(ucs.map(u => u.id)), acSet = new Set(actors.map(a => a.id));
+  const assoc = all.filter(([a, b]) => (acSet.has(a) && ucSet.has(b)) || (acSet.has(b) && ucSet.has(a))).map(([a, b]) => acSet.has(a) ? [a, b] : [b, a]);
+  const ucE = all.filter(([a, b]) => ucSet.has(a) && ucSet.has(b));
+  const keyY = u => { const ys = assoc.filter(x => x[1] === u.id).map(x => { const s = shapeOf(d, x[0]); return s.y + s.h / 2; }); return ys.length ? ys.reduce((p, q) => p + q, 0) / ys.length : u.y + u.h / 2; };
+  let y = 0;
+  const pad = 40, top = 56;
+  groups.forEach(G0 => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    if(G0.u.length){
+      let pos = new Map();
+      if(mode === 'ucGrid'){
+        const srt = G0.u.slice().sort((a, b) => keyY(a) - keyY(b));
+        const cols = Math.max(1, Math.round(Math.sqrt(srt.length / 1.5)) || 1);
+        const cw = Math.max(...srt.map(u => g(u.id).w)) + 40, rh = Math.max(...srt.map(u => g(u.id).h)) + 30;
+        srt.forEach((u, i) => pos.set(u.id, {cx:(i % cols) * cw, cy:Math.floor(i / cols) * rh}));
+      } else {
+        const ids = new Set(G0.u.map(u => u.id));
+        const N = G0.u.map(u => ({id:u.id, w:g(u.id).w, h:g(u.id).h, cx:u.x + u.w / 2, cy:keyY(u)}));
+        pos = layered(N, ucE.filter(([a, b]) => ids.has(a) && ids.has(b)), {dir:'LR', gapMain:70, gapCross:28}).pos;
+      }
+      G0.u.forEach(u => { const p = pos.get(u.id), a = g(u.id); x0 = Math.min(x0, p.cx - a.w / 2); x1 = Math.max(x1, p.cx + a.w / 2); y0 = Math.min(y0, p.cy - a.h / 2); y1 = Math.max(y1, p.cy + a.h / 2); });
+      G0.u.forEach(u => { const p = pos.get(u.id); centerTo(u, p.cx - x0, p.cy - y0 + y + top); });
+    } else { x0 = 0; x1 = 160; y0 = 0; y1 = 60; }
+    const w = Math.max(220, x1 - x0 + 2 * pad), h = (y1 - y0) + top + pad;
+    if(G0.S){ const a = g(G0.S.id); a.x = -pad - Math.max(0, (w - 2 * pad - (x1 - x0)) / 2); a.y = y; a.w = w; a.h = h; }
+    y += (G0.S ? h : (y1 - y0) + top) + 50;
+  });
+  if(!actors.length) return;
+  const boxL = Math.min(...tops.filter(s => kindOfSh(s) !== 'Actor').map(s => g(s.id).x));
+  const boxR = Math.max(...tops.filter(s => kindOfSh(s) !== 'Actor' && kindOfSh(s) !== 'Comment').map(s => g(s.id).x + g(s.id).w));
+  const desired = a => { const ys = assoc.filter(x => x[0] === a.id).map(x => { const b = g(x[1]); return b.y + b.h / 2; }); return ys.length ? ys.reduce((p, q) => p + q, 0) / ys.length : null; };
+  let left = actors.slice(), right = [];
+  if(mode === 'ucBoth' && actors.length > 1){
+    const cnt = a => assoc.filter(x => x[0] === a.id).length;
+    const srt = actors.slice().sort((a, b) => cnt(b) - cnt(a) || a.y - b.y);
+    const half = Math.ceil(srt.length / 2);
+    left = srt.slice(0, half); right = srt.slice(half);
+  }
+  const col = (arr, xc) => {
+    let fallback = 0;
+    const des = arr.map(a => { const v = desired(a); return v == null ? 1e5 + fallback++ : v; });
+    const idx = arr.map((_, i) => i).sort((p, q) => des[p] - des[q]);
+    const sizes = idx.map(i => g(arr[i].id).h + 24);
+    let last = 0; const dv = idx.map(i => des[i] >= 1e5 ? (last += 120) : (last = des[i]));
+    const r = packLine(dv, sizes, 20);
+    idx.forEach((i, k) => centerTo(arr[i], xc, r[k] - 10));
+  };
+  const aw = Math.max(...actors.map(a => g(a.id).w));
+  col(left, boxL - 150 - aw / 2);
+  if(right.length) col(right, boxR + 150 + aw / 2);
+}
+function applyGeo(d, geo, label){
+  snap();
+  d.edges.forEach(ed => { delete ed.mx; delete ed.my; });
+  const from = new Map(d.shapes.map(s => [s.id, {x:s.x, y:s.y, w:s.w, h:s.h}]));
+  const t0 = performance.now(), dur = 340;
+  const fin = () => { d.shapes.forEach(s => { const b = geo.get(s.id); if(b){ s.x = b.x; s.y = b.y; s.w = b.w; s.h = b.h; } }); afterChange(); fit(); if(label) toast(label); };
+  const step = now => {
+    if(cur() !== d) return fin();
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    d.shapes.forEach(s => { const a = from.get(s.id), b = geo.get(s.id); if(!a || !b) return; s.x = a.x + (b.x - a.x) * e; s.y = a.y + (b.y - a.y) * e; s.w = a.w + (b.w - a.w) * e; s.h = a.h + (b.h - a.h) * e; });
+    renderDiagram();
+    if(k < 1) requestAnimationFrame(step); else fin();
+  };
+  requestAnimationFrame(step);
+}
+function runLayout(mode){
+  const d = cur(); if(!d) return;
+  if(!topShapes(d).length) return toast('Diyagram boş');
+  const it = (LAYOUTS[d.dtype] || []).find(x => x[0] === mode);
+  applyGeo(d, layoutDiagram(d, mode), (it ? it[1].split(' (')[0] : 'Düzen') + ' uygulandı — Ctrl+Z ile geri alabilirsiniz');
+}
+function alignSel(how){
+  const d = cur(); if(!d) return;
+  const sel = d.shapes.filter(s => ST.sel.has(s.id) && !s.parent);
+  if(sel.length < 2) return toast('Hizalama için en az iki şekil seçin (Shift+tık veya alan seçimi)');
+  const geo = new Map(d.shapes.map(s => [s.id, {x:s.x, y:s.y, w:s.w, h:s.h}]));
+  const mv = (s, nx, ny) => { const a = geo.get(s.id), dx = nx - a.x, dy = ny - a.y; a.x = nx; a.y = ny; d.shapes.forEach(c => { if(c.parent === s.id){ const b = geo.get(c.id); b.x += dx; b.y += dy; } }); };
+  const x0 = Math.min(...sel.map(s => s.x)), x1 = Math.max(...sel.map(s => s.x + s.w)), y0 = Math.min(...sel.map(s => s.y)), y1 = Math.max(...sel.map(s => s.y + s.h));
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  switch(how){
+    case 'left': sel.forEach(s => mv(s, x0, s.y)); break;
+    case 'right': sel.forEach(s => mv(s, x1 - s.w, s.y)); break;
+    case 'hc': sel.forEach(s => mv(s, cx - s.w / 2, s.y)); break;
+    case 'top': sel.forEach(s => mv(s, s.x, y0)); break;
+    case 'bottom': sel.forEach(s => mv(s, s.x, y1 - s.h)); break;
+    case 'vc': sel.forEach(s => mv(s, s.x, cy - s.h / 2)); break;
+    case 'dh': { const srt = sel.slice().sort((a, b) => a.x - b.x), tot = srt.reduce((t, s) => t + s.w, 0), gap = (x1 - x0 - tot) / (srt.length - 1); let x = x0; srt.forEach(s => { mv(s, x, s.y); x += s.w + gap; }); break; }
+    case 'dv': { const srt = sel.slice().sort((a, b) => a.y - b.y), tot = srt.reduce((t, s) => t + s.h, 0), gap = (y1 - y0 - tot) / (srt.length - 1); let y = y0; srt.forEach(s => { mv(s, s.x, y); y += s.h + gap; }); break; }
+    case 'size': {
+      const ok = sel.filter(s => !UNNAMED.has(kindOfSh(s)) && kindOfSh(s) !== 'Port');
+      const w = Math.max(...ok.map(s => s.w)), h = Math.max(...ok.map(s => s.h));
+      ok.forEach(s => { const a = geo.get(s.id); a.w = w; a.h = h; });
+      break;
+    }
+  }
+  applyGeo(d, geo, null);
+}
+function layoutMenuItems(){
+  const d = cur(); if(!d) return [{h:'Önce bir diyagram açın'}];
+  const it = [{h:'Otomatik düzen — ' + d.dtype.toUpperCase()}];
+  LAYOUTS[d.dtype].forEach(([m, t], i) => it.push({t, k:i === 0 ? 'Ctrl+Shift+L' : '', f:() => runLayout(m)}));
+  const n = d.shapes.filter(s => ST.sel.has(s.id) && !s.parent).length;
+  it.push({h:'Hizala / dağıt (seçili ' + n + ')'});
+  [['left','Sola hizala'], ['hc','Yatay ortala'], ['right','Sağa hizala'], ['top','Üste hizala'], ['vc','Dikey ortala'], ['bottom','Alta hizala'], ['dh','Yatay eşit dağıt'], ['dv','Dikey eşit dağıt'], ['size','Aynı boyuta getir']]
+    .forEach(([k, t]) => it.push({t, dis:n < 2, f:() => alignSel(k)}));
+  return it;
+}
+
+/* ================= TEXT ================= */
+const mctx = document.createElement('canvas').getContext('2d');
+function tw(s, bold, size){ mctx.font = (bold ? 'bold ' : '') + (size || 12) + 'px ' + FF; return mctx.measureText(s).width; }
+function wrap(s, maxW, bold, size){
+  const out = [];
+  String(s == null ? '' : s).split('\n').forEach(para => {
+    let line = '';
+    para.split(/\s+/).filter(Boolean).forEach(w => {
+      const cand = line ? line + ' ' + w : w;
+      if(tw(cand, bold, size) <= maxW){ line = cand; return; }
+      if(line) out.push(line);
+      line = '';
+      if(tw(w, bold, size) <= maxW){ line = w; return; }
+      let chunk = '';
+      for(const ch of w){ if(chunk && tw(chunk + ch, bold, size) > maxW){ out.push(chunk); chunk = ''; } chunk += ch; }
+      line = chunk;
+    });
+    out.push(line);
+  });
+  return out;
+}
+function T(lines, x, y, o){
+  o = o || {}; if(!Array.isArray(lines)) lines = [lines];
+  const sz = o.size || 12, lh = o.lh || Math.round(sz * 1.27);
+  let s = `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-family="${FF}" font-size="${sz}" text-anchor="${o.anchor || 'middle'}" fill="${o.fill || '#151515'}"` +
+    (o.bold ? ' font-weight="bold"' : '') + (o.italic ? ' font-style="italic"' : '') +
+    (o.halo ? ' stroke="#ffffff" stroke-width="3" stroke-linejoin="round" paint-order="stroke"' : '') + '>';
+  lines.forEach((l, i) => { s += `<tspan x="${x.toFixed(1)}" dy="${i ? lh : 0}">${esc(l)}</tspan>`; });
+  return s + '</text>';
+}
+function Tc(lines, cx, cy, o){ o = o || {}; const sz = o.size || 12, lh = o.lh || Math.round(sz * 1.27); return T(lines, cx, cy - (lines.length - 1) * lh / 2 + sz * 0.36, o); }
+
+/* ================= SHAPE DRAWING ================= */
+function drawShape(sh, e, d, SM, exp){
+  const x = sh.x, y = sh.y, k = e.kind;
+  const fill = sh.fill || FILL[k] || '#fff';
+  const SW = `stroke="${STROKE}" stroke-width="1.2"`;
+  let s = '';
+  switch(k){
+    case 'Block': {
+      const ch = kidsOf(e.id);
+      const comps = [];
+      const parts = ch.filter(c => c.kind === 'Part' && !c.shared).map(partLabel);
+      const refs = ch.filter(c => c.kind === 'Part' && c.shared).map(partLabel);
+      const vals = ch.filter(c => c.kind === 'Value').map(valLabel);
+      const ports = ch.filter(c => c.kind === 'Port').map(portLabel);
+      if(parts.length) comps.push(['parts', parts]);
+      if(refs.length) comps.push(['references', refs]);
+      if(vals.length) comps.push(['values', vals]);
+      if(ports.length) comps.push(['ports', ports]);
+      let needW = 0; comps.forEach(c => c[1].forEach(t => { needW = Math.max(needW, tw(t) + 16); }));
+      if(sh.w < needW) sh.w = Math.ceil(needW / G) * G;
+      const io = iconOf(e), large = io && io.mode === 'large', top = y + (large ? 42 : 0);
+      if(io && !large && sh.w < 140) sh.w = 140;
+      const W = sh.w, lines = wrap(e.name, W - 12 - (io && !large ? 48 : 0), true);
+      let body = io ? (large ? iconSVG(io.ic, x + W / 2 - 17, y + 7, 34, io.col) : iconSVG(io.ic, x + 6, y + 6, 22, io.col)) : '';
+      body += T('«block»', x + W / 2, top + 15, {italic:1, size:11});
+      body += T(lines, x + W / 2, top + 30, {bold:1});
+      let yy = top + 30 + (lines.length - 1) * 15 + 9;
+      comps.forEach(c => {
+        body += `<line x1="${x}" y1="${yy}" x2="${x + W}" y2="${yy}" ${SW}/>`;
+        body += T(c[0], x + W / 2, yy + 14, {italic:1, size:11, fill:'#444'});
+        body += T(c[1], x + 7, yy + 29, {anchor:'start'});
+        yy += 29 + (c[1].length - 1) * 15 + 8;
+      });
+      const needH = Math.ceil((yy - y + 2) / G) * G;
+      if(sh.h < needH) sh.h = needH;
+      s = `<rect x="${x}" y="${y}" width="${W}" height="${sh.h}" fill="${fill}" ${SW}/>` + body;
+      break;
+    }
+    case 'Package': {
+      const tabW = Math.min(sh.w * 0.6, Math.max(60, tw(e.name, true) + 16));
+      s = `<rect x="${x}" y="${y}" width="${tabW}" height="18" fill="${fill}" ${SW}/><rect x="${x}" y="${y + 18}" width="${sh.w}" height="${sh.h - 18}" fill="${fill}" ${SW}/>`;
+      s += T(e.name, x + 8, y + 14, {anchor:'start', bold:1});
+      break;
+    }
+    case 'Actor': {
+      const cx = x + sh.w / 2, fh = Math.max(30, sh.h - 24), sc = fh / 66;
+      const hy = y + 10 * sc;
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="transparent" stroke="none"/>`;
+      const aio = iconOf(e);
+      if(aio){ const sz = Math.min(sh.w + 16, fh); s += iconSVG(aio.ic, cx - sz / 2, y + (fh - sz) / 2, sz, aio.col); }
+      else s += `<circle cx="${cx}" cy="${hy}" r="${9 * sc}" fill="${sh.fill || '#fff'}" ${SW}/>`;
+      if(!aio) s += `<path d="M${cx},${hy + 9 * sc} V${y + 44 * sc} M${cx - 16 * sc},${y + 25 * sc} H${cx + 16 * sc} M${cx},${y + 44 * sc} L${cx - 14 * sc},${y + 64 * sc} M${cx},${y + 44 * sc} L${cx + 14 * sc},${y + 64 * sc}" fill="none" ${SW}/>`;
+      s += T(wrap(e.name, Math.max(110, sh.w + 50), false), cx, y + fh + 16, {halo:1});
+      break;
+    }
+    case 'UseCase': {
+      s = `<ellipse cx="${x + sh.w / 2}" cy="${y + sh.h / 2}" rx="${sh.w / 2}" ry="${sh.h / 2}" fill="${fill}" ${SW}/>`;
+      s += Tc(wrap(e.name, sh.w * 0.74), x + sh.w / 2, y + sh.h / 2);
+      break;
+    }
+    case 'Subject': {
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/>`;
+      s += T(wrap(e.name, sh.w - 16, true), x + sh.w / 2, y + 20, {bold:1});
+      break;
+    }
+    case 'Part': case 'Object': {
+      const lbl = k === 'Part' ? (e.name + (e.type && E(e.type) ? ' : ' + typeName(e.type) : '')) : ((e.name || '') + (e.type && E(e.type) ? ' : ' + typeName(e.type) : ''));
+      const dash = (k === 'Part' && e.shared) ? ' stroke-dasharray="6 3"' : '';
+      const io = iconOf(e), iw = io ? 44 : 0;
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}${dash}/>`;
+      if(io) s += iconSVG(io.ic, x + 5, y + 5, 18, io.col);
+      if(k === 'Part' && d.shapes.some(c => c.parent === sh.id)) s += T(wrap(lbl, sh.w - 14 - iw, true).slice(0, 2), x + sh.w / 2, y + 18, {bold:1});
+      else s += Tc(wrap(lbl, sh.w - 14 - iw, k === 'Part'), x + sh.w / 2, y + Math.min(sh.h / 2, 26), {bold:k === 'Part'});
+      if(e.mult) s += T('[' + e.mult + ']', x + sh.w - 6, y + 14, {anchor:'end', size:11, fill:'#444'});
+      break;
+    }
+    case 'Value': {
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="8" fill="${fill}" ${SW}/>`;
+      s += Tc(wrap(valLabel(e), sh.w - 12), x + sh.w / 2, y + sh.h / 2);
+      break;
+    }
+    case 'Port': {
+      const P = sh.parent ? SM.get(sh.parent) : null;
+      const side = P ? portSide(sh, P) : 't';
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/>`;
+      const cx = x + sh.w / 2, cy = y + sh.h / 2;
+      if(e.dir === 'in' || e.dir === 'out'){
+        let v = {l:[1,0], r:[-1,0], t:[0,1], b:[0,-1]}[side];
+        if(e.dir === 'out') v = [-v[0], -v[1]];
+        const n = [-v[1], v[0]];
+        const tip = [cx + v[0] * 4, cy + v[1] * 4], b1 = [cx - v[0] * 4 + n[0] * 4, cy - v[1] * 4 + n[1] * 4], b2 = [cx - v[0] * 4 - n[0] * 4, cy - v[1] * 4 - n[1] * 4];
+        s += `<polygon points="${tip.join(',')} ${b1.join(',')} ${b2.join(',')}" fill="#333"/>`;
+      } else if(e.dir === 'inout'){
+        s += `<path d="M${cx - 4},${cy} H${cx + 4} M${cx},${cy - 4} V${cy + 4}" stroke="#333" stroke-width="1.4"/>`;
+      }
+      const lbl = e.name + (e.type && E(e.type) ? ' : ' + typeName(e.type) : '');
+      const o = {size:11, halo:1};
+      if(!P) s += T(lbl, x + sh.w + 4, y + sh.h / 2 + 4, Object.assign({anchor:'start'}, o));
+      else if(side === 'l') s += T(lbl, x + sh.w + 4, y + sh.h / 2 + 4, Object.assign({anchor:'start'}, o));
+      else if(side === 'r') s += T(lbl, x - 4, y + sh.h / 2 + 4, Object.assign({anchor:'end'}, o));
+      else if(side === 't') s += T(lbl, x + sh.w / 2, y + sh.h + 12, o);
+      else s += T(lbl, x + sh.w / 2, y - 5, o);
+      break;
+    }
+    case 'Action': {
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="12" fill="${fill}" ${SW}/>`;
+      s += Tc(wrap(e.name, sh.w - 16), x + sh.w / 2, y + sh.h / 2);
+      if(e.behavior && E(e.behavior)){
+        const rx = x + sh.w - 16, ry = y + sh.h - 14;
+        s += `<path d="M${rx + 5},${ry} V${ry + 9} M${rx},${ry + 9} V${ry + 4} H${rx + 10} V${ry + 9}" fill="none" stroke="#333" stroke-width="1.1"/>`;
+      }
+      break;
+    }
+    case 'Initial': s = `<circle cx="${x + sh.w / 2}" cy="${y + sh.h / 2}" r="${Math.min(sh.w, sh.h) / 2}" fill="#222" stroke="#222"/>`; break;
+    case 'Final': {
+      const r = Math.min(sh.w, sh.h) / 2;
+      s = `<circle cx="${x + sh.w / 2}" cy="${y + sh.h / 2}" r="${r}" fill="#fff" ${SW}/><circle cx="${x + sh.w / 2}" cy="${y + sh.h / 2}" r="${r - 5}" fill="#222"/>`; break;
+    }
+    case 'FlowFinal': {
+      const r = Math.min(sh.w, sh.h) / 2, cx = x + sh.w / 2, cy = y + sh.h / 2, q = r * 0.707;
+      s = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" ${SW}/><path d="M${cx - q},${cy - q} L${cx + q},${cy + q} M${cx + q},${cy - q} L${cx - q},${cy + q}" ${SW}/>`; break;
+    }
+    case 'Decision': case 'Merge': {
+      const cx = x + sh.w / 2, cy = y + sh.h / 2;
+      s = `<polygon points="${cx},${y} ${x + sh.w},${cy} ${cx},${y + sh.h} ${x},${cy}" fill="${sh.fill || '#fff'}" ${SW}/>`;
+      if(e.name) s += T(e.name, x + sh.w + 4, y - 2, {anchor:'start', size:11, halo:1});
+      break;
+    }
+    case 'Fork': case 'Join': s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="#222" stroke="#222"/>`; break;
+    case 'Partition': {
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/><rect x="${x}" y="${y}" width="${sh.w}" height="28" fill="#eef1f5" ${SW}/>`;
+      const rep = e.represents && E(e.represents) ? ' : ' + typeName(e.represents) : '';
+      s += Tc(wrap(e.name + rep, sh.w - 12, true).slice(0, 1), x + sh.w / 2, y + 14, {bold:1});
+      break;
+    }
+    case 'Comment': {
+      const f = 12;
+      s = `<path d="M${x},${y} H${x + sh.w - f} L${x + sh.w},${y + f} V${y + sh.h} H${x} Z M${x + sh.w - f},${y} V${y + f} H${x + sh.w}" fill="${fill}" ${SW}/>`;
+      const lines = wrap(e.name, sh.w - 16);
+      const needH = snapv(lines.length * 15 + 20);
+      if(sh.h < needH) sh.h = needH;
+      s += T(lines, x + 8, y + 18, {anchor:'start'});
+      break;
+    }
+    default: s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="#fff" ${SW}/>` + Tc([e.name], x + sh.w / 2, y + sh.h / 2);
+  }
+  if(!exp && e.kind !== 'Port' && !UNNAMED.has(e.kind) && !(e.kind === 'Action' && e.behavior && E(e.behavior)) && navTargets(e, d.id).length){
+    const ix = e.kind === 'Actor' ? sh.x + sh.w - 4 : sh.x + sh.w - 19, iy = e.kind === 'Actor' ? sh.y : (e.kind === 'UseCase' ? sh.y + sh.h - 22 : sh.y + sh.h - 15);
+    const ux = e.kind === 'UseCase' ? sh.x + sh.w / 2 - 7 : ix;
+    s += `<g class="navi"><title>Çift tık: alt diyagramı aç</title><rect x="${ux}" y="${iy}" width="15" height="11" rx="1.5" fill="#fff" stroke="#2d7ff9" stroke-width="1"/><path d="M${ux + 3},${iy + 3.5} h5 M${ux + 3},${iy + 6.5} h9 M${ux + 9},${iy + 3.5} l3,0" stroke="#2d7ff9" stroke-width="1.2"/></g>`;
+  }
+  return `<g data-sid="${sh.id}">${s}</g>`;
+}
+
+/* ================= EDGE GEOMETRY ================= */
+function bx(sh){ const e = E(sh.el), k = e ? e.kind : ''; return {x:sh.x, y:sh.y, w:sh.w, h:sh.h, cx:sh.x + sh.w / 2, cy:sh.y + sh.h / 2, hw:sh.w / 2, hh:sh.h / 2, f:ELL.has(k) ? 'e' : (DIA.has(k) ? 'd' : 'r')}; }
+function clipT(b, dx, dy){
+  const ax = Math.abs(dx) || 1e-9, ay = Math.abs(dy) || 1e-9;
+  if(b.f === 'e') return 1 / Math.sqrt((dx / b.hw) ** 2 + (dy / b.hh) ** 2);
+  if(b.f === 'd') return 1 / (ax / b.hw + ay / b.hh);
+  return Math.min(b.hw / ax, b.hh / ay);
+}
+function sideX(b, y, dir){ const dy = y - b.cy; let off = b.hw; if(b.f === 'e') off = b.hw * Math.sqrt(Math.max(0, 1 - (dy / b.hh) ** 2)); else if(b.f === 'd') off = b.hw * Math.max(0, 1 - Math.abs(dy) / b.hh); return b.cx + dir * off; }
+function sideY(b, x, dir){ const dx = x - b.cx; let off = b.hh; if(b.f === 'e') off = b.hh * Math.sqrt(Math.max(0, 1 - (dx / b.hw) ** 2)); else if(b.f === 'd') off = b.hh * Math.max(0, 1 - Math.abs(dx) / b.hw); return b.cy + dir * off; }
+function straight(A, B){
+  const dx = B.cx - A.cx, dy = B.cy - A.cy;
+  if(!dx && !dy) return [{x:A.cx, y:A.cy}, {x:B.cx, y:B.cy + 0.01}];
+  const ta = clipT(A, dx, dy), tb = clipT(B, -dx, -dy);
+  return [{x:A.cx + dx * ta, y:A.cy + dy * ta}, {x:B.cx - dx * tb, y:B.cy - dy * tb}];
+}
+function edgeGeom(S, T2, ed){
+  const A = bx(S), B = bx(T2);
+  if(ed.route === 'straight') return straight(A, B);
+  let hd = 0, hg = 0, vd = 0, vg = 0;
+  if(B.x >= A.x + A.w){ hd = 1; hg = B.x - A.x - A.w; } else if(A.x >= B.x + B.w){ hd = -1; hg = A.x - B.x - B.w; }
+  if(B.y >= A.y + A.h){ vd = 1; vg = B.y - A.y - A.h; } else if(A.y >= B.y + B.h){ vd = -1; vg = A.y - B.y - B.h; }
+  const mode = hd && (!vd || hg >= vg) ? 'h' : (vd ? 'v' : 's');
+  if(mode === 's') return straight(A, B);
+  if(mode === 'h'){
+    const lo = Math.max(A.y, B.y), hi = Math.min(A.y + A.h, B.y + B.h);
+    if(hi - lo > 4 && ed.mx == null){ const y = (lo + hi) / 2; return [{x:sideX(A, y, hd), y}, {x:sideX(B, y, -hd), y}]; }
+    const sx = sideX(A, A.cy, hd), tx = sideX(B, B.cy, -hd), mx = ed.mx != null ? ed.mx : snapv((sx + tx) / 2);
+    return [{x:sx, y:A.cy}, {x:mx, y:A.cy}, {x:mx, y:B.cy}, {x:tx, y:B.cy}];
+  }
+  const lo = Math.max(A.x, B.x), hi = Math.min(A.x + A.w, B.x + B.w);
+  if(hi - lo > 4 && ed.my == null){ const x = (lo + hi) / 2; return [{x, y:sideY(A, x, vd)}, {x, y:sideY(B, x, -vd)}]; }
+  const sy = sideY(A, A.cx, vd), ty = sideY(B, B.cx, -vd), my = ed.my != null ? ed.my : snapv((sy + ty) / 2);
+  return [{x:A.cx, y:sy}, {x:A.cx, y:my}, {x:B.cx, y:my}, {x:B.cx, y:ty}];
+}
+function head(type, p, q, sc){
+  sc = sc || 1;
+  const dx = p.x - q.x, dy = p.y - q.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+  const P = (a, b) => (p.x - ux * a * sc + nx * b * sc).toFixed(1) + ',' + (p.y - uy * a * sc + ny * b * sc).toFixed(1);
+  const tip = p.x.toFixed(1) + ',' + p.y.toFixed(1);
+  switch(type){
+    case 'open': return `<polyline points="${P(11, 5)} ${tip} ${P(11, -5)}" fill="none" stroke="${STROKE}" stroke-width="1.3"/>`;
+    case 'tri': return `<polygon points="${tip} ${P(14, 8)} ${P(14, -8)}" fill="#fff" stroke="${STROKE}" stroke-width="1.2"/>`;
+    case 'fd': return `<polygon points="${tip} ${P(8, 5)} ${P(16, 0)} ${P(8, -5)}" fill="${STROKE}" stroke="${STROKE}" stroke-width="1"/>`;
+    case 'hd': return `<polygon points="${tip} ${P(8, 5)} ${P(16, 0)} ${P(8, -5)}" fill="#fff" stroke="${STROKE}" stroke-width="1.2"/>`;
+  }
+  return '';
+}
+function edgeKind(ed){ const r = ed.el ? E(ed.el) : null; return r ? r.kind : ed.kind; }
+function drawEdge(d, ed, SM, pts, exp){
+  const r = ed.el ? E(ed.el) : null, kind = edgeKind(ed), st = ER[kind] || {};
+  const dstr = 'M' + pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' L');
+  let s = `<g data-eid="${ed.id}">`;
+  if(!exp) s += `<path d="${dstr}" fill="none" stroke="#000" stroke-opacity="0" stroke-width="12" pointer-events="stroke"/>`;
+  s += `<path d="${dstr}" fill="none" stroke="${STROKE}" stroke-width="${st.dash === 2 ? 1 : 1.2}"${st.dash ? ' stroke-dasharray="' + (st.dash === 2 ? '3 3' : '6 4') + '"' : ''}/>`;
+  const n = pts.length;
+  if(st.tgt) s += head(st.tgt, pts[n - 1], pts[n - 2]);
+  if(st.src) s += head(st.src, pts[0], pts[1]);
+  const lab = [];
+  if(st.st) lab.push(st.st);
+  if(r && r.name) lab.push(r.name);
+  if(r && r.guard) lab.push('[' + r.guard + ']');
+  if(lab.length){
+    const a = n === 4 ? pts[1] : pts[0], b = n === 4 ? pts[2] : pts[1];
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, vert = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
+    s += vert ? T(lab.join(' '), mx + 6, my + 4, {anchor:'start', size:11, halo:1}) : T(lab.join(' '), mx, my - 6, {size:11, halo:1});
+  }
+  if(r && (kind === 'Composition' || kind === 'Aggregation') && E(r.part)){
+    const p = E(r.part), q = pts[n - 1], o = pts[n - 2];
+    const dx = q.x - o.x, dy = q.y - o.y, L = Math.hypot(dx, dy) || 1;
+    const lx = q.x - dx / L * 16 + (-dy / L) * 10, ly = q.y - dy / L * 16 + (dx / L) * 10;
+    s += T(p.name + (p.mult ? ' [' + p.mult + ']' : ''), lx, ly + 4, {anchor:Math.abs(dy) > Math.abs(dx) ? 'start' : 'middle', size:11, halo:1, fill:'#333'});
+  }
+  return s + '</g>';
+}
+
+/* ================= DIAGRAM RENDER ================= */
+function diagramSVG(d, exp){
+  const SM = new Map(d.shapes.map(s => [s.id, s]));
+  const cont = [], norm = [], ports = [];
+  d.shapes.forEach(sh => {
+    const e = E(sh.el); if(!e) return;
+    const str = drawShape(sh, e, d, SM, exp);
+    (CONT.has(e.kind) ? cont : (e.kind === 'Port' && sh.parent ? ports : norm)).push(str);
+  });
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const grow = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
+  d.shapes.forEach(sh => {
+    const e = E(sh.el); if(!e) return;
+    grow(sh.x, sh.y); grow(sh.x + sh.w, sh.y + sh.h);
+    if(e.kind === 'Port'){ const L = tw(e.name + (e.type ? ' : ' + typeName(e.type) : ''), false, 11); grow(sh.x - L - 6, sh.y - 14); grow(sh.x + sh.w + L + 6, sh.y + sh.h + 14); }
+    if(e.kind === 'Actor'){ grow(sh.x - 30, sh.y); grow(sh.x + sh.w + 30, sh.y + sh.h + 14); }
+  });
+  let edges = '';
+  d.edges.forEach(ed => {
+    const S = SM.get(ed.s), T2 = SM.get(ed.t); if(!S || !T2) return;
+    if(ed.el && !E(ed.el)) return;
+    const pts = edgeGeom(S, T2, ed); ed._pts = pts;
+    pts.forEach(p => grow(p.x, p.y));
+    edges += drawEdge(d, ed, SM, pts, exp);
+  });
+  let frame = '', bbox = null;
+  if(isFinite(x0)){
+    const owner = E(d.owner);
+    const label = d.dtype + ' [' + (owner ? (KIND[owner.kind].en || owner.kind) : '') + '] ' + (owner ? owner.name : '') + ' [' + d.name + ']';
+    const fx = x0 - 30, fy = y0 - 50, fw = (x1 - x0) + 60, fh = (y1 - y0) + 80;
+    const L = tw(label, false, 12) + 16;
+    const FW = Math.max(fw, L + 30);
+    frame = `<g class="frame"><rect x="${fx}" y="${fy}" width="${FW}" height="${fh}" fill="none" stroke="#555" stroke-width="1"/>` +
+      `<path d="M${fx},${fy + 22} H${fx + L} L${fx + L + 10},${fy + 12} V${fy}" fill="none" stroke="#555" stroke-width="1"/>` +
+      T(label, fx + 7, fy + 15, {anchor:'start', size:12}) + '</g>';
+    bbox = {x:fx, y:fy, w:FW, h:fh};
+  }
+  return {svg:frame + cont.join('') + norm.join('') + ports.join('') + edges, bbox};
+}
+const svgEl = $('#svg'), wrapEl = $('#canvasWrap');
+function renderDiagram(){
+  const d = cur();
+  const emp = $('#empty');
+  if(!d){
+    svgEl.innerHTML = '';
+    emp.style.display = 'flex';
+    emp.innerHTML = 'Açık diyagram yok.<br>Model ağacında bir pakete / bloğa / aktiviteye <b>sağ tıklayıp</b> "Yeni diyagram" seçin<br>veya mevcut bir diyagrama <b>çift tıklayın</b>.';
+    $('#zoomLbl').textContent = '—';
+    return;
+  }
+  emp.style.display = d.shapes.length ? 'none' : 'flex';
+  emp.innerHTML = d.shapes.length ? '' : 'Diyagram boş.<br>Soldaki <b>paletten</b> eleman sürükleyip bırakın ya da <b>model ağacından</b> mevcut elemanları sürükleyin.';
+  const {svg} = diagramSVG(d, false);
+  const z = d.z;
+  const grid = ST.grid ? `<defs><pattern id="gp" width="${G * 2}" height="${G * 2}" patternUnits="userSpaceOnUse"><circle cx="0.8" cy="0.8" r="0.8" fill="#c9d1dc"/></pattern></defs><rect x="-20000" y="-20000" width="40000" height="40000" fill="url(#gp)"/>` : '';
+  svgEl.innerHTML = `<g id="vp" transform="translate(${d.vx},${d.vy}) scale(${z})">${grid}${svg}${selSVG(d)}<g id="ovl"></g></g>`;
+  $('#zoomLbl').textContent = Math.round(z * 100) + '%';
+  renderStatus();
+}
+function selSVG(d){
+  let s = '';
+  const z = d.z, hs = 7 / z, sw = 1.3 / z;
+  d.shapes.forEach(sh => {
+    if(!ST.sel.has(sh.id)) return;
+    s += `<rect x="${sh.x - 3 / z}" y="${sh.y - 3 / z}" width="${sh.w + 6 / z}" height="${sh.h + 6 / z}" fill="none" stroke="#2d7ff9" stroke-width="${sw}" stroke-dasharray="${4 / z} ${3 / z}" pointer-events="none"/>`;
+    const e = E(sh.el);
+    if(e && e.kind !== 'Port' && ST.sel.size === 1){
+      [['nw', sh.x, sh.y], ['ne', sh.x + sh.w, sh.y], ['sw', sh.x, sh.y + sh.h], ['se', sh.x + sh.w, sh.y + sh.h]].forEach(([h, hx, hy]) => {
+        s += `<rect data-h="${h}" data-hs="${sh.id}" x="${hx - hs / 2}" y="${hy - hs / 2}" width="${hs}" height="${hs}" fill="#fff" stroke="#2d7ff9" stroke-width="${sw}" style="cursor:${h === 'nw' || h === 'se' ? 'nwse' : 'nesw'}-resize"/>`;
+      });
+    }
+  });
+  d.edges.forEach(ed => {
+    if(!ST.sel.has(ed.id) || !ed._pts) return;
+    const p = ed._pts;
+    s += `<path d="M${p.map(q => q.x + ',' + q.y).join(' L')}" fill="none" stroke="#2d7ff9" stroke-width="${3 / z}" stroke-opacity=".55" pointer-events="none"/>`;
+    if(p.length === 4){
+      const mx = (p[1].x + p[2].x) / 2, my = (p[1].y + p[2].y) / 2;
+      s += `<rect data-mid="${ed.id}" x="${mx - hs / 2}" y="${my - hs / 2}" width="${hs}" height="${hs}" fill="#2d7ff9" stroke="#fff" stroke-width="${sw / 2}" style="cursor:move"/>`;
+    }
+  });
+  return s;
+}
+
+/* ================= TREE ================= */
+function childIndex(){ const idx = {}; for(const k in M.els){ const e = M.els[k]; (idx[e.owner] = idx[e.owner] || []).push(e); } return idx; }
+function sortEls(a, b){ const ra = RANK.indexOf(a.kind), rb = RANK.indexOf(b.kind); if(ra !== rb) return (ra < 0 ? 99 : ra) - (rb < 0 ? 99 : rb); return (a.name || '').localeCompare(b.name || '', 'tr'); }
+function icon(e){
+  const io = (e.kind === 'Block' || e.kind === 'Part' || e.kind === 'Actor') && iconOf(e);
+  if(io) return `<span class="ic" style="background:${io.col}">${iconInline(io.ic, 12, '#fff', 2.3)}</span>`;
+  if(e.kind === 'Diagram'){ const t = DT[e.dtype]; return `<span class="ic" style="background:${t ? t.col : '#555'}">${e.dtype}</span>`; }
+  const k = KIND[e.kind];
+  if(k.rel) return `<span class="ic" style="background:#8a94a3">↗</span>`;
+  return `<span class="ic" style="background:${k.col}">${k.ic}</span>`;
+}
+function renderTree(){
+  const idx = childIndex();
+  let h = '';
+  const row = (e, depth, has, open) => {
+    const k = KIND[e.kind];
+    const kd = e.kind === 'Diagram' ? '' : (k.rel ? k.tr : (e.kind === 'Part' && e.type ? '' : ''));
+    h += `<div class="tr${ST.tsel === e.id ? ' sel' : ''}" data-id="${e.id}" draggable="${e.id !== M.rootId}" style="padding-left:${depth * 14 + 4}px">` +
+      `<span class="tw" data-tog="${e.id}">${has ? (open ? '▾' : '▸') : ''}</span>${icon(e)}<span class="nm">${esc(treeName(e))}</span>${kd ? `<span class="kd">${esc(kd)}</span>` : ''}</div>`;
+  };
+  const rec = (id, depth) => {
+    const e = E(id); if(!e) return;
+    const ch = (idx[id] || []).slice().sort(sortEls);
+    const struct = ch.filter(c => !KIND[c.kind].rel), rels = ch.filter(c => KIND[c.kind].rel);
+    const open = depth === 0 || ST.exp.has(id);
+    row(e, depth, struct.length + rels.length > 0, open);
+    if(!open) return;
+    struct.forEach(c => rec(c.id, depth + 1));
+    if(rels.length){
+      const gid = 'rel:' + id, go = ST.exp.has(gid);
+      h += `<div class="tr grp" style="padding-left:${(depth + 1) * 14 + 4}px"><span class="tw" data-tog="${gid}">${go ? '▾' : '▸'}</span><span class="ic" style="background:#a0a9b6">⇄</span><span class="nm">İlişkiler (${rels.length})</span></div>`;
+      if(go) rels.forEach(r => row(r, depth + 2, false, false));
+    }
+  };
+  rec(M.rootId, 0);
+  $('#tree').innerHTML = h;
+}
+function treeName(e){
+  if(e.kind === 'Part') return partLabel(e);
+  if(e.kind === 'Port') return portLabel(e);
+  if(e.kind === 'Value') return valLabel(e);
+  return elLabel(e);
+}
+function revealInTree(id){
+  let e = E(id); if(!e) return;
+  let o = E(e.owner);
+  if(KIND[e.kind].rel && o) ST.exp.add('rel:' + o.id);
+  while(o){ ST.exp.add(o.id); o = E(o.owner); }
+  ST.tsel = id; renderTree();
+  const r = $('#tree').querySelector(`[data-id="${id}"]`);
+  if(r) r.scrollIntoView({block:'nearest'});
+}
+function treeRename(id){
+  revealInTree(id);
+  const row = $('#tree').querySelector(`[data-id="${id}"]`); if(!row) return;
+  const e = E(id), span = row.querySelector('.nm');
+  const inp = document.createElement('input'); inp.value = e.name || '';
+  span.replaceWith(inp); inp.focus(); inp.select();
+  let done = false;
+  const fin = ok => { if(done) return; done = true; if(ok && inp.value !== e.name){ snap(); e.name = inp.value.trim(); afterChange(); } else renderTree(); };
+  inp.addEventListener('keydown', ev => { ev.stopPropagation(); if(ev.key === 'Enter') fin(true); if(ev.key === 'Escape') fin(false); });
+  inp.addEventListener('blur', () => fin(true));
+}
+function newChild(owner, kind){
+  snap();
+  const e = mk(kind, owner);
+  if(kind === 'Comment') e.name = 'Not';
+  ST.exp.add(owner); ST.tsel = e.id; afterChange();
+  if(!UNNAMED.has(kind)) treeRename(e.id);
+}
+function openD(id, nav){
+  if(!E(id)) return;
+  if(!nav && ST.cur && ST.cur !== id){ ST.back.push(ST.cur); if(ST.back.length > 100) ST.back.shift(); ST.fwd.length = 0; }
+  if(!ST.open.includes(id)) ST.open.push(id);
+  ST.cur = id; ST.sel.clear(); ST.tool = null; renderAll(); persist();
+}
+function navBack(){ while(ST.back.length){ const id = ST.back.pop(); if(E(id) && id !== ST.cur){ if(ST.cur) ST.fwd.push(ST.cur); openD(id, true); return; } } toast('Geri gidilecek diyagram yok'); }
+function navFwd(){ while(ST.fwd.length){ const id = ST.fwd.pop(); if(E(id) && id !== ST.cur){ if(ST.cur) ST.back.push(ST.cur); openD(id, true); return; } } toast('İleri gidilecek diyagram yok'); }
+function goTargets(e, x, y){
+  const t = navTargets(e, ST.cur);
+  if(!t.length) return false;
+  if(t.length === 1){ openD(t[0].id); return true; }
+  menu(x, y, [{h:'Açılacak diyagram'}].concat(t.map(d => ({t:'[' + d.dtype + '] ' + d.name + '  —  ' + E(d.owner).name, f:() => openD(d.id)}))));
+  return true;
+}
+function newSubDiagram(e, dt){
+  snap();
+  let d;
+  if(e.kind === 'Action'){
+    let act = e.behavior && E(e.behavior);
+    if(!act){ act = mk('Activity', nearestPkg(e.owner), {name:e.name || defName('Activity', nearestPkg(e.owner))}); e.behavior = act.id; }
+    d = newDiagramCore(act.id, 'act', act.name);
+  } else if((e.kind === 'Part' || e.kind === 'Object') && dt === 'ibd'){
+    let b = e.type && E(e.type);
+    if(!b){ b = mk('Block', nearestPkg(d0owner(e)), {name:e.name ? e.name.charAt(0).toLocaleUpperCase('tr') + e.name.slice(1) : 'Blok'}); e.type = b.id; }
+    d = newDiagramCore(b.id, 'ibd', b.name);
+  } else d = newDiagramCore(e.id, dt, e.name + (dt === 'act' ? '' : ' ' + dt.toUpperCase()));
+  ST.exp.add(d.owner); openD(d.id); revealInTree(d.id); afterChange();
+}
+function d0owner(e){ let o = E(e.owner); while(o && o.kind !== 'Package' && o.kind !== 'Model') o = E(o.owner); return o ? o.id : M.rootId; }
+function subDiagramOpts(e){
+  switch(e.kind){
+    case 'Block': return [['ibd','İç Blok Diyagramı (IBD)'], ['act','Aktivite Diyagramı (davranış)'], ['bdd','Blok Tanım Diyagramı (BDD)']];
+    case 'Package': return [['bdd','BDD'], ['uc','Use Case Diyagramı'], ['act','Aktivite Diyagramı'], ['ibd','IBD (yeni blok ile)']];
+    case 'UseCase': return [['act','Aktivite Diyagramı (senaryo akışı)']];
+    case 'Action': return [['act', e.behavior ? 'Çağrılan aktivitenin diyagramı' : 'Yeni aktivite oluştur, çağır ve diyagramını aç']];
+    case 'Part': return [['ibd', e.type ? 'Tip bloğun IBD\'si' : 'Tip blok + IBD oluştur']];
+    case 'Activity': return [['act','Aktivite Diyagramı']];
+  }
+  return [];
+}
+function closeD(id){
+  ST.open = ST.open.filter(x => x !== id);
+  if(ST.cur === id) ST.cur = ST.open[ST.open.length - 1] || null;
+  ST.sel.clear(); renderAll(); persist();
+}
+const tree = $('#tree'), treeBox = $('#treeBox');
+tree.addEventListener('click', ev => {
+  if(ev.target.tagName === 'INPUT') return;
+  if(ev.detail === 2){ treeDbl(ev); return; }
+  const t = ev.target.closest('[data-tog]');
+  if(t){ const id = t.dataset.tog; ST.exp.has(id) ? ST.exp.delete(id) : ST.exp.add(id); renderTree(); persistSoon(); return; }
+  const r = ev.target.closest('.tr[data-id]'); if(!r) return;
+  ST.tsel = r.dataset.id;
+  const d = cur();
+  if(d){ ST.sel = new Set(d.shapes.filter(s => s.el === ST.tsel).map(s => s.id).concat(d.edges.filter(x => x.el === ST.tsel).map(x => x.id))); }
+  renderTree(); renderDiagram(); renderProps();
+});
+function treeDbl(ev){
+  if(ev.target.tagName === 'INPUT') return;
+  const r = ev.target.closest('.tr[data-id]'); if(!r || ev.target.closest('[data-tog]')) return;
+  const e = E(r.dataset.id); if(!e) return;
+  if(e.kind === 'Diagram') openD(e.id);
+  else if(goTargets(e, ev.clientX, ev.clientY)) return;
+  else if(OWN[e.kind] || diagOpts(e.kind).length){ ST.exp.has(e.id) ? ST.exp.delete(e.id) : ST.exp.add(e.id); renderTree(); }
+  else treeRename(e.id);
+}
+tree.addEventListener('contextmenu', ev => {
+  ev.preventDefault();
+  const r = ev.target.closest('.tr[data-id]'); if(!r) return;
+  ST.tsel = r.dataset.id; renderTree(); renderProps();
+  treeMenu(r.dataset.id, ev.clientX, ev.clientY);
+});
+tree.addEventListener('dragstart', ev => {
+  const r = ev.target.closest('.tr[data-id]'); if(!r) return;
+  ST.dragEl = r.dataset.id;
+  ev.dataTransfer.setData('text/plain', 'el:' + r.dataset.id);
+  ev.dataTransfer.effectAllowed = 'copyMove';
+});
+tree.addEventListener('dragend', () => { ST.dragEl = null; tree.querySelectorAll('.drop').forEach(x => x.classList.remove('drop')); });
+tree.addEventListener('dragover', ev => {
+  const r = ev.target.closest('.tr[data-id]'); if(!r || !ST.dragEl) return;
+  const c = E(ST.dragEl), o = E(r.dataset.id);
+  tree.querySelectorAll('.drop').forEach(x => x.classList.remove('drop'));
+  if(c && o && c.id !== o.id && !isAnc(c.id, o.id) && canOwn(o.kind, c.kind, c) && c.owner !== o.id){ ev.preventDefault(); r.classList.add('drop'); }
+});
+tree.addEventListener('drop', ev => {
+  ev.preventDefault();
+  const r = ev.target.closest('.tr[data-id]'); if(!r || !ST.dragEl) return;
+  const c = E(ST.dragEl), o = E(r.dataset.id);
+  if(c && o && !isAnc(c.id, o.id) && canOwn(o.kind, c.kind, c)){ snap(); c.owner = o.id; ST.exp.add(o.id); afterChange(); toast(`"${nm(c)}" → "${o.name}" altına taşındı`); }
+});
+treeBox.addEventListener('mousedown', () => { ST.focus = 'tree'; });
+function treeMenu(id, x, y){
+  const e = E(id), it = [];
+  if(e.kind === 'Diagram') it.push({t:'Diyagramı aç', f:() => openD(id)});
+  const ok = OWN[e.kind];
+  if(ok){ it.push({h:'Yeni eleman'}); ok.forEach(k => it.push({t:KIND[k].tr, f:() => newChild(id, k)})); }
+  const dts = diagOpts(e.kind);
+  if(dts.length){
+    it.push({h:'Yeni diyagram'});
+    dts.forEach(dt => {
+      let t = DT[dt].tr;
+      if(dt === 'ibd' && e.kind !== 'Block') t += ' + yeni blok';
+      if(dt === 'act' && e.kind !== 'Activity') t += ' + yeni aktivite';
+      it.push({t, f:() => { snap(); const d = newDiagramCore(id, dt); ST.exp.add(id); ST.exp.add(d.owner); openD(d.id); revealInTree(d.id); }});
+    });
+  }
+  it.push('-');
+  const d = cur();
+  if(d && e.kind !== 'Diagram' && !KIND[e.kind].rel) it.push({t:'Açık diyagrama ekle', dis:!canDrop(d, e), f:() => { const r = wrapEl.getBoundingClientRect(); dropExisting(id, {x:(r.width / 2 - d.vx) / d.z, y:(r.height / 2 - d.vy) / d.z}, null); }});
+  const shown = diagramsShowing(id);
+  if(shown.length){ it.push({h:'Gösterildiği diyagramlar'}); shown.slice(0, 8).forEach(dd => it.push({t:'↪ ' + dd.name, f:() => { openD(dd.id); const dd2 = cur(); ST.sel = new Set(dd2.shapes.filter(s => s.el === id).map(s => s.id)); renderDiagram(); }})); it.push('-'); }
+  it.push({t:'Yeniden adlandır', k:'F2', f:() => treeRename(id)});
+  if(id !== M.rootId) it.push({t:'Modelden sil', k:'Del', f:() => { snap(); delModel([id]); afterChange(); }});
+  menu(x, y, it);
+}
+
+/* ================= TABS / PALETTE ================= */
+function renderTabs(){
+  $('#tabs').innerHTML = ST.open.map(id => {
+    const d = E(id); if(!d) return '';
+    return `<div class="tab${id === ST.cur ? ' cur' : ''}" data-tab="${id}"><span class="ti" style="background:${DT[d.dtype].col}">${d.dtype}</span>${esc(d.name)}<span class="x" data-close="${id}">×</span></div>`;
+  }).join('');
+}
+$('#tabs').addEventListener('mousedown', ev => {
+  const x = ev.target.closest('[data-close]');
+  if(x){ ev.stopPropagation(); closeD(x.dataset.close); return; }
+  if(ev.button === 1){ const t = ev.target.closest('[data-tab]'); if(t){ ev.preventDefault(); closeD(t.dataset.tab); } return; }
+  const t = ev.target.closest('[data-tab]');
+  if(t && t.dataset.tab !== ST.cur) openD(t.dataset.tab);
+});
+$('#tabs').addEventListener('click', ev => { if(ev.detail !== 2) return; const t = ev.target.closest('[data-tab]'); if(t) revealInTree(t.dataset.tab); });
+function palIcon(k){
+  const W = 26, H = 18, sw = 'stroke="#333" stroke-width="1.1"';
+  let s = '';
+  switch(k){
+    case 'Block': s = `<rect x="2" y="2" width="22" height="14" fill="#fff8d8" ${sw}/><line x1="2" y1="8" x2="24" y2="8" ${sw}/>`; break;
+    case 'Package': s = `<rect x="2" y="2" width="10" height="4" fill="#f6eed6" ${sw}/><rect x="2" y="6" width="22" height="10" fill="#f6eed6" ${sw}/>`; break;
+    case 'Part': s = `<rect x="2" y="3" width="22" height="12" fill="#fff8d8" ${sw}/>`; break;
+    case 'Port': s = `<rect x="2" y="4" width="14" height="10" fill="#fff8d8" ${sw}/><rect x="13" y="6" width="6" height="6" fill="#fff" ${sw}/>`; break;
+    case 'Value': s = `<rect x="2" y="4" width="22" height="10" rx="4" fill="#f3eeff" ${sw}/>`; break;
+    case 'Actor': s = `<circle cx="13" cy="4" r="2.6" fill="#fff" ${sw}/><path d="M13,7 V12 M9,9 H17 M13,12 L10,17 M13,12 L16,17" fill="none" ${sw}/>`; break;
+    case 'UseCase': s = `<ellipse cx="13" cy="9" rx="11" ry="6" fill="#fff8d8" ${sw}/>`; break;
+    case 'Subject': s = `<rect x="2" y="2" width="22" height="14" fill="#fff" ${sw}/><line x1="6" y1="6" x2="20" y2="6" ${sw}/>`; break;
+    case 'Action': s = `<rect x="2" y="3" width="22" height="12" rx="4" fill="#fff8d8" ${sw}/>`; break;
+    case 'Initial': s = `<circle cx="13" cy="9" r="5" fill="#222"/>`; break;
+    case 'Final': s = `<circle cx="13" cy="9" r="6" fill="#fff" ${sw}/><circle cx="13" cy="9" r="3.4" fill="#222"/>`; break;
+    case 'FlowFinal': s = `<circle cx="13" cy="9" r="6" fill="#fff" ${sw}/><path d="M9,5 L17,13 M17,5 L9,13" ${sw}/>`; break;
+    case 'Decision': case 'Merge': s = `<polygon points="13,2 21,9 13,16 5,9" fill="#fff" ${sw}/>`; break;
+    case 'Fork': s = `<rect x="3" y="7" width="20" height="4" fill="#222"/><path d="M13,1 V7 M7,11 V17 M19,11 V17" ${sw}/>`; break;
+    case 'Join': s = `<rect x="3" y="7" width="20" height="4" fill="#222"/><path d="M7,1 V7 M19,1 V7 M13,11 V17" ${sw}/>`; break;
+    case 'Object': s = `<rect x="2" y="4" width="22" height="10" fill="#fff" ${sw}/>`; break;
+    case 'Partition': s = `<rect x="2" y="1" width="22" height="16" fill="#fff" ${sw}/><line x1="2" y1="5" x2="24" y2="5" ${sw}/><line x1="13" y1="1" x2="13" y2="17" ${sw}/>`; break;
+    case 'Comment': s = `<path d="M3,2 H19 L23,6 V16 H3 Z M19,2 V6 H23" fill="#fffde9" ${sw}/>`; break;
+    default: {
+      const st = ER[k] || {};
+      const p = {x:22, y:9}, q = {x:4, y:9};
+      s = `<line x1="4" y1="9" x2="22" y2="9" ${sw}${st.dash ? ' stroke-dasharray="3 2"' : ''}/>`;
+      if(st.tgt) s += head(st.tgt, p, q, 0.65);
+      if(st.src) s += head(st.src, q, p, 0.65);
+    }
+  }
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${s}</svg>`;
+}
+function renderPalette(){
+  const d = cur(), el = $('#palette');
+  if(!d){ el.innerHTML = '<div class="ph"><span>Palet</span></div><div class="pnote">Bir diyagram açıldığında, o diyagram türüne özgü elemanlar burada görünür.</div>'; return; }
+  const t = DT[d.dtype];
+  const it = (k, rel) => `<div class="pi${ST.tool && ST.tool.kind === k ? ' on' : ''}" ${rel ? `data-rk="${k}"` : `data-pk="${k}" draggable="true"`} title="${rel ? 'Tıklayın, sonra kaynaktan hedefe sürükleyin' : 'Sürükleyip bırakın veya tıklayıp tuvale tıklayın'}">${palIcon(k)}<span>${esc(KIND[k].tr)}</span></div>`;
+  el.innerHTML = `<div class="ph"><span>Palet · ${d.dtype.toUpperCase()}</span></div>` +
+    `<div class="pi${!ST.tool ? ' on' : ''}" data-sel="1">${'<svg width="26" height="18"><path d="M8,2 L8,15 L11,12 L14,17 L16,16 L13,11 L17,11 Z" fill="#fff" stroke="#333"/></svg>'}<span>Seçim</span></div>` +
+    `<div class="pg">Elemanlar</div>` + t.shapes.map(k => it(k, false)).join('') +
+    `<div class="pg">İlişkiler</div>` + t.rels.map(k => it(k, true)).join('') +
+    `<div class="pnote">Çift tık: aracı sabitle<br>Esc: aracı bırak</div>`;
+}
+const pal = $('#palette');
+function setTool(kind, type, sticky){
+  if(ST.tool && ST.tool.kind === kind && !sticky) ST.tool = null; else ST.tool = kind ? {kind, type, sticky:!!sticky} : null;
+  wrapEl.classList.toggle('tool', !!ST.tool); renderPalette(); renderStatus();
+}
+pal.addEventListener('click', ev => {
+  const p = ev.target.closest('.pi'); if(!p) return;
+  if(p.dataset.sel) return setTool(null);
+  if(p.dataset.pk) setTool(p.dataset.pk, 'shape');
+  if(p.dataset.rk) setTool(p.dataset.rk, 'rel');
+});
+pal.addEventListener('dblclick', ev => {
+  const p = ev.target.closest('.pi'); if(!p || p.dataset.sel) return;
+  ST.tool = null; setTool(p.dataset.pk || p.dataset.rk, p.dataset.pk ? 'shape' : 'rel', true);
+});
+pal.addEventListener('dragstart', ev => {
+  const p = ev.target.closest('[data-pk]'); if(!p) return;
+  ev.dataTransfer.setData('text/plain', 'pal:' + p.dataset.pk); ev.dataTransfer.effectAllowed = 'copy';
+});
+
+/* ================= CANVAS INTERACTION ================= */
+function cpt(ev){ const r = svgEl.getBoundingClientRect(), d = cur(); return {x:(ev.clientX - r.left - d.vx) / d.z, y:(ev.clientY - r.top - d.vy) / d.z}; }
+function shapeAt(ev){ const el = document.elementFromPoint(ev.clientX, ev.clientY); const g = el && el.closest && el.closest('[data-sid]'); return g ? shapeOf(cur(), g.dataset.sid) : null; }
+function canDrop(d, e){
+  if(!e || e.kind === 'Diagram' || KIND[e.kind].rel) return false;
+  if(d.dtype === 'ibd' && e.kind === 'Block') return true;
+  if(d.dtype === 'act' && (e.kind === 'Activity' || e.kind === 'Block')) return true;
+  return DT[d.dtype].shapes.includes(e.kind);
+}
+function ownerFor(kind, d){
+  if(d.dtype === 'bdd') return kind === 'Comment' ? d.owner : nearestPkg(d.owner);
+  if(d.dtype === 'uc') return nearestPkg(d.owner);
+  return d.owner;
+}
+function placeNew(kind, p, target){
+  const d = cur(); if(!d) return;
+  const k = KIND[kind];
+  if(kind === 'Port'){
+    const P = target && E(target.el) && E(target.el).kind === 'Part' ? target : (target && target.parent ? shapeOf(d, target.parent) : null);
+    snap();
+    let port, sh;
+    if(P){
+      const part = E(P.el);
+      port = mk('Port', part.type || part.id, {dir:''});
+      sh = addShape(d, port.id, 0, 0, 16, 16, P.id); snapPort(sh, P, p.x, p.y);
+    } else {
+      port = mk('Port', d.owner, {dir:''});
+      sh = addShape(d, port.id, snapv(p.x) - 8, snapv(p.y) - 8, 16, 16);
+      toast('İpucu: Port\'u bir part\'ın üzerine bırakırsanız kenarına yerleşir.');
+    }
+    ST.sel = new Set([sh.id]); ST.tsel = port.id; afterChange(); editShape(sh);
+    return;
+  }
+  snap();
+  const e = mk(kind, ownerFor(kind, d));
+  if(kind === 'Comment') e.name = 'Not';
+  const w = k.w || 120, h = k.h || 60;
+  const sh = addShape(d, e.id, snapv(p.x - w / 2), snapv(p.y - h / 2), w, h);
+  if(CONT.has(kind)){ d.shapes.splice(d.shapes.indexOf(sh), 1); d.shapes.unshift(sh); }
+  ST.sel = new Set([sh.id]); ST.tsel = e.id;
+  revealInTree(e.id); afterChange();
+  if(!UNNAMED.has(kind)) editShape(sh);
+}
+function dropExisting(id, p, target){
+  const d = cur(), e = E(id); if(!d || !e) return;
+  if(e.kind === 'Diagram'){ openD(id); return; }
+  if(!canDrop(d, e)) return toast(`"${KIND[e.kind].tr}" bu diyagram türüne eklenemez.`);
+  snap();
+  let sh = null;
+  if(d.dtype === 'ibd' && e.kind === 'Block'){
+    const tp = target && E(target.el);
+    if(tp && tp.kind === 'Part'){ tp.type = e.id; showPorts(d, target); toast(`"${tp.name}" part'ının tipi "${e.name}" yapıldı`); afterChange(); return; }
+    const part = mk('Part', d.owner, {name:uniqName(lcFirst(e.name) || 'part', d.owner), type:e.id});
+    sh = addShape(d, part.id, snapv(p.x - 85), snapv(p.y - 40), 170, 80); showPorts(d, sh);
+  } else if(d.dtype === 'act' && e.kind === 'Activity'){
+    const a = mk('Action', d.owner, {name:e.name, behavior:e.id});
+    sh = addShape(d, a.id, snapv(p.x - 70), snapv(p.y - 25), 140, 50);
+  } else if(d.dtype === 'act' && e.kind === 'Block'){
+    const o = mk('Object', d.owner, {name:'', type:e.id});
+    sh = addShape(d, o.id, snapv(p.x - 65), snapv(p.y - 22), 130, 44);
+  } else if(e.kind === 'Port'){
+    const P = target && E(target.el) && E(target.el).kind === 'Part' ? target : null;
+    if(P){ sh = addShape(d, e.id, 0, 0, 16, 16, P.id); snapPort(sh, P, p.x, p.y); }
+    else sh = addShape(d, e.id, snapv(p.x) - 8, snapv(p.y) - 8, 16, 16);
+    autoEdges(d, sh);
+  } else {
+    const ex = d.shapes.find(s => s.el === id && !s.parent);
+    if(ex){ undoStack.pop(); ST.sel = new Set([ex.id]); renderDiagram(); renderProps(); return toast('Bu eleman diyagramda zaten var.'); }
+    if((e.kind === 'Part' || e.kind === 'Value') && e.owner !== d.owner) toast('Uyarı: bu part/value, diyagramın bağlam bloğuna ait değil.');
+    const k = KIND[e.kind];
+    sh = addShape(d, id, snapv(p.x - (k.w || 120) / 2), snapv(p.y - (k.h || 60) / 2));
+    if(CONT.has(e.kind)){ d.shapes.splice(d.shapes.indexOf(sh), 1); d.shapes.unshift(sh); }
+    if(e.kind === 'Part') showPorts(d, sh);
+    autoEdges(d, sh);
+  }
+  ST.sel = new Set([sh.id]); ST.tsel = E(sh.el).id; afterChange();
+}
+function showRelated(d, sh){
+  const allowed = DT[d.dtype].rels; let n = 0, i = 0;
+  snap();
+  Object.values(M.els).forEach(r => {
+    if(!KIND[r.kind].rel || !allowed.includes(r.kind)) return;
+    let other = r.src === sh.el ? r.tgt : (r.tgt === sh.el ? r.src : null);
+    if(!other || !E(other)) return;
+    const oe = E(other);
+    if(!DT[d.dtype].shapes.includes(oe.kind) || d.shapes.some(s => s.el === other)) return;
+    const k = KIND[oe.kind];
+    const ns = addShape(d, other, sh.x + (i % 4) * 210 - 210, sh.y + sh.h + 90 + Math.floor(i / 4) * 140, k.w, k.h); i++; n++;
+    autoEdges(d, ns);
+  });
+  autoEdges(d, sh);
+  if(!n) undoStack.pop(); else afterChange();
+  toast(n ? n + ' ilişkili eleman eklendi' : 'Eklenecek ilişkili eleman yok');
+}
+
+let drag = null;
+svgEl.addEventListener('mousedown', ev => {
+  hideMenu(); ST.focus = 'canvas';
+  const d = cur(); if(!d) return;
+  if(ev.button === 1 || (ev.button === 0 && ST.space)){ ev.preventDefault(); drag = {type:'pan', sx:ev.clientX, sy:ev.clientY, vx:d.vx, vy:d.vy}; return; }
+  if(ev.button !== 0) return;
+  if(ev.detail === 2 && !ST.tool && !ST.space){ ev.preventDefault(); drag = null; handleDbl(ev); return; }
+  const ae = document.activeElement;
+  if(ae && ae !== inl && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) ae.blur();
+  else if(ae === inl && inlDone) inlDone(true);
+  ev.preventDefault();
+  const p = cpt(ev), t = ev.target;
+  const h = t.closest('[data-h]');
+  if(h){ const sh = shapeOf(d, h.dataset.hs); drag = {type:'resize', h:h.dataset.h, sh, o:{x:sh.x, y:sh.y, w:sh.w, h:sh.h}, kids:d.shapes.filter(s => s.parent === sh.id), start:p, snapped:false}; return; }
+  const mh = t.closest('[data-mid]');
+  if(mh){ const ed = d.edges.find(x => x.id === mh.dataset.mid); const pts = ed._pts; drag = {type:'mid', ed, ax:Math.abs(pts[1].x - pts[2].x) < 0.5 ? 'x' : 'y', snapped:false}; return; }
+  const sg = t.closest('[data-sid]'), eg = t.closest('[data-eid]');
+  const sh = sg ? shapeOf(d, sg.dataset.sid) : null;
+  if(ST.tool && ST.tool.type === 'rel'){
+    if(sh) drag = {type:'link', s:sh, p};
+    return;
+  }
+  if(ST.tool && ST.tool.type === 'shape'){
+    const k = ST.tool.kind; if(!ST.tool.sticky) setTool(null);
+    placeNew(k, p, sh); return;
+  }
+  if(sh){
+    if(ev.shiftKey || ev.ctrlKey){ ST.sel.has(sh.id) ? ST.sel.delete(sh.id) : ST.sel.add(sh.id); }
+    else if(!ST.sel.has(sh.id)) ST.sel = new Set([sh.id]);
+    ST.tsel = sh.el;
+    renderDiagram(); renderProps(); renderTree();
+    // move set
+    const set = new Set(d.shapes.filter(s => ST.sel.has(s.id)).map(s => s.id));
+    d.shapes.forEach(s => { if(set.has(s.id)){ const e = E(s.el); if(e && CONT.has(e.kind)) d.shapes.forEach(o => { if(o !== s && o.x >= s.x && o.y >= s.y && o.x + o.w <= s.x + s.w && o.y + o.h <= s.y + s.h) set.add(o.id); }); } });
+    d.shapes.forEach(s => { if(s.parent && set.has(s.parent)) set.add(s.id); });
+    const orig = new Map(); set.forEach(id => { const s = shapeOf(d, id); orig.set(id, {x:s.x, y:s.y}); });
+    drag = {type:'move', start:p, anchor:sh, orig, set, moved:false};
+    return;
+  }
+  if(eg){
+    const id = eg.dataset.eid;
+    if(ev.shiftKey || ev.ctrlKey){ ST.sel.has(id) ? ST.sel.delete(id) : ST.sel.add(id); } else ST.sel = new Set([id]);
+    const ed = d.edges.find(x => x.id === id); if(ed && ed.el) ST.tsel = ed.el;
+    renderDiagram(); renderProps(); renderTree(); return;
+  }
+  if(!ev.shiftKey) ST.sel.clear();
+  ST.tsel = null;
+  drag = {type:'rubber', start:p, add:ev.shiftKey};
+  renderDiagram(); renderProps(); renderTree();
+});
+window.addEventListener('mousemove', ev => {
+  if(!drag) return;
+  const d = cur(); if(!d){ drag = null; return; }
+  if(drag.type === 'pan'){ d.vx = drag.vx + ev.clientX - drag.sx; d.vy = drag.vy + ev.clientY - drag.sy; const vp = $('#vp'); if(vp) vp.setAttribute('transform', `translate(${d.vx},${d.vy}) scale(${d.z})`); return; }
+  const p = cpt(ev);
+  if(drag.type === 'move'){
+    let dx = p.x - drag.start.x, dy = p.y - drag.start.y;
+    if(!drag.moved){ if(Math.hypot(dx, dy) * d.z < 3) return; snap(); drag.moved = true; }
+    const a = drag.orig.get(drag.anchor.id);
+    const ae = E(drag.anchor.el);
+    const single = drag.set.size === 1 && ae && ae.kind === 'Port' && drag.anchor.parent;
+    if(single){
+      const P = shapeOf(d, drag.anchor.parent);
+      snapPort(drag.anchor, P, a.x + drag.anchor.w / 2 + dx, a.y + drag.anchor.h / 2 + dy);
+    } else {
+      if(!ev.altKey){ dx = snapv(a.x + dx) - a.x; dy = snapv(a.y + dy) - a.y; }
+      drag.set.forEach(id => { const s = shapeOf(d, id), o = drag.orig.get(id); s.x = o.x + dx; s.y = o.y + dy; });
+    }
+    renderDiagram(); return;
+  }
+  if(drag.type === 'resize'){
+    if(!drag.snapped){ snap(); drag.snapped = true; }
+    const o = drag.o, sh = drag.sh, e = E(sh.el), k = e.kind;
+    let x1 = o.x, y1 = o.y, x2 = o.x + o.w, y2 = o.y + o.h;
+    const px = ev.altKey ? p.x : snapv(p.x), py = ev.altKey ? p.y : snapv(p.y);
+    if(drag.h.includes('w')) x1 = px; else x2 = px;
+    if(drag.h.includes('n')) y1 = py; else y2 = py;
+    const minW = (k === 'Fork' || k === 'Join') ? 4 : (UNNAMED.has(k) ? 16 : 40), minH = (k === 'Fork' || k === 'Join') ? 4 : (UNNAMED.has(k) ? 16 : 24);
+    if(x2 - x1 < minW){ if(drag.h.includes('w')) x1 = x2 - minW; else x2 = x1 + minW; }
+    if(y2 - y1 < minH){ if(drag.h.includes('n')) y1 = y2 - minH; else y2 = y1 + minH; }
+    sh.x = x1; sh.y = y1; sh.w = x2 - x1; sh.h = y2 - y1;
+    drag.kids.forEach(c => snapPort(c, sh, c.x + c.w / 2, c.y + c.h / 2));
+    renderDiagram(); return;
+  }
+  if(drag.type === 'mid'){
+    if(!drag.snapped){ snap(); drag.snapped = true; }
+    if(drag.ax === 'x') drag.ed.mx = snapv(p.x); else drag.ed.my = snapv(p.y);
+    renderDiagram(); return;
+  }
+  const ovl = $('#ovl'); if(!ovl) return;
+  if(drag.type === 'rubber'){
+    const x = Math.min(p.x, drag.start.x), y = Math.min(p.y, drag.start.y), w = Math.abs(p.x - drag.start.x), h = Math.abs(p.y - drag.start.y);
+    drag.r = {x, y, w, h};
+    ovl.innerHTML = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="rgba(45,127,249,.08)" stroke="#2d7ff9" stroke-width="${1 / d.z}" stroke-dasharray="${4 / d.z}"/>`;
+    return;
+  }
+  if(drag.type === 'link'){
+    const s = drag.s;
+    ovl.innerHTML = `<line x1="${s.x + s.w / 2}" y1="${s.y + s.h / 2}" x2="${p.x}" y2="${p.y}" stroke="#2d7ff9" stroke-width="${1.5 / d.z}" stroke-dasharray="${5 / d.z}" pointer-events="none"/>`;
+  }
+});
+window.addEventListener('mouseup', ev => {
+  if(!drag) return;
+  const d = cur(), dr = drag; drag = null;
+  if(!d) return;
+  if(dr.type === 'pan'){ persistSoon(); return; }
+  if(dr.type === 'move' || dr.type === 'resize' || dr.type === 'mid'){ if(dr.moved || dr.snapped){ renderAll(); persist(); } return; }
+  if(dr.type === 'rubber'){
+    if(dr.r && dr.r.w > 2){
+      const r = dr.r;
+      d.shapes.forEach(s => { if(s.x >= r.x && s.y >= r.y && s.x + s.w <= r.x + r.w && s.y + s.h <= r.y + r.h) ST.sel.add(s.id); });
+      d.edges.forEach(x => { if(x._pts && x._pts.every(q => q.x >= r.x && q.y >= r.y && q.x <= r.x + r.w && q.y <= r.y + r.h)) ST.sel.add(x.id); });
+    }
+    renderDiagram(); renderProps(); return;
+  }
+  if(dr.type === 'link'){
+    const tsh = shapeAt(ev);
+    const kind = ST.tool && ST.tool.kind;
+    if(!ST.tool || !ST.tool.sticky) setTool(null);
+    if(!tsh || !kind){ renderDiagram(); return; }
+    if(tsh.id === dr.s.id){ renderDiagram(); return toast('Hedef olarak başka bir elemanın üzerine bırakın.'); }
+    const a = E(dr.s.el), b = E(tsh.el);
+    const err = validate(kind, a, b, d);
+    if(err){ renderDiagram(); return toast(err); }
+    snap();
+    const ed = connect(d, kind, dr.s, tsh);
+    ST.sel = new Set([ed.id]); if(ed.el) ST.tsel = ed.el;
+    afterChange();
+    if(['ControlFlow','ObjectFlow'].includes(kind) && (a.kind === 'Decision')) editEdge(ed, 'guard');
+  }
+});
+function handleDbl(ev){
+  const d = cur(); if(!d) return;
+  const hit = document.elementFromPoint(ev.clientX, ev.clientY) || ev.target;
+  const sg = hit.closest && hit.closest('[data-sid]'), eg = hit.closest && hit.closest('[data-eid]');
+  if(sg){
+    const sh = shapeOf(d, sg.dataset.sid), e = E(sh.el);
+    if(!ev.altKey && goTargets(e, ev.clientX, ev.clientY)) return;
+    if(UNNAMED.has(e.kind) && !DIA.has(e.kind)) return;
+    editShape(sh); return;
+  }
+  if(eg){ const ed = d.edges.find(x => x.id === eg.dataset.eid); if(ed && ed.el){ const r = E(ed.el); editEdge(ed, (r.kind === 'ControlFlow' || r.kind === 'ObjectFlow') ? 'guard' : 'name'); } }
+}
+svgEl.addEventListener('contextmenu', ev => {
+  ev.preventDefault();
+  const d = cur(); if(!d) return;
+  const sg = ev.target.closest('[data-sid]'), eg = ev.target.closest('[data-eid]');
+  const it = [];
+  if(sg){
+    const sh = shapeOf(d, sg.dataset.sid), e = E(sh.el);
+    if(!ST.sel.has(sh.id)){ ST.sel = new Set([sh.id]); ST.tsel = sh.el; renderDiagram(); renderProps(); renderTree(); }
+    it.push({h:KIND[e.kind].tr + (e.name ? ': ' + e.name.slice(0, 30) : '')});
+    if(!UNNAMED.has(e.kind) || DIA.has(e.kind)) it.push({t:'Yeniden adlandır', k:'F2', f:() => editShape(sh)});
+    it.push({t:'Ağaçta göster', f:() => revealInTree(e.id)});
+    if(['Block','Part','Actor'].includes(e.kind)) it.push({t:'İkon ata…', f:() => iconPicker(iconTargets(d, e))});
+    if(e.kind === 'Part') it.push({t:'Portları göster', f:() => { snap(); const a = showPorts(d, sh); if(!a.length){ undoStack.pop(); toast('Gösterilecek yeni port yok'); } else afterChange(); }});
+    if(['Block','Actor','UseCase','Package'].includes(e.kind)) it.push({t:'İlişkili elemanları göster', f:() => showRelated(d, sh)});
+    const tg = navTargets(e, d.id);
+    if(tg.length){ it.push({h:'Alt diyagrama git (çift tık)'}); tg.forEach(x => it.push({t:'↪ [' + x.dtype + '] ' + x.name, f:() => openD(x.id)})); }
+    const so = subDiagramOpts(e);
+    if(so.length){ it.push({h:'Yeni alt diyagram'}); so.forEach(([dt, t]) => it.push({t:'＋ ' + t, f:() => newSubDiagram(e, dt)})); }
+    it.push({t:'Diyagram bağla (hiperlink)…', f:() => linkMenu(e, ev.clientX, ev.clientY)});
+    if(ST.sel.size > 1){ it.push({h:'Hizala / dağıt'}); layoutMenuItems().filter(x => x.f && x.dis === false).forEach(x => it.push(x)); }
+    it.push('-');
+    it.push({t:'Öne getir', f:() => { snap(); reorder(d, true); afterChange(); }});
+    it.push({t:'Arkaya gönder', f:() => { snap(); reorder(d, false); afterChange(); }});
+    it.push('-');
+    it.push({t:'Diyagramdan kaldır', k:'Shift+Del', f:() => { snap(); removeFromDiagram(d, [...ST.sel]); afterChange(); }});
+    it.push({t:'Modelden sil', k:'Del', f:() => delSelectedModel()});
+  } else if(eg){
+    const ed = d.edges.find(x => x.id === eg.dataset.eid);
+    if(!ST.sel.has(ed.id)){ ST.sel = new Set([ed.id]); if(ed.el) ST.tsel = ed.el; renderDiagram(); renderProps(); renderTree(); }
+    it.push({h:KIND[edgeKind(ed)].tr});
+    if(ed.el) it.push({t:'Adı düzenle', f:() => editEdge(ed, 'name')});
+    if(ed.el && ['ControlFlow','ObjectFlow'].includes(edgeKind(ed))) it.push({t:'Koşul (guard) düzenle', f:() => editEdge(ed, 'guard')});
+    it.push({t:ed.route === 'straight' ? 'Dik açılı çizgi yap' : 'Düz çizgi yap', f:() => { snap(); ed.route = ed.route === 'straight' ? 'ortho' : 'straight'; afterChange(); }});
+    it.push({t:'Rotayı sıfırla', f:() => { snap(); delete ed.mx; delete ed.my; afterChange(); }});
+    if(ed.el) it.push({t:'Ağaçta göster', f:() => revealInTree(ed.el)});
+    it.push('-');
+    it.push({t:'Diyagramdan kaldır', k:'Shift+Del', f:() => { snap(); removeFromDiagram(d, [...ST.sel]); afterChange(); }});
+    if(ed.el) it.push({t:'Modelden sil', k:'Del', f:() => delSelectedModel()});
+  } else {
+    it.push({t:'Tümünü seç', k:'Ctrl+A', f:() => { ST.sel = new Set(d.shapes.map(s => s.id)); renderDiagram(); }});
+    it.push({t:'Ekrana sığdır', f:fit});
+    it.push({h:'Otomatik düzen'});
+    LAYOUTS[d.dtype].forEach(([m, t]) => it.push({t, f:() => runLayout(m)}));
+    it.push('-');
+    it.push({t:'PNG olarak indir', f:() => exportPNG()});
+    it.push({t:'SVG olarak indir', f:() => exportSVG()});
+    it.push({t:'Panoya resim olarak kopyala', f:() => copyImage()});
+    it.push('-');
+    it.push({t:'Diyagramı ağaçta göster', f:() => revealInTree(d.id)});
+    it.push({t:'Diyagramı yeniden adlandır', f:() => treeRename(d.id)});
+  }
+  menu(ev.clientX, ev.clientY, it);
+});
+function iconTargets(d, e){
+  const ids = new Set([e.id]);
+  d.shapes.forEach(s => { if(ST.sel.has(s.id)){ const x = E(s.el); if(x && ['Block','Part','Actor'].includes(x.kind)) ids.add(x.id); } });
+  return [...ids];
+}
+let icState = {cat:'all', q:'', col:''};
+function iconPicker(ids){
+  const els = ids.map(E).filter(Boolean); if(!els.length) return;
+  const curIc = els[0].icon;
+  icState.col = els[0].iconColor || '';
+  const box = $('#modalBox');
+  box.style.width = 'min(920px, 94vw)'; box.style.maxWidth = 'none';
+  const sw = ['', '#26364b', '#1f6fd1', '#c0392b', '#2e7d32', '#d18a00', '#6c3fc4', '#0f8a8a', '#5a6b24', '#000000'];
+  box.innerHTML = `<h2>İkon seç — ${els.length > 1 ? els.length + ' eleman' : esc(nm(els[0]))}</h2>
+    <div class="icbar"><input id="icq" placeholder="Ara… (ör. uçak, radar, motor, batarya, sunucu)" value="${esc(icState.q)}">
+    <span class="icsw" title="İkon rengi (boş = kategori rengi)">${sw.map(c => `<b data-col="${c}" class="${icState.col === c ? 'on' : ''}" style="background:${c || 'conic-gradient(#c0392b,#d18a00,#2e7d32,#1f6fd1,#6c3fc4,#c0392b)'}" title="${c ? c : 'Kategori rengi'}"></b>`).join('')}</span>
+    ${els.some(e => e.icon) ? '<button class="pbtn" id="icnone">İkonu kaldır</button>' : ''}<button class="pbtn" id="icclose">Kapat</button></div>
+    <div class="iccats"><span class="chip${icState.cat === 'all' ? ' on' : ''}" data-cat="all">Tümü (${Object.keys(ICONS).length})</span>${ICON_CATS.map(([k, n, c]) => `<span class="chip${icState.cat === k ? ' on' : ''}" data-cat="${k}"><i style="background:${c}"></i>${esc(n)}</span>`).join('')}</div>
+    <div class="icgrid" id="icgrid"></div>
+    ${els.some(e => e.kind === 'Block') ? '<p class="muted" style="margin:8px 0 0">İpucu: Blokta ikonun başlıkta büyük görünmesi için Özellikler panelinden "Gösterim → Başlıkta büyük" seçin. Part\'lar ikonu tip bloğundan otomatik alır.</p>' : ''}`;
+  const grid = $('#icgrid');
+  const draw = () => {
+    const q = icState.q.toLocaleLowerCase('tr').trim();
+    const list = Object.values(ICONS).filter(ic => (icState.cat === 'all' || ic.cat === icState.cat) && (!q || ic.name.toLocaleLowerCase('tr').includes(q) || ic.id.includes(q) || ICON_CATS.find(c => c[0] === ic.cat)[1].toLocaleLowerCase('tr').includes(q)));
+    grid.innerHTML = list.map(ic => `<button class="icb${ic.id === curIc ? ' on' : ''}" data-ic="${ic.id}" title="${esc(ic.name)}">${iconInline(ic, 30, icState.col || ICON_CAT_COL[ic.cat])}<span>${esc(ic.name)}</span></button>`).join('') || '<div class="muted">Sonuç bulunamadı</div>';
+  };
+  draw();
+  $('#modal').style.display = 'flex';
+  const q = $('#icq'); q.focus();
+  q.oninput = () => { icState.q = q.value; draw(); };
+  q.onkeydown = ev => { ev.stopPropagation(); if(ev.key === 'Escape') close(); if(ev.key === 'Enter'){ const b = grid.querySelector('[data-ic]'); if(b) pick(b.dataset.ic); } };
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; };
+  const pick = id => { snap(); els.forEach(e => { e.icon = id; if(icState.col) e.iconColor = icState.col; else delete e.iconColor; }); close(); afterChange(); toast(`"${ICONS[id].name}" ikonu atandı`); };
+  box.onclick = ev => {
+    const t = ev.target;
+    const b = t.closest('[data-ic]'); if(b) return pick(b.dataset.ic);
+    const c = t.closest('[data-cat]'); if(c){ icState.cat = c.dataset.cat; box.querySelectorAll('[data-cat]').forEach(x => x.classList.toggle('on', x === c)); draw(); return; }
+    const s0 = t.closest('[data-col]'); if(s0){ icState.col = s0.dataset.col; box.querySelectorAll('[data-col]').forEach(x => x.classList.toggle('on', x === s0)); draw(); return; }
+    if(t.id === 'icnone'){ snap(); els.forEach(e => { delete e.icon; delete e.iconColor; }); close(); afterChange(); return; }
+    if(t.id === 'icclose') close();
+  };
+}
+function linkMenu(e, x, y){
+  const ds = Object.values(M.els).filter(v => v.kind === 'Diagram').sort(sortEls);
+  const it = [{h:'"' + nm(e) + '" için bağlı diyagram'}];
+  if(e.link) it.push({t:'✕ Bağlantıyı kaldır', f:() => { snap(); e.link = null; afterChange(); }});
+  ds.forEach(v => it.push({t:(e.link === v.id ? '✓ ' : '') + '[' + v.dtype + '] ' + v.name, f:() => { snap(); e.link = v.id; afterChange(); toast('Bağlandı — çift tıklayınca "' + v.name + '" açılır'); }}));
+  setTimeout(() => menu(x, y, it), 0);
+}
+function openBehavior(e){
+  const act = E(e.behavior); if(!act) return;
+  let d = kidsOf(act.id).find(x => x.kind === 'Diagram' && x.dtype === 'act');
+  if(!d){ snap(); d = newDiagramCore(act.id, 'act'); }
+  openD(d.id);
+}
+function reorder(d, front){
+  const sel = d.shapes.filter(s => ST.sel.has(s.id)), rest = d.shapes.filter(s => !ST.sel.has(s.id));
+  d.shapes = front ? rest.concat(sel) : sel.concat(rest);
+}
+function delSelectedModel(){
+  const d = cur(); if(!d) return;
+  const ids = new Set();
+  d.shapes.forEach(s => { if(ST.sel.has(s.id)) ids.add(s.el); });
+  d.edges.forEach(x => { if(ST.sel.has(x.id)){ if(x.el) ids.add(x.el); else x._rm = 1; } });
+  snap();
+  d.edges = d.edges.filter(x => !x._rm);
+  delModel([...ids]);
+  afterChange();
+}
+wrapEl.addEventListener('wheel', ev => {
+  const d = cur(); if(!d) return;
+  ev.preventDefault();
+  if(ev.ctrlKey){
+    const r = svgEl.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
+    zoomAt(d, d.z * Math.exp(-ev.deltaY * 0.0015), mx, my);
+  } else { d.vx -= ev.shiftKey ? ev.deltaY : ev.deltaX; d.vy -= ev.shiftKey ? 0 : ev.deltaY; renderDiagram(); }
+  persistSoon();
+}, {passive:false});
+function zoomAt(d, nz, mx, my){
+  nz = Math.max(0.15, Math.min(4, nz));
+  d.vx = mx - (mx - d.vx) * nz / d.z; d.vy = my - (my - d.vy) * nz / d.z; d.z = nz; renderDiagram();
+}
+function zoomBtn(f){ const d = cur(); if(!d) return; const r = svgEl.getBoundingClientRect(); zoomAt(d, d.z * f, r.width / 2, r.height / 2); persistSoon(); }
+function fit(){
+  const d = cur(); if(!d) return;
+  const {bbox} = diagramSVG(d, true);
+  const r = svgEl.getBoundingClientRect();
+  if(!bbox){ d.vx = 60; d.vy = 70; d.z = 1; }
+  else { const z = Math.max(0.15, Math.min(1.5, (r.width - 60) / bbox.w, (r.height - 60) / bbox.h)); d.z = z; d.vx = (r.width - bbox.w * z) / 2 - bbox.x * z; d.vy = (r.height - bbox.h * z) / 2 - bbox.y * z; }
+  renderDiagram(); persistSoon();
+}
+wrapEl.addEventListener('dragover', ev => { if(cur()){ ev.preventDefault(); ev.dataTransfer.dropEffect = 'copy'; } });
+wrapEl.addEventListener('drop', ev => {
+  ev.preventDefault();
+  const d = cur(); if(!d) return;
+  const data = ev.dataTransfer.getData('text/plain') || '';
+  const p = cpt(ev), target = shapeAt(ev);
+  if(data.startsWith('pal:')) placeNew(data.slice(4), p, target);
+  else if(data.startsWith('el:')) dropExisting(data.slice(3), p, target);
+  ST.dragEl = null;
+});
+
+/* ================= INLINE EDIT ================= */
+const inl = $('#inl');
+let inlDone = null;
+function inlineEdit(sx, sy, w, h, val, multi, cb){
+  const d = cur();
+  inl.style.left = (d.vx + sx * d.z) + 'px'; inl.style.top = (d.vy + sy * d.z) + 'px';
+  inl.style.width = Math.max(120, w * d.z) + 'px'; inl.style.height = Math.max(26, h * d.z) + 'px';
+  inl.style.textAlign = multi ? 'left' : 'center';
+  inl.value = val || ''; inl.style.display = 'block'; inl.focus(); inl.select();
+  let done = false;
+  inlDone = ok => { if(done) return; done = true; inl.style.display = 'none'; inlDone = null; if(ok && inl.value !== (val || '')) cb(inl.value); };
+  inl.onkeydown = ev => {
+    ev.stopPropagation();
+    if(ev.key === 'Escape') inlDone(false);
+    if(ev.key === 'Enter' && (!multi || ev.ctrlKey)){ ev.preventDefault(); inlDone(true); }
+  };
+  inl.onblur = () => inlDone && inlDone(true);
+}
+function editShape(sh){
+  const e = E(sh.el); if(!e) return;
+  const multi = e.kind === 'Comment';
+  let y = sh.y, h = sh.h;
+  if(e.kind === 'Actor'){ y = sh.y + sh.h - 22; h = 26; }
+  else if(e.kind === 'Port' || DIA.has(e.kind)){ y = sh.y - 28; h = 26; }
+  else if(e.kind === 'Block' || e.kind === 'Subject' || e.kind === 'Partition' || e.kind === 'Package'){ h = Math.min(sh.h, 40); }
+  else if(!multi) { y = sh.y + sh.h / 2 - 15; h = 30; }
+  const x = e.kind === 'Port' || DIA.has(e.kind) ? sh.x - 50 : (e.kind === 'Actor' ? sh.x - 30 : sh.x);
+  const w = e.kind === 'Port' || DIA.has(e.kind) ? 120 : (e.kind === 'Actor' ? sh.w + 60 : sh.w);
+  inlineEdit(x, y, w, h, e.name, multi, v => { snap(); e.name = multi ? v : v.trim(); afterChange(); });
+}
+function editEdge(ed, field){
+  const r = E(ed.el); if(!r) return;
+  if(!ed._pts) renderDiagram();
+  if(!ed._pts) return;
+  const p = ed._pts, a = p.length === 4 ? p[1] : p[0], b = p.length === 4 ? p[2] : p[1];
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  inlineEdit(mx - 70, my - 14, 140, 26, r[field] || '', false, v => { snap(); r[field] = v.trim(); afterChange(); });
+}
+
+/* ================= PROPERTIES ================= */
+function propTarget(){
+  const d = cur();
+  if(d && ST.sel.size === 1){
+    const id = [...ST.sel][0];
+    const sh = shapeOf(d, id); if(sh) return {el:E(sh.el), sh};
+    const ed = d.edges.find(x => x.id === id); if(ed) return {el:ed.el ? E(ed.el) : null, ed};
+  }
+  if(ST.tsel && E(ST.tsel)) return {el:E(ST.tsel)};
+  if(d && !ST.sel.size) return {el:d};
+  return {};
+}
+function blockOpts(sel){ return '<option value="">(yok)</option>' + Object.values(M.els).filter(e => e.kind === 'Block').sort(sortEls).map(b => `<option value="${b.id}"${b.id === sel ? ' selected' : ''}>${esc(b.name)}</option>`).join(''); }
+function renderProps(){
+  const {el, sh, ed} = propTarget();
+  const pf = (l, c) => `<div class="pf"><label>${l}</label><div>${c}</div></div>`;
+  let h = '';
+  if(!el && !ed){ h = `<div class="muted">${ST.sel.size > 1 ? ST.sel.size + ' öğe seçili.' : 'Özelliklerini görmek için ağaçta veya diyagramda bir eleman seçin.'}</div>`; $('#props').innerHTML = h; return; }
+  if(!el && ed){
+    h = `<div class="pt">${KIND.Anchor.tr}</div>` + pf('Çizgi', `<select data-ef="route"><option value="ortho"${ed.route !== 'straight' ? ' selected' : ''}>Dik açılı</option><option value="straight"${ed.route === 'straight' ? ' selected' : ''}>Düz</option></select>`);
+    $('#props').innerHTML = h; return;
+  }
+  const k = KIND[el.kind];
+  h += `<div class="pt">${icon(el)} ${esc(el.kind === 'Diagram' ? DT[el.dtype].tr : k.tr)}</div>`;
+  if(el.kind === 'Comment') h += pf('Metin', `<textarea data-f="name">${esc(el.name)}</textarea>`);
+  else h += pf('Ad', `<input data-f="name" value="${esc(el.name)}">`);
+  if(el.owner) h += pf('Sahibi', `<a class="lnk" data-goto="${el.owner}">${esc(pathOf(el.owner))}</a>`);
+  switch(el.kind){
+    case 'Part':
+      h += pf('Tip', `<select data-f="type">${blockOpts(el.type)}</select>`);
+      h += pf('Çokluk', `<input data-f="mult" value="${esc(el.mult || '')}" placeholder="ör. 1, 0..1, 1..*">`);
+      h += pf('Toplama', `<select data-f="shared"><option value="">composite (parça)</option><option value="1"${el.shared ? ' selected' : ''}>shared (referans)</option></select>`);
+      break;
+    case 'Value':
+      h += pf('Tip', `<input data-f="vtype" list="vtypes" value="${esc(el.vtype || '')}"><datalist id="vtypes"><option>Real</option><option>Integer</option><option>Boolean</option><option>String</option></datalist>`);
+      h += pf('Varsayılan', `<input data-f="def" value="${esc(el.def || '')}">`);
+      h += pf('Birim', `<input data-f="unit" value="${esc(el.unit || '')}" placeholder="ör. V, kg, Hz">`);
+      break;
+    case 'Port':
+      h += pf('Yön', `<select data-f="dir">${['', 'in', 'out', 'inout'].map(v => `<option value="${v}"${(el.dir || '') === v ? ' selected' : ''}>${v || '(belirsiz)'}</option>`).join('')}</select>`);
+      h += pf('Tip', `<select data-f="type">${blockOpts(el.type)}</select>`);
+      break;
+    case 'Object':
+      h += pf('Tip', `<select data-f="type">${blockOpts(el.type)}</select>`); break;
+    case 'Partition':
+      h += pf('Temsil eder', `<select data-f="represents">${blockOpts(el.represents)}</select>`); break;
+    case 'Action': {
+      const acts = Object.values(M.els).filter(e => e.kind === 'Activity').sort(sortEls);
+      h += pf('Çağırır', `<select data-f="behavior"><option value="">(yok)</option>${acts.map(a => `<option value="${a.id}"${a.id === el.behavior ? ' selected' : ''}>${esc(a.name)}</option>`).join('')}</select>`);
+      if(el.behavior && E(el.behavior)) h += pf('', `<button class="pbtn" data-openbeh="1">Aktiviteyi aç</button>`);
+      break;
+    }
+    case 'Diagram':
+      h += pf('Şekil / bağlantı', `${el.shapes.length} / ${el.edges.length}`);
+      h += pf('', `<button class="pbtn" data-opend="${el.id}">Diyagramı aç</button>`); break;
+  }
+  if(k.rel){
+    h += pf('Kaynak', `<a class="lnk" data-goto="${el.src}">${esc(E(el.src) ? nm(E(el.src)) : '?')}</a>`);
+    h += pf('Hedef', `<a class="lnk" data-goto="${el.tgt}">${esc(E(el.tgt) ? nm(E(el.tgt)) : '?')}</a>`);
+    if(el.kind === 'ControlFlow' || el.kind === 'ObjectFlow') h += pf('Koşul', `<input data-f="guard" value="${esc(el.guard || '')}" placeholder="guard, ör. başarılı">`);
+    if(el.part && E(el.part)) h += pf('Oluşan part', `<a class="lnk" data-goto="${el.part}">${esc(partLabel(E(el.part)))}</a>`);
+    if(el.kind === 'Connector'){ if(el.sp && E(el.sp)) h += pf('Kaynak part', esc(E(el.sp).name)); if(el.tp && E(el.tp)) h += pf('Hedef part', esc(E(el.tp).name)); }
+  }
+  if(['Block','Part','Actor'].includes(el.kind)){
+    const io = iconOf(el);
+    h += `<div class="sub"><span>İkon</span></div>`;
+    h += pf('İkon', (io ? `<span class="icprev">${iconInline(io.ic, 22, io.col)}</span> ${esc(io.ic.name)}${!el.icon ? ' <span class="muted">(tipten)</span>' : ''}<br>` : '') + `<button class="pbtn" data-icpick="1">${io ? 'Değiştir…' : 'İkon seç…'}</button>${el.icon ? ' <button class="pbtn" data-icclear="1">Kaldır</button>' : ''}`);
+    if(el.icon && ICONS[el.icon]){
+      h += pf('İkon rengi', `<input type="color" data-f="iconColor" value="${el.iconColor || ICON_CAT_COL[ICONS[el.icon].cat]}"> <button class="pbtn" data-iccol="1">Varsayılan</button>`);
+      if(el.kind === 'Block') h += pf('Gösterim', `<select data-f="iconMode"><option value="corner">Köşede küçük</option><option value="large"${el.iconMode === 'large' ? ' selected' : ''}>Başlıkta büyük</option></select>`);
+    }
+  }
+  if(el.kind === 'Block'){
+    const ch = kidsOf(el.id);
+    const sec = (title, kind, fmt) => {
+      const list = ch.filter(c => c.kind === kind);
+      return `<div class="sub"><span>${title} (${list.length})</span><button data-add="${kind}">+ Ekle</button></div>` + list.map(c => `<div class="li"><a class="lnk" data-goto="${c.id}">${esc(fmt(c))}</a></div>`).join('');
+    };
+    h += sec('Parts', 'Part', partLabel) + sec('Value properties', 'Value', valLabel) + sec('Ports', 'Port', portLabel);
+    const used = Object.values(M.els).filter(p => (p.kind === 'Part' || p.kind === 'Port' || p.kind === 'Object') && p.type === el.id);
+    if(used.length) h += `<div class="sub"><span>Bu bloğu tip olarak kullananlar</span></div>` + used.map(p => `<div class="li"><a class="lnk" data-goto="${p.id}">${esc(pathOf(p.id))}</a></div>`).join('');
+  }
+  if(el.kind !== 'Diagram' && !k.rel){
+    const ds = Object.values(M.els).filter(v => v.kind === 'Diagram').sort(sortEls);
+    h += pf('Bağlı diyagram', `<select data-f="link"><option value="">(yok)</option>${ds.map(v => `<option value="${v.id}"${v.id === el.link ? ' selected' : ''}>[${v.dtype}] ${esc(v.name)}</option>`).join('')}</select>`);
+    const tg = navTargets(el, null);
+    if(tg.length) h += `<div class="sub"><span>Alt diyagramlar (çift tıkla açılır)</span></div>` + tg.map(v => `<div class="li"><a class="lnk" data-opend="${v.id}">[${v.dtype}] ${esc(v.name)}</a></div>`).join('');
+  }
+  if(el.kind !== 'Diagram') h += pf('Açıklama', `<textarea data-f="doc">${esc(el.doc || '')}</textarea>`);
+  if(el.kind !== 'Diagram' && !k.rel){
+    const shown = diagramsShowing(el.id);
+    if(shown.length) h += `<div class="sub"><span>Gösterildiği diyagramlar</span></div>` + shown.map(d => `<div class="li"><a class="lnk" data-opend="${d.id}" data-focus="${el.id}">${esc(d.name)}</a> <span class="muted">${d.dtype}</span></div>`).join('');
+  }
+  if(sh){
+    h += `<div class="sub"><span>Görünüm</span></div>`;
+    h += pf('Dolgu', `<input type="color" data-sf="fill" value="${sh.fill || (FILL[el.kind] && FILL[el.kind].startsWith('#') ? FILL[el.kind] : '#ffffff')}"> <button class="pbtn" data-resetfill="1">Varsayılan</button>`);
+    h += pf('Konum/Boyut', `<span class="muted">${Math.round(sh.x)}, ${Math.round(sh.y)} · ${Math.round(sh.w)}×${Math.round(sh.h)}</span>`);
+  }
+  if(ed){
+    h += `<div class="sub"><span>Görünüm</span></div>`;
+    h += pf('Çizgi', `<select data-ef="route"><option value="ortho"${ed.route !== 'straight' ? ' selected' : ''}>Dik açılı</option><option value="straight"${ed.route === 'straight' ? ' selected' : ''}>Düz</option></select>`);
+  }
+  $('#props').innerHTML = h;
+}
+const propsEl = $('#props');
+propsEl.addEventListener('change', ev => {
+  const t = ev.target, tg = propTarget();
+  if(t.dataset.f && tg.el){
+    snap();
+    const f = t.dataset.f; let v = t.value;
+    if(['type', 'behavior', 'represents', 'link'].includes(f) && !v) v = null;
+    if(f === 'shared') v = !!v;
+    if(f === 'name' && tg.el.kind !== 'Comment') v = v.trim();
+    tg.el[f] = v;
+    if(f === 'behavior' && v && !tg.el.name) tg.el.name = E(v).name;
+    if(f === 'type' && v && tg.el.kind === 'Part'){ Object.values(M.els).forEach(d => { if(d.kind === 'Diagram' && d.dtype === 'ibd') d.shapes.filter(s => s.el === tg.el.id && !s.parent).forEach(s => showPorts(d, s)); }); }
+    afterChange(); return;
+  }
+  if(t.dataset.sf && tg.sh){ snap(); tg.sh.fill = t.value; afterChange(); return; }
+  if(t.dataset.ef && tg.ed){ snap(); tg.ed.route = t.value; afterChange(); }
+});
+propsEl.addEventListener('click', ev => {
+  const t = ev.target;
+  if(t.dataset.goto){ revealInTree(t.dataset.goto); const d = cur(); if(d){ ST.sel = new Set(d.shapes.filter(s => s.el === t.dataset.goto).map(s => s.id)); renderDiagram(); } renderProps(); return; }
+  if(t.dataset.opend){ openD(t.dataset.opend); if(t.dataset.focus){ const d = cur(); ST.sel = new Set(d.shapes.filter(s => s.el === t.dataset.focus).map(s => s.id)); ST.tsel = t.dataset.focus; renderDiagram(); renderProps(); } return; }
+  if(t.dataset.openbeh){ const tg = propTarget(); if(tg.el) openBehavior(tg.el); return; }
+  if(t.dataset.add){ const tg = propTarget(); if(tg.el) newChild(tg.el.id, t.dataset.add); return; }
+  const bt = t.closest && t.closest('button');
+  if(bt && bt.dataset.icpick){ const tg = propTarget(); if(tg.el){ const d = cur(); iconPicker(d && ST.sel.size > 1 ? iconTargets(d, tg.el) : [tg.el.id]); } return; }
+  if(bt && bt.dataset.icclear){ const tg = propTarget(); if(tg.el){ snap(); delete tg.el.icon; delete tg.el.iconColor; afterChange(); } return; }
+  if(bt && bt.dataset.iccol){ const tg = propTarget(); if(tg.el){ snap(); delete tg.el.iconColor; afterChange(); } return; }
+  if(t.dataset.resetfill){ const tg = propTarget(); if(tg.sh){ snap(); delete tg.sh.fill; afterChange(); } }
+});
+
+/* ================= MENU / TOAST / STATUS ================= */
+const ctx = $('#ctx');
+function menu(x, y, items){
+  ctx.innerHTML = items.map((it, i) => it === '-' ? '<div class="sep"></div>' : (it.h ? `<div class="mh">${esc(it.h)}</div>` : `<div class="mi${it.dis ? ' dis' : ''}" data-i="${i}"><span>${esc(it.t)}</span>${it.k ? `<span class="k">${it.k}</span>` : ''}</div>`)).join('');
+  ctx.style.display = 'block';
+  const r = ctx.getBoundingClientRect();
+  ctx.style.left = Math.min(x, innerWidth - r.width - 6) + 'px';
+  ctx.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 6)) + 'px';
+  ctx.onclick = ev => { const mi = ev.target.closest('.mi'); if(!mi) return; hideMenu(); items[+mi.dataset.i].f(); };
+}
+function hideMenu(){ ctx.style.display = 'none'; }
+window.addEventListener('mousedown', ev => { if(!ev.target.closest('#ctx')) hideMenu(); }, true);
+let toastT = null;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 2800); }
+function renderStatus(){
+  const d = cur();
+  $('#stDiag').textContent = d ? DT[d.dtype].tr + ' — ' + d.name : 'Diyagram açık değil';
+  $('#stCount').textContent = d ? `${d.shapes.length} şekil · ${d.edges.length} bağlantı · %${Math.round(d.z * 100)}` : `${Object.keys(M.els).length} model elemanı`;
+  $('#stHint').textContent = ST.tool ? (ST.tool.type === 'rel' ? `${KIND[ST.tool.kind].tr}: kaynaktan hedefe sürükleyin · Esc iptal` : `${KIND[ST.tool.kind].tr}: tuvale tıklayın · Esc iptal`) :
+    'Ctrl+Tekerlek yakınlaş · Boşluk/Orta tuş+sürükle kaydır · Del modelden sil · Shift+Del diyagramdan kaldır';
+}
+function renderAll(){ renderTree(); renderTabs(); renderPalette(); renderDiagram(); renderProps(); renderStatus(); }
+
+/* ================= EXPORT ================= */
+function exportSVGString(){
+  const d = cur(); if(!d) return null;
+  const {svg, bbox} = diagramSVG(d, true);
+  if(!bbox){ toast('Diyagram boş'); return null; }
+  const pad = 12, x = bbox.x - pad, y = bbox.y - pad, w = Math.ceil(bbox.w + pad * 2), h = Math.ceil(bbox.h + pad * 2);
+  return {str:`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${x} ${y} ${w} ${h}"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff"/>${svg}</svg>`, w, h, name:fileSafe(d.name)};
+}
+function fileSafe(s){ return String(s || 'diyagram').replace(/[\\/:*?"<>|]+/g, '_').trim() || 'diyagram'; }
+function download(blob, name){
+  if(NATIVE){
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    const flt = {png:'PNG görüntü (*.png)|*.png', svg:'SVG görüntü (*.svg)|*.svg', html:'HTML (*.html)|*.html', json:'JSON (*.json)|*.json'}[ext] || 'Tüm dosyalar (*.*)|*.*';
+    const rd = new FileReader();
+    rd.onload = async () => {
+      const b64 = String(rd.result).split(',')[1] || '';
+      const r = await nDialog('save', name, flt, b64, true);
+      if(r.error) toast('Kaydedilemedi: ' + r.error); else if(r.path) toast('Kaydedildi: ' + r.path);
+    };
+    rd.readAsDataURL(blob); return;
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+function exportSVG(){ const r = exportSVGString(); if(r) download(new Blob([r.str], {type:'image/svg+xml'}), r.name + '.svg'); }
+function toPNG(cb){
+  const r = exportSVGString(); if(!r) return;
+  const scale = Math.min(3, Math.max(1, 6000 / Math.max(r.w, r.h) < 2 ? 1 : 2));
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas'); c.width = Math.round(r.w * scale); c.height = Math.round(r.h * scale);
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    c.toBlob(b => cb(b, r.name), 'image/png');
+  };
+  img.onerror = () => toast('Görüntü oluşturulamadı');
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
+}
+function exportPNG(){ toPNG((b, n) => download(b, n + '.png')); }
+function copyImage(){
+  toPNG(async b => {
+    try { await navigator.clipboard.write([new ClipboardItem({'image/png': b})]); toast('Diyagram panoya kopyalandı — Word/PowerPoint\'e yapıştırabilirsiniz'); }
+    catch(e){ toast('Panoya kopyalama bu tarayıcıda izinli değil; PNG indirin.'); }
+  });
+}
+
+/* ================= PERSIST / FILES ================= */
+function pack(){ M.ui = {open:ST.open, cur:ST.cur, exp:[...ST.exp].slice(0, 2000)}; M.savedAt = Date.now(); return M; }
+function serialize(){ const s = JSON.stringify(pack()); return s; }
+/* ---- native (exe) bridge: present only when running inside SysMLModelleyici.exe ---- */
+const NATIVE = typeof window.nativeInfo === 'function';
+let curPath = '', dirty = false, nSeq = 0;
+const nWait = {};
+window.__ncb = (id, res) => { const f = nWait[id]; delete nWait[id]; if(f) f(res || {}); };
+function nDialog(kind, name, filter, data, b64){ return new Promise(res => { const id = ++nSeq; nWait[id] = res; window.nativeDialog(id, kind, name || '', filter || '', data || '', !!b64).catch(e => { delete nWait[id]; res({error:String(e)}); }); }); }
+const baseName = p => String(p || '').split(/[\\/]/).pop();
+function updTitle(){
+  if(!NATIVE) return;
+  const t = (dirty ? '* ' : '') + (curPath ? baseName(curPath) : (M ? E(M.rootId).name + ' (kaydedilmedi)' : '')) + ' — SysML Modelleyici';
+  try { window.nativeSetTitle(t); } catch(e){}
+}
+function markDirty(){ if(!dirty){ dirty = true; updTitle(); } }
+let aT = null;
+function persist(){
+  if(NATIVE){ clearTimeout(aT); aT = setTimeout(() => { try { window.nativeAutosave(JSON.stringify(pack(), clean), curPath, dirty); } catch(e){} }, 500); return; }
+  try { localStorage.setItem(LSK, JSON.stringify(pack(), clean)); } catch(e){}
+}
+let pT = null;
+function persistSoon(){ clearTimeout(pT); pT = setTimeout(persist, 400); }
+async function saveJSON(saveAs){
+  const txt = JSON.stringify(pack(), clean, 1);
+  if(!NATIVE){ download(new Blob([txt], {type:'application/json'}), fileSafe(E(M.rootId).name) + '.sysml.json'); toast('Model kaydedildi (JSON)'); return; }
+  try {
+    if(curPath && !saveAs){ await window.nativeWrite(curPath, txt); }
+    else {
+      const r = await nDialog('save', curPath ? baseName(curPath) : fileSafe(E(M.rootId).name) + '.sysml', 'SysML model (*.sysml)|*.sysml|JSON (*.json)|*.json', txt, false);
+      if(r.error) throw r.error; if(!r.path) return;
+      curPath = r.path;
+    }
+    dirty = false; updTitle(); persist(); toast('Kaydedildi: ' + baseName(curPath));
+  } catch(e){ toast('Kaydedilemedi: ' + e); }
+}
+function saveHTML(){
+  const json = JSON.stringify(pack(), clean).replace(/</g, '\\u003c');
+  const html = PRISTINE.replace(/(<script type="application\/json" id="embedded-model">)[\s\S]*?(<\/script>)/, (m, a, b) => a + json + b);
+  download(new Blob([html], {type:'text/html'}), fileSafe(E(M.rootId).name) + '.html');
+  toast('Model gömülü HTML kaydedildi — bu dosyayı açan kişi modeli hazır görür');
+}
+function validModel(m){ return m && m.els && m.rootId && m.els[m.rootId]; }
+function loadModel(m){
+  M = m;
+  Object.values(M.els).forEach(e => { if(e.kind === 'Diagram'){ e.shapes = e.shapes || []; e.edges = e.edges || []; if(!e.z) e.z = 1; if(e.vx == null){ e.vx = 60; e.vy = 70; } } });
+  const ui = M.ui || {};
+  ST.open = (ui.open || []).filter(id => E(id)); ST.cur = E(ui.cur) ? ui.cur : (ST.open[0] || null);
+  ST.exp = new Set(ui.exp || [M.rootId]); ST.sel.clear(); ST.tsel = null; ST.tool = null;
+}
+function parseModelText(txt){
+  let m = null;
+  try {
+    if(/^\s*</.test(txt)){ const mm = txt.match(/<script type="application\/json" id="embedded-model">([\s\S]*?)<\/script>/); if(mm && mm[1].trim()) m = JSON.parse(mm[1]); }
+    else m = JSON.parse(txt.replace(/^\uFEFF/, ''));
+  } catch(e){}
+  return validModel(m) ? m : null;
+}
+function openText(txt, path){
+  const m = parseModelText(txt);
+  if(!m){ toast('Geçerli bir model dosyası değil'); return false; }
+  snap(); loadModel(m); ST.back = []; ST.fwd = [];
+  curPath = path && /\.(sysml|json)$/i.test(path) ? path : '';
+  dirty = !curPath; afterLoad(); updTitle(); toast('Model açıldı: ' + E(M.rootId).name);
+  return true;
+}
+$('#fileIn').addEventListener('change', ev => {
+  const f = ev.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = () => openText(String(rd.result), '');
+  rd.readAsText(f, 'utf-8'); ev.target.value = '';
+});
+async function openFile(){
+  if(!NATIVE) return $('#fileIn').click();
+  if(dirty && !confirm('Kaydedilmemiş değişiklikler var. Yine de başka bir model açılsın mı?')) return;
+  const r = await nDialog('open', '', 'Model dosyaları (*.sysml;*.json;*.html)|*.sysml;*.json;*.html;*.htm|Tüm dosyalar (*.*)|*.*');
+  if(r.error) return toast('Açılamadı: ' + r.error);
+  if(r.path) openText(r.text, r.path);
+}
+function emptyModel(){ M = {uid:uid(), v:1, els:{}, rootId:null}; const r = mk('Model', null, {name:'Model'}); M.rootId = r.id; mk('Package', r.id, {name:'Paket1'}); return M; }
+
+/* ================= TOOLBAR / KEYS ================= */
+const ACT = {
+  new(){ if(NATIVE && dirty && !confirm('Kaydedilmemiş değişiklikler var. Devam edilsin mi?')) return; if(!NATIVE && !confirm('Yeni boş model oluşturulsun mu? (Mevcut model Geri Al ile geri getirilebilir; kalıcı yedek için önce Kaydet\'i kullanın.)')) return; snap(); const m = emptyModel(); m.ui = {open:[], cur:null, exp:[m.rootId]}; loadModel(m); curPath = ''; dirty = true; afterLoad(); updTitle(); },
+  navBack, navFwd,
+  layoutMenu(){ const b = document.querySelector('[data-act="layoutMenu"]').getBoundingClientRect(); setTimeout(() => menu(b.left, b.bottom + 4, layoutMenuItems()), 0); },
+  iconMenu(){
+    const d = cur(), ids = new Set();
+    if(d) d.shapes.forEach(s => { if(ST.sel.has(s.id)){ const e = E(s.el); if(e && ['Block','Part','Actor'].includes(e.kind)) ids.add(e.id); } });
+    if(!ids.size && ST.tsel && E(ST.tsel) && ['Block','Part','Actor'].includes(E(ST.tsel).kind)) ids.add(ST.tsel);
+    if(!ids.size) return toast('Önce bir blok, part veya aktör seçin');
+    iconPicker([...ids]);
+  },
+  open:openFile, save(){ saveJSON(false); }, saveAs(){ saveJSON(true); }, saveHtml:saveHTML, undo, redo,
+  png:exportPNG, svg:exportSVG, copy:copyImage,
+  zin(){ zoomBtn(1.2); }, zout(){ zoomBtn(1 / 1.2); }, fit,
+  grid(){ ST.grid = !ST.grid; renderDiagram(); },
+  expandAll(){ Object.values(M.els).forEach(e => { if(!KIND[e.kind].rel) ST.exp.add(e.id); }); renderTree(); persistSoon(); },
+  collapseAll(){ ST.exp = new Set([M.rootId]); renderTree(); persistSoon(); },
+  help:showHelp
+};
+document.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if(b && ACT[b.dataset.act]) ACT[b.dataset.act](); });
+document.addEventListener('keydown', ev => {
+  const tag = (ev.target.tagName || '').toLowerCase();
+  if(tag === 'input' || tag === 'textarea' || tag === 'select') return;
+  const k = ev.key, c = ev.ctrlKey || ev.metaKey;
+  if(k === ' '){ ST.space = true; ev.preventDefault(); return; }
+  if(ev.altKey && k === 'ArrowLeft'){ ev.preventDefault(); navBack(); return; }
+  if(ev.altKey && k === 'ArrowRight'){ ev.preventDefault(); navFwd(); return; }
+  if(c && (k === 'z' || k === 'Z') && !ev.shiftKey){ ev.preventDefault(); undo(); return; }
+  if(c && (k === 'y' || k === 'Y' || ((k === 'z' || k === 'Z') && ev.shiftKey))){ ev.preventDefault(); redo(); return; }
+  if(c && (k === 's' || k === 'S')){ ev.preventDefault(); saveJSON(ev.shiftKey); return; }
+  if(c && ev.shiftKey && (k === 'l' || k === 'L')){ ev.preventDefault(); const d0 = cur(); if(d0) runLayout(LAYOUTS[d0.dtype][0][0]); return; }
+  if(c && (k === 'o' || k === 'O')){ ev.preventDefault(); openFile(); return; }
+  if(k === 'Escape'){ if($('#modal').style.display === 'flex'){ $('#modal').style.display = 'none'; return; } setTool(null); ST.sel.clear(); hideMenu(); renderDiagram(); renderProps(); return; }
+  const d = cur();
+  if(ST.focus === 'tree'){
+    if(k === 'Delete' && ST.tsel && ST.tsel !== M.rootId){ snap(); delModel([ST.tsel]); afterChange(); }
+    if(k === 'F2' && ST.tsel){ ev.preventDefault(); treeRename(ST.tsel); }
+    if(k === 'Enter' && ST.tsel && E(ST.tsel) && E(ST.tsel).kind === 'Diagram') openD(ST.tsel);
+    return;
+  }
+  if(!d) return;
+  if(c && (k === 'a' || k === 'A')){ ev.preventDefault(); ST.sel = new Set(d.shapes.map(s => s.id)); renderDiagram(); renderProps(); return; }
+  if(k === 'Delete'){
+    if(!ST.sel.size) return; ev.preventDefault();
+    if(ev.shiftKey){ snap(); removeFromDiagram(d, [...ST.sel]); afterChange(); } else delSelectedModel();
+    return;
+  }
+  if(k === 'F2'){ ev.preventDefault(); const id = [...ST.sel][0]; const sh = id && shapeOf(d, id); if(sh) editShape(sh); else { const ed = d.edges.find(x => x.id === id); if(ed) editEdge(ed, 'name'); } return; }
+  if(k.startsWith('Arrow') && ST.sel.size){
+    ev.preventDefault();
+    const st = ev.shiftKey ? 1 : G, dx = k === 'ArrowLeft' ? -st : k === 'ArrowRight' ? st : 0, dy = k === 'ArrowUp' ? -st : k === 'ArrowDown' ? st : 0;
+    snap();
+    const set = new Set([...ST.sel]); d.shapes.forEach(s => { if(s.parent && set.has(s.parent)) set.add(s.id); });
+    d.shapes.forEach(s => { if(set.has(s.id) && !(s.parent && !ST.sel.has(s.parent) && ST.sel.has(s.id))){ s.x += dx; s.y += dy; } });
+    renderDiagram(); persistSoon(); return;
+  }
+  if(k === '+' || k === '='){ zoomBtn(1.2); } if(k === '-'){ zoomBtn(1 / 1.2); }
+});
+window.addEventListener('mouseup', ev => { if(ev.button === 3){ ev.preventDefault(); navBack(); } if(ev.button === 4){ ev.preventDefault(); navFwd(); } });
+document.addEventListener('keyup', ev => { if(ev.key === ' ') ST.space = false; });
+window.addEventListener('blur', () => { ST.space = false; });
+function showHelp(){
+  $('#modalBox').onclick = null; $('#modalBox').style.width = ''; $('#modalBox').style.maxWidth = '';
+  $('#modalBox').innerHTML = `<h2>SysML Modelleyici — Kullanım</h2>
+  <h3>Model ağacı</h3>
+  <table>
+  <tr><td>Sağ tık</td><td>Yeni eleman / yeni diyagram (BDD, IBD, Use Case, Aktivite), yeniden adlandır, sil</td></tr>
+  <tr><td>Çift tık</td><td>Diyagramı açar; diğer elemanları açar/kapatır</td></tr>
+  <tr><td>Sürükle → ağaç</td><td>Elemanı başka bir paket/blok altına taşır</td></tr>
+  <tr><td>Sürükle → diyagram</td><td>Mevcut elemanı diyagramda gösterir; ilişkileri otomatik çizilir.<br>IBD'ye Blok bırakmak o tipte yeni part oluşturur; bir part'ın üzerine bırakmak part'ın tipini değiştirir.<br>Aktivite diyagramına Aktivite bırakmak onu çağıran aksiyon oluşturur.</td></tr>
+  </table>
+  <h3>Diyagram</h3>
+  <table>
+  <tr><td>Palet</td><td>Elemanı sürükleyip bırakın veya tıklayıp tuvale tıklayın. İlişki aracını seçip kaynaktan hedefe sürükleyin. Çift tık aracı sabitler.</td></tr>
+  <tr><td>Çift tık</td><td>Elemanın alt diyagramı varsa onu açar (bloğun IBD'si, part'ın tip bloğunun IBD'si, aksiyonun çağırdığı aktivite, use case'in akışı, bağlı hiperlink diyagram). Birden fazlaysa seçim menüsü çıkar. Sağ alt köşedeki mavi simge alt diyagram olduğunu gösterir. Alt diyagramı yoksa ad düzenlemeye geçer; <kbd>Alt</kbd>+çift tık her zaman ad düzenler.</td></tr>
+  <tr><td>◀ ▶ / <kbd>Alt+←</kbd> <kbd>Alt+→</kbd></td><td>Önceki / sonraki diyagrama dön (farenin geri/ileri tuşları da çalışır)</td></tr>
+  <tr><td>Sağ tık → Yeni alt diyagram</td><td>Seçili eleman için IBD / aktivite diyagramı oluşturup bağlar; aksiyon için yeni aktivite oluşturup çağırır</td></tr>
+  <tr><td><kbd>F2</kbd></td><td>Ad düzenle (Not'larda <kbd>Ctrl+Enter</kbd> ile bitir). Akış çizgisinde koşul (guard) düzenler.</td></tr>
+  <tr><td><kbd>Del</kbd></td><td>Seçiliyi <b>modelden</b> siler (tüm diyagramlardan kalkar)</td></tr>
+  <tr><td><kbd>Shift+Del</kbd></td><td>Yalnızca bu <b>diyagramdan</b> kaldırır, model elemanı kalır</td></tr>
+  <tr><td><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd></td><td>Geri al / yinele</td></tr>
+  <tr><td><kbd>Ctrl+Tekerlek</kbd></td><td>Yakınlaş; tekerlek kaydırır; <kbd>Boşluk</kbd> veya orta tuş + sürükle tuvali kaydırır</td></tr>
+  <tr><td>Ok tuşları</td><td>Seçiliyi 10 px (Shift ile 1 px) taşır; <kbd>Alt</kbd>+sürükle ızgarasız taşır</td></tr>
+  <tr><td>Bağlantı orta tutamağı</td><td>Seçili dik açılı bağlantının orta parçasını sürükleyerek rota ayarlanır</td></tr>
+  </table>
+  <h3>Otomatik düzen ve hizalama</h3>
+  <table>
+  <tr><td>Düzen ▾ / <kbd>Ctrl+Shift+L</kbd></td><td>Diyagram türüne özel düzenler: BDD'de hiyerarşik (bütün üstte, parçalar altta; genelleme üst sınıf üstte), ızgara, dairesel. IBD'de bağlantı yönüne göre akış (out → in), portlar karşı tarafa bakacak şekilde yeniden dizilir. Use case'te aktörler solda ya da iki yanda, use case'ler sistem sınırı içinde, include/extend sağa doğru. Aktivitede akış sırası; kulvarlar varsa her düğüm kendi kulvarında kalır.</td></tr>
+  <tr><td>Toparla</td><td>Mevcut yerleşimi koruyup çakışmaları giderir ve ızgaraya oturtur.</td></tr>
+  <tr><td>Hizala / dağıt</td><td>Birden fazla şekil seçiliyken: sola/sağa/üste/alta hizala, ortala, eşit aralıkla dağıt, aynı boyut. Sağ tık menüsünde de vardır.</td></tr>
+  <tr><td>Geri alma</td><td>Her düzen tek adımda <kbd>Ctrl+Z</kbd> ile geri alınır.</td></tr>
+  </table>
+  <h3>İkonlar</h3>
+  <table>
+  <tr><td>İkon ata</td><td>Blok, part veya aktör seçip araç çubuğundaki <b>İkon</b> düğmesi, sağ tık → "İkon ata…" veya Özellikler panelinden. 10 kategoride 200'e yakın ikon, aramalı. Birden çok eleman seçiliyse hepsine birden atanır.</td></tr>
+  <tr><td>Gösterim</td><td>Blokta "köşede küçük" veya "başlıkta büyük"; renk kategoriden gelir, istenirse değiştirilir. Part'lar ve nesne düğümleri ikonu tip bloğundan otomatik alır; ağaçta da görünür.</td></tr>
+  </table>
+  <h3>Modelle senkron davranışlar</h3>
+  <table>
+  <tr><td>BDD Composition / Aggregation</td><td>Bütün blokta hedef blok tipinde otomatik <i>part</i> oluşturur; bloğun "parts" bölmesinde görünür.</td></tr>
+  <tr><td>IBD Port</td><td>Part'a bırakılan port, part'ın tip bloğuna eklenir; BDD'de bloğun "ports" bölmesinde görünür.</td></tr>
+  <tr><td>IBD oluşturma</td><td>Bloğun mevcut part'ları, portları ve connector'ları otomatik yerleştirilir.</td></tr>
+  <tr><td>Ad değişikliği</td><td>Ağaçta, tüm diyagramlarda ve özelliklerde anında güncellenir.</td></tr>
+  </table>
+  <h3>Kayıt</h3>
+  <table>
+  <tr><td>Otomatik</td><td>Model tarayıcının yerel deposunda otomatik saklanır (aynı bilgisayar/tarayıcı).</td></tr>
+  <tr><td>Kaydet</td><td>.sysml.json dosyası indirir; "Aç" ile geri yüklenir.</td></tr>
+  <tr><td>HTML olarak kaydet</td><td>Modeli içine gömülü uygulama dosyası üretir; paylaştığınız kişi açınca modeli hazır görür.</td></tr>
+  <tr><td>PNG / SVG / Panoya kopyala</td><td>Açık diyagramı çerçevesiyle birlikte görüntü olarak verir.</td></tr>
+  </table>
+  <p style="text-align:right;margin:12px 0 0"><button class="pbtn" onclick="document.getElementById('modal').style.display='none'">Kapat</button></p>`;
+  $('#modal').style.display = 'flex';
+}
+$('#modal').addEventListener('mousedown', ev => { if(ev.target.id === 'modal') $('#modal').style.display = 'none'; });
+
+/* splitters */
+(function(){
+  const vs = $('#vsplit'), hs = $('#hsplit'), left = $('#left'), tb = $('#treeBox'), pb = $('#propsBox');
+  vs.addEventListener('mousedown', ev => {
+    ev.preventDefault(); const sx = ev.clientX, w0 = left.offsetWidth;
+    const mv = e => { left.style.width = Math.max(180, Math.min(600, w0 + e.clientX - sx)) + 'px'; };
+    const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); };
+    addEventListener('mousemove', mv); addEventListener('mouseup', up);
+  });
+  hs.addEventListener('mousedown', ev => {
+    ev.preventDefault(); const sy = ev.clientY, h0 = tb.offsetHeight, tot = tb.offsetHeight + pb.offsetHeight;
+    const mv = e => { const h = Math.max(60, Math.min(tot - 60, h0 + e.clientY - sy)); tb.style.flex = 'none'; tb.style.height = h + 'px'; pb.style.flex = '1'; };
+    const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); };
+    addEventListener('mousemove', mv); addEventListener('mouseup', up);
+  });
+})();
+
+/* ================= DEMO ================= */
+function demo(){
+  M = {uid:uid(), v:1, els:{}, rootId:null};
+  const root = mk('Model', null, {name:'Örnek Model'}); M.rootId = root.id;
+  const pk = mk('Package', root.id, {name:'Yapı'});
+  const sys = mk('Block', pk.id, {name:'Araç Sistemi', doc:'Sistem bağlam bloğu'});
+  const gb = mk('Block', pk.id, {name:'Güç Birimi'}), kb = mk('Block', pk.id, {name:'Kontrol Birimi'}), sb = mk('Block', pk.id, {name:'Sensör Birimi'});
+  sys.icon = 'apc'; sys.iconMode = 'large'; gb.icon = 'battery'; kb.icon = 'cpu'; sb.icon = 'radar';
+  mk('Value', gb.id, {name:'gerilim', vtype:'Real', def:'28', unit:'V'});
+  mk('Value', sys.id, {name:'kütle', vtype:'Real', unit:'kg'});
+  const pGo = mk('Port', gb.id, {name:'güçÇıkış', dir:'out'});
+  const pKg = mk('Port', kb.id, {name:'güçGiriş', dir:'in'});
+  const pKv = mk('Port', kb.id, {name:'veriGiriş', dir:'in'});
+  const pSv = mk('Port', sb.id, {name:'veriÇıkış', dir:'out'});
+  const bdd = mk('Diagram', pk.id, {name:'Sistem Yapısı', dtype:'bdd', shapes:[], edges:[], vx:60, vy:80, z:1});
+  const s0 = addShape(bdd, sys.id, 270, 30, 180, 80), s1 = addShape(bdd, gb.id, 20, 230, 190, 80), s2 = addShape(bdd, kb.id, 270, 230, 190, 80), s3 = addShape(bdd, sb.id, 520, 230, 190, 80);
+  const e1 = connect(bdd, 'Composition', s0, s1), e2 = connect(bdd, 'Composition', s0, s2), e3 = connect(bdd, 'Composition', s0, s3);
+  const partG = E(E(e1.el).part).id, partK = E(E(e2.el).part).id, partS = E(E(e3.el).part).id;
+  const ibd = newDiagramCore(sys.id, 'ibd', 'Araç Sistemi İç Yapısı');
+  const ps = (part, port) => ibd.shapes.find(s => s.el === port && s.parent && shapeOf(ibd, s.parent).el === part);
+  const mv = (part, dx, dy) => { const P = ibd.shapes.find(s => s.el === part && !s.parent); ibd.shapes.forEach(s => { if(s === P || s.parent === P.id){ s.x += dx; s.y += dy; } }); };
+  mv(partS, -640, 180); ibd.shapes.filter(s => E(s.el).kind === 'Value').forEach(s => { s.x += 640; s.y -= 20; });
+  const c1 = connect(ibd, 'Connector', ps(partG, pGo.id), ps(partK, pKg.id)); E(c1.el).name = 'güçHattı';
+  const c2 = connect(ibd, 'Connector', ps(partS, pSv.id), ps(partK, pKv.id)); E(c2.el).name = 'veriYolu';
+  const pu = mk('Package', root.id, {name:'Kullanım Senaryoları'});
+  const op = mk('Actor', pu.id, {name:'Operatör'});
+  const subj = mk('Subject', pu.id, {name:'Araç Sistemi'});
+  const u1 = mk('UseCase', pu.id, {name:'Sistemi Başlat'}), u2 = mk('UseCase', pu.id, {name:'Görev Planla'}), u3 = mk('UseCase', pu.id, {name:'Durum İzle'}), u4 = mk('UseCase', pu.id, {name:'Kendi Kendine Test'});
+  const uc = mk('Diagram', pu.id, {name:'Operatör Senaryoları', dtype:'uc', shapes:[], edges:[], vx:60, vy:80, z:1});
+  const sS = addShape(uc, subj.id, 200, 0, 420, 400);
+  const sOp = addShape(uc, op.id, 40, 150), sU1 = addShape(uc, u1.id, 250, 60, 150, 64), sU2 = addShape(uc, u2.id, 250, 170, 150, 64), sU3 = addShape(uc, u3.id, 250, 280, 150, 64), sU4 = addShape(uc, u4.id, 440, 60, 150, 64);
+  connect(uc, 'Association', sOp, sU1); connect(uc, 'Association', sOp, sU2); connect(uc, 'Association', sOp, sU3); connect(uc, 'Include', sU1, sU4);
+  const pa = mk('Package', root.id, {name:'Davranış'});
+  const act = mk('Activity', pa.id, {name:'Sistemi Başlat'});
+  const ad = newDiagramCore(act.id, 'act', 'Sistemi Başlat Akışı');
+  const A = (k, n, x, y, w, h) => addShape(ad, mk(k, act.id, n != null ? {name:n} : {}).id, x, y, w, h);
+  const n0 = A('Initial', null, 228, 0), n1 = A('Action', 'Güç ver', 170, 60), n2 = A('Action', 'Kendi kendine test yap', 170, 150), n3 = A('Decision', null, 222, 240),
+    n4 = A('Action', 'Hazır durumunu bildir', 170, 320), n5 = A('Final', null, 227, 410), n6 = A('Action', 'Hata raporla', 400, 230), n7 = A('FlowFinal', null, 458, 320);
+  [[n0, n1], [n1, n2], [n2, n3], [n4, n5], [n6, n7]].forEach(([a, b]) => connect(ad, 'ControlFlow', a, b));
+  E(connect(ad, 'ControlFlow', n3, n4).el).guard = 'başarılı';
+  E(connect(ad, 'ControlFlow', n3, n6).el).guard = 'hata';
+  u1.link = ad.id;
+  const actT = mk('Activity', pa.id, {name:'Kendi Kendine Test'});
+  E(n2.el).behavior = actT.id;
+  const td = newDiagramCore(actT.id, 'act', 'Kendi Kendine Test Akışı');
+  const B = (k, n, x, y, w, h) => addShape(td, mk(k, actT.id, n != null ? {name:n} : {}).id, x, y, w, h);
+  const t0 = B('Initial', null, 98, 0), t1 = B('Fork', null, 40, 60, 140, 6), t2 = B('Action', 'Güç hattı kontrolü', -60, 110), t3 = B('Action', 'Sensör kontrolü', 180, 110), t4 = B('Join', null, 40, 210, 140, 6), t5 = B('Action', 'Test sonucunu kaydet', 40, 260), t6 = B('Final', null, 97, 350);
+  [[t0, t1], [t1, t2], [t1, t3], [t2, t4], [t3, t4], [t4, t5], [t5, t6]].forEach(([a, b]) => connect(td, 'ControlFlow', a, b));
+  const note = mk('Comment', act.id, {name:'Test süresi en fazla 30 sn olmalıdır.'});
+  const sn = addShape(ad, note.id, 410, 120, 170, 50); connect(ad, 'Anchor', sn, n2);
+  M.ui = {open:[bdd.id, ibd.id, uc.id, ad.id], cur:bdd.id, exp:[root.id, pk.id, pu.id, pa.id, act.id, sys.id]};
+  return M;
+}
+
+/* ================= BOOT ================= */
+(async function boot(){
+  if(NATIVE){
+    document.querySelectorAll('.nat').forEach(b => b.style.display = 'inline-block');
+    let info = {};
+    try { info = await window.nativeInfo() || {}; } catch(e){}
+    let m = null;
+    if(info.argText) m = parseModelText(info.argText);
+    if(m){ curPath = /\.(sysml|json)$/i.test(info.argPath || '') ? info.argPath : ''; dirty = !curPath; }
+    else if(info.autosave){ m = parseModelText(info.autosave); if(m){ curPath = info.lastPath || ''; dirty = !!info.dirty || !curPath; } }
+    if(!m){ m = demo(); dirty = true; }
+    loadModel(m); renderAll(); updTitle(); persist();
+    return;
+  }
+  let emb = null, ls = null;
+  try { const t = $('#embedded-model').textContent.trim(); if(t) emb = JSON.parse(t); } catch(e){}
+  try { const t = localStorage.getItem(LSK); if(t) ls = JSON.parse(t); } catch(e){}
+  let m;
+  if(validModel(emb) && validModel(ls) && ls.uid === emb.uid && (ls.savedAt || 0) > (emb.savedAt || 0)) m = ls;
+  else if(validModel(emb)) m = emb;
+  else if(validModel(ls)) m = ls;
+  else m = demo();
+  loadModel(m);
+  renderAll(); persist();
+})();
+</script>
+</body>
+</html>
