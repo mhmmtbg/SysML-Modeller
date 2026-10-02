@@ -13,6 +13,7 @@ Dosya içindeki ana bölümler (`/* ===== ... ===== */` başlıklarıyla ayrılm
 | STATE | Model (`M`), arayüz durumu (`ST`), geri al/yinele yığınları |
 | DIAGRAM CORE | Şekil ekleme, port yerleşimi, ilişki oluşturma, doğrulama, silme |
 | AUTO LAYOUT | Katmanlı (Sugiyama tarzı) yerleşim, kulvarlar, use case düzeni, ızgara, dairesel, toparla, hizalama |
+| REQUIREMENTS & TRACEABILITY | Gereksinim tablosu, izlenebilirlik matrisi, kapsama analizi, sütun yönetimi, bağımlılıksız XLSX yazıcı/okuyucu (ZIP + DecompressionStream), CSV |
 | SHAPE / EDGE DRAWING | SVG çizimi, dik açılı bağlantı rotalama, ok uçları |
 | TREE / TABS / PALETTE | Model ağacı, sekmeler, palet |
 | CANVAS INTERACTION | Fare/klavye etkileşimi, sürükle-bırak, satır içi düzenleme |
@@ -43,7 +44,7 @@ Dosya içindeki ana bölümler (`/* ===== ... ===== */` başlıklarıyla ayrılm
 - **[go-webview2](https://github.com/jchv/go-webview2):** Saf Go, CGO gerektirmez. Windows'taki Edge WebView2 motorunu kullanır.
 - HTML, `go:embed` ile exe'nin içine gömülür ve yalnızca `127.0.0.1` üzerinden sunulur.
 - Masaüstüne özel işlevler, JavaScript'e bağlanan fonksiyonlarla sağlanır:
-  - `nativeInfo`, `nativeAutosave`, `nativeWrite`, `nativeSetTitle`, `nativeDialog` (Windows aç/kaydet pencereleri)
+  - `nativeInfo`, `nativeAutosave`, `nativeWrite`, `nativeSetTitle`, `nativeDialog` (Windows aç/kaydet pencereleri; ikili dosyalar base64 ile taşınır)
 - HTML bu fonksiyonları bulamazsa normal tarayıcı moduna döner. Yani `app/sysml-modeler.html` iki sürüm için de tek kaynaktır.
 
 ### Derleme

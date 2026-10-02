@@ -263,7 +263,11 @@ func main() {
 						res["error"] = err.Error()
 					} else {
 						res["path"] = p
-						res["text"] = string(b)
+						if isB64 {
+							res["b64"] = base64.StdEncoding.EncodeToString(b)
+						} else {
+							res["text"] = string(b)
+						}
 					}
 				}
 			} else {
