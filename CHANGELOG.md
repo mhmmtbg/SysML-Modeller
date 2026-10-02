@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.5.0 — 2026-10-03
+
+- Test durumu alanları: prosedür no, yöntem (Test/Analiz/Muayene/Gösterim), doğrulama seviyesi (Birim → Kalifikasyon), test edilen birim, standart/referans, sorumlu, planlanan başlangıç/bitiş, sonuç (Planlandı/Yapılmadı/Geçti/Kaldı/Koşullu), sonuç tarihi, rapor no; diyagramda sonuç rozeti
+- **Doğrulama Matrisi (VCRM):** gereksinim × T/A/M/G, doğrulama seviyesi, test/prosedür, sonuç, rapor no ve hesaplanan doğrulama durumu; seviye/alt sistem, durum ve yöntem filtreleri
+- Doğrulama durumu (Doğrulandı / Kısmen / Kaldı / Planlandı / Faaliyet yok) gereksinim tablosunda, kapsama analizinde ve Excel çıktısında
+- **Test kampanyası:** testlerin düzenlenebilir tablosu ve seviyeye/sonuca/birime göre gruplanan zaman çizelgesi (Gantt); bugün çizgisi, gecikmiş test uyarısı
+- Excel: VCRM ve Test Durumları sayfaları; test sonuçlarını Excel'den geri aktarma (prosedür no veya ada göre eşleşir, Excel tarih biçimlerini tanır)
+
 ## v1.4.0 — 2026-10-03
 
 - Gereksinim kalite kontrolü (INCOSE kuralları): "-malıdır" kipi, birden fazla ister, belirsiz ifadeler (uygun, yeterli, hızlı…), TBD/TBC, birimsiz sayılar, aşırı uzun metin, yinelenen ID, birbirine çok benzeyen gereksinimler; tabloda rozet, özelliklerde uyarı listesi, **Kalite raporu** görünümü ve Excel'de "Kalite" sayfası

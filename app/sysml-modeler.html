@@ -159,6 +159,17 @@ td.mxd.on{background:#e6d3f1}
 td.mxd.na{background:#f5f6f8;cursor:default}
 td.mxt{text-align:center;font-weight:700;color:#445;background:#f7f8fa}
 td.mxt.zero{color:#c0392b;background:#fbe3e5}
+.vcrm th.vm{text-align:center;width:26px;padding:6px 4px}
+td.vmc{text-align:center;font-weight:700;color:#2e7d32;cursor:pointer;position:relative;min-width:24px}
+td.vmc:hover{background:#eef6ee}td.vmc.on{background:#f1f8f1}
+td.vmc i{position:absolute;right:3px;bottom:3px;width:7px;height:7px;border-radius:50%}
+.ganttw{overflow:auto;border:1px solid #cfd6df;border-radius:6px;background:#fff;max-height:52vh}
+.gantt{display:block}
+table.tct input,table.tct select{font:inherit;font-size:12px;border:1px solid transparent;background:transparent;padding:2px 3px;border-radius:3px;max-width:170px}
+table.tct input:not([type=date]){min-width:90px}
+table.tct input:hover,table.tct select:hover{border-color:#bfc8d3}
+table.tct input:focus{border-color:#d18a00;background:#fffbe6;outline:none}
+table.tct tr.late td.rn{border-left:3px solid #c0392b}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:16px}
 .card{background:#fff;border:1px solid #dde3ea;border-radius:8px;padding:12px 14px}
 .cv{font-size:26px;font-weight:700;color:#26364b}
@@ -1441,6 +1452,12 @@ function drawShape(sh, e, d, SM, exp){
       s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="12" fill="${sh.fill || FILL[k] || '#fff8d8'}" ${SW}/>`;
       s += T(stp, x + sh.w / 2, y + 17, {italic:1, size:11});
       s += T(wrap(e.name, sh.w - 16, true), x + sh.w / 2, y + 33, {bold:1});
+      if(k === 'TestCase' && (e.result || e.procNo || e.tLevel)){
+        const rs = testResult(e), rw = tw(rs, true, 9.5) + 12;
+        s += `<rect x="${x + sh.w - rw - 5}" y="${y + 4}" width="${rw}" height="14" rx="7" fill="${RES_COL[rs]}"/>` + T(rs, x + sh.w - 5 - rw / 2, y + 14.5, {size:9.5, bold:1, fill:'#fff'});
+        const info = [e.procNo, e.tLevel].filter(Boolean).join(' · ');
+        if(info){ const nl = wrap(e.name, sh.w - 16, true).length, iy = y + 33 + nl * 15; if(sh.h < iy - y + 8) sh.h = snapv(iy - y + 10); s += T(info.length > 34 ? info.slice(0, 33) + '…' : info, x + sh.w / 2, iy, {size:10.5, fill:'#556'}); }
+      }
       break;
     }
     case 'State': {
@@ -2900,6 +2917,8 @@ function renderProps(){
       h += pf('Tip', `<input data-f="vtype" list="vtypes2" value="${esc(el.vtype || '')}"><datalist id="vtypes2"><option>Real</option><option>Integer</option><option>Boolean</option></datalist>`); break;
     case 'Requirement':
       h += reqPropsHTML(el, pf); break;
+    case 'TestCase':
+      h += testPropsHTML(el, pf); break;
     case 'Partition':
       h += pf('Temsil eder', `<select data-f="represents">${blockOpts(el.represents)}</select>`); break;
     case 'Action': {
@@ -2987,6 +3006,7 @@ propsEl.addEventListener('change', ev => {
     if(f.startsWith('attr:')){ tg.el.attrs = tg.el.attrs || {}; tg.el.attrs[f.slice(5)] = v; afterChange(); return; }
     if(f === 'name' && tg.el.kind !== 'Comment') v = v.trim();
     tg.el[f] = v;
+    if(tg.el.kind === 'TestCase'){ if(f === 'result' && ['Geçti', 'Kaldı', 'Koşullu'].includes(v) && !tg.el.rDate) tg.el.rDate = todayISO(); if(f === 'pStart' && v && (!tg.el.pEnd || tg.el.pEnd < v)) tg.el.pEnd = v; }
     if(f === 'subsys' && tg.el.kind === 'Requirement'){ tg.el.subsys = String(v).trim(); relocateReq(tg.el); }
     if(f === 'behavior' && v && !tg.el.name) tg.el.name = E(v).name;
     if(f === 'type' && v && (tg.el.kind === 'Part' || tg.el.kind === 'ConstraintProp')){ Object.values(M.els).forEach(d => { if(d.kind === 'Diagram' && (d.dtype === 'ibd' || d.dtype === 'par')) d.shapes.filter(s => s.el === tg.el.id && !s.parent).forEach(s => showPorts(d, s)); }); }
@@ -3038,6 +3058,7 @@ const TRACE_COLS = [
   {key:'_funcs', label:'Fonksiyonlar', trace:1, w:24},
   {key:'_verifyBy', label:'Doğrulayan Test', trace:1, w:20},
   {key:'_status', label:'Kapsama Durumu', trace:1, w:30},
+  {key:'_verst', label:'Doğrulama Durumu', trace:1, w:16},
   {key:'_quality', label:'Kalite', trace:1, w:30}
 ];
 const FUNC_KINDS = new Set(['Activity','Action']);
@@ -3214,6 +3235,8 @@ function renderView(){
   else if(ST.cur === '@matrix') body.innerHTML = matrixHTML();
   else if(ST.cur === '@quality') body.innerHTML = qualityHTML();
   else if(ST.cur === '@baseline'){ body.innerHTML = baselineHTML(); renderViewBar(); }
+  else if(ST.cur === '@vcrm'){ refreshLvlSelect(); body.innerHTML = vcrmHTML(); }
+  else if(ST.cur === '@campaign') body.innerHTML = campaignHTML();
   else body.innerHTML = coverageHTML();
   body.scrollTop = st; body.scrollLeft = sl;
   if(pendingFocus){ const el = body.querySelector(`[data-r="${pendingFocus[0]}"][data-c="${pendingFocus[1]}"]`); pendingFocus = null; if(el){ el.focus(); placeCaretEnd(el); } }
@@ -3238,6 +3261,10 @@ function renderViewBar(){
       <label class="vchk"><input type="checkbox" data-mf="empty"${MX.empty ? ' checked' : ''}> Yalnız boş satırlar</label>${xl}`;
   } else if(ST.cur === '@quality'){
     bar.innerHTML = `<label class="vchk"><input type="checkbox" data-cf="qall"${CV.qall ? ' checked' : ''}> Sorunsuzları da göster</label><span class="vsep"></span><button class="vb" data-va="export">⤒ Excel'e aktar (Kalite sayfası dahil)</button>`;
+  } else if(ST.cur === '@vcrm'){
+    bar.innerHTML = vcrmBar(); const ls = bar.querySelector('[data-xf="vc.lvl"]'); ls.value = VC.lvl; if(ls.value !== VC.lvl){ VC.lvl = 'all'; ls.value = 'all'; }
+  } else if(ST.cur === '@campaign'){
+    bar.innerHTML = campaignBar();
   } else if(ST.cur === '@baseline'){
     const bls = M.baselines || [], opts = sel => bls.map(b => `<option value="${b.id}"${sel === b.id ? ' selected' : ''}>${esc(b.name)}</option>`).join('');
     bar.innerHTML = `<button class="vb pri" data-va="mkbl">+ Taban çizgisi oluştur</button><span class="vsep"></span>
@@ -3259,7 +3286,7 @@ function lvlMatch(r, lvl){
   if(lvl.startsWith('sub:')) return reqLevel(r) !== 'Sistem' && String(r.subsys || '').trim() === lvl.slice(4);
   return true;
 }
-function refreshLvlSelect(){ const ls = document.querySelector('#view [data-vf="lvl"]'); if(ls){ const h = lvlOptions(); if(ls.dataset.h !== h){ ls.innerHTML = h; ls.dataset.h = h; ls.value = RV.lvl; if(ls.value !== RV.lvl){ RV.lvl = 'all'; ls.value = 'all'; } } } }
+function refreshLvlSelect(){ const vc = ST.cur === '@vcrm', ls = document.querySelector(vc ? '#view [data-xf="vc.lvl"]' : '#view [data-vf="lvl"]'), S0 = vc ? VC : RV; if(ls){ const h = lvlOptions(); if(ls.dataset.h !== h){ ls.innerHTML = h; ls.dataset.h = h; ls.value = S0.lvl; if(ls.value !== S0.lvl){ S0.lvl = 'all'; ls.value = 'all'; } } } }
 function cellVal(r, key){ if(key.startsWith('attr:')) return (r.attrs || {})[key.slice(5)] || ''; return r[key] == null ? '' : String(r[key]); }
 function reqTableHTML(){
   const cols = visCols(), idx = relIdx();
@@ -3290,6 +3317,7 @@ function reqTableHTML(){
       else if(k === '_verifyBy') h += `<td>${chips(t.verifyBy, r.id, 'test')}</td>`;
       else if(k === 'status') h += `<td><select class="stsel" style="color:${STATUS_COL[reqStatus(r)]}" data-r="${r.id}" data-c="status">${REQ_STATUS.map(x => `<option${reqStatus(r) === x ? ' selected' : ''}>${x}</option>`).join('')}</select></td>`;
       else if(k === '_quality') h += `<td>${qualityBadge(reqQuality(r, SIMX))}</td>`;
+      else if(k === '_verst') h += `<td>${verChip(verStatus(r, t))}</td>`;
       else if(k === '_status') h += `<td><span class="cov cov-${c.st}">${c.st}</span>${c.gaps.length ? `<div class="gapt">${c.gaps.map(esc).join('<br>')}</div>` : ''}</td>`;
       else h += `<td><div class="ce${k === 'text' || k === 'srcText' ? ' long' : ''}${k === 'reqId' ? ' rid' : ''}" contenteditable="true" spellcheck="false" data-r="${r.id}" data-c="${esc(k)}">${esc(cellVal(r, k))}</div></td>`;
     });
@@ -3364,7 +3392,9 @@ function coverageData(){
     ['Üst gereksinimi olan (alt sistem)', pct(sub, x => x.t.parents.length > 0), null, 1],
     ['Model/fonksiyonla karşılanan (alt sistem)', pct(sub, x => x.t.elems.length + x.t.funcs.length > 0), null, 1],
     ['Doğrulama yöntemi tanımlı', pct(sys.concat(sub), x => !!(x.r.verif && x.r.verif.trim())), 'tüm gereksinimler', 1],
-    ['Test ile doğrulanan', pct(sys.concat(sub), x => x.t.verifyBy.length > 0), 'verify ilişkisi olan', 1]
+    ['Doğrulama faaliyeti planlanan', pct(sys.concat(sub), x => x.t.verifyBy.length > 0), 'verify ilişkisi olan test/faaliyet', 1],
+    ['Doğrulanan (testleri geçen)', pct(sys.concat(sub), x => verStatus(x.r, x.t) === 'Doğrulandı'), 'tüm testleri "Geçti"', 1],
+    ['Başarısız doğrulama', sys.concat(sub).filter(x => verStatus(x.r, x.t) === 'Kaldı').length, null, 0]
   ]};
 }
 function coverageHTML(){
@@ -3380,10 +3410,10 @@ function coverageHTML(){
     const list = CV.gaps ? rows.filter(x => x.c.st !== 'Tam') : rows;
     let s = `<h3>${title} <span class="muted">(${list.length}${CV.gaps ? ' eksik' : ''})</span></h3>`;
     if(!list.length) return s + `<div class="muted" style="margin:0 0 14px">${CV.gaps ? 'Eksik yok 🎉' : 'Kayıt yok'}</div>`;
-    s += `<table class="rt cvt"><thead><tr><th>ID</th><th>Gereksinim</th>${sys ? '<th>Alt Sistem Gereksinimleri</th>' : '<th>Üst Gereksinim</th>'}<th>Model Elemanları</th><th>Fonksiyonlar</th><th>Doğrulama</th><th>Test</th><th>Durum</th><th>Eksikler</th></tr></thead><tbody>`;
+    s += `<table class="rt cvt"><thead><tr><th>ID</th><th>Gereksinim</th>${sys ? '<th>Alt Sistem Gereksinimleri</th>' : '<th>Üst Gereksinim</th>'}<th>Model Elemanları</th><th>Fonksiyonlar</th><th>Doğrulama</th><th>Test</th><th>Doğrulama Durumu</th><th>Durum</th><th>Eksikler</th></tr></thead><tbody>`;
     list.forEach(({r, t, c}) => {
       s += `<tr data-row="${r.id}" class="${ST.tsel === r.id ? 'sel' : ''}"><td style="white-space:nowrap"><a class="lnk" data-goto="${r.id}"><b>${esc(r.reqId || '')}</b></a></td><td class="cvtx">${!sys && r.subsys ? `<span class="chip2">${esc(r.subsys)}</span> ` : ''}${esc(r.name || '')}${r.text ? `<div class="muted">${esc(r.text.slice(0, 140))}</div>` : ''}</td>
-        <td>${nl(sys ? t.children : t.parents)}</td><td>${nl(t.elems)}</td><td>${nl(t.funcs)}</td><td>${r.verif ? esc(r.verif) : '<span class="miss">—</span>'}</td><td>${nl(t.verifyBy)}</td>
+        <td>${nl(sys ? t.children : t.parents)}</td><td>${nl(t.elems)}</td><td>${nl(t.funcs)}</td><td>${r.verif ? esc(r.verif) : '<span class="miss">—</span>'}</td><td>${nl(t.verifyBy)}</td><td>${verChip(verStatus(r, t))}</td>
         <td><span class="cov cov-${c.st}">${c.st}</span><div style="margin-top:3px">${statusChip(r)}</div></td><td class="gapt">${c.gaps.map(esc).join('<br>')}</td></tr>`;
     });
     return s + '</tbody></table>';
@@ -3589,15 +3619,15 @@ function buildXlsx(sheets){
   return zipStore(files);
 }
 const stStyle = st => st === 'Tam' ? 3 : st === 'Kısmi' ? 5 : 4;
-function traceText(key, t, c){
+function traceText(key, t, c, r0){
   const ids = a => a.map(x => x.reqId || nm(x)).join('\n'), names = a => a.map(x => x.name).join('\n');
-  return {_parents:ids(t.parents), _children:ids(t.children), _satisfy:names(t.elems), _funcs:names(t.funcs), _verifyBy:names(t.verifyBy), _status:c.st + (c.gaps.length ? ' — ' + c.gaps.join('; ') : '')}[key];
+  return {_parents:ids(t.parents), _children:ids(t.children), _satisfy:names(t.elems), _funcs:names(t.funcs), _verifyBy:names(t.verifyBy), _verst:verStatus(r0 || {}, t), _status:c.st + (c.gaps.length ? ' — ' + c.gaps.join('; ') : '')}[key];
 }
 function exportReqsXlsx(){
   const cols = visCols(), idx = relIdx(), rs = allReqs();
   if(!rs.length) return toast('Dışa aktarılacak gereksinim yok');
   const R1 = [cols.map(c => ({v:c.label, s:c.trace ? 9 : 1}))];
-  rs.forEach(r => { const t = trace(r, idx), c = covStatus(r, t); R1.push(cols.map(col => col.trace ? (col.key === '_status' ? {v:traceText(col.key, t, c), s:stStyle(c.st)} : traceText(col.key, t, c)) : (col.key === 'reqId' ? {v:cellVal(r, 'reqId'), s:6} : (col.key === 'level' ? reqLevel(r) : cellVal(r, col.key))))); });
+  rs.forEach(r => { const t = trace(r, idx), c = covStatus(r, t); R1.push(cols.map(col => col.trace ? (col.key === '_status' ? {v:traceText(col.key, t, c), s:stStyle(c.st)} : col.key === '_quality' ? reqQuality(r, simIndex()).map(x => x[1]).join('\n') : traceText(col.key, t, c, r)) : (col.key === 'reqId' ? {v:cellVal(r, 'reqId'), s:6} : (col.key === 'level' ? reqLevel(r) : cellVal(r, col.key))))); });
   const sheets = [{name:'Gereksinimler', rows:R1, widths:cols.map(c => c.w), header:true, freeze:[1, 1], filter:1}];
   const mat = (name, rows, colsE, kindF) => {
     const hdr = [{v:name, s:1}].concat(colsE.map(c => ({v:(c.reqId ? c.reqId + ' ' : '') + c.name, s:8})));
@@ -3615,12 +3645,13 @@ function exportReqsXlsx(){
   const D = coverageData();
   const cv = [[{v:'Kapsama Analizi — ' + E(M.rootId).name, s:10}], [], [{v:'Gösterge', s:1}, {v:'Değer', s:1}]];
   D.cards.forEach(([t, v, sub0, isPct]) => cv.push([t + (sub0 ? ' (' + sub0 + ')' : ''), {v:isPct ? '%' + v : v, s:6}]));
-  cv.push([], [{v:'ID', s:1}, {v:'Seviye', s:1}, {v:'Gereksinim', s:1}, {v:'Durum', s:1}, {v:'Eksikler', s:1}]);
-  D.sys.concat(D.sub).forEach(({r, c}) => cv.push([{v:r.reqId || '', s:6}, reqLevel(r), (r.name ? r.name + ': ' : '') + (r.text || ''), {v:c.st, s:stStyle(c.st)}, c.gaps.join('\n')]));
-  sheets.push({name:'Kapsama Analizi', rows:cv, widths:[44, 14, 60, 12, 50]});
+  cv.push([], [{v:'ID', s:1}, {v:'Seviye', s:1}, {v:'Gereksinim', s:1}, {v:'Durum', s:1}, {v:'Eksikler', s:1}, {v:'Doğrulama Durumu', s:1}]);
+  D.sys.concat(D.sub).forEach(({r, c, t}) => cv.push([{v:r.reqId || '', s:6}, reqLevel(r), (r.name ? r.name + ': ' : '') + (r.text || ''), {v:c.st, s:stStyle(c.st)}, c.gaps.join('\n'), verStatus(r, t)]));
+  sheets.push({name:'Kapsama Analizi', rows:cv, widths:[44, 14, 60, 12, 50, 16]});
   const SIMQ = simIndex(), qr = [[{v:'ID', s:1}, {v:'Gereksinim', s:1}, {v:'Önem', s:1}, {v:'Bulgu', s:1}]];
   rs.filter(activeReq).forEach(r => reqQuality(r, SIMQ).forEach(([sv, m]) => qr.push([{v:r.reqId || '', s:6}, r.text || '', {v:sv, s:sv === 'hata' ? 4 : sv === 'uyarı' ? 5 : 2}, m])));
   sheets.push({name:'Kalite', rows:qr, widths:[12, 70, 10, 60], header:true, freeze:[0, 1], filter:1});
+  vcrmSheets().forEach(x => sheets.push(x));
   const blob = buildXlsx(sheets);
   download(blob, fileSafe(E(M.rootId).name) + ' - Gereksinimler.xlsx');
 }
@@ -3849,6 +3880,11 @@ function reqMenuItems(){
     {t:'Excel\'den gereksinim aktar…', f:importReqs},
     {t:'Excel\'e aktar (gereksinimler + matrisler + kapsama)', f:exportReqsXlsx},
     {t:'Sütunlar ve özellikler…', f:columnManager},
+    '-',
+    {t:'Doğrulama matrisi (VCRM)', f:() => openD('@vcrm')},
+    {t:'Test kampanyası (zaman çizelgesi)', f:() => openD('@campaign')},
+    {t:'Excel\'e aktar (VCRM + test durumları)', f:exportVcrmXlsx},
+    {t:'Excel\'den test durumu / sonuç aktar…', f:importTests},
     '-',
     {t:'Kalite raporu', f:() => openD('@quality')},
     {t:'Taban çizgileri ve karşılaştırma', f:() => openD('@baseline')},
@@ -4129,6 +4165,272 @@ function impactAnalysis(id){
     if(ev.target.id === 'ic0') close();
   };
 }
+
+/* ================= PHASE 3: VERIFICATION MANAGEMENT (TEST CASES, VCRM, CAMPAIGN) ================= */
+const TEST_LEVELS = ['Birim', 'Entegrasyon', 'Alt Sistem', 'Sistem', 'Kabul (FAT)', 'Saha (SAT)', 'Kalifikasyon'];
+const TEST_RESULT = ['Planlandı', 'Yapılmadı', 'Geçti', 'Kaldı', 'Koşullu'];
+const RES_COL = {'Planlandı':'#5d8fc9', 'Yapılmadı':'#95a5a6', 'Geçti':'#2e9e6a', 'Kaldı':'#c0392b', 'Koşullu':'#d18a00'};
+const VER_ST = ['Doğrulandı', 'Kısmen', 'Kaldı', 'Planlandı', 'Faaliyet yok'];
+const VST_COL = {'Doğrulandı':'#2e9e6a', 'Kısmen':'#d18a00', 'Kaldı':'#c0392b', 'Planlandı':'#5d8fc9', 'Faaliyet yok':'#95a5a6'};
+const TEST_FIELDS = [['name', 'Test adı'], ['procNo', 'Prosedür no'], ['tMethod', 'Yöntem'], ['tLevel', 'Doğrulama seviyesi'], ['testItem', 'Test edilen birim'], ['std', 'Standart / referans'], ['resp', 'Sorumlu'], ['pStart', 'Planlanan başlangıç'], ['pEnd', 'Planlanan bitiş'], ['result', 'Sonuç'], ['rDate', 'Sonuç tarihi'], ['reportNo', 'Rapor no']];
+VIEWS['@vcrm'] = {tr:'Doğrulama Matrisi (VCRM)', ic:'VCR', note:'Doğrulama Çapraz Referans Matrisi: her gereksinimin planlanan doğrulama yöntemi (T/A/M/G), doğrulama seviyesi, ilgili test/prosedürler, sonuçları ve rapor numaraları.<br><br><b>Doğrulama durumu</b> testlerin sonucundan hesaplanır: tüm testler <i>Geçti</i> → Doğrulandı; herhangi biri <i>Kaldı</i> → Kaldı.'};
+VIEWS['@campaign'] = {tr:'Test Kampanyası', ic:'TST', note:'Test durumlarını tablo halinde düzenleyin ve planlanan tarihlerini zaman çizelgesinde görün.<br><br>Çubuk renkleri test sonucunu gösterir; kırmızı çerçeve bitiş tarihi geçmiş ama sonuçlanmamış testleri işaretler.<br><br>Çubuğa veya satıra tıklayınca test Özellikler panelinde açılır.'};
+const allTests = () => Object.values(M.els).filter(e => e.kind === 'TestCase').sort((a, b) => String(a.pStart || '9999').localeCompare(String(b.pStart || '9999')) || String(a.procNo || '').localeCompare(String(b.procNo || ''), 'tr', {numeric:true}) || nm(a).localeCompare(nm(b), 'tr'));
+const testResult = tc => TEST_RESULT.includes(tc.result) ? tc.result : 'Planlandı';
+function testReqs(tc, idx){ return ((idx || relIdx())['Verify'] || []).filter(x => x.src === tc.id).map(x => E(x.tgt)).filter(e => e && e.kind === 'Requirement').sort(reqSort); }
+function verStatus(r, t){
+  const ts = (t || trace(r)).verifyBy;
+  if(!ts.length) return 'Faaliyet yok';
+  const res = ts.map(x => x.kind === 'TestCase' ? testResult(x) : 'Planlandı');
+  if(res.includes('Kaldı')) return 'Kaldı';
+  if(res.every(x => x === 'Geçti')) return 'Doğrulandı';
+  if(res.some(x => x === 'Geçti' || x === 'Koşullu')) return 'Kısmen';
+  return 'Planlandı';
+}
+const verChip = s => `<span class="stc" style="background:${VST_COL[s]}">${esc(s)}</span>`;
+const resChip = s => `<span class="stc" style="background:${RES_COL[s]}">${esc(s)}</span>`;
+const todayISO = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const fmtD = s => s ? s.split('-').reverse().join('.') : '';
+const overdue = tc => ['Planlandı', 'Yapılmadı'].includes(testResult(tc)) && tc.pEnd && tc.pEnd < todayISO();
+function testPkg(){ const t = allTests()[0]; return t && E(t.owner) ? t.owner : findOrMkPkg(M.rootId, 'Doğrulama'); }
+function newTest(extra){ return mk('TestCase', testPkg(), Object.assign({name:uniqName('Yeni test', testPkg()), result:'Planlandı', tMethod:'Test'}, extra || {})); }
+function pickReqsForTest(tid){
+  const tc = E(tid); if(!tc) return;
+  const cur = new Set(testReqs(tc).map(r => r.id)), cands = allReqs();
+  pickList('Doğruladığı gereksinimler — ' + nm(tc), cands, cur, ids => {
+    snap(); const want = new Set(ids);
+    cands.forEach(r => { if(want.has(r.id) && !cur.has(r.id)) addRel('Verify', tc.id, r.id); if(!want.has(r.id) && cur.has(r.id)) delRel('Verify', tc.id, r.id); });
+    afterChange();
+  });
+}
+function testFieldInput(tc, f, attr){
+  const v = tc[f] || '', a = attr || `data-f="${f}"`;
+  if(f === 'tMethod') return `<select ${a}><option value="">—</option>${VERIF.map(x => `<option${v === x[0] ? ' selected' : ''}>${x[0]}</option>`).join('')}</select>`;
+  if(f === 'tLevel') return `<select ${a}><option value="">—</option>${TEST_LEVELS.concat(v && !TEST_LEVELS.includes(v) ? [v] : []).map(x => `<option${v === x ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select>`;
+  if(f === 'result') return `<select ${a} style="color:${RES_COL[testResult(tc)]};font-weight:600">${TEST_RESULT.map(x => `<option${testResult(tc) === x ? ' selected' : ''}>${x}</option>`).join('')}</select>`;
+  if(f === 'pStart' || f === 'pEnd' || f === 'rDate') return `<input type="date" ${a} value="${esc(v)}">`;
+  if(f === 'testItem') return `<input ${a} list="tilist" value="${esc(v)}" placeholder="ör. Güç Birimi">`;
+  return `<input ${a} value="${esc(v)}">`;
+}
+const testItemList = () => `<datalist id="tilist">${[...new Set(Object.values(M.els).filter(e => e.kind === 'Block').map(b => b.name).concat(subsystems()))].sort((a, b) => a.localeCompare(b, 'tr')).map(n => `<option value="${esc(n)}">`).join('')}</datalist>`;
+function testPropsHTML(el, pf){
+  let h = '';
+  TEST_FIELDS.slice(1).forEach(([f, l]) => { h += pf(l, testFieldInput(el, f)); });
+  h += testItemList();
+  if(overdue(el)) h += `<div class="gaps" style="background:#fdf2f2;border-color:#f1c4c4;color:#8a2a2a">⚠ Planlanan bitiş tarihi geçti, sonuç girilmedi</div>`;
+  const rs = testReqs(el);
+  h += `<div class="sub"><span>Doğruladığı gereksinimler (${rs.length})</span><button data-tcreq="${el.id}">+ / −</button></div>`;
+  h += rs.length ? rs.map(r => `<div class="li"><a class="lnk" data-goto="${r.id}"><b>${esc(r.reqId || '')}</b> ${esc(r.name || '')}</a> ${verChip(verStatus(r))}</div>`).join('') : '<div class="muted" style="font-size:12px">Henüz bağlı gereksinim yok (Verify ilişkisi)</div>';
+  return h;
+}
+
+/* ---- VCRM ---- */
+let VC = {lvl:'all', vst:'all', meth:'all'};
+function vcrmRows(){
+  const idx = relIdx();
+  return allReqs().filter(activeReq).filter(r => lvlMatch(r, VC.lvl)).map(r => {
+    const t = trace(r, idx), tests = t.verifyBy.filter(x => x.kind === 'TestCase'), meth = new Set(String(r.verif || '').split(/[,;\/]+/).map(x => x.trim()).filter(Boolean));
+    return {r, t, tests, meth, vs:verStatus(r, t)};
+  }).filter(x => (VC.vst === 'all' || x.vs === VC.vst) && (VC.meth === 'all' || x.meth.has(VC.meth)));
+}
+function vcrmHTML(){
+  if(!allReqs().length) return `<div class="vempty">Henüz gereksinim yok.<br><br><button class="vb pri" data-va="table">Gereksinim tablosunu aç</button></div>`;
+  const rows = vcrmRows(), all = allReqs().filter(activeReq).map(r => verStatus(r));
+  let h = '<div class="cards">' + VER_ST.map(s => { const n = all.filter(x => x === s).length, p = all.length ? Math.round(n / all.length * 100) : 0; return `<div class="card"><div class="cv" style="color:${VST_COL[s]}">${n}</div><div class="ct">${s}</div><div class="cbar"><i style="width:${p}%;background:${VST_COL[s]}"></i></div><div class="cs">%${p}</div></div>`; }).join('') + '</div>';
+  h += `<table class="rt vcrm"><thead><tr><th class="rn">#</th><th>Gereksinim ID</th><th>Gereksinim</th><th>Seviye</th>${VERIF.map(([v, a]) => `<th class="vm" title="${v}">${a}</th>`).join('')}<th>Doğrulama Seviyesi</th><th>Test / Prosedür</th><th>Sonuç</th><th>Rapor No</th><th>Doğrulama Durumu</th></tr></thead><tbody>`;
+  rows.forEach(({r, tests, meth, vs}, i) => {
+    const lv = [...new Set(tests.map(x => x.tLevel).filter(Boolean))].join(', ');
+    h += `<tr data-row="${r.id}" class="${ST.tsel === r.id ? 'sel' : ''} lv-${reqLevel(r) === 'Sistem' ? 's' : 'a'}"><td class="rn">${i + 1}</td><td style="white-space:nowrap"><a class="lnk" data-goto="${r.id}"><b>${esc(r.reqId || '')}</b></a></td>
+      <td class="cvtx">${esc(r.name || '')}${r.text ? `<div class="muted">${esc(r.text.slice(0, 160))}</div>` : ''}</td><td style="white-space:nowrap">${reqLevel(r) === 'Sistem' ? 'Sistem' : esc(r.subsys || 'Alt sistem')}</td>`;
+    VERIF.forEach(([v]) => {
+      const tm = tests.filter(x => x.tMethod === v), res = tm.map(testResult);
+      const col = !tm.length ? '' : res.includes('Kaldı') ? RES_COL['Kaldı'] : res.every(x => x === 'Geçti') ? RES_COL['Geçti'] : res.some(x => x === 'Geçti' || x === 'Koşullu') ? RES_COL['Koşullu'] : RES_COL['Planlandı'];
+      h += `<td class="vmc${meth.has(v) ? ' on' : ''}" data-verif="${v}" data-vr="${r.id}" title="${v}${tm.length ? ' — ' + tm.map(x => nm(x) + ': ' + testResult(x)).join(', ') : ''}">${meth.has(v) ? 'X' : ''}${col ? `<i style="background:${col}"></i>` : ''}</td>`;
+    });
+    h += `<td>${esc(lv) || '<span class="muted">—</span>'}</td>
+      <td><div class="tcell">${tests.map(x => `<span class="chip2"><a class="lnk" data-goto="${x.id}">${esc(nm(x))}${x.procNo ? ' · ' + esc(x.procNo) : ''}</a></span>`).join('')}<button class="tadd" data-trpick="test" data-rid="${r.id}" title="Test bağla / çıkar">+</button></div></td>
+      <td>${tests.map(x => resChip(testResult(x))).join(' ') || '<span class="muted">—</span>'}</td><td>${esc(tests.map(x => x.reportNo).filter(Boolean).join(', ')) || '<span class="muted">—</span>'}</td><td>${verChip(vs)}</td></tr>`;
+  });
+  h += '</tbody></table>';
+  const noMeth = rows.filter(x => !x.meth.size).length, noAct = rows.filter(x => x.meth.size && !x.tests.length).length;
+  return h + `<div class="vfoot">${rows.length} gereksinim · Yöntemi tanımsız: <b class="${noMeth ? 'bad' : ''}">${noMeth}</b> · Yöntemi var ama test/faaliyeti yok: <b class="${noAct ? 'bad' : ''}">${noAct}</b> · T/A/M/G hücresine tıklayarak planlanan yöntemi değiştirin; renkli işaret o yöntemdeki testlerin sonucudur.</div>`;
+}
+
+/* ---- test kampanyası ---- */
+let CP = {grp:'tLevel', res:'all', q:'', scale:'auto'};
+function campaignTests(){
+  const q = asciiTr(CP.q || '');
+  return allTests().filter(tc => (CP.res === 'all' || (CP.res === '@late' ? overdue(tc) : testResult(tc) === CP.res)) && (!q || asciiTr([tc.name, tc.procNo, tc.testItem, tc.std, tc.resp, tc.reportNo].join(' ')).includes(q)));
+}
+function ganttSVG(tests){
+  const dated = tests.filter(t => t.pStart && !isNaN(Date.parse(t.pStart)));
+  if(!dated.length) return `<div class="untr" style="margin-bottom:12px">Zaman çizelgesi için testlere <b>planlanan başlangıç</b> ve <b>bitiş</b> tarihi girin (aşağıdaki tablodan veya Özellikler panelinden).</div>`;
+  const DAY = 864e5, P = s => Date.parse(s + 'T00:00:00Z'), today = P(todayISO());
+  let min = Infinity, max = -Infinity;
+  dated.forEach(t => { const a = P(t.pStart), b = t.pEnd && !isNaN(P(t.pEnd)) ? Math.max(a, P(t.pEnd)) : a; min = Math.min(min, a); max = Math.max(max, b); if(t.rDate && !isNaN(P(t.rDate))){ min = Math.min(min, P(t.rDate)); max = Math.max(max, P(t.rDate)); } });
+  if(today >= min - 45 * DAY && today <= max + 45 * DAY){ min = Math.min(min, today); max = Math.max(max, today); }
+  min -= 3 * DAY; max += 4 * DAY;
+  const days = Math.round((max - min) / DAY);
+  const pxd = CP.scale === 'gun' ? 26 : CP.scale === 'hafta' ? 9 : CP.scale === 'ay' ? 3 : Math.max(3, Math.min(26, 980 / days));
+  const LW = 270, RH = 26, HH = 42, W = LW + days * pxd + 10;
+  const groups = []; const gk = t => CP.grp === 'none' ? '' : CP.grp === 'result' ? testResult(t) : (t[CP.grp] || '(belirtilmemiş)');
+  const order = CP.grp === 'tLevel' ? TEST_LEVELS : CP.grp === 'result' ? TEST_RESULT : [];
+  dated.forEach(t => { const k = gk(t); let g = groups.find(x => x.k === k); if(!g) groups.push(g = {k, items:[]}); g.items.push(t); });
+  groups.sort((a, b) => { const ia = order.indexOf(a.k), ib = order.indexOf(b.k); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.k.localeCompare(b.k, 'tr'); });
+  const nRows = dated.length + (CP.grp === 'none' ? 0 : groups.length), H = HH + nRows * RH + 6;
+  const X = ms => LW + (ms - min) / DAY * pxd;
+  let s = `<svg class="gantt" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/><rect x="0" y="0" width="${W}" height="${HH}" fill="#26364b"/>`;
+  const AYLAR = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+  for(let d = 0; d <= days; d++){
+    const ms = min + d * DAY, dt = new Date(ms), x = X(ms), dom = dt.getUTCDate(), wd = dt.getUTCDay();
+    if(pxd >= 9 && (wd === 0 || wd === 6)) s += `<rect x="${x}" y="${HH}" width="${pxd}" height="${H - HH}" fill="#f5f6f8"/>`;
+    const dim = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 1, 0)).getUTCDate();
+    if(dom === 1 || (d === 0 && (dim - dom + 1) * pxd > 70)){ s += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="${d === 0 ? 'none' : '#cfd6df'}"/><text x="${x + 4}" y="15" fill="#fff" font-size="11.5" font-weight="600">${AYLAR[dt.getUTCMonth()]} ${dt.getUTCFullYear()}</text>`; }
+    if(pxd >= 14) s += `<text x="${x + pxd / 2}" y="34" fill="#c9d3e0" font-size="10" text-anchor="middle">${dom}</text>`;
+    else if(wd === 1 && pxd >= 5) s += `<line x1="${x}" y1="${HH}" x2="${x}" y2="${H}" stroke="#eef1f4"/><text x="${x + 2}" y="34" fill="#c9d3e0" font-size="9.5">${dom}</text>`;
+  }
+  s += `<text x="10" y="30" fill="#fff" font-size="12" font-weight="600">Test durumu</text>`;
+  let y = HH;
+  groups.forEach(g => {
+    if(CP.grp !== 'none'){ s += `<rect x="0" y="${y}" width="${W}" height="${RH}" fill="#eef2f8"/><text x="10" y="${y + 17}" font-size="12" font-weight="700" fill="#26364b">${esc(g.k)} <tspan fill="#8592a3" font-weight="400">(${g.items.length})</tspan></text>`; y += RH; }
+    g.items.forEach(t => {
+      const a = P(t.pStart), b = t.pEnd && !isNaN(P(t.pEnd)) ? Math.max(a, P(t.pEnd)) : a, res = testResult(t), col = RES_COL[res], late = overdue(t);
+      const bx = X(a), bw = Math.max(pxd, (b - a) / DAY * pxd + pxd), lbl = nm(t) + (t.procNo ? ' · ' + t.procNo : '');
+      s += `<g data-goto="${t.id}" style="cursor:pointer"><rect x="0" y="${y}" width="${W}" height="${RH}" fill="${ST.tsel === t.id ? '#e8f0fe' : 'transparent'}"/><line x1="0" y1="${y + RH}" x2="${W}" y2="${y + RH}" stroke="#eef1f4"/>`;
+      s += `<text x="${CP.grp === 'none' ? 10 : 20}" y="${y + 17}" font-size="12" fill="#26364b">${esc(lbl.length > 38 ? lbl.slice(0, 37) + '…' : lbl)}<title>${esc(lbl)}</title></text>`;
+      s += `<rect x="${bx}" y="${y + 5}" width="${bw}" height="${RH - 10}" rx="4" fill="${col}" ${late ? 'stroke="#c0392b" stroke-width="2.5" stroke-dasharray="4 2"' : ''}><title>${esc(nm(t))}\n${fmtD(t.pStart)} – ${fmtD(t.pEnd || t.pStart)}\nSonuç: ${res}${late ? ' (gecikmiş)' : ''}</title></rect>`;
+      const rt = res + (late ? ' !' : '');
+      if(bw > tw(rt, true, 10.5) + 10) s += `<text x="${bx + bw / 2}" y="${y + 17}" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle" pointer-events="none">${esc(rt)}</text>`;
+      else s += `<text x="${bx + bw + 4}" y="${y + 17}" font-size="10.5" fill="${col}" font-weight="700" pointer-events="none">${esc(rt)}</text>`;
+      if(t.rDate && !isNaN(P(t.rDate))){ const rx = X(P(t.rDate)) + pxd / 2; s += `<path d="M${rx} ${y + 3}l5 5-5 5-5-5z" fill="#26364b" stroke="#fff"><title>Sonuç tarihi ${fmtD(t.rDate)}</title></path>`; }
+      s += `</g>`; y += RH;
+    });
+  });
+  if(today >= min && today <= max){ const tx = X(today) + pxd / 2; s += `<line x1="${tx}" y1="${HH - 6}" x2="${tx}" y2="${H}" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="5 3"/><rect x="${tx - 22}" y="${HH - 12}" width="44" height="13" rx="6" fill="#c0392b"/><text x="${tx}" y="${HH - 2}" font-size="9.5" fill="#fff" text-anchor="middle" font-weight="700">Bugün</text>`; }
+  s += `<line x1="${LW - 0.5}" y1="0" x2="${LW - 0.5}" y2="${H}" stroke="#cfd6df"/></svg>`;
+  const undated = tests.length - dated.length;
+  return `<div class="ganttw">${s}</div>${undated ? `<div class="muted" style="margin:4px 0 0">${undated} testin planlanan tarihi yok; çizelgede gösterilmiyor.</div>` : ''}`;
+}
+function campaignHTML(){
+  const all = allTests(), tests = campaignTests();
+  if(!all.length) return `<div class="vempty">Henüz test durumu yok.<br><br><button class="vb pri" data-xa="addTest">+ Test durumu ekle</button></div>`;
+  const cnt = r => all.filter(t => testResult(t) === r).length, late = all.filter(overdue).length;
+  let h = '<div class="cards">' + TEST_RESULT.map(r => `<div class="card"><div class="cv" style="color:${RES_COL[r]}">${cnt(r)}</div><div class="ct">${r}</div></div>`).join('') + `<div class="card"><div class="cv" style="color:${late ? '#c0392b' : '#2e9e6a'}">${late}</div><div class="ct">Gecikmiş (bitişi geçmiş, sonuçsuz)</div></div></div>`;
+  h += `<h3>Zaman çizelgesi</h3>` + ganttSVG(tests);
+  const idx = relIdx();
+  h += `<h3>Test durumları <span class="muted">(${tests.length} / ${all.length})</span></h3><table class="rt tct"><thead><tr><th class="rn">#</th>${TEST_FIELDS.map(([, l]) => `<th>${l}</th>`).join('')}<th class="th-tr">Doğruladığı Gereksinimler</th><th></th></tr></thead><tbody>`;
+  tests.forEach((tc, i) => {
+    h += `<tr data-row="${tc.id}" class="${ST.tsel === tc.id ? 'sel' : ''}${overdue(tc) ? ' late' : ''}"><td class="rn">${i + 1}</td>`;
+    TEST_FIELDS.forEach(([f]) => { h += `<td>${testFieldInput(tc, f, `data-tc="${tc.id}" data-tf="${f}"`)}</td>`; });
+    const rs = testReqs(tc, idx);
+    h += `<td><div class="tcell">${rs.map(r => `<span class="chip2" title="${esc(r.name || '')}"><a class="lnk" data-goto="${r.id}">${esc(r.reqId || nm(r))}</a></span>`).join('')}<button class="tadd" data-tcreq="${tc.id}" title="Gereksinim bağla / çıkar">+</button></div></td><td class="ra"><button class="tdel" data-tcdel="${tc.id}" title="Testi sil">✕</button></td></tr>`;
+  });
+  return h + `</tbody></table>${testItemList()}<div class="vfoot">Alanlar değiştirildiğinde kaydedilir. Gereksinim tarafındaki doğrulama durumu bu sonuçlardan hesaplanır.</div>`;
+}
+function vcrmBar(){
+  return `<select data-xf="vc.lvl">${lvlOptions()}</select>
+    <label>Durum <select data-xf="vc.vst"><option value="all">Tümü</option>${VER_ST.map(s => `<option${VC.vst === s ? ' selected' : ''}>${s}</option>`).join('')}</select></label>
+    <label>Yöntem <select data-xf="vc.meth"><option value="all">Tümü</option>${VERIF.map(([v]) => `<option${VC.meth === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+    <span class="vsep"></span><button class="vb" data-xa="campaign">Test kampanyasına git</button><button class="vb" data-xa="vxl">⤒ Excel'e aktar (VCRM + testler)</button>`;
+}
+function campaignBar(){
+  return `<button class="vb pri" data-xa="addTest">+ Test durumu</button><span class="vsep"></span>
+    <label>Grupla <select data-xf="cp.grp">${[['tLevel', 'Doğrulama seviyesi'], ['result', 'Sonuç'], ['tMethod', 'Yöntem'], ['testItem', 'Test edilen birim'], ['resp', 'Sorumlu'], ['none', 'Gruplama yok']].map(([k, t]) => `<option value="${k}"${CP.grp === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+    <label>Sonuç <select data-xf="cp.res"><option value="all">Tümü</option>${TEST_RESULT.map(s => `<option${CP.res === s ? ' selected' : ''}>${s}</option>`).join('')}<option value="@late"${CP.res === '@late' ? ' selected' : ''}>Gecikmiş</option></select></label>
+    <label>Ölçek <select data-xf="cp.scale">${[['auto', 'Otomatik'], ['gun', 'Gün'], ['hafta', 'Hafta'], ['ay', 'Ay']].map(([k, t]) => `<option value="${k}"${CP.scale === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+    <input data-xf="cp.q" placeholder="Ara (ad, prosedür, birim…)" value="${esc(CP.q)}">
+    <span class="vsep"></span><button class="vb" data-xa="vcrm">VCRM'e git</button><button class="vb" data-xa="timp">⤓ Excel'den test aktar</button><button class="vb" data-xa="vxl">⤒ Excel'e aktar</button>`;
+}
+function vcrmSheets(){
+  const idx = relIdx(), rs = allReqs().filter(activeReq);
+  const V = [[{v:'Gereksinim ID', s:1}, {v:'Seviye', s:1}, {v:'Alt Sistem', s:1}, {v:'Gereksinim', s:1}].concat(VERIF.map(([v]) => ({v, s:1}))).concat(['Doğrulama Seviyesi', 'Test / Prosedür', 'Sonuç', 'Rapor No', 'Doğrulama Durumu'].map(v => ({v, s:1})))];
+  rs.forEach(r => {
+    const t = trace(r, idx), tests = t.verifyBy.filter(x => x.kind === 'TestCase'), meth = new Set(String(r.verif || '').split(/[,;\/]+/).map(x => x.trim())), vs = verStatus(r, t);
+    V.push([{v:r.reqId || '', s:6}, reqLevel(r), reqLevel(r) === 'Sistem' ? '' : (r.subsys || ''), (r.name ? r.name + ': ' : '') + (r.text || '')].concat(VERIF.map(([v]) => meth.has(v) ? {v:'X', s:7} : '')).concat([[...new Set(tests.map(x => x.tLevel).filter(Boolean))].join(', '), tests.map(x => nm(x) + (x.procNo ? ' (' + x.procNo + ')' : '')).join('\n'), tests.map(x => testResult(x)).join('\n'), tests.map(x => x.reportNo).filter(Boolean).join('\n'), {v:vs, s:vs === 'Doğrulandı' ? 3 : vs === 'Kaldı' || vs === 'Faaliyet yok' ? 4 : 5}]));
+  });
+  const T0 = [TEST_FIELDS.map(([, l]) => ({v:l, s:1})).concat([{v:'Doğruladığı Gereksinimler', s:9}, {v:'Açıklama', s:1}])];
+  allTests().forEach(tc => T0.push(TEST_FIELDS.map(([f]) => f === 'result' ? {v:testResult(tc), s:tc.result === 'Geçti' ? 3 : tc.result === 'Kaldı' ? 4 : tc.result === 'Koşullu' ? 5 : 2} : (f === 'pStart' || f === 'pEnd' || f === 'rDate') ? fmtD(tc[f]) : (f === 'name' ? {v:nm(tc), s:6} : tc[f] || '')).concat([testReqs(tc, idx).map(r => r.reqId || nm(r)).join('\n'), tc.doc || ''])));
+  return [{name:'VCRM', rows:V, widths:[14, 11, 16, 60, 5, 5, 5, 5, 16, 30, 12, 14, 16], header:true, freeze:[1, 1], filter:1}, {name:'Test Durumları', rows:T0, widths:[28, 14, 10, 14, 18, 18, 14, 12, 12, 11, 12, 14, 22, 30], header:true, freeze:[1, 1], filter:1}];
+}
+function exportVcrmXlsx(){
+  if(!allReqs().length && !allTests().length) return toast('Dışa aktarılacak veri yok');
+  download(buildXlsx(vcrmSheets()), fileSafe(E(M.rootId).name) + ' - VCRM.xlsx');
+}
+/* ---- test durumlarını Excel'den aktarma (sonuç güncelleme) ---- */
+const TEST_SYN = {name:['test adi', 'test', 'test durumu', 'test name', 'ad'], procNo:['prosedur no', 'prosedur', 'procedure', 'test no', 'tp no'], tMethod:['yontem', 'method', 'dogrulama yontemi'], tLevel:['dogrulama seviyesi', 'seviye', 'level', 'test seviyesi'], testItem:['test edilen birim', 'birim', 'test item', 'urun'], std:['standart / referans', 'standart', 'referans', 'standard'], resp:['sorumlu', 'responsible', 'test sorumlusu'], pStart:['planlanan baslangic', 'baslangic', 'start', 'plan baslangic'], pEnd:['planlanan bitis', 'bitis', 'end', 'finish', 'plan bitis'], result:['sonuc', 'result', 'test sonucu'], rDate:['sonuc tarihi', 'test tarihi', 'result date', 'tarih'], reportNo:['rapor no', 'rapor', 'report', 'report no'], _reqs:['dogruladigi gereksinimler', 'gereksinimler', 'gereksinim id', 'requirements', 'verified requirements'], doc:['aciklama', 'not', 'notes', 'description']};
+function toISODate(v){
+  v = String(v || '').trim(); if(!v) return '';
+  if(/^\d{4,6}(\.\d+)?$/.test(v) && +v > 20000 && +v < 80000){ const d = new Date(Date.UTC(1899, 11, 30) + Math.floor(+v) * 864e5); return d.toISOString().slice(0, 10); }
+  let m = v.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/); if(m) return m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0');
+  m = v.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/); if(m) return (m[3].length === 2 ? '20' + m[3] : m[3]) + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+  return '';
+}
+function normResult(v){ const a = asciiTr(v); if(!a) return ''; if(/gect|pass|basarili|ok\b|uygun/.test(a)) return 'Geçti'; if(/kald|fail|basarisiz|red/.test(a)) return 'Kaldı'; if(/kosul|condition|sartli/.test(a)) return 'Koşullu'; if(/yapilmad|not run|iptal|ertel/.test(a)) return 'Yapılmadı'; if(/plan/.test(a)) return 'Planlandı'; return ''; }
+async function importTests(){
+  let file;
+  try { file = await pickBytes(); } catch(e){ return toast('Dosya açılamadı: ' + e.message); }
+  if(!file) return;
+  let sheets;
+  try { sheets = /\.xlsx$/i.test(file.name) || (file.u8[0] === 0x50 && file.u8[1] === 0x4b) ? await readXlsx(file.u8) : parseCSV(decodeText(file.u8)); } catch(e){ return toast('Okunamadı: ' + e.message); }
+  const mapHdr = row => { const m = {}; row.forEach((h, i) => { const n = asciiTr(h); if(!n) return; for(const k in TEST_SYN){ if(!(k in m) && TEST_SYN[k].includes(n)){ m[k] = i; return; } } }); return m; };
+  let best = null;
+  sheets.forEach(sh => { for(let ri = 0; ri < Math.min(10, sh.rows.length); ri++){ const m = mapHdr(sh.rows[ri] || []); if(('name' in m || 'procNo' in m) && (!best || Object.keys(m).length > Object.keys(best.m).length)) best = {sh, ri, m}; } });
+  if(!best) return toast('"Test adı" veya "Prosedür no" sütunu bulunamadı');
+  snap();
+  const byProc = new Map(), byName = new Map(); allTests().forEach(t => { if(t.procNo) byProc.set(asciiTr(t.procNo), t); byName.set(asciiTr(t.name), t); });
+  const reqById = new Map(allReqs().filter(r => r.reqId).map(r => [asciiTr(r.reqId), r]));
+  let add = 0, upd = 0, rels = 0; const miss = new Set();
+  best.sh.rows.slice(best.ri + 1).forEach(row => {
+    const g = k => k in best.m ? String(row[best.m[k]] == null ? '' : row[best.m[k]]).trim() : '';
+    const nmv = g('name'), pr = g('procNo'); if(!nmv && !pr) return;
+    let tc = (pr && byProc.get(asciiTr(pr))) || (nmv && byName.get(asciiTr(nmv)));
+    if(!tc){ tc = newTest({name:nmv || pr, tMethod:''}); add++; if(pr) byProc.set(asciiTr(pr), tc); byName.set(asciiTr(tc.name), tc); } else upd++;
+    if(nmv) tc.name = nmv;
+    ['procNo', 'tLevel', 'testItem', 'std', 'resp', 'reportNo', 'doc'].forEach(k => { const v = g(k); if(v) tc[k] = v; });
+    const mt = g('tMethod'); if(mt){ const vm = VERIF.find(([v, a0]) => asciiTr(v) === asciiTr(mt) || a0 === mt.toUpperCase()); tc.tMethod = vm ? vm[0] : mt; }
+    ['pStart', 'pEnd', 'rDate'].forEach(k => { const v = toISODate(g(k)); if(v) tc[k] = v; });
+    const rs = normResult(g('result')); if(rs) tc.result = rs;
+    g('_reqs').split(/[\n,;]+/).map(x => x.trim()).filter(Boolean).forEach(id => { const r = reqById.get(asciiTr(id)); if(!r){ miss.add(id); return; } if(addRel('Verify', tc.id, r.id)) rels++; });
+  });
+  if(!ST.open.includes('@campaign')) ST.open.push('@campaign');
+  ST.cur = '@campaign'; afterChange();
+  toast(`${add} test eklendi, ${upd} güncellendi, ${rels} Verify ilişkisi kuruldu` + (miss.size ? ` · Bulunamayan gereksinim: ${[...miss].slice(0, 5).join(', ')}` : ''));
+}
+(function(){
+  const V = $('#view');
+  V.addEventListener('click', ev => {
+    const t = ev.target;
+    const xa = t.closest('[data-xa]');
+    if(xa){
+      const a = xa.dataset.xa;
+      if(a === 'addTest'){ snap(); const tc = newTest(); ST.tsel = tc.id; ST.exp.add(tc.owner); CP.res = 'all'; CP.q = ''; afterChange(); renderViewBar(); setTimeout(() => { const i = document.querySelector(`#view [data-tc="${tc.id}"][data-tf="name"]`); if(i){ i.focus(); i.select(); i.scrollIntoView({block:'nearest'}); } }, 0); }
+      if(a === 'campaign') openD('@campaign');
+      if(a === 'vcrm') openD('@vcrm');
+      if(a === 'vxl') exportVcrmXlsx();
+      if(a === 'timp') importTests();
+      return;
+    }
+    const tr = t.closest('[data-tcreq]'); if(tr){ pickReqsForTest(tr.dataset.tcreq); return; }
+    const td = t.closest('[data-tcdel]'); if(td){ const tc = E(td.dataset.tcdel); if(tc && confirm(`"${nm(tc)}" testi silinsin mi? (Verify ilişkileri de silinir)`)){ snap(); delModel([tc.id]); afterChange(); } }
+  });
+  V.addEventListener('change', ev => {
+    const t = ev.target;
+    if(t.dataset.tc && t.dataset.tf){
+      const tc = E(t.dataset.tc); if(!tc) return;
+      let v = t.value; if(t.dataset.tf === 'name'){ v = v.trim(); if(!v) return renderView(); }
+      if((tc[t.dataset.tf] || '') === v) return;
+      snap(); tc[t.dataset.tf] = v;
+      if(t.dataset.tf === 'result' && ['Geçti', 'Kaldı', 'Koşullu'].includes(v) && !tc.rDate) tc.rDate = todayISO();
+      if(t.dataset.tf === 'pStart' && v && (!tc.pEnd || tc.pEnd < v)) tc.pEnd = v;
+      afterChange(); return;
+    }
+    if(t.dataset.xf){ const [o, k] = t.dataset.xf.split('.'); (o === 'vc' ? VC : CP)[k] = t.value; renderView(); }
+  });
+  V.addEventListener('input', ev => { const t = ev.target; if(t.dataset.xf === 'cp.q'){ CP.q = t.value; const b = V.querySelector('.vbody'); b.innerHTML = campaignHTML(); } });
+  V.addEventListener('keydown', ev => { const t = ev.target; if(t.dataset && (t.dataset.tc || t.dataset.xf)){ if(ev.key === 'Enter') t.blur(); ev.stopPropagation(); } });
+  $('#props').addEventListener('click', ev => { const b = ev.target.closest('[data-tcreq]'); if(b) pickReqsForTest(b.dataset.tcreq); });
+})();
 
 /* ================= MENU / TOAST / STATUS ================= */
 const ctx = $('#ctx');
@@ -4506,8 +4808,16 @@ function demo(){
   S3.text = 'Sistem operatöre çalışma durumunu uygun şekilde ve hızlı bildirmelidir.';
   addRel('Satisfy', gb.id, A1.id); addRel('Satisfy', kb.id, A2.id); addRel('Satisfy', sb.id, A3.id); addRel('Satisfy', sys.id, S4.id);
   addRel('Satisfy', act.id, S2.id); addRel('Satisfy', E(n2.el).id, A2.id); addRel('Satisfy', E(n4.el).id, A4.id);
-  const tc1 = mk('TestCase', reqHome(M.rootId), {name:'Açılış süresi testi'}); addRel('Verify', tc1.id, S2.id);
-  const tc2 = mk('TestCase', reqHome(M.rootId), {name:'Besleme gerilimi testi'}); addRel('Verify', tc2.id, S1.id);
+  const DD = n => { const d = new Date(Date.now() + n * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const tPkg = findOrMkPkg(M.rootId, 'Doğrulama');
+  const TC = (n, o, reqs) => { const tc = mk('TestCase', tPkg, Object.assign({name:n, tMethod:'Test'}, o)); reqs.forEach(r => addRel('Verify', tc.id, r.id)); return tc; };
+  const tc1 = TC('Açılış süresi testi', {procNo:'TP-SYS-001', tLevel:'Sistem', testItem:'Araç Sistemi', std:'Müşteri ATP', resp:'Test Ekibi', pStart:DD(-20), pEnd:DD(-16), result:'Geçti', rDate:DD(-16), reportNo:'TR-001'}, [S2]);
+  const tc2 = TC('Besleme gerilimi testi', {procNo:'TP-SYS-002', tLevel:'Sistem', testItem:'Güç Birimi', std:'MIL-STD-1275E', resp:'Test Ekibi', pStart:DD(-12), pEnd:DD(-9), result:'Kaldı', rDate:DD(-9), reportNo:'TR-002'}, [S1]);
+  TC('Güç birimi birim testi', {procNo:'TP-GB-001', tLevel:'Birim', testItem:'Güç Birimi', resp:'Donanım', pStart:DD(-30), pEnd:DD(-26), result:'Geçti', rDate:DD(-26), reportNo:'TR-GB-01'}, [A1]);
+  TC('Kontrol yazılımı açılış testi', {procNo:'TP-KB-001', tLevel:'Entegrasyon', testItem:'Kontrol Birimi', resp:'Yazılım', pStart:DD(-6), pEnd:DD(-2), result:'Planlandı'}, [A2]);
+  TC('Sensör veri hızı ölçümü', {procNo:'TP-SB-001', tLevel:'Alt Sistem', testItem:'Sensör Birimi', std:'IEEE 1451', resp:'Donanım', pStart:DD(3), pEnd:DD(7), result:'Planlandı'}, [A3]);
+  TC('Durum bildirimi analizi', {procNo:'AN-SYS-003', tMethod:'Analiz', tLevel:'Sistem', resp:'Sistem Müh.', pStart:DD(-4), pEnd:DD(5), result:'Koşullu', rDate:DD(-1), reportNo:'AR-003'}, [S3, A4]);
+  TC('EMC kalifikasyon testi', {procNo:'TP-QT-010', tLevel:'Kalifikasyon', testItem:'Araç Sistemi', std:'MIL-STD-461G', resp:'Kalifikasyon', pStart:DD(14), pEnd:DD(28), result:'Planlandı'}, []);
   const rqPkg = findOrMkPkg(M.rootId, 'Gereksinimler');
   const rd = newDiagramCore(rqPkg, 'req', 'Hazır Olma Gereksinimleri');
   const rS2 = addShape(rd, S2.id, 220, 0, 250, 110), rA2 = addShape(rd, A2.id, 40, 230, 250, 110), rA3 = addShape(rd, A3.id, 360, 230, 250, 110);
