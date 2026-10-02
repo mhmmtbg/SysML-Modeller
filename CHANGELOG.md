@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.4.0 — 2026-10-03
+
+- Gereksinim kalite kontrolü (INCOSE kuralları): "-malıdır" kipi, birden fazla ister, belirsiz ifadeler (uygun, yeterli, hızlı…), TBD/TBC, birimsiz sayılar, aşırı uzun metin, yinelenen ID, birbirine çok benzeyen gereksinimler; tabloda rozet, özelliklerde uyarı listesi, **Kalite raporu** görünümü ve Excel'de "Kalite" sayfası
+- Durum iş akışı: Taslak → İncelemede → Onaylı → Değişiklikte → İptal; onaylı bir gereksinimin metni/doğrulama yöntemi/seviyesi değişince otomatik "Değişiklikte" olur; tabloda durum sütunu ve filtresi; İptal edilenler kapsama analizine girmez
+- Değişiklik geçmişi: her gereksinim değişikliği kim/ne zaman/eski → yeni değer ve isteğe bağlı gerekçeyle kaydedilir; kelime düzeyinde fark gösterimi; Excel'e aktarma
+- Taban çizgileri (baseline): modelin gereksinim durumunu adla dondurma, iki taban çizgisini veya taban çizgisini güncel modelle karşılaştırma (eklenen/silinen/değişen), farkı Excel'e aktarma
+- Etki analizi: bir gereksinim veya model elemanı değişirse etkilenen üst/alt gereksinimler, karşılayan elemanlar, testler ve diyagramlar ağaç olarak
+- Kullanıcı adı ayarı (geçmiş kayıtlarında görünür)
+
 ## v1.3.0 — 2026-10-03
 
 - Kopyala / yapıştır / çoğalt (`Ctrl+C`, `Ctrl+V`, `Ctrl+Shift+V`, `Ctrl+D`): aynı elemanı başka diyagramda gösterme veya yeni eleman olarak kopyalama; bloklar iç yapılarıyla birlikte kopyalanır

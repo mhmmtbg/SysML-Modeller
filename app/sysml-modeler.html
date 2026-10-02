@@ -179,6 +179,18 @@ table.cm input:not([type]){font:inherit;padding:2px 5px;border:1px solid #bfc8d3
 .imwrap{max-height:48vh;overflow:auto}
 table.imt td{padding:5px 8px;vertical-align:middle}
 table.imt select{font:inherit;font-size:12px;padding:3px;border:1px solid #bfc8d3;border-radius:3px;min-width:240px}
+.qok{color:#2e7d32;font-weight:700}.qwarn{color:#b9770e;font-weight:700;cursor:help}.qerr{color:#c0392b;font-weight:700;cursor:help}.qinfo{color:#2e86c1;font-weight:700;cursor:help}
+.q-hata{color:#a52834}.q-uyarı{color:#8a5a00}.q-bilgi{color:#2e6f8e}
+.stc{display:inline-block;color:#fff;border-radius:9px;padding:0 8px;font-size:11px;font-weight:600;line-height:17px;white-space:nowrap}
+select.stsel{font-weight:700}
+del{background:#fbe3e5;color:#a52834;text-decoration:line-through}ins{background:#d9f2df;color:#1e6b35;text-decoration:none}
+.bll{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.blc{background:#fff;border:1px solid #dde3ea;border-radius:6px;padding:6px 10px;display:flex;gap:10px;align-items:center;font-size:12.5px}
+tr.d-add td{background:#f0faf3}tr.d-del td{background:#fdf1f2}tr.d-chg td{background:#fffaf0}
+.dchip{display:inline-block;border-radius:9px;padding:0 8px;font-size:11px;font-weight:700}.dchip.d-add{background:#d9f2df;color:#1e7a3c}.dchip.d-del{background:#f8d7da;color:#a52834}.dchip.d-chg{background:#fff3cd;color:#8a6100}
+.itree{background:#fbfcfd;border:1px solid #e3e7ec;border-radius:6px;padding:4px;max-height:30vh;overflow:auto}
+.itl{padding:2px 6px;font-size:12.5px;line-height:1.6}
+.hli{font-size:11.5px;border-left:3px solid #d5dde8;padding:2px 0 2px 7px;margin:4px 0}
 #toast{position:fixed;bottom:34px;left:50%;transform:translateX(-50%);background:#26364b;color:#fff;padding:7px 14px;border-radius:5px;display:none;z-index:300;font-size:12.5px}
 </style>
 </head>
@@ -650,9 +662,10 @@ function afterLoad(){
   ST.open = ST.open.filter(id => isView(id) || (E(id) && E(id).kind === 'Diagram'));
   if(!isView(ST.cur) && !E(ST.cur)) ST.cur = ST.open[0] || null;
   ST.sel.clear(); if(ST.tsel && !E(ST.tsel)) ST.tsel = null;
+  rebuildReqCache();
   renderAll(); persist();
 }
-function afterChange(){ renderAll(); persist(); }
+function afterChange(){ trackReqChanges(); renderAll(); persist(); }
 
 /* ================= MODEL HELPERS ================= */
 function kidsOf(id){ const r = []; for(const k in M.els){ const e = M.els[k]; if(e.owner === id) r.push(e); } return r; }
@@ -663,7 +676,7 @@ function uniqName(base, owner){ const n = new Set(kidsOf(owner).map(e => e.name)
 function defName(kind, owner){ const b = BASE[kind]; if(!b) return ''; const n = new Set(kidsOf(owner).map(e => e.name)); let i = 1; while(n.has(b + i)) i++; return b + i; }
 function mk(kind, owner, props){
   const e = Object.assign({id:uid(), kind, owner, name:defName(kind, owner), doc:''}, props || {});
-  if(kind === 'Requirement'){ if(!e.level) e.level = 'Sistem'; if(!e.reqId) e.reqId = nextReqId(e.level); if(e.text == null) e.text = ''; if(!e.attrs) e.attrs = {}; }
+  if(kind === 'Requirement'){ if(!e.level) e.level = 'Sistem'; if(!e.status) e.status = 'Taslak'; if(!e.reqId) e.reqId = nextReqId(e.level); if(e.text == null) e.text = ''; if(!e.attrs) e.attrs = {}; }
   M.els[e.id] = e; return e;
 }
 function elLabel(e){
@@ -2110,6 +2123,7 @@ function treeMenu(id, x, y){
   if(d && e.kind !== 'Diagram' && !KIND[e.kind].rel) it.push({t:'Açık diyagrama ekle', dis:!canDrop(d, e), f:() => { const r = wrapEl.getBoundingClientRect(); dropExisting(id, {x:(r.width / 2 - d.vx) / d.z, y:(r.height / 2 - d.vy) / d.z}, null); }});
   const shown = diagramsShowing(id);
   if(shown.length){ it.push({h:'Gösterildiği diyagramlar'}); shown.slice(0, 8).forEach(dd => it.push({t:'↪ ' + dd.name, f:() => { openD(dd.id); const dd2 = cur(); ST.sel = new Set(dd2.shapes.filter(s => s.el === id).map(s => s.id)); renderDiagram(); }})); it.push('-'); }
+  if(e.kind !== 'Diagram' && !KIND[e.kind].rel) it.push({t:'Etki analizi…', f:() => impactAnalysis(id)});
   it.push({t:'Yeniden adlandır', k:'F2', f:() => treeRename(id)});
   if(id !== M.rootId) it.push({t:'Modelden sil', k:'Del', f:() => { snap(); delModel([id]); afterChange(); }});
   menu(x, y, it);
@@ -2931,6 +2945,7 @@ function renderProps(){
     const tg = navTargets(el, null);
     if(tg.length) h += `<div class="sub"><span>Alt diyagramlar (çift tıkla açılır)</span></div>` + tg.map(v => `<div class="li"><a class="lnk" data-opend="${v.id}">[${v.dtype}] ${esc(v.name)}</a></div>`).join('');
   }
+  if(el.kind !== 'Diagram' && !k.rel) h += pf('', `<button class="pbtn" data-impact="${el.id}">⇶ Etki analizi</button>`);
   if(el.kind !== 'Diagram') h += pf('Açıklama', `<textarea data-f="doc">${esc(el.doc || '')}</textarea>`);
   if(el.kind !== 'Diagram' && !k.rel){
     const shown = diagramsShowing(el.id);
@@ -3011,6 +3026,7 @@ const STD_COLS = [
   {key:'text', label:'Gereksinim Metni', w:60},
   {key:'level', label:'Seviye', w:12},
   {key:'subsys', label:'Alt Sistem', w:18},
+  {key:'status', label:'Durum', w:14},
   {key:'verif', label:'Doğrulama Yöntemi', w:18},
   {key:'srcNo', label:'Müşteri İster No', w:16},
   {key:'srcText', label:'Müşteri İsteri', w:40}
@@ -3021,7 +3037,8 @@ const TRACE_COLS = [
   {key:'_satisfy', label:'Karşılayan Model Elemanları', trace:1, w:26},
   {key:'_funcs', label:'Fonksiyonlar', trace:1, w:24},
   {key:'_verifyBy', label:'Doğrulayan Test', trace:1, w:20},
-  {key:'_status', label:'Kapsama Durumu', trace:1, w:30}
+  {key:'_status', label:'Kapsama Durumu', trace:1, w:30},
+  {key:'_quality', label:'Kalite', trace:1, w:30}
 ];
 const FUNC_KINDS = new Set(['Activity','Action']);
 const ELEM_KINDS = ['Block','Part','Port','Value','UseCase','Actor','ConstraintBlock','StateMachine','Interaction','State'];
@@ -3162,6 +3179,9 @@ function reqPropsHTML(el, pf){
   h += pf('Müşteri ister no', `<input data-f="srcNo" value="${esc(el.srcNo || '')}">`);
   h += pf('Müşteri isteri', `<textarea data-f="srcText">${esc(el.srcText || '')}</textarea>`);
   c.attrs.forEach(a => { h += pf(esc(a.label), `<input data-f="attr:${esc(a.key)}" value="${esc((el.attrs || {})[a.key] || '')}">`); });
+  h += pf('Durum', `<select data-f="status" style="color:${STATUS_COL[reqStatus(el)]};font-weight:600">${REQ_STATUS.map(x => `<option${reqStatus(el) === x ? ' selected' : ''}>${x}</option>`).join('')}</select>`);
+  const iss = reqQuality(el, simIndex());
+  if(iss.length) h += `<div class="gaps" style="background:#fdf2f2;border-color:#f1c4c4;color:#8a2a2a">${iss.map(([sv, m]) => (sv === 'hata' ? '✖ ' : sv === 'uyarı' ? '⚠ ' : 'ℹ ') + esc(m)).join('<br>')}</div>`;
   const t = trace(el), cs = covStatus(el, t);
   h += `<div class="sub"><span>İzlenebilirlik</span><span class="cov cov-${cs.st}">${cs.st}</span></div>`;
   const list = (title, arr, role) => `<div class="trl"><div><b>${title}</b> <button class="pbtn" data-trpick="${role}" data-rid="${el.id}">+ / −</button></div>${arr.map(x => `<span class="chip2"><a class="lnk" data-goto="${x.id}">${esc(elDesc(x))}</a></span>`).join('') || '<span class="muted">—</span>'}</div>`;
@@ -3172,6 +3192,10 @@ function reqPropsHTML(el, pf){
   h += list('Doğrulayan testler', t.verifyBy, 'test');
   if(t.refined.length) h += `<div class="trl"><div><b>Refine / Trace</b></div>${t.refined.map(x => `<span class="chip2"><a class="lnk" data-goto="${x.id}">${esc(elDesc(x))}</a></span>`).join('')}</div>`;
   if(cs.gaps.length) h += `<div class="gaps">${cs.gaps.map(g => '⚠ ' + esc(g)).join('<br>')}</div>`;
+  const hist = (M.reqLog || []).filter(x => x.id === el.id).slice(-5).reverse();
+  h += `<div class="sub"><span>Değişiklik geçmişi</span><button data-hist="${el.id}">Tümü</button></div>`;
+  h += pf('Gerekçe', `<input data-reason="1" value="${esc(ST.reason || '')}" placeholder="Sonraki değişikliklere eklenir (ör. ECR-012)">`);
+  h += hist.length ? hist.map(x => `<div class="hli"><span class="muted">${esc(new Date(x.t).toLocaleString('tr-TR'))} · ${esc(x.u)}</span><br><b>${esc(x.f)}</b>: ${x.f === 'Metin' ? wordDiff(x.o, x.n) : esc(String(x.n).slice(0, 120))}${x.why ? ` <span class="muted">(${esc(x.why)})</span>` : ''}</div>`).join('') : '<div class="muted" style="font-size:12px">Henüz değişiklik kaydı yok</div>';
   return h;
 }
 function funcReqs(e, idx){ return (idx['Satisfy'] || []).filter(x => x.src === e.id).map(x => E(x.tgt)).filter(Boolean); }
@@ -3188,6 +3212,8 @@ function renderView(){
   const st = body.scrollTop, sl = body.scrollLeft;
   if(ST.cur === '@reqtable'){ refreshLvlSelect(); body.innerHTML = reqTableHTML(); }
   else if(ST.cur === '@matrix') body.innerHTML = matrixHTML();
+  else if(ST.cur === '@quality') body.innerHTML = qualityHTML();
+  else if(ST.cur === '@baseline'){ body.innerHTML = baselineHTML(); renderViewBar(); }
   else body.innerHTML = coverageHTML();
   body.scrollTop = st; body.scrollLeft = sl;
   if(pendingFocus){ const el = body.querySelector(`[data-r="${pendingFocus[0]}"][data-c="${pendingFocus[1]}"]`); pendingFocus = null; if(el){ el.focus(); placeCaretEnd(el); } }
@@ -3200,6 +3226,7 @@ function renderViewBar(){
   if(ST.cur === '@reqtable'){
     bar.innerHTML = `<button class="vb pri" data-va="addSys">+ Sistem gereksinimi</button><button class="vb pri2" data-va="addSub">+ Alt sistem gereksinimi</button>
       <span class="vsep"></span><select data-vf="lvl">${lvlOptions()}</select>
+      <select data-vf="st"><option value="all">Tüm durumlar</option>${REQ_STATUS.map(x => `<option${RV.st === x ? ' selected' : ''}>${x}</option>`).join('')}</select>
       <input data-vf="q" placeholder="Ara (ID, metin, ister no…)" value="${esc(RV.q)}"><label class="vchk"><input type="checkbox" data-vf="gaps"${RV.gaps ? ' checked' : ''}> Yalnız eksikler</label>
       <span class="vsep"></span><button class="vb" data-va="cols">☰ Sütunlar / özellikler</button>${xl}`;
     const ls = bar.querySelector('[data-vf="lvl"]'); ls.value = RV.lvl; if(ls.value !== RV.lvl){ RV.lvl = 'all'; ls.value = 'all'; }
@@ -3209,6 +3236,13 @@ function renderViewBar(){
       <label>Sütunlar <select data-mf="cols">${so(MX.cols, msetList().map(x => [x[0], x[1]]))}</select></label>
       <label>İlişki <select data-mf="rel">${so(MX.rel, [['auto','Otomatik'], ['DeriveReqt','Derive'], ['Satisfy','Satisfy'], ['Verify','Verify'], ['Refine','Refine'], ['Trace','Trace']])}</select></label>
       <label class="vchk"><input type="checkbox" data-mf="empty"${MX.empty ? ' checked' : ''}> Yalnız boş satırlar</label>${xl}`;
+  } else if(ST.cur === '@quality'){
+    bar.innerHTML = `<label class="vchk"><input type="checkbox" data-cf="qall"${CV.qall ? ' checked' : ''}> Sorunsuzları da göster</label><span class="vsep"></span><button class="vb" data-va="export">⤒ Excel'e aktar (Kalite sayfası dahil)</button>`;
+  } else if(ST.cur === '@baseline'){
+    const bls = M.baselines || [], opts = sel => bls.map(b => `<option value="${b.id}"${sel === b.id ? ' selected' : ''}>${esc(b.name)}</option>`).join('');
+    bar.innerHTML = `<button class="vb pri" data-va="mkbl">+ Taban çizgisi oluştur</button><span class="vsep"></span>
+      <label>Karşılaştır <select data-blf="a">${opts(BL.a)}</select></label><label>ile <select data-blf="b"><option value="@current"${BL.b === '@current' ? ' selected' : ''}>Güncel model</option>${opts(BL.b)}</select></label>
+      <label class="vchk"><input type="checkbox" data-blf="onlyCh"${BL.onlyCh ? ' checked' : ''}> Yalnız farklar</label><span class="vsep"></span><button class="vb" data-va="blx">⤒ Fark raporunu Excel'e aktar</button>`;
   } else {
     bar.innerHTML = `<label class="vchk"><input type="checkbox" data-cf="gaps"${CV.gaps ? ' checked' : ''}> Yalnız eksikleri göster</label><button class="vb" data-va="matrix">İzlenebilirlik matrisine git</button>${xl}`;
   }
@@ -3234,6 +3268,8 @@ function reqTableHTML(){
   const q = RV.q.toLocaleLowerCase('tr').trim();
   if(q) rs = rs.filter(r => [r.reqId, r.name, r.text, r.srcNo, r.srcText].concat(Object.values(r.attrs || {})).join(' ').toLocaleLowerCase('tr').includes(q));
   const T0 = new Map(rs.map(r => { const t = trace(r, idx); return [r.id, {t, c:covStatus(r, t)}]; }));
+  const SIMX = cols.some(c => c.key === '_quality') ? simIndex() : null;
+  if(RV.st && RV.st !== 'all') rs = rs.filter(r => reqStatus(r) === RV.st);
   if(RV.gaps) rs = rs.filter(r => T0.get(r.id).c.st !== 'Tam');
   if(RV.sortKey){ const k = RV.sortKey; rs.sort((a, b) => RV.sortDir * (k === '_status' ? T0.get(a.id).c.st.localeCompare(T0.get(b.id).c.st, 'tr') : cellVal(a, k).localeCompare(cellVal(b, k), 'tr', {numeric:true}))); }
   if(!allReqs().length) return `<div class="vempty">Henüz gereksinim yok.<br><br><button class="vb pri" data-va="addSys">+ Sistem gereksinimi ekle</button> &nbsp; <button class="vb" data-va="import">⤓ Excel'den aktar</button></div>`;
@@ -3252,6 +3288,8 @@ function reqTableHTML(){
       else if(k === '_satisfy') h += `<td>${chips(t.elems, r.id, 'elem')}</td>`;
       else if(k === '_funcs') h += `<td>${chips(t.funcs, r.id, 'func')}</td>`;
       else if(k === '_verifyBy') h += `<td>${chips(t.verifyBy, r.id, 'test')}</td>`;
+      else if(k === 'status') h += `<td><select class="stsel" style="color:${STATUS_COL[reqStatus(r)]}" data-r="${r.id}" data-c="status">${REQ_STATUS.map(x => `<option${reqStatus(r) === x ? ' selected' : ''}>${x}</option>`).join('')}</select></td>`;
+      else if(k === '_quality') h += `<td>${qualityBadge(reqQuality(r, SIMX))}</td>`;
       else if(k === '_status') h += `<td><span class="cov cov-${c.st}">${c.st}</span>${c.gaps.length ? `<div class="gapt">${c.gaps.map(esc).join('<br>')}</div>` : ''}</td>`;
       else h += `<td><div class="ce${k === 'text' || k === 'srcText' ? ' long' : ''}${k === 'reqId' ? ' rid' : ''}" contenteditable="true" spellcheck="false" data-r="${r.id}" data-c="${esc(k)}">${esc(cellVal(r, k))}</div></td>`;
     });
@@ -3310,7 +3348,7 @@ function matrixHTML(){
   return h;
 }
 function coverageData(){
-  const idx = relIdx(), rs = allReqs();
+  const idx = relIdx(), rs = allReqs().filter(activeReq);
   const rows = rs.map(r => { const t = trace(r, idx); return {r, t, c:covStatus(r, t)}; });
   const sys = rows.filter(x => reqLevel(x.r) === 'Sistem'), sub = rows.filter(x => reqLevel(x.r) !== 'Sistem');
   const pct = (arr, f) => arr.length ? Math.round(arr.filter(f).length / arr.length * 100) : 0;
@@ -3346,7 +3384,7 @@ function coverageHTML(){
     list.forEach(({r, t, c}) => {
       s += `<tr data-row="${r.id}" class="${ST.tsel === r.id ? 'sel' : ''}"><td style="white-space:nowrap"><a class="lnk" data-goto="${r.id}"><b>${esc(r.reqId || '')}</b></a></td><td class="cvtx">${!sys && r.subsys ? `<span class="chip2">${esc(r.subsys)}</span> ` : ''}${esc(r.name || '')}${r.text ? `<div class="muted">${esc(r.text.slice(0, 140))}</div>` : ''}</td>
         <td>${nl(sys ? t.children : t.parents)}</td><td>${nl(t.elems)}</td><td>${nl(t.funcs)}</td><td>${r.verif ? esc(r.verif) : '<span class="miss">—</span>'}</td><td>${nl(t.verifyBy)}</td>
-        <td><span class="cov cov-${c.st}">${c.st}</span></td><td class="gapt">${c.gaps.map(esc).join('<br>')}</td></tr>`;
+        <td><span class="cov cov-${c.st}">${c.st}</span><div style="margin-top:3px">${statusChip(r)}</div></td><td class="gapt">${c.gaps.map(esc).join('<br>')}</td></tr>`;
     });
     return s + '</tbody></table>';
   };
@@ -3375,6 +3413,8 @@ function coverageHTML(){
       if(a === 'export') exportReqsXlsx();
       if(a === 'cols') columnManager();
       if(a === 'matrix') openD('@matrix');
+      if(a === 'mkbl') createBaseline();
+      if(a === 'blx'){ if((M.baselines || []).length) exportBaselineDiff(); else toast('Önce bir taban çizgisi oluşturun'); }
       if(a === 'table') openD('@reqtable');
       return;
     }
@@ -3382,6 +3422,7 @@ function coverageHTML(){
     if(sk){ const k = sk.dataset.sort; if(RV.sortKey === k) RV.sortDir = -RV.sortDir; else { RV.sortKey = k; RV.sortDir = 1; } renderView(); return; }
     const vc = t.closest('[data-verif]'); if(vc){ toggleVerif(vc.dataset.vr, vc.dataset.verif); return; }
     const tp = t.closest('[data-trpick]'); if(tp){ pickTrace(tp.dataset.rid, tp.dataset.trpick); return; }
+    const bd = t.closest('[data-bldel]'); if(bd){ const b = (M.baselines || []).find(x => x.id === bd.dataset.bldel); if(b && confirm(`"${b.name}" taban çizgisi silinsin mi?`)){ snap(); M.baselines = M.baselines.filter(x => x !== b); afterChange(); } return; }
     const rd = t.closest('[data-rdel]'); if(rd){ const r = E(rd.dataset.rdel); if(r && confirm(`"${nm(r)}" silinsin mi? (İlişkileri de silinir)`)){ snap(); delModel([r.id]); afterChange(); } return; }
     const g = t.closest('[data-goto]'); if(g){ const e = E(g.dataset.goto); if(e){ ST.tsel = e.id; revealInTree(e.id); renderProps(); markSelRow(); } return; }
     const mc = t.closest('[data-mx]');
@@ -3395,6 +3436,10 @@ function coverageHTML(){
   V.addEventListener('change', ev => {
     const t = ev.target;
     if(t.dataset.c === 'level'){ const r = E(t.dataset.r); if(r) changeLevel(r, t.value); return; }
+    if(t.dataset.c === 'status'){ const r = E(t.dataset.r); if(r){ snap(); r.status = t.value; afterChange(); } return; }
+    if(t.dataset.vf === 'st'){ RV.st = t.value; renderView(); return; }
+    if(t.dataset.cf === 'qall'){ CV.qall = t.checked; renderView(); return; }
+    if(t.dataset.blf){ const k = t.dataset.blf; BL[k] = t.type === 'checkbox' ? t.checked : t.value; renderView(); return; }
     if(t.dataset.vf === 'lvl'){ RV.lvl = t.value; renderView(); }
     if(t.dataset.vf === 'gaps'){ RV.gaps = t.checked; renderView(); }
     if(t.dataset.mf){ const k = t.dataset.mf; MX[k] = t.type === 'checkbox' ? t.checked : t.value; renderView(); }
@@ -3420,7 +3465,10 @@ function coverageHTML(){
     if(k === 'subsys') relocateReq(r);
     setTimeout(() => { const a = document.activeElement; if(a && a.dataset && a.dataset.c && a.dataset.r) pendingFocus = [a.dataset.r, a.dataset.c]; afterChange(); }, 0);
   });
+  $('#props').addEventListener('change', ev => { if(ev.target.dataset.reason){ ST.reason = ev.target.value.trim(); toast(ST.reason ? 'Gerekçe sonraki değişikliklere eklenecek' : 'Gerekçe temizlendi'); } });
   $('#props').addEventListener('click', ev => {
+    const hb = ev.target.closest('[data-hist]'); if(hb){ historyModal(hb.dataset.hist); return; }
+    const ib = ev.target.closest('[data-impact]'); if(ib){ impactAnalysis(ib.dataset.impact); return; }
     const vc = ev.target.closest('[data-verif]'); if(vc){ toggleVerif(vc.dataset.vr, vc.dataset.verif); return; }
     const tp = ev.target.closest('[data-trpick]'); if(tp) pickTrace(tp.dataset.rid, tp.dataset.trpick);
   });
@@ -3570,6 +3618,9 @@ function exportReqsXlsx(){
   cv.push([], [{v:'ID', s:1}, {v:'Seviye', s:1}, {v:'Gereksinim', s:1}, {v:'Durum', s:1}, {v:'Eksikler', s:1}]);
   D.sys.concat(D.sub).forEach(({r, c}) => cv.push([{v:r.reqId || '', s:6}, reqLevel(r), (r.name ? r.name + ': ' : '') + (r.text || ''), {v:c.st, s:stStyle(c.st)}, c.gaps.join('\n')]));
   sheets.push({name:'Kapsama Analizi', rows:cv, widths:[44, 14, 60, 12, 50]});
+  const SIMQ = simIndex(), qr = [[{v:'ID', s:1}, {v:'Gereksinim', s:1}, {v:'Önem', s:1}, {v:'Bulgu', s:1}]];
+  rs.filter(activeReq).forEach(r => reqQuality(r, SIMQ).forEach(([sv, m]) => qr.push([{v:r.reqId || '', s:6}, r.text || '', {v:sv, s:sv === 'hata' ? 4 : sv === 'uyarı' ? 5 : 2}, m])));
+  sheets.push({name:'Kalite', rows:qr, widths:[12, 70, 10, 60], header:true, freeze:[0, 1], filter:1});
   const blob = buildXlsx(sheets);
   download(blob, fileSafe(E(M.rootId).name) + ' - Gereksinimler.xlsx');
 }
@@ -3679,7 +3730,7 @@ async function importReqs(){
   if(!sheets.length) return toast('Dosyada veri bulunamadı');
   importDialog(sheets, file.name);
 }
-const IMP_TARGETS = [['', '— Yok say —'], ['reqId', 'Gereksinim ID'], ['name', 'Başlık'], ['text', 'Gereksinim metni'], ['level', 'Seviye (Sistem / Alt Sistem)'], ['subsys', 'Alt sistem adı'], ['verif', 'Doğrulama yöntemi'], ['srcNo', 'Müşteri ister no'], ['srcText', 'Müşteri isteri'], ['_parents', 'Üst gereksinim ID(ler)i → Derive'], ['_satisfy', 'Karşılayan model elemanı adları → Satisfy'], ['_funcs', 'Fonksiyon adları → Satisfy'], ['_verifyBy', 'Doğrulayan test adları → Verify'], ['new', '+ Yeni özellik olarak ekle']];
+const IMP_TARGETS = [['', '— Yok say —'], ['reqId', 'Gereksinim ID'], ['name', 'Başlık'], ['text', 'Gereksinim metni'], ['level', 'Seviye (Sistem / Alt Sistem)'], ['subsys', 'Alt sistem adı'], ['status', 'Durum (Taslak / Onaylı …)'], ['verif', 'Doğrulama yöntemi'], ['srcNo', 'Müşteri ister no'], ['srcText', 'Müşteri isteri'], ['_parents', 'Üst gereksinim ID(ler)i → Derive'], ['_satisfy', 'Karşılayan model elemanı adları → Satisfy'], ['_funcs', 'Fonksiyon adları → Satisfy'], ['_verifyBy', 'Doğrulayan test adları → Verify'], ['new', '+ Yeni özellik olarak ekle']];
 const asciiTr = x => String(x || '').toLocaleLowerCase('tr').replace(/[çğıöşüâîû]/g, c => ({'ç':'c','ğ':'g','ı':'i','ö':'o','ş':'s','ü':'u','â':'a','î':'i','û':'u'}[c])).replace(/\s+/g, ' ').trim();
 function guessTarget(h){
   const n = asciiTr(h);
@@ -3687,7 +3738,8 @@ function guessTarget(h){
   const has = (...a) => a.some(x => n.includes(x));
   const attr = reqCfg().attrs.find(a => asciiTr(a.label) === n); if(attr) return 'attr:' + attr.key;
   if(has('musteri', 'kaynak', 'source', 'customer', 'ister no') || n === 'ister') return /(^|\s)(no|numara|id|kimlik)\.?$/.test(n) || has(' no ', 'no.') ? 'srcNo' : 'srcText';
-  if(has('kapsama', 'durum', 'status', 'alt sistem gereksinimleri', 'children')) return '';
+  if(has('kapsama', 'alt sistem gereksinimleri', 'children', 'kalite')) return '';
+  if(has('durum', 'status', 'onay')) return 'status';
   if((has('alt sistem', 'altsistem', 'subsystem', 'birim', 'unit') && !has('gereksinim', 'requirement')) || n === 'alt sistem') return 'subsys';
   if(has('ust ', 'ust gereksinim', 'parent', 'turetildi', 'derived from')) return '_parents';
   if(has('karsilayan', 'satisf', 'model eleman')) return '_satisfy';
@@ -3770,6 +3822,7 @@ function doImport(rows, hr, map, defLevel, update){
     if(get('level') !== undefined && get('level') !== '') { if(r.level !== lvl){ r.level = lvl; const tgtPkg = reqPkgFor(lvl); const o = E(r.owner); if(o && /Gereksinimleri$/.test(o.name)) r.owner = tgtPkg; } }
     ['name', 'text', 'srcNo', 'srcText'].forEach(k => { const v = get(k); if(v !== undefined) r[k] = v; });
     if(get('verif') !== undefined) r.verif = parseVerif(get('verif'));
+    if(get('status')){ const sv = asciiTr(get('status')); r.status = /iptal|cancel|delet/.test(sv) ? 'İptal' : /degisik|change|revize/.test(sv) ? 'Değişiklikte' : /onay|approv|accept|kabul/.test(sv) ? 'Onaylı' : /incele|review/.test(sv) ? 'İncelemede' : 'Taslak'; }
     map.forEach((m, i) => { if(m.startsWith('attr:')){ r.attrs = r.attrs || {}; r.attrs[m.slice(5)] = String(row[i] == null ? '' : row[i]).trim(); } });
     later.push([r, get('_parents'), get('_satisfy'), get('_funcs'), get('_verifyBy')]);
   });
@@ -3797,7 +3850,284 @@ function reqMenuItems(){
     {t:'Excel\'e aktar (gereksinimler + matrisler + kapsama)', f:exportReqsXlsx},
     {t:'Sütunlar ve özellikler…', f:columnManager},
     '-',
+    {t:'Kalite raporu', f:() => openD('@quality')},
+    {t:'Taban çizgileri ve karşılaştırma', f:() => openD('@baseline')},
+    {t:'Değişiklik geçmişi…', f:() => historyModal(null)},
+    {t:'Kullanıcı adım…', f:setUserName},
+    '-',
     {t:'Yeni gereksinim diyagramı', f:() => { snap(); const d = newDiagramCore(findOrMkPkg(M.rootId, 'Gereksinimler'), 'req', 'Gereksinimler'); ST.exp.add(d.owner); openD(d.id); afterChange(); }}];
+}
+
+/* ================= PHASE 2: QUALITY, STATUS, BASELINES, HISTORY, IMPACT ================= */
+const REQ_STATUS = ['Taslak', 'İncelemede', 'Onaylı', 'Değişiklikte', 'İptal'];
+const STATUS_COL = {'Taslak':'#7f8c8d', 'İncelemede':'#d18a00', 'Onaylı':'#2e7d32', 'Değişiklikte':'#c0392b', 'İptal':'#95a5a6'};
+const reqStatus = r => REQ_STATUS.includes(r.status) ? r.status : 'Taslak';
+const activeReq = r => reqStatus(r) !== 'İptal';
+VIEWS['@quality'] = {tr:'Gereksinim Kalite Raporu', ic:'QA', note:'Gereksinim metinleri INCOSE yazım kurallarına göre denetlenir: zorunluluk ifadesi, belirsiz kelimeler, birden fazla ister, birimsiz değerler, TBD, aşırı uzunluk ve çok benzer gereksinimler.<br><br>Satıra tıklayınca gereksinim Özellikler panelinde açılır.'};
+VIEWS['@baseline'] = {tr:'Taban Çizgileri', ic:'BL', note:'Gereksinim setinin adlandırılmış anlık kopyalarını oluşturun ve iki taban çizgisini (veya taban çizgisi ile güncel modeli) karşılaştırın.<br><br>Değişen metinler kelime düzeyinde renklendirilir.'};
+
+/* ---- kalite denetimi ---- */
+const VAGUE = ['uygun', 'yeterli', 'yeterince', 'mümkün', 'mümkünse', 'mümkün olduğunca', 'mümkün mertebe', 'gerektiğinde', 'gerekirse', 'gerekli görüldüğünde', 'kolay', 'kolayca', 'kolaylıkla', 'hızlı', 'hızlıca', 'çabuk', 'kullanıcı dostu', 'esnek', 'sağlam', 'optimum', 'optimal', 'maksimize', 'minimize', 'en iyi', 'en az düzeyde', 'vb.', 'vs.', 've/veya', 'yaklaşık', 'makul', 'etkin', 'verimli', 'kabul edilebilir', 'normal', 'genellikle', 'bazen', 'çoğunlukla', 'yüksek performans', 'gibi', 'benzeri', 'adequate', 'appropriate', 'etc.', 'and/or', 'user-friendly', 'as possible', 'easy', 'fast', 'approximately', 'sufficient', 'flexible', 'robust'];
+const UNITS = 'v|mv|kv|a|ma|w|kw|mw|hz|khz|mhz|ghz|s|sn|ms|µs|us|dk|min|saat|sa|h|gün|m|mm|cm|km|µm|nm|kg|g|mg|ton|n|kn|nm|pa|kpa|mpa|bar|mbar|psi|°c|°|c|k|db|dbm|db\\(a\\)|%|rpm|dev/dk|lux|lm|cd|l|ml|m2|m²|m3|m³|bit|byte|kb|mb|gb|tb|bps|kbps|mbps|gbps|grms|g²/hz|g2/hz|ohm|Ω|kΩ|f|µf|nf|pf|j|kj|wh|kwh|mah|ah|kn·m|n·m|nm|m/s|km/h|kt|knot|ft|in|lb|°f|mil|adet|kez|cycle|döngü|yıl|ay|hafta|saniye|dakika|metre|kilogram|volt|amper|watt|derece';
+const UNIT_RE = (() => { const u = UNITS.split('|'), lg = u.filter(x => x.replace(/\\/g, '').length >= 4), sh = u.filter(x => x.replace(/\\/g, '').length < 4); return new RegExp('^\\s*((' + lg.join('|') + ')|(' + sh.join('|') + ')(?![a-zçğıöşü]))', 'i'); })();
+function qTokens(t){ return new Set(asciiTr(t).replace(/[^a-z0-9 ]/g, ' ').split(' ').filter(w => w.length > 2)); }
+let qCache = {sig:'', sim:new Map()};
+function simIndex(){
+  const rs = allReqs().filter(r => r.text && activeReq(r));
+  const sig = rs.map(r => r.id + ':' + r.text).join('|');
+  if(sig === qCache.sig) return qCache.sim;
+  const tok = rs.map(r => [r, qTokens(r.text)]), sim = new Map();
+  for(let i = 0; i < tok.length; i++) for(let j = i + 1; j < tok.length; j++){
+    const A = tok[i][1], B = tok[j][1]; if(A.size < 3 || B.size < 3) continue;
+    let inter = 0; A.forEach(w => { if(B.has(w)) inter++; });
+    const jac = inter / (A.size + B.size - inter);
+    if(jac >= 0.72){ [[i, j], [j, i]].forEach(([a, b]) => { const k = tok[a][0].id; if(!sim.has(k)) sim.set(k, []); sim.get(k).push([tok[b][0], jac]); }); }
+  }
+  qCache = {sig, sim}; return sim;
+}
+function reqQuality(r, sim){
+  const out = [], t = String(r.text || '').trim(), low = t.toLocaleLowerCase('tr');
+  if(!t){ out.push(['hata', 'Gereksinim metni boş']); return out; }
+  const modal = low.match(/m[ae]l[ıi](d[ıi]r)?(?![a-zçğıöşü])|zorundadır|zorunludur|\bshall\b|\bmust\b/g) || [];
+  if(!modal.length) out.push(['uyarı', 'Zorunluluk ifadesi yok ("-malıdır / -melidir")']);
+  if(modal.length > 1) out.push(['uyarı', 'Birden fazla ister içeriyor olabilir (' + modal.length + ' zorunluluk ifadesi) — bölmeyi düşünün']);
+  const vg = VAGUE.filter(v => new RegExp('(^|[^a-zçğıöşü])' + v.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&') + '($|[^a-zçğıöşü])', 'i').test(low));
+  if(vg.length) out.push(['uyarı', 'Belirsiz / doğrulanamaz ifade: ' + vg.map(v => '"' + v + '"').join(', ')]);
+  if(/\b(tbd|tbr|tbc)\b|belirlenecek|daha sonra belirlenecek|ileride tanımlanacak|\?\?/i.test(t)) out.push(['uyarı', 'Belirlenmemiş değer (TBD / belirlenecek)']);
+  const nums = [];
+  t.replace(/(^|[^A-Za-z0-9\-\/.])(\d+(?:[.,]\d+)?)(?![\d.,]*[A-Za-z]*-)/g, (m, pre, n, off) => {
+    const rest = t.slice(off + m.length), before = t.slice(Math.max(0, off - 14), off + pre.length).toLocaleLowerCase('tr');
+    if(/^[\-\/]/.test(rest) || /^\.\d/.test(rest) || pre === '%' || /%\s*$/.test(before)) return m;
+    if(/(yöntem|method|madde|bölüm|kısım|rev|std|standart|no|sayı|sürüm|versiyon|tablo|şekil|ek|annex|para)\.?\s*$/.test(before)) return m;
+    if(!UNIT_RE.test(rest) && !/^\s*(x|×|\*)\s*\d/.test(rest)) nums.push(n);
+    return m;
+  });
+  const realNums = nums.filter(n => !/^(19|20)\d\d$/.test(n));
+  if(realNums.length) out.push(['bilgi', 'Birimsiz sayısal değer: ' + [...new Set(realNums)].slice(0, 4).join(', ')]);
+  const words = t.split(/\s+/).length;
+  if(words > 55) out.push(['bilgi', 'Çok uzun (' + words + ' kelime) — sadeleştirmeyi düşünün']);
+  if(/\b(o|bu|şu|it|they|this)\b\s/i.test(t.split(/[.;]/)[0]) && false) out.push(['bilgi', 'Belirsiz zamir']);
+  const dup = allReqs().filter(x => x !== r && x.reqId && x.reqId === r.reqId);
+  if(dup.length) out.push(['hata', 'Aynı ID başka bir gereksinimde de var: ' + r.reqId]);
+  (sim && sim.get(r.id) || []).slice(0, 3).forEach(([o, j]) => out.push(['uyarı', `${o.reqId || nm(o)} ile çok benzer (%${Math.round(j * 100)})`]));
+  return out;
+}
+function qualityBadge(iss){
+  if(!iss.length) return '<span class="qok" title="Sorun bulunmadı">✓</span>';
+  const sev = iss.some(x => x[0] === 'hata') ? 'qerr' : iss.some(x => x[0] === 'uyarı') ? 'qwarn' : 'qinfo';
+  return `<span class="${sev}" title="${esc(iss.map(x => '• ' + x[1]).join('\n'))}">⚠ ${iss.length}</span>`;
+}
+function qualityHTML(){
+  const sim = simIndex(), rs = allReqs().filter(activeReq);
+  if(!rs.length) return '<div class="vempty">Denetlenecek gereksinim yok.</div>';
+  const rows = rs.map(r => ({r, iss:reqQuality(r, sim)}));
+  const bad = rows.filter(x => x.iss.length), cnt = s => rows.reduce((n, x) => n + x.iss.filter(i => i[0] === s).length, 0);
+  let h = `<div class="cards"><div class="card"><div class="cv">${rs.length}</div><div class="ct">Denetlenen gereksinim</div></div>
+    <div class="card"><div class="cv" style="color:${bad.length ? '#c0392b' : '#2e9e6a'}">${bad.length}</div><div class="ct">Sorunlu gereksinim</div></div>
+    <div class="card"><div class="cv" style="color:#a52834">${cnt('hata')}</div><div class="ct">Hata</div></div>
+    <div class="card"><div class="cv" style="color:#d18a00">${cnt('uyarı')}</div><div class="ct">Uyarı</div></div>
+    <div class="card"><div class="cv" style="color:#2e86c1">${cnt('bilgi')}</div><div class="ct">Bilgi</div></div></div>`;
+  const list = CV.qall ? rows : bad;
+  h += `<table class="rt cvt"><thead><tr><th>ID</th><th>Gereksinim metni</th><th>Durum</th><th>Bulgular</th></tr></thead><tbody>`;
+  list.forEach(({r, iss}) => {
+    h += `<tr data-row="${r.id}" class="${ST.tsel === r.id ? 'sel' : ''}"><td style="white-space:nowrap"><a class="lnk" data-goto="${r.id}"><b>${esc(r.reqId || '')}</b></a></td><td class="cvtx" style="max-width:520px">${esc(r.text || '')}</td><td>${statusChip(r)}</td><td class="gapt">${iss.length ? iss.map(([s, m]) => `<span class="q-${s}">${s === 'hata' ? '✖' : s === 'uyarı' ? '⚠' : 'ℹ'} ${esc(m)}</span>`).join('<br>') : '<span class="qok">✓ Sorun yok</span>'}</td></tr>`;
+  });
+  return h + `</tbody></table>${!list.length ? '<div class="vempty">Tüm gereksinimler kurallara uygun 🎉</div>' : ''}`;
+}
+function statusChip(r){ const s = reqStatus(r); return `<span class="stc" style="background:${STATUS_COL[s]}">${esc(s)}</span>`; }
+
+/* ---- değişiklik geçmişi ---- */
+function userName(){ try { return localStorage.getItem('sysml-user') || 'Kullanıcı'; } catch(e){ return 'Kullanıcı'; } }
+function setUserName(){
+  const v = prompt('Değişiklik geçmişinde görünecek adınız:', userName());
+  if(v != null && v.trim()){ try { localStorage.setItem('sysml-user', v.trim()); } catch(e){} toast('Kullanıcı adı: ' + v.trim()); }
+}
+const TRACKED = [['reqId', 'ID'], ['name', 'Başlık'], ['text', 'Metin'], ['level', 'Seviye'], ['subsys', 'Alt sistem'], ['verif', 'Doğrulama'], ['status', 'Durum'], ['srcNo', 'Müşteri ister no'], ['srcText', 'Müşteri isteri']];
+const SUBST = new Set(['text', 'verif', 'level', 'subsys', 'name']);
+let REQ_CACHE = null;
+function reqSnap(r, idx){
+  const o = {};
+  TRACKED.forEach(([k]) => o[k] = k === 'status' ? reqStatus(r) : String(r[k] == null ? '' : r[k]));
+  Object.entries(r.attrs || {}).forEach(([k, v]) => o['attr:' + k] = String(v == null ? '' : v));
+  o._parents = (idx['DeriveReqt'] || []).filter(x => x.src === r.id).map(x => E(x.tgt)).filter(Boolean).map(x => x.reqId).sort().join(', ');
+  return o;
+}
+function rebuildReqCache(){ const idx = relIdx(); REQ_CACHE = new Map(allReqs().map(r => [r.id, reqSnap(r, idx)])); }
+function fieldLabel(k){ if(k === '_parents') return 'Üst gereksinim'; if(k.startsWith('attr:')){ const a = reqCfg().attrs.find(x => x.key === k.slice(5)); return a ? a.label : k.slice(5); } const t = TRACKED.find(x => x[0] === k); return t ? t[1] : k; }
+function trackReqChanges(){
+  if(!M) return;
+  if(!REQ_CACHE){ rebuildReqCache(); return; }
+  const idx = relIdx(), now = new Date().toISOString(), u = userName(), why = ST.reason || '';
+  const log = M.reqLog = M.reqLog || [];
+  const seen = new Set(), push = e => log.push(Object.assign({t:now, u, why}, e));
+  allReqs().forEach(r => {
+    seen.add(r.id);
+    let cur0 = reqSnap(r, idx); const old = REQ_CACHE.get(r.id);
+    if(!old){ push({id:r.id, rid:r.reqId, f:'Oluşturuldu', o:'', n:(r.text || r.name || '').slice(0, 200)}); return; }
+    const keys = new Set(Object.keys(old).concat(Object.keys(cur0)));
+    let subst = false;
+    keys.forEach(k => { const a = old[k] || '', b = cur0[k] || ''; if(a !== b){ push({id:r.id, rid:r.reqId, f:fieldLabel(k), o:a, n:b}); if(SUBST.has(k)) subst = true; } });
+    if(subst && old.status === 'Onaylı' && reqStatus(r) === 'Onaylı'){
+      r.status = 'Değişiklikte'; push({id:r.id, rid:r.reqId, f:'Durum', o:'Onaylı', n:'Değişiklikte', why:(why ? why + ' · ' : '') + 'onaylı gereksinim değiştiği için otomatik'});
+      toast(`${r.reqId}: onaylı gereksinim değişti → durum "Değişiklikte" yapıldı`);
+    }
+  });
+  REQ_CACHE.forEach((old, id) => { if(!seen.has(id)) push({id, rid:old.reqId, f:'Silindi', o:(old.text || '').slice(0, 200), n:''}); });
+  if(log.length > 5000) log.splice(0, log.length - 5000);
+  rebuildReqCache();
+}
+function historyModal(rid){
+  const box = $('#modalBox');
+  box.style.width = 'min(980px, 96vw)'; box.style.maxWidth = 'none';
+  const all = (M.reqLog || []).slice().reverse();
+  const draw = () => {
+    const q = asciiTr($('#hq') ? $('#hq').value : '');
+    const list = all.filter(e => (!rid || e.id === rid) && (!q || asciiTr([e.rid, e.f, e.o, e.n, e.u, e.why].join(' ')).includes(q))).slice(0, 600);
+    $('#hl').innerHTML = list.length ? `<table class="rt cvt"><thead><tr><th>Zaman</th><th>Kullanıcı</th><th>ID</th><th>Alan</th><th>Eski</th><th>Yeni</th><th>Gerekçe</th></tr></thead><tbody>${list.map(e => `<tr><td style="white-space:nowrap">${esc(new Date(e.t).toLocaleString('tr-TR'))}</td><td>${esc(e.u)}</td><td style="white-space:nowrap"><b>${esc(e.rid || '')}</b></td><td>${esc(e.f)}</td><td class="muted" style="max-width:260px">${esc(String(e.o).slice(0, 300))}</td><td style="max-width:260px">${e.f === 'Metin' ? wordDiff(e.o, e.n) : esc(String(e.n).slice(0, 300))}</td><td class="muted">${esc(e.why || '')}</td></tr>`).join('')}</tbody></table>` : '<div class="muted" style="padding:10px">Kayıt yok</div>';
+  };
+  box.innerHTML = `<h2>Değişiklik geçmişi${rid && E(rid) ? ' — ' + esc(nm(E(rid))) : ''}</h2>
+    <div class="icbar"><input id="hq" placeholder="Ara (ID, alan, değer, kullanıcı, gerekçe)"><button class="pbtn" id="hx">⤒ Excel'e aktar</button><button class="pbtn" id="hu">Kullanıcı adım…</button><button class="pbtn pri" id="hc">Kapat</button></div><div id="hl" style="max-height:62vh;overflow:auto"></div>`;
+  $('#modal').style.display = 'flex'; draw();
+  $('#hq').oninput = draw; $('#hq').onkeydown = ev => ev.stopPropagation();
+  box.onclick = ev => {
+    if(ev.target.id === 'hc'){ $('#modal').style.display = 'none'; box.onclick = null; box.style.width = ''; box.style.maxWidth = ''; }
+    if(ev.target.id === 'hu') setUserName();
+    if(ev.target.id === 'hx'){
+      const rows = [[{v:'Zaman', s:1}, {v:'Kullanıcı', s:1}, {v:'ID', s:1}, {v:'Alan', s:1}, {v:'Eski değer', s:1}, {v:'Yeni değer', s:1}, {v:'Gerekçe', s:1}]];
+      all.filter(e => !rid || e.id === rid).forEach(e => rows.push([new Date(e.t).toLocaleString('tr-TR'), e.u, {v:e.rid || '', s:6}, e.f, e.o, e.n, e.why || '']));
+      download(buildXlsx([{name:'Değişiklik Geçmişi', rows, widths:[20, 16, 12, 18, 50, 50, 30], header:true, freeze:[0, 1], filter:1}]), fileSafe(E(M.rootId).name) + ' - Değişiklik Geçmişi.xlsx');
+    }
+  };
+}
+/* kelime düzeyinde fark */
+function wordDiff(a, b){
+  const A = String(a || '').split(/(\s+)/), B = String(b || '').split(/(\s+)/);
+  if(A.length * B.length > 250000) return `<del>${esc(a)}</del> <ins>${esc(b)}</ins>`;
+  const n = A.length, m = B.length, L = Array.from({length:n + 1}, () => new Uint16Array(m + 1));
+  for(let i = n - 1; i >= 0; i--) for(let j = m - 1; j >= 0; j--) L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  let i = 0, j = 0, out = '';
+  while(i < n && j < m){
+    if(A[i] === B[j]){ out += esc(A[i]); i++; j++; }
+    else if(L[i + 1][j] >= L[i][j + 1]){ out += `<del>${esc(A[i])}</del>`; i++; }
+    else { out += `<ins>${esc(B[j])}</ins>`; j++; }
+  }
+  while(i < n){ out += `<del>${esc(A[i++])}</del>`; }
+  while(j < m){ out += `<ins>${esc(B[j++])}</ins>`; }
+  return out.replace(/<\/del><del>/g, '').replace(/<\/ins><ins>/g, '');
+}
+
+/* ---- taban çizgileri ---- */
+let BL = {a:'', b:'@current', onlyCh:true};
+function baselineSnapshot(){
+  const idx = relIdx(), out = {};
+  allReqs().forEach(r => { const t = trace(r, idx); out[r.id] = Object.assign(reqSnap(r, idx), {_satisfy:t.elems.map(x => x.name).sort().join(', '), _funcs:t.funcs.map(x => x.name).sort().join(', '), _tests:t.verifyBy.map(x => x.name).sort().join(', ')}); });
+  return out;
+}
+function createBaseline(){
+  const name = prompt('Taban çizgisi adı (ör. SRR öncesi, Rev-A):', 'Taban çizgisi ' + ((M.baselines || []).length + 1));
+  if(!name || !name.trim()) return;
+  snap();
+  M.baselines = M.baselines || [];
+  M.baselines.push({id:uid(), name:name.trim(), t:new Date().toISOString(), u:userName(), reqs:baselineSnapshot()});
+  BL.a = M.baselines[M.baselines.length - 1].id; BL.b = '@current';
+  afterChange(); toast(`"${name.trim()}" taban çizgisi oluşturuldu (${Object.keys(M.baselines[M.baselines.length - 1].reqs).length} gereksinim)`);
+}
+const blSet = id => id === '@current' ? baselineSnapshot() : ((M.baselines || []).find(b => b.id === id) || {}).reqs || {};
+const blName = id => id === '@current' ? 'Güncel model' : ((M.baselines || []).find(b => b.id === id) || {}).name || '?';
+function baselineDiff(aId, bId){
+  const A = blSet(aId), B = blSet(bId), rows = [];
+  const ids = new Set(Object.keys(A).concat(Object.keys(B)));
+  ids.forEach(id => {
+    const a = A[id], b = B[id];
+    if(!a){ rows.push({id, rid:b.reqId, st:'Eklendi', ch:[], a, b}); return; }
+    if(!b){ rows.push({id, rid:a.reqId, st:'Silindi', ch:[], a, b}); return; }
+    const ch = [...new Set(Object.keys(a).concat(Object.keys(b)))].filter(k => (a[k] || '') !== (b[k] || ''));
+    rows.push({id, rid:b.reqId || a.reqId, st:ch.length ? 'Değişti' : 'Aynı', ch, a, b});
+  });
+  return rows.sort((x, y) => String(x.rid).localeCompare(String(y.rid), 'tr', {numeric:true}));
+}
+const blField = k => k === '_satisfy' ? 'Karşılayan elemanlar' : k === '_funcs' ? 'Fonksiyonlar' : k === '_tests' ? 'Doğrulayan testler' : fieldLabel(k);
+function baselineHTML(){
+  const bls = M.baselines || [];
+  let h = `<div class="bll">${bls.length ? bls.map(b => `<div class="blc"><b>${esc(b.name)}</b><span class="muted">${esc(new Date(b.t).toLocaleString('tr-TR'))} · ${esc(b.u || '')} · ${Object.keys(b.reqs).length} gereksinim</span><button class="tdel" data-bldel="${b.id}" title="Sil">✕</button></div>`).join('') : '<div class="muted">Henüz taban çizgisi yok. "+ Taban çizgisi oluştur" ile mevcut gereksinim setinin anlık kopyasını alın.</div>'}</div>`;
+  if(!bls.length) return h;
+  if(!BL.a || !bls.some(b => b.id === BL.a)) BL.a = bls[bls.length - 1].id;
+  const rows = baselineDiff(BL.a, BL.b), sum = st => rows.filter(r => r.st === st).length;
+  h += `<div class="cards"><div class="card"><div class="cv" style="color:#2e7d32">${sum('Eklendi')}</div><div class="ct">Eklenen</div></div><div class="card"><div class="cv" style="color:#c0392b">${sum('Silindi')}</div><div class="ct">Silinen</div></div><div class="card"><div class="cv" style="color:#d18a00">${sum('Değişti')}</div><div class="ct">Değişen</div></div><div class="card"><div class="cv">${sum('Aynı')}</div><div class="ct">Değişmeyen</div></div></div>`;
+  const list = BL.onlyCh ? rows.filter(r => r.st !== 'Aynı') : rows;
+  h += `<table class="rt cvt"><thead><tr><th>ID</th><th>Durum</th><th>Alan</th><th>${esc(blName(BL.a))}</th><th>${esc(blName(BL.b))}</th></tr></thead><tbody>`;
+  list.forEach(r => {
+    const cls = {Eklendi:'d-add', Silindi:'d-del', 'Değişti':'d-chg', 'Aynı':''}[r.st];
+    if(r.st === 'Değişti'){
+      r.ch.forEach((k, i) => { h += `<tr class="${cls}">${i === 0 ? `<td rowspan="${r.ch.length}" style="white-space:nowrap"><a class="lnk" data-goto="${r.id}"><b>${esc(r.rid || '')}</b></a></td><td rowspan="${r.ch.length}"><span class="dchip ${cls}">${r.st}</span></td>` : ''}<td>${esc(blField(k))}</td><td class="muted" style="max-width:380px">${esc(r.a[k] || '')}</td><td style="max-width:380px">${wordDiff(r.a[k], r.b[k])}</td></tr>`; });
+    } else {
+      const x = r.b || r.a;
+      h += `<tr class="${cls}"><td style="white-space:nowrap">${E(r.id) ? `<a class="lnk" data-goto="${r.id}"><b>${esc(r.rid || '')}</b></a>` : `<b>${esc(r.rid || '')}</b>`}</td><td><span class="dchip ${cls}">${r.st}</span></td><td>Metin</td><td class="muted" style="max-width:380px">${r.a ? esc(r.a.text || '') : ''}</td><td style="max-width:380px">${r.b ? esc(r.b.text || '') : ''}</td></tr>`;
+    }
+  });
+  return h + `</tbody></table>${!list.length ? '<div class="vempty">İki küme arasında fark yok.</div>' : ''}`;
+}
+function exportBaselineDiff(){
+  const rows = baselineDiff(BL.a, BL.b).filter(r => r.st !== 'Aynı');
+  const out = [[{v:'ID', s:1}, {v:'Durum', s:1}, {v:'Alan', s:1}, {v:blName(BL.a), s:1}, {v:blName(BL.b), s:1}]];
+  rows.forEach(r => {
+    const st = {v:r.st, s:r.st === 'Eklendi' ? 3 : r.st === 'Silindi' ? 4 : 5};
+    if(r.st === 'Değişti') r.ch.forEach(k => out.push([{v:r.rid || '', s:6}, st, blField(k), r.a[k] || '', r.b[k] || '']));
+    else out.push([{v:r.rid || '', s:6}, st, 'Metin', r.a ? r.a.text || '' : '', r.b ? r.b.text || '' : '']);
+  });
+  download(buildXlsx([{name:'Fark Raporu', rows:out, widths:[12, 12, 20, 60, 60], header:true, freeze:[0, 1], filter:1}]), fileSafe(blName(BL.a) + ' - ' + blName(BL.b)) + ' Fark.xlsx');
+}
+
+/* ---- etki analizi ---- */
+function impactLinks(x){
+  const idx = relIdx(), out = [], g = k => idx[k] || [];
+  const e = E(x); if(!e) return out;
+  g('DeriveReqt').forEach(r => { if(r.tgt === x) out.push([r.src, 'türetilmiş alt gereksinim']); });
+  g('Satisfy').forEach(r => { if(r.tgt === x) out.push([r.src, FUNC_KINDS.has((E(r.src) || {}).kind) ? 'karşılayan fonksiyon' : 'karşılayan eleman']); if(r.src === x) out.push([r.tgt, 'karşıladığı gereksinim (yeniden doğrulanmalı)']); });
+  g('Verify').forEach(r => { if(r.tgt === x) out.push([r.src, 'doğrulayan test (tekrar edilmeli)']); if(r.src === x) out.push([r.tgt, 'doğruladığı gereksinim']); });
+  g('Refine').concat(g('Trace')).forEach(r => { if(r.tgt === x) out.push([r.src, r.kind.toLowerCase()]); else if(r.src === x) out.push([r.tgt, r.kind.toLowerCase()]); });
+  g('Allocate').forEach(r => { if(r.src === x) out.push([r.tgt, 'tahsis edildiği yapı']); if(r.tgt === x) out.push([r.src, 'tahsis edilen fonksiyon']); });
+  if(e.kind === 'Block' || e.kind === 'ConstraintBlock') Object.values(M.els).forEach(p => { if((p.kind === 'Part' || p.kind === 'ConstraintProp' || p.kind === 'Lifeline') && p.type === x){ const o = E(p.owner); out.push([p.id, 'bu tipte ' + KIND[p.kind].tr.toLowerCase()]); if(o && o.kind === 'Block') out.push([o.id, 'içeren blok']); } });
+  if(e.kind === 'Activity') Object.values(M.els).forEach(a => { if(a.kind === 'Action' && a.behavior === x) out.push([a.id, 'çağıran aksiyon']); });
+  if(e.kind === 'Part' && e.type) out.push([e.type, 'tip bloğu']);
+  return out.filter(([id]) => E(id) && id !== x);
+}
+function impactUp(x){
+  const idx = relIdx(), out = [], g = k => idx[k] || [];
+  g('DeriveReqt').forEach(r => { if(r.src === x) out.push([r.tgt, 'türetildiği üst gereksinim']); });
+  g('Satisfy').forEach(r => { if(r.src === x) out.push([r.tgt, 'karşıladığı gereksinim']); });
+  g('Verify').forEach(r => { if(r.src === x) out.push([r.tgt, 'doğruladığı gereksinim']); });
+  return out.filter(([id]) => E(id));
+}
+function impactTree(root, fn, maxD){
+  const seen = new Set([root]), lines = [];
+  const rec = (x, d) => { if(d > maxD) return; fn(x).forEach(([y, why]) => { const rep = seen.has(y); seen.add(y); lines.push({id:y, d, why, rep}); if(!rep) rec(y, d + 1); }); };
+  rec(root, 1);
+  return {lines, ids:seen};
+}
+function impactAnalysis(id){
+  const e = E(id); if(!e) return;
+  const box = $('#modalBox');
+  box.style.width = 'min(820px, 95vw)'; box.style.maxWidth = 'none';
+  const dn = impactTree(id, impactLinks, 5), up = impactTree(id, impactUp, 5);
+  const affected = [...dn.ids].filter(x => x !== id);
+  const diags = Object.values(M.els).filter(d => d.kind === 'Diagram' && d.shapes.some(s => s.el === id || affected.includes(s.el)));
+  const tl = lines => lines.length ? lines.map(l => `<div class="itl" style="padding-left:${(l.d - 1) * 20 + 6}px">${l.d > 1 ? '└ ' : ''}${icon(E(l.id))} <a class="lnk" data-igo="${l.id}">${esc(elDesc(E(l.id)))}</a> <span class="muted">— ${esc(l.why)}${l.rep ? ' (yukarıda)' : ''}</span>${E(l.id).kind === 'Requirement' ? ' ' + statusChip(E(l.id)) : ''}</div>`).join('') : '<div class="muted" style="padding:6px">—</div>';
+  const kinds = {}; affected.forEach(x => { const k = KIND[E(x).kind].tr; kinds[k] = (kinds[k] || 0) + 1; });
+  box.innerHTML = `<h2>Etki analizi — ${esc(nm(e))}</h2>
+    <p class="muted" style="margin:0 0 8px">Bu eleman değişirse etkilenebilecek elemanlar (aşağı akış) ve bu elemanın dayandıkları (yukarı akış).</p>
+    <div class="cards" style="margin-bottom:10px"><div class="card"><div class="cv">${affected.length}</div><div class="ct">Etkilenen eleman</div></div>${Object.entries(kinds).map(([k, n]) => `<div class="card"><div class="cv">${n}</div><div class="ct">${esc(k)}</div></div>`).join('')}<div class="card"><div class="cv">${diags.length}</div><div class="ct">Etkilenen diyagram</div></div></div>
+    <h3 style="margin:6px 0">⬇ Etkilenenler (aşağı akış)</h3><div class="itree">${tl(dn.lines)}</div>
+    <h3 style="margin:12px 0 6px">⬆ Dayandıkları (yukarı akış)</h3><div class="itree">${tl(up.lines)}</div>
+    <h3 style="margin:12px 0 6px">Etkilenen diyagramlar</h3><div class="itree">${diags.map(d => `<div class="itl">${icon(d)} <a class="lnk" data-iod="${d.id}">${esc(d.name)}</a></div>`).join('') || '<div class="muted" style="padding:6px">—</div>'}</div>
+    <p style="text-align:right;margin:10px 0 0"><button class="pbtn pri" id="ic0">Kapat</button></p>`;
+  $('#modal').style.display = 'flex';
+  const close = () => { $('#modal').style.display = 'none'; box.onclick = null; box.style.width = ''; box.style.maxWidth = ''; };
+  box.onclick = ev => {
+    const g = ev.target.closest('[data-igo]'); if(g){ close(); ST.tsel = g.dataset.igo; revealInTree(g.dataset.igo); renderProps(); return; }
+    const o = ev.target.closest('[data-iod]'); if(o){ close(); openD(o.dataset.iod); const d = cur(); ST.sel = new Set(d.shapes.filter(s => s.el === id || affected.includes(s.el)).map(s => s.id)); renderDiagram(); return; }
+    if(ev.target.id === 'ic0') close();
+  };
 }
 
 /* ================= MENU / TOAST / STATUS ================= */
@@ -3916,6 +4246,7 @@ function loadModel(m){
   const ui = M.ui || {};
   ST.open = (ui.open || []).filter(id => isView(id) || E(id)); ST.cur = (isView(ui.cur) || E(ui.cur)) ? ui.cur : (ST.open[0] || null);
   ST.exp = new Set(ui.exp || [M.rootId]); ST.sel.clear(); ST.tsel = null; ST.tool = null;
+  rebuildReqCache();
 }
 function parseModelText(txt){
   let m = null;
@@ -4169,6 +4500,10 @@ function demo(){
   const A5 = RQ('Alt Sistem', 'SUB-005', 'Bakım arayüzü', 'Kontrol birimi bakım için seri arayüz sağlamalıdır.', 'Muayene', '', '', 'Düşük');
   [[A1, 'Güç Birimi'], [A2, 'Kontrol Birimi'], [A3, 'Sensör Birimi'], [A4, 'Kontrol Birimi'], [A5, 'Kontrol Birimi']].forEach(([r, n]) => { r.subsys = n; r.owner = reqPkgFor('Alt Sistem', n); });
   [[A1, S1], [A2, S2], [A3, S2], [A4, S3]].forEach(([x, y]) => addRel('DeriveReqt', x.id, y.id));
+  [S1, S2, A1, A2].forEach(r => r.status = 'Onaylı'); [S3, A3].forEach(r => r.status = 'İncelemede');
+  M.baselines = [{id:uid(), name:'Rev-A (SRR)', t:new Date(Date.now() - 86400000 * 14).toISOString(), u:'Örnek', reqs:baselineSnapshot()}];
+  A3.text = 'Sensör birimi veriyi en az 100 Hz ile kontrol birimine iletmelidir.'; A3.status = 'Değişiklikte';
+  S3.text = 'Sistem operatöre çalışma durumunu uygun şekilde ve hızlı bildirmelidir.';
   addRel('Satisfy', gb.id, A1.id); addRel('Satisfy', kb.id, A2.id); addRel('Satisfy', sb.id, A3.id); addRel('Satisfy', sys.id, S4.id);
   addRel('Satisfy', act.id, S2.id); addRel('Satisfy', E(n2.el).id, A2.id); addRel('Satisfy', E(n4.el).id, A4.id);
   const tc1 = mk('TestCase', reqHome(M.rootId), {name:'Açılış süresi testi'}); addRel('Verify', tc1.id, S2.id);
