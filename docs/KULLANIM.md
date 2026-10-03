@@ -8,6 +8,9 @@
 4. [Diyagram türleri](#4-diyagram-türleri)
 5. [İç içe diyagramlar ve gezinme](#5-iç-içe-diyagramlar-ve-gezinme)
 5a. [Gereksinim yönetimi ve izlenebilirlik](#5a-gereksinim-yönetimi-ve-izlenebilirlik)
+5b. [Gereksinim kalitesi, durum, geçmiş ve taban çizgileri](#5b-gereksinim-kalitesi-durum-geçmiş-ve-taban-çizgileri)
+5c. [Doğrulama ve test yönetimi](#5c-doğrulama-ve-test-yönetimi)
+5d. [Araçlar: rapor, model doğrulama, birleştirme, ReqIF](#5d-araçlar-rapor-model-doğrulama-birleştirme-reqif)
 6. [Otomatik düzen ve hizalama](#6-otomatik-düzen-ve-hizalama)
 7. [İkonlar](#7-ikonlar)
 8. [Özellikler paneli](#8-özellikler-paneli)
@@ -64,6 +67,11 @@ Paneller arasındaki ayırıcılar sürüklenerek boyutlandırılabilir.
   - Bağlantılar otomatik olarak elemanların etrafından dolaşır. Aynı kenara gelen bağlantılar ayrı noktalara dağıtılır, paralel hatlar üst üste binmez.
   - Düz çizgili bağlantılar (use case, durum makinesi, not bağlantısı) bir elemanı keserse dik açılı olarak etrafından dolaşır.
   - Elle ayar: seçili bağlantının ortasındaki mavi tutamak sürüklenir. Sağ tık → *Rotayı sıfırla* otomatik rotaya döndürür.
+  - Bağlantı ucunu yeniden bağlama: seçili bağlantının uç tutamacını başka bir elemana sürükleyin; model ilişkisi de güncellenir.
+- **Kopyala / yapıştır:** `Ctrl+C` / `Ctrl+V`. Başka bir diyagrama yapıştırınca aynı model elemanları orada da gösterilir; aynı diyagrama yapıştırınca yeni eleman olarak kopyalanır (bloklar part, port ve değerleriyle). `Ctrl+Shift+V` her zaman yeni eleman olarak yapıştırır, `Ctrl+D` seçimi çoğaltır.
+- **Ağaçtan toplu ekleme:** Ağaçta `Ctrl`/`Shift` + tık ile birden çok eleman seçip diyagrama birlikte sürükleyin; aralarındaki ilişkiler otomatik çizilir.
+- **Arama:** `Ctrl+F` modeli ad, gereksinim ID ve metni, açıklama ve özellik değerlerinde arar; sonuca tıklayınca ağaçta ve diyagramda gösterilir.
+- **Görünüm:** Özellikler panelindeki *Görünüm* bölümünden dolgu ve çizgi rengi, bloklarda bölmeleri (parts, references, values, ports) gizleme ve diyagram yazı boyutu ayarlanır. Aktivite diyagramında paletteki *Kulvar (yatay)* ile yatay kulvar eklenir.
 - **Ad düzenleme:**
   - `F2` ya da `Alt`+çift tık ad düzenler.
   - Alt diyagramı olmayan elemanlarda düz çift tık da ad düzenler.
@@ -276,9 +284,119 @@ Doğrulama yöntemi metinleri (*T, A, Test, Analiz, Muayene, Inspection, Göster
 | Sistem-Alt Sistem | Sistem × alt sistem türetme matrisi (X) |
 | Gereksinim-Fonksiyon | Gereksinim × fonksiyon karşılama matrisi |
 | Gereksinim-Blok | Gereksinim × blok karşılama matrisi |
-| Kapsama Analizi | Gösterge özetleri ve her gereksinimin durum/eksik listesi |
+| Kapsama Analizi | Gösterge özetleri, her gereksinimin kapsama durumu, eksikleri ve doğrulama durumu |
+| Kalite | Kalite denetimi bulguları (önem, bulgu) |
+| VCRM | Doğrulama çapraz referans matrisi |
+| Test Durumları | Tüm test alanları ve doğruladığı gereksinimler |
 
 Dışa aktarılan dosya tekrar içe aktarılabilir. Ortak ID'ler güncellenir ve ilişkiler korunur; Excel'de toplu düzenleme yapıp geri almak için kullanılabilir.
+
+## 5b. Gereksinim kalitesi, durum, geçmiş ve taban çizgileri
+
+### Durum iş akışı
+
+Her gereksinimin bir **durumu** vardır: *Taslak → İncelemede → Onaylı → Değişiklikte → İptal*. Tabloda **Durum** sütunundan veya Özellikler panelinden değiştirilir; tablo duruma göre filtrelenebilir.
+
+- **Onaylı** bir gereksinimin başlığı, metni, doğrulama yöntemi, seviyesi veya alt sistemi değişirse durum otomatik olarak **Değişiklikte** olur.
+- **İptal** edilen gereksinimler kapsama analizine, VCRM'e ve kalite raporuna girmez.
+
+### Kalite denetimi
+
+Gereksinim metinleri INCOSE yazım kurallarına göre otomatik denetlenir. Tablodaki **Kalite** sütununda rozet, Özellikler panelinde uyarı listesi görünür; tüm bulgular **Gereksinimler ▾ → Kalite raporu** görünümündedir.
+
+| Kural | Örnek |
+|---|---|
+| Zorunluluk ifadesi yok | "-malıdır / -melidir", *shall* bulunmuyor |
+| Birden fazla ister | Bir cümlede iki "-malıdır" |
+| Belirsiz ifade | uygun, yeterli, hızlı, kolay, kullanıcı dostu, vb., ve/veya… |
+| Belirlenmemiş değer | TBD, TBC, belirlenecek |
+| Birimsiz sayı | "30 ağırlıkta" (yüzde ve standart/yöntem numaraları hariç) |
+| Aşırı uzun metin | Bölünmesi önerilir |
+| Yinelenen ID / çok benzer gereksinim | Aynı ID veya metni %72'den fazla örtüşen gereksinimler |
+
+### Değişiklik geçmişi
+
+Gereksinim alanlarındaki ve üst gereksinim bağlantılarındaki her değişiklik **kim, ne zaman, eski → yeni değer** olarak kaydedilir. Özellikler panelindeki **Gerekçe** alanına yazdığınız metin (ör. *ECR-012*) sonraki değişikliklere eklenir. Metin değişiklikleri kelime düzeyinde renkli gösterilir. Tüm geçmiş: **Gereksinimler ▾ → Değişiklik geçmişi** (Excel'e aktarılabilir). Kullanıcı adınızı **Gereksinimler ▾ → Kullanıcı adım** ile ayarlayın.
+
+### Taban çizgileri (baseline)
+
+**Gereksinimler ▾ → Taban çizgileri** görünümünde **+ Taban çizgisi oluştur** ile gereksinim setini adla dondurun (ör. *Rev-A (SRR)*). İki taban çizgisini veya bir taban çizgisini güncel modelle karşılaştırın: eklenen, silinen ve değişen gereksinimler alan alan listelenir. Fark raporu Excel'e aktarılabilir.
+
+### Etki analizi
+
+Bir gereksinime veya model elemanına sağ tıklayıp (ya da Özellikler → **⇶ Etki analizi**) değişikliğin etkileyeceği alt/üst gereksinimleri, karşılayan elemanları, testleri ve diyagramları ağaç halinde görün.
+
+## 5c. Doğrulama ve test yönetimi
+
+### Test durumu alanları
+
+Test durumu (TestCase) seçildiğinde Özellikler panelinde şu alanlar bulunur: prosedür no, yöntem (Test / Analiz / Muayene / Gösterim), doğrulama seviyesi (Birim, Entegrasyon, Alt Sistem, Sistem, Kabul (FAT), Saha (SAT), Kalifikasyon), test edilen birim, standart/referans, sorumlu, planlanan başlangıç ve bitiş, sonuç (*Planlandı, Yapılmadı, Geçti, Kaldı, Koşullu*), sonuç tarihi ve rapor no. Sonuç girildiğinde sonuç tarihi boşsa bugün atanır. Gereksinim diyagramında test şeklinin köşesinde sonuç rozeti görünür.
+
+### Doğrulama durumu
+
+Her gereksinimin doğrulama durumu, Verify ile bağlı testlerin sonucundan hesaplanır:
+
+| Durum | Koşul |
+|---|---|
+| Doğrulandı | Tüm testler *Geçti* |
+| Kaldı | En az bir test *Kaldı* |
+| Kısmen | Bazı testler *Geçti* veya *Koşullu* |
+| Planlandı | Testler var, henüz sonuç yok |
+| Faaliyet yok | Bağlı test yok |
+
+Bu durum gereksinim tablosunda (**Doğrulama Durumu** sütunu), kapsama analizinde ve Excel çıktısında görünür.
+
+### VCRM (Doğrulama Çapraz Referans Matrisi)
+
+**Gereksinimler ▾ → Doğrulama matrisi (VCRM)**: her gereksinim için planlanan yöntemler (T/A/M/G hücrelerine tıklayarak değiştirilir; renkli nokta o yöntemdeki testlerin sonucudur), doğrulama seviyesi, test/prosedürler, sonuçlar, rapor numaraları ve doğrulama durumu. Seviye/alt sistem, durum ve yöntem filtreleri vardır.
+
+### Test kampanyası
+
+**Gereksinimler ▾ → Test kampanyası** görünümü:
+
+- Üstte sonuç sayaçları ve gecikmiş test sayısı.
+- **Zaman çizelgesi (Gantt):** testler planlanan tarihlerine göre çubuk olarak; renk sonucu gösterir, kırmızı kesikli çerçeve bitişi geçmiş ama sonuçlanmamış testleri işaretler, ◆ sonuç tarihidir, kırmızı çizgi bugündür. Doğrulama seviyesi, sonuç, yöntem, birim veya sorumluya göre gruplanır; ölçek gün/hafta/ay seçilebilir.
+- **Test tablosu:** tüm alanlar doğrudan düzenlenir; **+** ile doğruladığı gereksinimler bağlanır.
+
+**⤓ Excel'den test aktar** ile test ekibinin doldurduğu tablo geri alınır: testler prosedür no'ya, yoksa ada göre eşleşir; yeni satırlar yeni test olur. Tanınan sütunlar: Test adı, Prosedür no, Yöntem, Seviye, Test edilen birim, Standart, Sorumlu, Başlangıç, Bitiş, Sonuç (*Geçti/PASS/Başarılı, Kaldı/FAIL…*), Sonuç tarihi, Rapor no, Gereksinimler (ID listesi). Tarihler `gg.aa.yyyy`, `yyyy-aa-gg` veya Excel tarih biçiminde olabilir.
+
+## 5d. Araçlar: rapor, model doğrulama, birleştirme, ReqIF
+
+Araç çubuğundaki **Araçlar ▾** menüsü:
+
+### Rapor oluştur
+
+Başlık, doküman no, revizyon ve hazırlayan bilgisini girin; bölümleri (model özeti, diyagramlar, yapı sözlüğü, gereksinimler, izlenebilirlik ve kapsama, doğrulama, kalite bulguları, model doğrulama bulguları) ve rapora girecek diyagramları seçin. İsteğe bağlı yatay sayfa.
+
+- **Word (.docx):** kapak, içindekiler (Word açılışta günceller), başlık stilleri, tablo başlıkları her sayfada tekrar eder, şekil başlıkları, alt bilgide doküman no ve sayfa numarası. Diyagramlar yüksek çözünürlüklü PNG olarak gömülür.
+- **Yazdırılabilir HTML:** aynı içerik, vektörel diyagramlarla; tarayıcıda **Yazdır / PDF olarak kaydet**.
+
+Girdiğiniz başlık ve doküman bilgileri bir sonraki rapor için hatırlanır.
+
+### Model doğrulama
+
+Model, SysML tutarlılık kurallarına göre denetlenir. Bulgular **hata / uyarı / bilgi** olarak sınıflanır, kurala göre filtrelenir ve Excel'e aktarılır; satıra tıklayınca eleman ağaçta ve diyagramda gösterilir.
+
+| Önem | Kurallar |
+|---|---|
+| Hata | Kopuk ilişki, sahipsiz eleman, silinmiş aktiviteyi çağıran aksiyon, döngüsel kompozisyon, döngüsel kalıtım |
+| Uyarı | Tipsiz part / kısıt özelliği, isimsiz veya aynı sahipte aynı adlı elemanlar, başlangıç/bitiş düğümü olmayan aktivite, gelen/giden akışı olmayan aksiyon, tek dallı karar, ulaşılamayan durum, aktörsüz use case, port yön uyumsuzluğu, gereksinim bağlanmamış test, boş kısıt |
+| Bilgi | Tipsiz port/değer/yaşam çizgisi, koşulsuz karar dalı, çıkışı olmayan durum, farklı tipli bağlı portlar, kullanılmayan blok, boş diyagram/paket |
+
+### Başka modeli birleştir
+
+Başka bir `.sysml` (veya modeli gömülü `.html`) dosyasını seçin. Aktarılacak üst paketleri (ya da yalnızca alt paketlerini) ve hedef paketi belirleyin. Seçilenlerin tüm içeriği — diyagramlar ve ilişkiler dahil — aktarılır. Aynı kimlikli elemanlar (aynı modelin kopyalarından gelenler) için seçenekler:
+
+- **Gelen sürümle güncelle:** ekip arkadaşınızın değiştirdiği kopyadaki değişiklikleri alır.
+- **Mevcut kalsın:** yalnızca yeni elemanları ekler.
+- **Yeni kimlikle kopya:** her şeyi ayrı kopya olarak ekler.
+
+Aynı gereksinim ID'si farklı gereksinimlerde kullanılıyorsa uyarı verilir.
+
+### ReqIF
+
+- **ReqIF olarak dışa aktar:** gereksinimler ReqIF 1.2 biçiminde (ForeignID, Name, Text, seviye, alt sistem, durum, doğrulama yöntemi, müşteri isteri ve özel özellikler; Derive/Refine/Trace ilişkileri; sistem ve alt sistem başlıklarıyla hiyerarşi). IBM DOORS, Polarion, Jama gibi araçlara aktarılabilir.
+- **ReqIF içe aktar:** `.reqif` dosyası Excel içe aktarma penceresiyle açılır; öznitelikler sütun olarak eşleşir, ilişkiler üst gereksinim olarak gelir.
 
 ## 6. Otomatik düzen ve hizalama
 
@@ -352,7 +470,7 @@ Seçili elemana göre alanlar değişir:
 | **Kaydet** (`Ctrl+S`) | `.sysml.json` dosyası indirir | Aynı `.sysml` dosyasının üzerine yazar; ilk seferde konum sorar |
 | **Farklı kaydet** (`Ctrl+Shift+S`) | — | Windows kaydet penceresi |
 | **Aç** (`Ctrl+O`) | `.sysml`, `.json` veya gömülü `.html` | Aynı, Windows aç penceresiyle |
-| **HTML olarak kaydet** | Modeli içine gömülü uygulama dosyası üretir | Aynı |
+| **HTML kaydet** | Modeli içine gömülü uygulama dosyası üretir | Aynı |
 
 - Masaüstü sürümde kaydedilmemiş değişiklik varsa pencere başlığında `*` görünür. Uygulama kapatılsa bile son durum otomatik kayıttan geri gelir.
 - Bir `.sysml` dosyasını **exe'nin üzerine sürükleyip bırakırsanız** uygulama o dosyayla açılır.
@@ -363,7 +481,7 @@ Seçili elemana göre alanlar değişir:
 
 - **PNG:** Yüksek çözünürlüklü (2×) beyaz arka planlı görüntü
 - **SVG:** Vektörel; ölçeklenebilir, düzenlenebilir
-- **Panoya kopyala:** Word, PowerPoint veya e-postaya doğrudan yapıştırılır.
+- **Panoya:** Word, PowerPoint veya e-postaya doğrudan yapıştırılır.
 
 Çıktıya SysML diyagram çerçevesi (`bdd [Package] Yapı [Sistem Yapısı]` gibi) dahil edilir. Seçim işaretleri ve gezinme simgeleri dahil edilmez.
 
@@ -375,6 +493,9 @@ Seçili elemana göre alanlar değişir:
 | `Ctrl+S` / `Ctrl+Shift+S` | Kaydet / farklı kaydet |
 | `Ctrl+O` | Aç |
 | `Ctrl+A` | Diyagramdaki tümünü seç |
+| `Ctrl+C` / `Ctrl+V` | Kopyala / yapıştır (başka diyagramda aynı elemanı gösterir, aynı diyagramda kopyalar) |
+| `Ctrl+Shift+V` / `Ctrl+D` | Yeni eleman olarak yapıştır / çoğalt |
+| `Ctrl+F` | Model içinde ara |
 | `Ctrl+Shift+L` | Diyagram türünün varsayılan otomatik düzeni |
 | `Del` / `Shift+Del` | Modelden sil / diyagramdan kaldır |
 | `F2` | Ad düzenle |
@@ -396,4 +517,4 @@ Exe dijital imzalı değildir. Kurum politikası imzasız programları engelliyo
 Otomatik kayıt tarayıcının yerel deposundadır; tarayıcı verisi temizlenirse silinir. Önemli modelleri **Kaydet** ile dosya olarak saklayın.
 
 **Cameo'ya aktarabilir miyim?**
-Şimdilik hayır; XMI desteği yok. Diyagramları PNG/SVG olarak alabilirsiniz.
+Model için henüz XMI desteği yok. Gereksinimleri **ReqIF** olarak aktarabilirsiniz (Cameo, DOORS, Polarion ReqIF okur). Diyagramları PNG/SVG olarak, tüm modeli Word raporu olarak alabilirsiniz.

@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.6.0 — 2026-10-03
+
+- **Araçlar ▾** menüsü
+- **Rapor oluştur:** seçilen bölümler ve diyagramlarla Word (.docx) rapor — kapak, içindekiler, başlık stilleri, sayfa numaralı alt bilgi, şekil başlıkları, her sayfada tekrar eden tablo başlıkları — veya yazdırılabilir HTML rapor (PDF'e yazdırma)
+- **Model doğrulama:** 25'i aşkın tutarlılık kuralı (kopuk ilişki, döngüsel kompozisyon/kalıtım, tipsiz part, başlangıç/bitişi olmayan aktivite, ulaşılamayan durum, aktörsüz use case, port yön uyumsuzluğu, bağlantısız test…); hata/uyarı/bilgi sınıfları, filtre, Excel'e aktarma, bulguya tıklayınca elemana gitme
+- **Modeli birleştir:** başka bir .sysml dosyasından seçilen paketleri diyagram ve ilişkileriyle aktarma; ortak kimlikli elemanlarda güncelle / atla / kopya seçenekleri; çakışan gereksinim ID uyarısı
+- **ReqIF 1.2:** gereksinimleri öznitelikleri, Derive/Refine/Trace ilişkileri ve sistem/alt sistem hiyerarşisiyle dışa aktarma; .reqif dosyalarını içe aktarma
+- Araç çubuğu etiketleri kısaltıldı (HTML kaydet, Panoya); yardım, README ve kullanım kılavuzu v1.3–v1.6 özellikleriyle güncellendi
+
 ## v1.5.0 — 2026-10-03
 
 - Test durumu alanları: prosedür no, yöntem (Test/Analiz/Muayene/Gösterim), doğrulama seviyesi (Birim → Kalifikasyon), test edilen birim, standart/referans, sorumlu, planlanan başlangıç/bitiş, sonuç (Planlandı/Yapılmadı/Geçti/Kaldı/Koşullu), sonuç tarihi, rapor no; diyagramda sonuç rozeti

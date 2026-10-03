@@ -16,6 +16,9 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
   - **İzlenebilirlik matrisi:** sistem × alt sistem, gereksinim × fonksiyon, gereksinim × blok, test, use case; hücreye tıklayarak ilişki kurma
   - **Kapsama analizi:** karşılanmayan sistem gereksinimleri, üst gereksinimi olmayan (yetim) alt sistem gereksinimleri, doğrulama yöntemi eksikleri, gereksinime izlenmeyen bloklar ve fonksiyonlar
   - **Excel:** `.xlsx`/`.csv` içe aktarma (sütunlar otomatik eşleşir, bilinmeyenler yeni özellik olur, üst gereksinim ID'leri ilişkiye dönüşür); gereksinim + matris + kapsama sayfalarıyla `.xlsx` dışa aktarma
+- **Gereksinim kalitesi ve konfigürasyon yönetimi:** INCOSE kurallarıyla kalite denetimi, durum iş akışı (Taslak → Onaylı → Değişiklikte), gerekçeli değişiklik geçmişi, taban çizgileri ve karşılaştırma, etki analizi
+- **Doğrulama yönetimi:** test durumu alanları (prosedür, seviye, tarih, sonuç, rapor no), **VCRM**, gereksinim bazında doğrulama durumu, **test kampanyası zaman çizelgesi (Gantt)**, test sonuçlarını Excel'den geri alma
+- **Araçlar:** **Word (.docx) ve yazdırılabilir HTML rapor**, model doğrulama kuralları, başka modelle birleştirme, **ReqIF** içe/dışa aktarma (DOORS, Polarion…)
 - **Model ağacı:** Diyagramda yapılan her değişiklik ağaca anında yansır. Bir eleman birden çok diyagramda gösterilebilir.
 - **Diyagrama özel palet:** Açık diyagramın türüne göre elemanlar ve ilişkiler; sürükle-bırak veya tıkla-yerleştir
 - **Modelle senkron davranışlar:**
@@ -32,6 +35,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
   - Otomatik kayıt
   - `.sysml` (JSON) model dosyası
   - Modeli içine gömülü, tek dosyalık HTML (paylaşım için)
+- **Düzenleme:** kopyala/yapıştır/çoğalt, model içinde arama (`Ctrl+F`), ağaçtan çoklu sürükleme, bağlantı ucunu yeniden bağlama, renk ve bölme görünümü, yatay kulvar
 - **Geri al / yinele**, yakınlaştırma, ızgara, çoklu seçim, kısayollar
 
 ## İndirme ve çalıştırma
@@ -52,9 +56,10 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 2. Model ağacında bir pakete **sağ tıklayın → Yeni diyagram** (BDD, IBD, Use Case, Aktivite).
 3. Soldaki **paletten** elemanları diyagrama sürükleyin. İlişki için ilişki türünü seçip kaynaktan hedefe sürükleyin.
 4. Dağınık mı oldu? **Düzen ▾** menüsünden bir düzen seçin (`Ctrl+Shift+L`).
-5. **Gereksinimler ▾** menüsünden gereksinim tablosunu açın, Excel'den isterleri aktarın, izlenebilirliği kurun ve kapsama analizine bakın.
-6. Bloklara **İkon** atayın, sonra **PNG** ile görüntüyü indirin.
-7. **Kaydet** (`Ctrl+S`) ile modeli `.sysml` dosyası olarak saklayın.
+5. **Gereksinimler ▾** menüsünden gereksinim tablosunu açın, Excel'den isterleri aktarın, izlenebilirliği kurun, kapsama analizine ve VCRM'e bakın.
+6. **Araçlar ▾ → Rapor oluştur** ile modelin Word raporunu alın.
+7. Bloklara **İkon** atayın, sonra **PNG** ile görüntüyü indirin.
+8. **Kaydet** (`Ctrl+S`) ile modeli `.sysml` dosyası olarak saklayın.
 
 Ayrıntılı kullanım için: **[docs/KULLANIM.md](docs/KULLANIM.md)**
 
@@ -86,6 +91,14 @@ Ayrıntılı kullanım için: **[docs/KULLANIM.md](docs/KULLANIM.md)**
 |---|---|
 | ![Kapsama](docs/images/kapsama-analizi.png) | ![Excel](docs/images/excel-ice-aktar.png) |
 
+| Doğrulama matrisi (VCRM) | Test kampanyası |
+|---|---|
+| ![VCRM](docs/images/vcrm.png) | ![Test kampanyası](docs/images/test-kampanyasi.png) |
+
+| Taban çizgisi karşılaştırma | Model doğrulama |
+|---|---|
+| ![Taban çizgisi](docs/images/taban-cizgisi.png) | ![Model doğrulama](docs/images/model-dogrulama.png) |
+
 PNG çıktısı örneği:
 
 ![PNG çıktısı](docs/images/cikti-bdd.png)
@@ -107,5 +120,5 @@ Exe'yi kendiniz derlemek için: **[docs/GELISTIRME.md](docs/GELISTIRME.md)**
 
 - Sequence diyagramında kombine fragmanlar (alt/loop/opt) ve durum makinesinde iç içe (composite) durumlar henüz yok.
 - Eski `.xls` biçimi okunmaz; Excel'de `.xlsx` olarak kaydedip aktarın.
-- XMI içe/dışa aktarma yok; Cameo ile doğrudan dosya alışverişi yapılamaz.
-- Kulvarlar yalnızca dikey çizilir.
+- Model için XMI içe/dışa aktarma yok; Cameo ile gereksinim alışverişi ReqIF üzerinden yapılabilir.
+- Word raporundaki içindekiler tablosu Word açılışta alanları güncellediğinde dolar (Word sorarsa "Evet" deyin).

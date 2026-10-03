@@ -159,6 +159,7 @@ td.mxd.on{background:#e6d3f1}
 td.mxd.na{background:#f5f6f8;cursor:default}
 td.mxt{text-align:center;font-weight:700;color:#445;background:#f7f8fa}
 td.mxt.zero{color:#c0392b;background:#fbe3e5}
+.vcrm td.cvtx{min-width:280px}
 .vcrm th.vm{text-align:center;width:26px;padding:6px 4px}
 td.vmc{text-align:center;font-weight:700;color:#2e7d32;cursor:pointer;position:relative;min-width:24px}
 td.vmc:hover{background:#eef6ee}td.vmc.on{background:#f1f8f1}
@@ -170,6 +171,9 @@ table.tct input:not([type=date]){min-width:90px}
 table.tct input:hover,table.tct select:hover{border-color:#bfc8d3}
 table.tct input:focus{border-color:#d18a00;background:#fffbe6;outline:none}
 table.tct tr.late td.rn{border-left:3px solid #c0392b}
+.rpgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}.rpgrid label{display:flex;flex-direction:column;font-size:12px;color:#445;gap:2px}
+.rpgrid input{font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid #bfc8d3;border-radius:4px}
+.rpsec{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin-bottom:6px}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:16px}
 .card{background:#fff;border:1px solid #dde3ea;border-radius:8px;padding:12px 14px}
 .cv{font-size:26px;font-weight:700;color:#26364b}
@@ -213,7 +217,7 @@ tr.d-add td{background:#f0faf3}tr.d-del td{background:#fdf1f2}tr.d-chg td{backgr
     <button data-act="open" title="JSON veya gömülü HTML model dosyası aç">Aç</button>
     <button data-act="save" title="Modeli kaydet (Ctrl+S)">Kaydet</button>
     <button data-act="saveAs" class="nat" title="Farklı kaydet (Ctrl+Shift+S)">Farklı kaydet</button>
-    <button data-act="saveHtml" title="Modeli içine gömülü HTML olarak kaydet (paylaşım için)">HTML olarak kaydet</button>
+    <button data-act="saveHtml" title="Modeli içine gömülü HTML olarak kaydet (paylaşım için)">HTML kaydet</button>
     <span class="sep"></span>
     <button data-act="navBack" title="Önceki diyagram (Alt+←)">◀</button>
     <button data-act="navFwd" title="Sonraki diyagram (Alt+→)">▶</button>
@@ -223,7 +227,7 @@ tr.d-add td{background:#f0faf3}tr.d-del td{background:#fdf1f2}tr.d-chg td{backgr
     <span class="sep"></span>
     <button data-act="png" title="Diyagramı PNG olarak indir">PNG</button>
     <button data-act="svg" title="Diyagramı SVG olarak indir">SVG</button>
-    <button data-act="copy" title="Diyagramı panoya resim olarak kopyala">Panoya kopyala</button>
+    <button data-act="copy" title="Diyagramı panoya resim olarak kopyala (Word/PowerPoint’e yapıştırmak için)">Panoya</button>
     <span class="sep"></span>
     <button data-act="zout" title="Uzaklaş">−</button>
     <span id="zoomLbl">100%</span>
@@ -232,6 +236,7 @@ tr.d-add td{background:#f0faf3}tr.d-del td{background:#fdf1f2}tr.d-chg td{backgr
     <button data-act="grid" title="Izgara göster/gizle">Izgara</button>
     <span class="sep"></span>
  <button data-act="reqMenu" title="Gereksinim tablosu, izlenebilirlik matrisi, kapsama analizi, Excel" style="background:#6c3483;border-color:#8e44ad">Gereksinimler ▾</button>
+    <button data-act="toolsMenu" title="Rapor (Word/HTML), model doğrulama, model birleştirme, ReqIF">Araçlar ▾</button>
     <button data-act="layoutMenu" title="Otomatik düzen ve hizalama (Ctrl+Shift+L)">Düzen ▾</button>
     <button data-act="iconMenu" title="Seçili blok/part/aktöre ikon ata">İkon</button>
     <span class="sep"></span>
@@ -3237,6 +3242,7 @@ function renderView(){
   else if(ST.cur === '@baseline'){ body.innerHTML = baselineHTML(); renderViewBar(); }
   else if(ST.cur === '@vcrm'){ refreshLvlSelect(); body.innerHTML = vcrmHTML(); }
   else if(ST.cur === '@campaign') body.innerHTML = campaignHTML();
+  else if(ST.cur === '@validation') body.innerHTML = validationHTML();
   else body.innerHTML = coverageHTML();
   body.scrollTop = st; body.scrollLeft = sl;
   if(pendingFocus){ const el = body.querySelector(`[data-r="${pendingFocus[0]}"][data-c="${pendingFocus[1]}"]`); pendingFocus = null; if(el){ el.focus(); placeCaretEnd(el); } }
@@ -3265,6 +3271,8 @@ function renderViewBar(){
     bar.innerHTML = vcrmBar(); const ls = bar.querySelector('[data-xf="vc.lvl"]'); ls.value = VC.lvl; if(ls.value !== VC.lvl){ VC.lvl = 'all'; ls.value = 'all'; }
   } else if(ST.cur === '@campaign'){
     bar.innerHTML = campaignBar();
+  } else if(ST.cur === '@validation'){
+    bar.innerHTML = validationBar();
   } else if(ST.cur === '@baseline'){
     const bls = M.baselines || [], opts = sel => bls.map(b => `<option value="${b.id}"${sel === b.id ? ' selected' : ''}>${esc(b.name)}</option>`).join('');
     bar.innerHTML = `<button class="vb pri" data-va="mkbl">+ Taban çizgisi oluştur</button><span class="vsep"></span>
@@ -3736,14 +3744,14 @@ function parseCSV(text){
 }
 async function pickBytes(){
   if(NATIVE){
-    const r = await nDialog('open', '', 'Excel / CSV (*.xlsx;*.csv;*.txt)|*.xlsx;*.csv;*.txt;*.tsv|Tüm dosyalar (*.*)|*.*', '', true);
+    const r = await nDialog('open', '', 'Excel / CSV / ReqIF (*.xlsx;*.csv;*.reqif)|*.xlsx;*.csv;*.txt;*.tsv;*.reqif;*.xml|Tüm dosyalar (*.*)|*.*', '', true);
     if(r.error) throw new Error(r.error);
     if(!r.path) return null;
     const bin = atob(r.b64 || ''), u8 = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
     return {name:r.path, u8};
   }
   return new Promise(res => {
-    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.csv,.txt,.tsv';
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.csv,.txt,.tsv,.reqif,.xml';
     inp.onchange = async () => { const f = inp.files[0]; if(!f) return res(null); res({name:f.name, u8:new Uint8Array(await f.arrayBuffer())}); };
     inp.click();
   });
@@ -3755,7 +3763,8 @@ async function importReqs(){
   let sheets;
   try {
     if(/\.xls$/i.test(file.name)) throw new Error('Eski .xls biçimi desteklenmiyor; Excel\'de "Farklı kaydet → .xlsx" yapın.');
-    sheets = /\.xlsx$/i.test(file.name) || (file.u8[0] === 0x50 && file.u8[1] === 0x4b) ? await readXlsx(file.u8) : parseCSV(decodeText(file.u8));
+    if(/\.(reqif|xml)$/i.test(file.name) || /<REQ-IF[\s>]/.test(new TextDecoder().decode(file.u8.subarray(0, 4000)))){ sheets = reqifToSheet(new TextDecoder().decode(file.u8)); if(!sheets) throw new Error('Geçerli bir ReqIF dosyası değil'); }
+    else sheets = /\.xlsx$/i.test(file.name) || (file.u8[0] === 0x50 && file.u8[1] === 0x4b) ? await readXlsx(file.u8) : parseCSV(decodeText(file.u8));
   } catch(e){ return toast('Okunamadı: ' + e.message); }
   sheets = sheets.filter(s => s.rows.some(r => r.some(c => String(c).trim())));
   if(!sheets.length) return toast('Dosyada veri bulunamadı');
@@ -3885,6 +3894,8 @@ function reqMenuItems(){
     {t:'Test kampanyası (zaman çizelgesi)', f:() => openD('@campaign')},
     {t:'Excel\'e aktar (VCRM + test durumları)', f:exportVcrmXlsx},
     {t:'Excel\'den test durumu / sonuç aktar…', f:importTests},
+    '-',
+    {t:'ReqIF olarak dışa aktar…', f:exportReqIF},
     '-',
     {t:'Kalite raporu', f:() => openD('@quality')},
     {t:'Taban çizgileri ve karşılaştırma', f:() => openD('@baseline')},
@@ -4425,11 +4436,480 @@ async function importTests(){
       if(t.dataset.tf === 'pStart' && v && (!tc.pEnd || tc.pEnd < v)) tc.pEnd = v;
       afterChange(); return;
     }
-    if(t.dataset.xf){ const [o, k] = t.dataset.xf.split('.'); (o === 'vc' ? VC : CP)[k] = t.value; renderView(); }
+    if(t.dataset.xf){ const [o, k] = t.dataset.xf.split('.'); if(o === 'vc' || o === 'cp'){ (o === 'vc' ? VC : CP)[k] = t.value; renderView(); } }
   });
   V.addEventListener('input', ev => { const t = ev.target; if(t.dataset.xf === 'cp.q'){ CP.q = t.value; const b = V.querySelector('.vbody'); b.innerHTML = campaignHTML(); } });
   V.addEventListener('keydown', ev => { const t = ev.target; if(t.dataset && (t.dataset.tc || t.dataset.xf)){ if(ev.key === 'Enter') t.blur(); ev.stopPropagation(); } });
   $('#props').addEventListener('click', ev => { const b = ev.target.closest('[data-tcreq]'); if(b) pickReqsForTest(b.dataset.tcreq); });
+})();
+
+/* ================= PHASE 4: VALIDATION, REPORTS, MERGE, REQIF ================= */
+VIEWS['@validation'] = {tr:'Model Doğrulama', ic:'✔', note:'Model, SysML yazım ve tutarlılık kurallarına göre denetlenir: tipsiz part/port, isimsiz veya aynı adlı elemanlar, kopuk ilişkiler, başlangıç/bitiş düğümü eksik aktiviteler, ulaşılamayan durumlar, aktörü olmayan use case\'ler, döngüsel kompozisyon/kalıtım, yön uyumsuz port bağlantıları, gereksinim bağlanmamış testler.<br><br>Satıra tıklayınca eleman ağaçta ve diyagramda gösterilir.'};
+const SEV_COL = {'hata':'#c0392b', 'uyarı':'#d18a00', 'bilgi':'#5d8fc9'};
+const NAMED = new Set(['Package', 'Block', 'Part', 'Port', 'Value', 'Actor', 'UseCase', 'Activity', 'Action', 'State', 'StateMachine', 'Interaction', 'ConstraintBlock', 'TestCase', 'Partition', 'Subject']);
+function validateModel(){
+  const out = [], add = (sev, rule, e, msg) => out.push({sev, rule, id:e ? e.id : null, msg});
+  const els = Object.values(M.els), idx = relIdx(), R = k => idx[k] || [];
+  const inDiag = new Set(); els.forEach(d => { if(d.kind === 'Diagram') d.shapes.forEach(s => inDiag.add(s.el)); });
+  // kopuk ilişkiler
+  els.forEach(e => { if(KIND[e.kind] && KIND[e.kind].rel && (!E(e.src) || !E(e.tgt))) add('hata', 'Kopuk ilişki', e, `${KIND[e.kind].tr} ilişkisinin ${!E(e.src) ? 'kaynağı' : 'hedefi'} modelde yok`); });
+  els.forEach(e => { if(e.owner && !E(e.owner)) add('hata', 'Sahipsiz eleman', e, 'Sahibi (owner) modelde bulunamadı'); });
+  // isimsiz ve aynı adlı
+  const sib = new Map();
+  els.forEach(e => {
+    if(!NAMED.has(e.kind)) return;
+    if(!String(e.name || '').trim()){ if(!(e.kind === 'Part' && e.type) && !(e.kind === 'Partition' && e.represents)) add('uyarı', 'İsimsiz eleman', e, KIND[e.kind].tr + ' adı boş'); return; }
+    const k = e.owner + '|' + e.kind + '|' + asciiTr(e.name); if(sib.has(k)){ if(sib.get(k) !== -1){ add('uyarı', 'Aynı adlı elemanlar', E(sib.get(k)), `"${e.name}" adında birden fazla ${KIND[e.kind].tr} aynı sahipte`); sib.set(k, -1); } } else sib.set(k, e.id);
+  });
+  // tip denetimleri
+  els.forEach(e => {
+    if(e.kind === 'Part' && !(e.type && E(e.type))) add('uyarı', 'Tipsiz part', e, 'Part bir bloğa tiplenmemiş');
+    if(e.kind === 'Port' && !(e.type && E(e.type))) add('bilgi', 'Tipsiz port', e, 'Port bir arayüz bloğuna tiplenmemiş');
+    if(e.kind === 'ConstraintProp' && !(e.type && E(e.type))) add('uyarı', 'Tipsiz kısıt özelliği', e, 'Kısıt bloğu seçilmemiş');
+    if(e.kind === 'Lifeline' && !(e.type && E(e.type))) add('bilgi', 'Tipsiz yaşam çizgisi', e, 'Blok veya aktöre bağlı değil');
+    if(e.kind === 'Value' && !e.vtype) add('bilgi', 'Tipsiz değer', e, 'Value property tipi (Real, Integer…) boş');
+    if(e.kind === 'ConstraintBlock' && !String(e.expr || '').trim()) add('uyarı', 'Boş kısıt', e, 'Kısıt ifadesi tanımlanmamış');
+    if(e.kind === 'Action' && e.behavior && !E(e.behavior)) add('hata', 'Kopuk çağrı', e, 'Çağrılan aktivite silinmiş');
+  });
+  // aktiviteler
+  const flows = R('ControlFlow').concat(R('ObjectFlow'));
+  els.filter(e => e.kind === 'Activity').forEach(a => {
+    const nodes = kidsOf(a.id).filter(n => ['Action', 'Initial', 'Final', 'FlowFinal', 'Decision', 'Merge', 'Fork', 'Join', 'Object'].includes(n.kind));
+    if(!nodes.some(n => n.kind === 'Action')) return;
+    if(!nodes.some(n => n.kind === 'Initial')) add('uyarı', 'Başlangıç düğümü yok', a, 'Aktivitede başlangıç düğümü yok');
+    if(!nodes.some(n => n.kind === 'Final' || n.kind === 'FlowFinal')) add('uyarı', 'Bitiş düğümü yok', a, 'Aktivitede aktivite/akış sonu düğümü yok');
+    nodes.forEach(n => {
+      const inc = flows.filter(f => f.tgt === n.id), outg = flows.filter(f => f.src === n.id);
+      if(n.kind === 'Action'){ if(!inc.length) add('uyarı', 'Gelen akış yok', n, `"${a.name}" içinde aksiyona gelen akış yok`); if(!outg.length) add('uyarı', 'Giden akış yok', n, `"${a.name}" içinde aksiyondan çıkan akış yok`); }
+      if(n.kind === 'Decision'){ if(outg.length < 2) add('uyarı', 'Eksik karar dalı', n, `Karar düğümünden ${outg.length} dal çıkıyor (en az 2 olmalı)`); else if(outg.some(f => !String(f.guard || f.name || '').trim())) add('bilgi', 'Koşulsuz karar dalı', n, 'Karar dallarından en az biri koşul [guard] içermiyor'); }
+      if(n.kind === 'Initial' && !outg.length) add('uyarı', 'Giden akış yok', n, 'Başlangıç düğümünden akış çıkmıyor');
+    });
+  });
+  // durum makineleri
+  const trs = R('Transition');
+  els.filter(e => e.kind === 'StateMachine').forEach(sm => {
+    const nodes = kidsOf(sm.id).filter(n => ['State', 'Initial', 'Choice', 'Final'].includes(n.kind));
+    if(!nodes.some(n => n.kind === 'State')) return;
+    const init = nodes.filter(n => n.kind === 'Initial');
+    if(!init.length) add('uyarı', 'Başlangıç durumu yok', sm, 'Durum makinesinde başlangıç (initial) yok');
+    const seen = new Set(init.map(n => n.id)), st = [...seen];
+    while(st.length){ const x = st.pop(); trs.filter(t => t.src === x).forEach(t => { if(!seen.has(t.tgt)){ seen.add(t.tgt); st.push(t.tgt); } }); }
+    nodes.filter(n => n.kind === 'State').forEach(n => { if(init.length && !seen.has(n.id)) add('uyarı', 'Ulaşılamayan durum', n, `"${sm.name}" başlangıcından bu duruma ulaşılamıyor`); if(!trs.some(t => t.src === n.id) && nodes.length > 2) add('bilgi', 'Çıkışı olmayan durum', n, 'Durumdan çıkan geçiş yok (son durum mu?)'); });
+    nodes.filter(n => n.kind === 'Choice').forEach(n => { if(trs.filter(t => t.src === n.id).length < 2) add('uyarı', 'Eksik seçim dalı', n, 'Seçim düğümünden en az 2 geçiş çıkmalı'); });
+  });
+  // use case
+  els.filter(e => e.kind === 'UseCase').forEach(u => {
+    const act = R('Association').some(r => (r.src === u.id && E(r.tgt) && E(r.tgt).kind === 'Actor') || (r.tgt === u.id && E(r.src) && E(r.src).kind === 'Actor'));
+    const viaInc = R('Include').some(r => r.tgt === u.id) || R('Extend').some(r => r.src === u.id) || R('Generalization').some(r => r.src === u.id);
+    if(!act && !viaInc) add('uyarı', 'Aktörsüz use case', u, 'Hiçbir aktörle ilişkili değil (include/extend ile de bağlanmamış)');
+  });
+  // döngüler
+  const cyc = (edges, rule, msg) => {
+    const g = new Map(); edges.forEach(([a, b]) => { if(!g.has(a)) g.set(a, []); g.get(a).push(b); });
+    const col = new Map(), rep = new Set();
+    const dfs = (v, path) => { col.set(v, 1); (g.get(v) || []).forEach(w => { if(col.get(w) === 1){ const c = path.slice(path.indexOf(w)); const k = [...c].sort().join(); if(!rep.has(k)){ rep.add(k); add('hata', rule, E(w), msg + ': ' + c.map(x => nm(E(x))).concat(nm(E(w))).join(' → ')); } } else if(!col.get(w)) dfs(w, path.concat(w)); }); col.set(v, 2); };
+    [...g.keys()].forEach(v => { if(!col.get(v)) dfs(v, [v]); });
+  };
+  cyc(els.filter(p => p.kind === 'Part' && !p.shared && p.type && E(p.owner) && E(p.owner).kind === 'Block').map(p => [p.owner, p.type]), 'Döngüsel kompozisyon', 'Blok kendini (dolaylı) içeriyor');
+  cyc(R('Generalization').map(r => [r.src, r.tgt]), 'Döngüsel kalıtım', 'Generalization döngüsü');
+  // port yönleri
+  R('Connector').forEach(c => {
+    const a = E(c.src), b = E(c.tgt); if(!a || !b || a.kind !== 'Port' || b.kind !== 'Port') return;
+    if(c.sp && c.tp && a.dir && b.dir && a.dir === b.dir && a.dir !== 'inout') add('uyarı', 'Port yön uyumsuzluğu', c, `${nm(a)} (${a.dir}) → ${nm(b)} (${b.dir}): iki part arasındaki bağlantıda yönler zıt olmalı`);
+    if(!c.sp !== !c.tp && a.dir && b.dir && a.dir !== b.dir && a.dir !== 'inout' && b.dir !== 'inout') add('uyarı', 'Port yön uyumsuzluğu', c, `Delegasyon bağlantısında (sınır portu ↔ part portu) yönler aynı olmalı: ${nm(a)} (${a.dir}), ${nm(b)} (${b.dir})`);
+    if(a.type && b.type && a.type !== b.type) add('bilgi', 'Port tipi farklı', c, `Bağlı portların tipleri farklı: ${nm(E(a.type) || {})} / ${nm(E(b.type) || {})}`);
+  });
+  // testler, kullanılmayanlar, boşlar
+  els.filter(e => e.kind === 'TestCase').forEach(t => { if(!R('Verify').some(r => r.src === t.id)) add('uyarı', 'Bağlantısız test', t, 'Hiçbir gereksinimi doğrulamıyor (Verify yok)'); });
+  const typeUse = new Set(els.map(e => e.type).filter(Boolean)), relUse = new Set(); els.forEach(e => { if(e.src){ relUse.add(e.src); relUse.add(e.tgt); } });
+  els.filter(e => e.kind === 'Block').forEach(b => { if(!inDiag.has(b.id) && !typeUse.has(b.id) && !relUse.has(b.id)) add('bilgi', 'Kullanılmayan blok', b, 'Hiçbir diyagramda yok, tip olarak kullanılmıyor ve ilişkisi yok'); });
+  els.filter(e => e.kind === 'Diagram' && !e.shapes.length).forEach(d => add('bilgi', 'Boş diyagram', d, 'Diyagramda hiç şekil yok'));
+  els.filter(e => e.kind === 'Package' && !kidsOf(e.id).length).forEach(p => add('bilgi', 'Boş paket', p, 'Paketin içi boş'));
+  const ord = {hata:0, 'uyarı':1, bilgi:2};
+  return out.sort((a, b) => ord[a.sev] - ord[b.sev] || a.rule.localeCompare(b.rule, 'tr'));
+}
+let VD = {sev:'all', rule:'all'};
+function showElement(id){
+  const e = E(id); if(!e) return;
+  ST.tsel = e.id; revealInTree(e.id);
+  const tgt = e.src && !e.shapes ? e : e;
+  const dd = e.kind === 'Diagram' ? e : diagramsShowing(e.id)[0] || (e.src ? Object.values(M.els).find(d => d.kind === 'Diagram' && d.edges.some(x => x.el === e.id)) : null);
+  if(!dd){ renderAll(); return; }
+  openD(dd.id); const d = cur(); if(!d || e.kind === 'Diagram'){ renderAll(); return; }
+  const sh = d.shapes.find(s => s.el === tgt.id), ed = d.edges.find(x => x.el === tgt.id);
+  ST.sel = new Set(sh ? d.shapes.filter(s => s.el === tgt.id).map(s => s.id) : ed ? [ed.id] : []);
+  const s0 = sh || (ed && shapeOf(d, ed.s));
+  if(s0){ const rr = svgEl.getBoundingClientRect(); d.vx = rr.width / 2 - (s0.x + s0.w / 2) * d.z; d.vy = rr.height / 2 - (s0.y + s0.h / 2) * d.z; }
+  ST.tsel = e.id; renderAll();
+}
+function validationHTML(){
+  const all = validateModel(), rules = [...new Set(all.map(x => x.rule))].sort((a, b) => a.localeCompare(b, 'tr'));
+  const list = all.filter(x => (VD.sev === 'all' || x.sev === VD.sev) && (VD.rule === 'all' || x.rule === VD.rule));
+  let h = '<div class="cards">' + ['hata', 'uyarı', 'bilgi'].map(s => `<div class="card"><div class="cv" style="color:${SEV_COL[s]}">${all.filter(x => x.sev === s).length}</div><div class="ct">${s === 'hata' ? 'Hata' : s === 'uyarı' ? 'Uyarı' : 'Bilgi'}</div></div>`).join('') + `<div class="card"><div class="cv">${Object.values(M.els).filter(e => !KIND[e.kind].rel).length}</div><div class="ct">Denetlenen eleman</div></div></div>`;
+  if(!all.length) return h + '<div class="vempty">Bulgu yok — model tüm kuralları geçti 🎉</div>';
+  h += `<table class="rt"><thead><tr><th class="rn">#</th><th>Önem</th><th>Kural</th><th>Eleman</th><th>Açıklama</th></tr></thead><tbody>` + list.map((x, i) => {
+    const e = E(x.id);
+    return `<tr data-vrow="${x.id || ''}" style="cursor:pointer"><td class="rn">${i + 1}</td><td><span class="stc" style="background:${SEV_COL[x.sev]}">${x.sev}</span></td><td style="white-space:nowrap">${esc(x.rule)}</td><td>${e ? `${icon(e)} <b>${esc(nm(e))}</b><div class="muted" style="font-size:11px">${esc(pathOf(e.owner))}</div>` : '—'}</td><td>${esc(x.msg)}</td></tr>`;
+  }).join('') + '</tbody></table>';
+  return h + `<div class="vfoot">${list.length} / ${all.length} bulgu</div>`;
+}
+function validationBar(){
+  const rules = [...new Set(validateModel().map(x => x.rule))].sort((a, b) => a.localeCompare(b, 'tr'));
+  return `<label>Önem <select data-xf="vd.sev"><option value="all">Tümü</option>${['hata', 'uyarı', 'bilgi'].map(s => `<option${VD.sev === s ? ' selected' : ''}>${s}</option>`).join('')}</select></label>
+    <label>Kural <select data-xf="vd.rule"><option value="all">Tümü</option>${rules.map(r => `<option${VD.rule === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
+    <span class="vsep"></span><button class="vb" data-xa="vrefresh">↻ Yeniden denetle</button><button class="vb" data-xa="vdxl">⤒ Excel'e aktar</button>`;
+}
+function exportValidationXlsx(){
+  const rows = [[{v:'Önem', s:1}, {v:'Kural', s:1}, {v:'Eleman', s:1}, {v:'Tür', s:1}, {v:'Konum', s:1}, {v:'Açıklama', s:1}]];
+  validateModel().forEach(x => { const e = E(x.id); rows.push([{v:x.sev, s:x.sev === 'hata' ? 4 : x.sev === 'uyarı' ? 5 : 2}, x.rule, e ? nm(e) : '', e ? KIND[e.kind].tr : '', e ? pathOf(e.owner) : '', x.msg]); });
+  download(buildXlsx([{name:'Model Doğrulama', rows, widths:[10, 26, 30, 16, 40, 70], header:true, freeze:[0, 1], filter:1}]), fileSafe(E(M.rootId).name) + ' - Model Doğrulama.xlsx');
+}
+
+/* ---- rapor (Word .docx / yazdırılabilir HTML) ---- */
+function diagramSVGStr(d){
+  const r = diagramSVG(d, true); if(!r.bbox) return null;
+  const pad = 12, x = r.bbox.x - pad, y = r.bbox.y - pad, w = Math.ceil(r.bbox.w + pad * 2), h = Math.ceil(r.bbox.h + pad * 2);
+  return {str:`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${x} ${y} ${w} ${h}"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff"/>${r.svg}</svg>`, w, h};
+}
+function svgToPng(r, scale){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => { const c = document.createElement('canvas'); c.width = Math.round(r.w * scale); c.height = Math.round(r.h * scale); const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height); c.toBlob(async b => res(new Uint8Array(await b.arrayBuffer())), 'image/png'); };
+    img.onerror = () => rej(new Error('görüntü'));
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
+  });
+}
+const RPT_SECTIONS = [['summary', 'Model özeti'], ['diagrams', 'Diyagramlar'], ['blocks', 'Yapı sözlüğü (bloklar, part, port, değerler)'], ['reqs', 'Gereksinimler'], ['trace', 'İzlenebilirlik ve kapsama analizi'], ['verif', 'Doğrulama (VCRM ve test durumları)'], ['quality', 'Gereksinim kalite bulguları'], ['validation', 'Model doğrulama bulguları']];
+function buildReport(o){
+  const B = [], H = (lv, t) => B.push({t:'h', lv, x:t}), Pp = (x, st) => B.push({t:'p', x, st}), TB = (head, rows, w) => B.push({t:'table', head, rows, w});
+  const root = E(M.rootId), idx = relIdx(); let sec = 0, fig = 0;
+  const cnt = k => Object.values(M.els).filter(e => e.kind === k).length;
+  if(o.summary){
+    H(1, `${++sec}. Model özeti`);
+    Pp(`Bu doküman "${root.name}" modelinden ${new Date().toLocaleDateString('tr-TR')} tarihinde SysML Modelleyici ile otomatik olarak üretilmiştir.`);
+    const kinds = ['Package', 'Block', 'Part', 'Port', 'Actor', 'UseCase', 'Activity', 'Action', 'StateMachine', 'State', 'Interaction', 'ConstraintBlock', 'Requirement', 'TestCase', 'Diagram'].filter(cnt);
+    TB(['Eleman türü', 'Adet'], kinds.map(k => [KIND[k].tr, String(cnt(k))]), [70, 30]);
+    const ds = Object.values(M.els).filter(e => e.kind === 'Diagram' && (o.dia || []).includes(e.id));
+    if(ds.length) TB(['Diyagram', 'Tür', 'Konum'], ds.map(d => [d.name, DT[d.dtype].tr, pathOf(d.owner)]), [35, 30, 35]);
+  }
+  if(o.diagrams){
+    H(1, `${++sec}. Diyagramlar`);
+    Object.values(M.els).filter(e => e.kind === 'Diagram').sort(sortEls).filter(d => (o.dia || []).includes(d.id)).forEach(d => {
+      H(2, d.name); if(d.doc) Pp(d.doc);
+      const r = diagramSVGStr(d); if(!r){ Pp('(Diyagram boş)', 'muted'); return; }
+      B.push({t:'img', d, r, cap:`Şekil ${++fig} – ${d.name} (${DT[d.dtype].tr})`});
+    });
+  }
+  if(o.blocks){
+    const bl = Object.values(M.els).filter(e => e.kind === 'Block').sort(sortEls);
+    if(bl.length){
+      H(1, `${++sec}. Yapı sözlüğü`);
+      bl.forEach(b => {
+        H(2, b.name); Pp(b.doc || 'Açıklama girilmemiş.', b.doc ? '' : 'muted');
+        const ch = kidsOf(b.id), parts = ch.filter(c => c.kind === 'Part'), vals = ch.filter(c => c.kind === 'Value'), ports = ch.filter(c => c.kind === 'Port');
+        if(parts.length) TB(['Part', 'Tip', 'Çokluk', 'Toplama'], parts.map(p => [p.name || '', p.type && E(p.type) ? E(p.type).name : '—', p.mult || '1', p.shared ? 'shared' : 'composite']), [30, 30, 15, 25]);
+        if(vals.length) TB(['Değer', 'Tip', 'Varsayılan', 'Birim'], vals.map(v => [v.name || '', v.vtype || '', v.def || '', v.unit || '']), [35, 25, 20, 20]);
+        if(ports.length) TB(['Port', 'Yön', 'Tip'], ports.map(p => [p.name || '', p.dir || '', p.type && E(p.type) ? E(p.type).name : '—']), [40, 20, 40]);
+        const rs = (idx['Satisfy'] || []).filter(x => x.src === b.id).map(x => E(x.tgt)).filter(Boolean);
+        if(rs.length) Pp('Karşıladığı gereksinimler: ' + rs.map(r => r.reqId || nm(r)).join(', '));
+      });
+    }
+  }
+  if(o.reqs && allReqs().length){
+    H(1, `${++sec}. Gereksinimler`);
+    const grp = [['Sistem gereksinimleri', allReqs().filter(r => reqLevel(r) === 'Sistem')]].concat(subsystems().map(s => ['Alt sistem: ' + s, allReqs().filter(r => reqLevel(r) !== 'Sistem' && String(r.subsys || '').trim() === s)]));
+    const noName = allReqs().filter(r => reqLevel(r) !== 'Sistem' && !String(r.subsys || '').trim()); if(noName.length) grp.push(['Alt sistem gereksinimleri', noName]);
+    grp.filter(g => g[1].length).forEach(([t, rs]) => { H(2, t); TB(['ID', 'Başlık', 'Gereksinim', 'Doğrulama', 'Durum', 'Müşteri ister'], rs.map(r => [r.reqId || '', r.name || '', r.text || '', r.verif || '—', reqStatus(r), r.srcNo || '']), [11, 15, 44, 12, 9, 9]); });
+  }
+  if(o.trace && allReqs().length){
+    H(1, `${++sec}. İzlenebilirlik ve kapsama analizi`);
+    const D = coverageData();
+    TB(['Gösterge', 'Değer'], D.cards.map(([t, v, s0, p]) => [t + (s0 ? ' (' + s0 + ')' : ''), p ? '%' + v : String(v)]), [75, 25]);
+    H(2, 'İzlenebilirlik tablosu');
+    TB(['ID', 'Üst / alt gereksinim', 'Karşılayan elemanlar', 'Fonksiyonlar', 'Kapsama'], D.sys.concat(D.sub).map(({r, t, c}) => [r.reqId || '', (reqLevel(r) === 'Sistem' ? t.children : t.parents).map(x => x.reqId || nm(x)).join(', ') || '—', t.elems.map(nm).join(', ') || '—', t.funcs.map(nm).join(', ') || '—', {x:c.st, c:c.st === 'Tam' ? 'D9F2DF' : c.st === 'Kısmi' ? 'FFF3CD' : 'F8D7DA'}]), [12, 20, 28, 25, 15]);
+    const gaps = D.sys.concat(D.sub).filter(x => x.c.gaps.length);
+    if(gaps.length){ H(2, 'Kapsama eksikleri'); TB(['ID', 'Eksikler'], gaps.map(({r, c}) => [r.reqId || '', c.gaps.join('; ')]), [15, 85]); }
+  }
+  if(o.verif && (allReqs().length || allTests().length)){
+    H(1, `${++sec}. Doğrulama`);
+    H(2, 'Doğrulama çapraz referans matrisi (VCRM)');
+    TB(['ID', 'T', 'A', 'M', 'G', 'Test / prosedür', 'Sonuç', 'Durum'], allReqs().filter(activeReq).map(r => { const t = trace(r, idx), ts = t.verifyBy.filter(x => x.kind === 'TestCase'), m = new Set(String(r.verif || '').split(/[,;\/]+/).map(x => x.trim())), vs = verStatus(r, t); return [r.reqId || ''].concat(VERIF.map(([v]) => m.has(v) ? 'X' : '')).concat([ts.map(x => nm(x) + (x.procNo ? ' (' + x.procNo + ')' : '')).join(', ') || '—', ts.map(testResult).join(', ') || '—', {x:vs, c:vs === 'Doğrulandı' ? 'D9F2DF' : vs === 'Kaldı' || vs === 'Faaliyet yok' ? 'F8D7DA' : 'FFF3CD'}]); }), [12, 5, 5, 5, 5, 36, 16, 16]);
+    if(allTests().length){ H(2, 'Test durumları'); TB(['Test', 'Prosedür', 'Seviye', 'Plan', 'Sonuç', 'Rapor', 'Gereksinimler'], allTests().map(t => [nm(t), t.procNo || '', t.tLevel || '', [fmtD(t.pStart), fmtD(t.pEnd)].filter(Boolean).join(' – '), testResult(t), t.reportNo || '', testReqs(t, idx).map(r => r.reqId || nm(r)).join(', ')]), [22, 12, 11, 17, 10, 10, 18]); }
+  }
+  if(o.quality && allReqs().length){
+    const SQ = simIndex(), rows = []; allReqs().filter(activeReq).forEach(r => reqQuality(r, SQ).forEach(([sv, m]) => rows.push([r.reqId || '', sv, m])));
+    H(1, `${++sec}. Gereksinim kalite bulguları`);
+    if(rows.length) TB(['ID', 'Önem', 'Bulgu'], rows, [14, 12, 74]); else Pp('Bulgu yok.');
+  }
+  if(o.validation){
+    const v = validateModel();
+    H(1, `${++sec}. Model doğrulama bulguları`);
+    if(v.length) TB(['Önem', 'Kural', 'Eleman', 'Açıklama'], v.map(x => [x.sev, x.rule, x.id && E(x.id) ? nm(E(x.id)) : '', x.msg]), [10, 22, 23, 45]); else Pp('Bulgu yok — model tüm kuralları geçti.');
+  }
+  return B;
+}
+const wx = s => xe(s);
+function docxRun(x, o){ o = o || {}; const lines = String(x == null ? '' : x).split('\n'); return `<w:r><w:rPr>${o.b ? '<w:b/>' : ''}${o.i ? '<w:i/>' : ''}${o.col ? `<w:color w:val="${o.col}"/>` : ''}${o.sz ? `<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>` : ''}</w:rPr>${lines.map((l, i) => (i ? '<w:br/>' : '') + `<w:t xml:space="preserve">${wx(l)}</w:t>`).join('')}</w:r>`; }
+function docxP(x, style, o){ o = o || {}; return `<w:p><w:pPr>${style ? `<w:pStyle w:val="${style}"/>` : ''}${o.jc ? `<w:jc w:val="${o.jc}"/>` : ''}${o.pb ? '<w:pageBreakBefore/>' : ''}${o.keep ? '<w:keepNext/>' : ''}</w:pPr>${docxRun(x, o)}</w:p>`; }
+async function buildDocx(B, o){
+  const land = !!o.land, TW = land ? 14570 : 9638, maxW = (land ? 25.7 : 17) / 2.54 * 914400, maxH = (land ? 14.5 : 21) / 2.54 * 914400;
+  const media = []; let body = '', pic = 0;
+  body += docxP(o.title || E(M.rootId).name, 'Title') + docxP(E(M.rootId).name + ' — SysML Model Raporu', 'Subtitle');
+  const meta = [['Doküman no', o.docNo], ['Revizyon', o.rev], ['Hazırlayan', o.author], ['Tarih', new Date().toLocaleDateString('tr-TR')]].filter(x => x[1]);
+  if(meta.length) body += docxTable(['Alan', 'Değer'], meta, [30, 70], TW, true);
+  body += `<w:p><w:pPr><w:pStyle w:val="TOCHeading"/><w:pageBreakBefore/></w:pPr>${docxRun('İçindekiler')}</w:p><w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-2" \\h \\z \\u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>${docxRun('İçindekiler tablosunu güncellemek için tıklayıp F9 tuşuna basın.', {i:1, col:'777777'})}<w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>`;
+  let first = true;
+  for(const b of B){
+    if(b.t === 'h'){ body += docxP(b.x, 'Heading' + b.lv, {pb:b.lv === 1 && first}); if(b.lv === 1) first = false; }
+    else if(b.t === 'p') body += docxP(b.x, null, b.st === 'muted' ? {i:1, col:'777777'} : {});
+    else if(b.t === 'table') body += docxTable(b.head, b.rows, b.w, TW);
+    else if(b.t === 'img'){
+      const scale = Math.min(2, 4000 / Math.max(b.r.w, b.r.h)) || 1;
+      let png; try { png = await svgToPng(b.r, scale); } catch(e){ body += docxP('(Görüntü oluşturulamadı)', null, {i:1}); continue; }
+      pic++; media.push({name:`word/media/image${pic}.png`, data:png});
+      let cx = b.r.w * 9525, cy = b.r.h * 9525; const k = Math.min(1, maxW / cx, maxH / cy); cx = Math.round(cx * k); cy = Math.round(cy * k);
+      body += `<w:p><w:pPr><w:jc w:val="center"/><w:keepNext/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${pic}" name="Şekil ${pic}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${pic}" name="image${pic}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdImg${pic}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+      body += docxP(b.cap, 'Caption', {jc:'center'});
+    }
+  }
+  const sect = `<w:sectPr><w:footerReference w:type="default" r:id="rIdFtr"/><w:pgSz w:w="${land ? 16838 : 11906}" w:h="${land ? 11906 : 16838}"${land ? ' w:orient="landscape"' : ''}/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr>`;
+  const NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}${sect}</w:body></w:document>`;
+  const hs = (id, name, sz, col, before, extra) => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="${before}" w:after="120"/>${extra || ''}</w:pPr><w:rPr><w:b/><w:color w:val="${col}"/><w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr></w:style>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="tr-TR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="100" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
+<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
+<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:before="2400" w:after="200"/></w:pPr><w:rPr><w:b/><w:color w:val="26364B"/><w:sz w:val="56"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Subtitle"><w:name w:val="Subtitle"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="600"/></w:pPr><w:rPr><w:color w:val="6C3483"/><w:sz w:val="30"/></w:rPr></w:style>
+${hs('Heading1', 'heading 1', 32, '26364B', 360, '<w:outlineLvl w:val="0"/><w:pBdr><w:bottom w:val="single" w:sz="8" w:space="2" w:color="8E44AD"/></w:pBdr>')}${hs('Heading2', 'heading 2', 25, '3D5070', 240, '<w:outlineLvl w:val="1"/>')}${hs('Heading3', 'heading 3', 22, '3D5070', 200, '<w:outlineLvl w:val="2"/>')}${hs('TOCHeading', 'TOC Heading', 32, '26364B', 240, '')}
+<w:style w:type="paragraph" w:styleId="Caption"><w:name w:val="caption"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="240"/></w:pPr><w:rPr><w:i/><w:color w:val="555555"/><w:sz w:val="18"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="TOC1"><w:name w:val="toc 1"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="60"/></w:pPr><w:rPr><w:b/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="TOC2"><w:name w:val="toc 2"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="40"/><w:ind w:left="240"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Footer"><w:name w:val="footer"/><w:basedOn w:val="Normal"/><w:rPr><w:color w:val="777777"/><w:sz w:val="16"/></w:rPr></w:style>
+<w:style w:type="table" w:styleId="TableGrid"><w:name w:val="Table Grid"/><w:tblPr><w:tblBorders><w:top w:val="single" w:sz="4" w:color="BFC8D3"/><w:left w:val="single" w:sz="4" w:color="BFC8D3"/><w:bottom w:val="single" w:sz="4" w:color="BFC8D3"/><w:right w:val="single" w:sz="4" w:color="BFC8D3"/><w:insideH w:val="single" w:sz="4" w:color="BFC8D3"/><w:insideV w:val="single" w:sz="4" w:color="BFC8D3"/></w:tblBorders><w:tblCellMar><w:top w:w="30" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="30" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>`;
+  const footer = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:pPr><w:pStyle w:val="Footer"/><w:tabs><w:tab w:val="right" w:pos="${TW}"/></w:tabs></w:pPr><w:r><w:t xml:space="preserve">${wx((o.docNo ? o.docNo + '  ·  ' : '') + (o.title || E(M.rootId).name) + (o.rev ? '  ·  Rev. ' + o.rev : ''))}</w:t></w:r><w:r><w:tab/><w:t xml:space="preserve">Sayfa </w:t></w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>1</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r><w:r><w:t xml:space="preserve"> / </w:t></w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> NUMPAGES </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>1</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:ftr>`;
+  const settings = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:updateFields w:val="true"/><w:defaultTabStop w:val="708"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>`;
+  const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${wx(o.title || E(M.rootId).name)}</dc:title><dc:creator>${wx(o.author || userName())}</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`;
+  const files = [
+    {name:'[Content_Types].xml', data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`},
+    {name:'_rels/.rels', data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`},
+    {name:'word/_rels/document.xml.rels', data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdSty" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdSet" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/><Relationship Id="rIdFtr" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>${media.map((m, i) => `<Relationship Id="rIdImg${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image${i + 1}.png"/>`).join('')}</Relationships>`},
+    {name:'word/document.xml', data:doc}, {name:'word/styles.xml', data:styles}, {name:'word/settings.xml', data:settings}, {name:'word/footer1.xml', data:footer}, {name:'docProps/core.xml', data:core}
+  ].concat(media);
+  const z = zipStore(files);
+  return new Blob([z], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+function docxTable(head, rows, w, TW, plain){
+  const tot = w.reduce((a, b) => a + b, 0), cw = w.map(x => Math.round(x / tot * TW));
+  const cell = (v, i, hd) => { const o = v && typeof v === 'object' ? v : {x:v}; const fill = hd ? '26364B' : o.c; return `<w:tc><w:tcPr><w:tcW w:w="${cw[i]}" w:type="dxa"/>${fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>` : ''}</w:tcPr><w:p><w:pPr><w:spacing w:after="0"/></w:pPr>${docxRun(o.x, hd ? {b:1, col:'FFFFFF', sz:17} : {sz:17})}</w:p></w:tc>`; };
+  return `<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:w="${TW}" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${cw.map(x => `<w:gridCol w:w="${x}"/>`).join('')}</w:tblGrid>` +
+    (plain ? '' : `<w:tr><w:trPr><w:tblHeader/><w:cantSplit/></w:trPr>${head.map((h, i) => cell(h, i, 1)).join('')}</w:tr>`) +
+    rows.map(r => `<w:tr><w:trPr><w:cantSplit/></w:trPr>${r.map((v, i) => cell(v, i, 0)).join('')}</w:tr>`).join('') + `</w:tbl><w:p><w:pPr><w:spacing w:after="60"/></w:pPr></w:p>`;
+}
+function buildReportHTML(B, o){
+  let toc = '', body = '', n = 0;
+  B.forEach(b => {
+    if(b.t === 'h'){ const id = 's' + (++n); if(b.lv <= 2) toc += `<li class="t${b.lv}"><a href="#${id}">${esc(b.x)}</a></li>`; body += `<h${b.lv + 1} id="${id}">${esc(b.x)}</h${b.lv + 1}>`; }
+    else if(b.t === 'p') body += `<p${b.st === 'muted' ? ' class="mut"' : ''}>${esc(b.x).replace(/\n/g, '<br>')}</p>`;
+    else if(b.t === 'table'){ const tot = b.w.reduce((a, c) => a + c, 0); body += `<table><colgroup>${b.w.map(x => `<col style="width:${(x / tot * 100).toFixed(1)}%">`).join('')}</colgroup><thead><tr>${b.head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${b.rows.map(r => `<tr>${r.map(v => { const q = v && typeof v === 'object' ? v : {x:v}; return `<td${q.c ? ` style="background:#${q.c}"` : ''}>${esc(q.x).replace(/\n/g, '<br>')}</td>`; }).join('')}</tr>`).join('')}</tbody></table>`; }
+    else if(b.t === 'img') body += `<figure>${b.r.str.replace('<svg ', '<svg style="max-width:100%;height:auto" ')}<figcaption>${esc(b.cap)}</figcaption></figure>`;
+  });
+  const meta = [['Doküman no', o.docNo], ['Revizyon', o.rev], ['Hazırlayan', o.author], ['Tarih', new Date().toLocaleDateString('tr-TR')]].filter(x => x[1]);
+  return `<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><title>${esc(o.title || E(M.rootId).name)}</title><style>
+@page{size:A4 ${o.land ? 'landscape' : 'portrait'};margin:16mm 14mm}
+body{font:10.5pt/1.45 "Segoe UI",Calibri,Arial,sans-serif;color:#222;max-width:${o.land ? 1100 : 820}px;margin:0 auto;padding:24px}
+.cover{min-height:60vh;display:flex;flex-direction:column;justify-content:center;border-bottom:3px solid #8e44ad;margin-bottom:24px}
+.cover h1{font-size:30pt;color:#26364b;margin:0 0 6px}.cover .sub{font-size:15pt;color:#6c3483;margin-bottom:30px}
+.meta td{border:none;padding:2px 14px 2px 0}.meta td:first-child{color:#667;font-weight:600}
+h2{font-size:17pt;color:#26364b;border-bottom:2px solid #8e44ad;padding-bottom:3px;margin:30px 0 10px;page-break-before:always}
+h3{font-size:13pt;color:#3d5070;margin:20px 0 8px;page-break-after:avoid}h4{font-size:11.5pt;color:#3d5070}
+table{width:100%;border-collapse:collapse;margin:6px 0 14px;font-size:9pt;table-layout:fixed}th{background:#26364b;color:#fff;text-align:left}
+th,td{border:1px solid #bfc8d3;padding:3px 6px;vertical-align:top;word-wrap:break-word}thead{display:table-header-group}tr{page-break-inside:avoid}
+figure{margin:10px 0 18px;text-align:center;page-break-inside:avoid}figcaption{font-style:italic;color:#555;font-size:9pt;margin-top:4px}
+.mut{color:#777;font-style:italic}.toc{columns:2;font-size:10pt}.toc li{list-style:none}.toc .t2{padding-left:16px;font-size:9.5pt}.toc a{color:#26364b;text-decoration:none}
+.pbar{position:sticky;top:0;background:#fff;padding:8px 0;border-bottom:1px solid #ddd;text-align:right}.pbar button{font:inherit;padding:6px 16px;background:#8e44ad;color:#fff;border:none;border-radius:4px;cursor:pointer}
+@media print{.pbar{display:none}body{padding:0;max-width:none}}
+</style></head><body><div class="pbar"><button onclick="print()">Yazdır / PDF olarak kaydet</button></div>
+<div class="cover"><h1>${esc(o.title || E(M.rootId).name)}</h1><div class="sub">${esc(E(M.rootId).name)} — SysML Model Raporu</div><table class="meta">${meta.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></div>
+<h3 style="margin-top:0">İçindekiler</h3><ul class="toc">${toc}</ul>${body}</body></html>`;
+}
+function reportDialog(){
+  const box = $('#modalBox'), dias = Object.values(M.els).filter(e => e.kind === 'Diagram').sort(sortEls);
+  box.style.width = 'min(720px, 96vw)'; box.style.maxWidth = 'none';
+  const L = (() => { try { return JSON.parse(localStorage.getItem('sysml-report') || '{}'); } catch(e){ return {}; } })();
+  box.innerHTML = `<h2>Rapor oluştur</h2>
+    <div class="rpgrid"><label>Başlık <input id="rpT" value="${esc(L.title || E(M.rootId).name + ' Sistem Tanım Dokümanı')}"></label><label>Doküman no <input id="rpN" value="${esc(L.docNo || '')}" placeholder="ör. STD-001"></label>
+    <label>Revizyon <input id="rpR" value="${esc(L.rev || 'A')}"></label><label>Hazırlayan <input id="rpA" value="${esc(L.author || userName())}"></label></div>
+    <div class="sub" style="margin-top:10px"><span>Bölümler</span></div><div class="rpsec">${RPT_SECTIONS.map(([k, t]) => `<label class="vchk"><input type="checkbox" data-rps="${k}"${L.sec && L.sec[k] === false ? '' : ' checked'}> ${t}</label>`).join('')}</div>
+    <div class="sub"><span>Diyagramlar (${dias.length})</span><span><button class="pbtn" id="rpall">Tümü</button> <button class="pbtn" id="rpnone">Hiçbiri</button></span></div>
+    <div class="plist" style="max-height:28vh">${dias.map(d => `<label class="pli"><input type="checkbox" data-rpd="${d.id}" checked> <span class="ti" style="background:${DT[d.dtype].col};color:#fff;border-radius:3px;padding:0 4px;font-size:10px">${d.dtype}</span> ${esc(d.name)} <em style="flex-basis:auto;padding:0;margin-left:auto">${esc(pathOf(d.owner))}</em></label>`).join('')}</div>
+    <div class="icbar" style="margin-top:8px"><label class="vchk"><input type="checkbox" id="rpL"${L.land ? ' checked' : ''}> Yatay sayfa</label></div>
+    <p style="text-align:right;margin:10px 0 0"><span class="muted" id="rpst"></span> &nbsp; <button class="pbtn" id="rpcancel">Vazgeç</button> <button class="pbtn" id="rphtml">Yazdırılabilir HTML</button> <button class="pbtn pri" id="rpdocx">Word (.docx)</button></p>`;
+  $('#modal').style.display = 'flex';
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null; };
+  const opts = () => { const o = {title:$('#rpT').value.trim(), docNo:$('#rpN').value.trim(), rev:$('#rpR').value.trim(), author:$('#rpA').value.trim(), land:$('#rpL').checked, sec:{}, dia:[...box.querySelectorAll('[data-rpd]:checked')].map(x => x.dataset.rpd)}; box.querySelectorAll('[data-rps]').forEach(c => { o[c.dataset.rps] = c.checked; o.sec[c.dataset.rps] = c.checked; }); try { localStorage.setItem('sysml-report', JSON.stringify({title:o.title, docNo:o.docNo, rev:o.rev, author:o.author, land:o.land, sec:o.sec})); } catch(e){} return o; };
+  box.onclick = async ev => {
+    const id = ev.target.id;
+    if(id === 'rpcancel') close();
+    if(id === 'rpall' || id === 'rpnone') box.querySelectorAll('[data-rpd]').forEach(c => c.checked = id === 'rpall');
+    if(id === 'rphtml' || id === 'rpdocx'){
+      const o = opts(); $('#rpst').textContent = 'Hazırlanıyor…'; ev.target.disabled = true;
+      try {
+        const B = buildReport(o), fn = fileSafe(o.title || E(M.rootId).name);
+        if(id === 'rphtml') download(new Blob([buildReportHTML(B, o)], {type:'text/html'}), fn + '.html');
+        else download(await buildDocx(B, o), fn + '.docx');
+        close(); toast('Rapor oluşturuldu');
+      } catch(e){ $('#rpst').textContent = 'Hata: ' + e.message; ev.target.disabled = false; }
+    }
+  };
+}
+
+/* ---- model birleştirme ---- */
+async function pickModelText(){
+  if(NATIVE){ const r = await nDialog('open', '', 'Model dosyaları (*.sysml;*.json;*.html)|*.sysml;*.json;*.html;*.htm|Tüm dosyalar (*.*)|*.*'); if(r.error) throw new Error(r.error); return r.path ? {name:r.path, text:r.text} : null; }
+  return new Promise(res => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.sysml,.json,.html,.htm'; inp.onchange = async () => { const f = inp.files[0]; if(!f) return res(null); res({name:f.name, text:await f.text()}); }; inp.click(); });
+}
+const REF_FIELDS = ['src', 'tgt', 'sp', 'tp', 'part', 'type', 'behavior', 'represents', 'link'];
+async function mergeModelDialog(){
+  let f; try { f = await pickModelText(); } catch(e){ return toast('Açılamadı: ' + e.message); }
+  if(!f) return;
+  const O = parseModelText(f.text); if(!O) return toast('Geçerli bir model dosyası değil');
+  const OE = id => O.els[id], okids = id => Object.values(O.els).filter(e => e.owner === id && !(KIND[e.kind] && KIND[e.kind].rel));
+  const tops = okids(O.rootId);
+  const pkgs = Object.values(M.els).filter(e => e.kind === 'Model' || e.kind === 'Package').sort((a, b) => pathOf(a.id).localeCompare(pathOf(b.id), 'tr'));
+  const box = $('#modalBox'); box.style.width = 'min(720px, 96vw)'; box.style.maxWidth = 'none';
+  const same = Object.keys(O.els).filter(id => M.els[id]).length;
+  box.innerHTML = `<h2>Modeli birleştir <span class="muted" style="font-size:12px;font-weight:normal">${esc(baseName(f.name))} · ${esc(OE(O.rootId).name)}</span></h2>
+    <p class="muted" style="margin:0 0 8px">Aktarılacak üst elemanları seçin. Seçilenlerin tüm içeriği (diyagramlar ve ilişkiler dahil) aktarılır.</p>
+    <div class="plist" style="max-height:34vh">${tops.map(e => `<label class="pli"><input type="checkbox" data-mg="${e.id}" checked> ${icon(e)} <b>${esc(e.name || KIND[e.kind].tr)}</b> <span class="muted">${esc(KIND[e.kind].tr)}</span>${okids(e.id).filter(k => k.kind === 'Package').map(k => `<span style="flex-basis:100%;padding-left:28px"><label class="vchk"><input type="checkbox" data-mg="${k.id}" data-mgp="${e.id}"> ${esc(k.name)} (yalnız bu alt paket)</label></span>`).join('')}</label>`).join('') || '<div class="muted">Kaynak modelde aktarılacak eleman yok</div>'}</div>
+    <div class="icbar" style="margin-top:8px"><label>Hedef paket <select id="mgT">${pkgs.map(p => `<option value="${p.id}">${esc(pathOf(p.id))}</option>`).join('')}</select></label></div>
+    <div class="icbar"><label>Aynı kimlikli elemanlar <select id="mgM"><option value="update">Gelen sürümle güncelle</option><option value="skip">Mevcut kalsın (atla)</option><option value="copy">Yeni kimlikle kopya olarak ekle</option></select></label><span class="muted">${same} eleman iki modelde ortak kimliğe sahip</span></div>
+    <p style="text-align:right;margin:10px 0 0"><button class="pbtn" id="mgcancel">Vazgeç</button> <button class="pbtn pri" id="mgok">Birleştir</button></p>`;
+  $('#modal').style.display = 'flex';
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null; };
+  box.onclick = ev => {
+    const c = ev.target.closest('[data-mgp]'); if(c && c.checked){ const p = box.querySelector(`[data-mg="${c.dataset.mgp}"]:not([data-mgp])`); if(p) p.checked = false; }
+    const p0 = ev.target.closest('[data-mg]:not([data-mgp])'); if(p0 && p0.checked) box.querySelectorAll(`[data-mgp="${p0.dataset.mg}"]`).forEach(x => x.checked = false);
+    if(ev.target.id === 'mgcancel') close();
+    if(ev.target.id === 'mgok'){ const sel = [...box.querySelectorAll('[data-mg]:checked')].map(x => x.dataset.mg); if(!sel.length) return toast('En az bir eleman seçin'); const tg = $('#mgT').value, mode = $('#mgM').value; close(); mergeModel(O, sel, tg, mode); }
+  };
+}
+function mergeModel(O, sel, target, mode){
+  const S = new Set(), ch = new Map();
+  Object.values(O.els).forEach(e => { if(e.owner){ if(!ch.has(e.owner)) ch.set(e.owner, []); ch.get(e.owner).push(e.id); } });
+  const walk = id => { if(S.has(id)) return; S.add(id); (ch.get(id) || []).forEach(walk); };
+  sel.forEach(walk);
+  Object.values(O.els).forEach(e => { if(e.src && e.tgt && KIND[e.kind] && KIND[e.kind].rel && !S.has(e.id) && (S.has(e.src) || S.has(e.tgt))) S.add(e.id); });
+  const map = new Map(); S.forEach(id => map.set(id, mode === 'copy' && M.els[id] ? uid() : id));
+  const exists = id => map.has(id) || !!M.els[id];
+  const R = id => map.has(id) ? map.get(id) : id;
+  snap();
+  let added = 0, updated = 0, skipped = 0, dropped = 0;
+  const selSet = new Set(sel), dupReq = [];
+  const reqIds = new Map(Object.values(M.els).filter(e => e.kind === 'Requirement' && e.reqId).map(e => [e.reqId, e.id]));
+  [...S].forEach(oid => {
+    const e0 = O.els[oid]; if(!e0) return;
+    const nid = map.get(oid), had = !!M.els[nid];
+    if(had && mode === 'skip'){ skipped++; return; }
+    const e = JSON.parse(JSON.stringify(e0)); e.id = nid;
+    if(e.src && e.tgt && (!exists(e.src) || !exists(e.tgt))){ dropped++; return; }
+    e.owner = selSet.has(oid) || !e.owner ? target : (map.has(e.owner) ? R(e.owner) : (M.els[e.owner] ? e.owner : target));
+    REF_FIELDS.forEach(k => { if(e[k]){ if(exists(e[k])) e[k] = R(e[k]); else e[k] = (k === 'src' || k === 'tgt') ? e[k] : null; } });
+    if(e.kind === 'Diagram'){ e.shapes = (e.shapes || []).filter(s => exists(s.el)).map(s => Object.assign(s, {el:R(s.el)})); const sids = new Set(e.shapes.map(s => s.id)); e.edges = (e.edges || []).filter(x => sids.has(x.s) && sids.has(x.t) && (!x.el || exists(x.el))).map(x => Object.assign(x, {el:x.el ? R(x.el) : null})); }
+    if(e.kind === 'Requirement' && e.reqId && reqIds.has(e.reqId) && reqIds.get(e.reqId) !== nid) dupReq.push(e.reqId);
+    if(had){ updated++; if(M.els[nid].owner && M.els[nid].owner !== e.owner && !selSet.has(oid)) e.owner = M.els[nid].owner; } else added++;
+    M.els[nid] = e;
+  });
+  // ilişkilerin sonradan atlanan uçlarını temizle
+  Object.values(M.els).forEach(e => { if(e.src && KIND[e.kind] && KIND[e.kind].rel && (!M.els[e.src] || !M.els[e.tgt])){ delete M.els[e.id]; dropped++; } });
+  if(O.reqCfg){ const c = reqCfg(); (O.reqCfg.attrs || []).forEach(a => { if(!c.attrs.some(x => x.key === a.key)) c.attrs.push(a); }); }
+  ST.exp.add(target); sel.forEach(id => { const n = map.get(id); if(n) ST.exp.add(n); });
+  afterChange();
+  toast(`Birleştirildi: ${added} eklendi, ${updated} güncellendi${skipped ? ', ' + skipped + ' atlandı' : ''}${dropped ? ', ' + dropped + ' ucu eksik ilişki alınmadı' : ''}${dupReq.length ? ' · Çakışan gereksinim ID: ' + [...new Set(dupReq)].slice(0, 5).join(', ') : ''}`);
+  return {added, updated, skipped, dropped, dupReq};
+}
+
+/* ---- ReqIF ---- */
+function exportReqIF(){
+  const rs = allReqs(); if(!rs.length) return toast('Dışa aktarılacak gereksinim yok');
+  const now = new Date().toISOString(), LC = `LAST-CHANGE="${now}"`, c = reqCfg();
+  const enumDT = (id, name, vals) => `<DATATYPE-DEFINITION-ENUMERATION IDENTIFIER="${id}" LONG-NAME="${xe(name)}" ${LC}><SPECIFIED-VALUES>${vals.map((v, i) => `<ENUM-VALUE IDENTIFIER="${id}-${i}" LONG-NAME="${xe(v)}" ${LC}><PROPERTIES><EMBEDDED-VALUE KEY="${i}" OTHER-CONTENT="${xe(v)}"/></PROPERTIES></ENUM-VALUE>`).join('')}</SPECIFIED-VALUES></DATATYPE-DEFINITION-ENUMERATION>`;
+  const LV = ['Sistem', 'Alt Sistem'], VM = VERIF.map(x => x[0]);
+  const sAD = (id, name) => `<ATTRIBUTE-DEFINITION-STRING IDENTIFIER="${id}" LONG-NAME="${xe(name)}" ${LC}><TYPE><DATATYPE-DEFINITION-STRING-REF>DT-STR</DATATYPE-DEFINITION-STRING-REF></TYPE></ATTRIBUTE-DEFINITION-STRING>`;
+  const eAD = (id, name, dt, multi) => `<ATTRIBUTE-DEFINITION-ENUMERATION IDENTIFIER="${id}" LONG-NAME="${xe(name)}" MULTI-VALUED="${multi ? 'true' : 'false'}" ${LC}><TYPE><DATATYPE-DEFINITION-ENUMERATION-REF>${dt}</DATATYPE-DEFINITION-ENUMERATION-REF></TYPE></ATTRIBUTE-DEFINITION-ENUMERATION>`;
+  const attrId = k => 'AD-X-' + String(k).replace(/[^A-Za-z0-9_-]/g, '_');
+  const sV = (ad, v) => v ? `<ATTRIBUTE-VALUE-STRING THE-VALUE="${xe(v)}"><DEFINITION><ATTRIBUTE-DEFINITION-STRING-REF>${ad}</ATTRIBUTE-DEFINITION-STRING-REF></DEFINITION></ATTRIBUTE-VALUE-STRING>` : '';
+  const eV = (ad, refs) => refs.length ? `<ATTRIBUTE-VALUE-ENUMERATION><DEFINITION><ATTRIBUTE-DEFINITION-ENUMERATION-REF>${ad}</ATTRIBUTE-DEFINITION-ENUMERATION-REF></DEFINITION><VALUES>${refs.map(r => `<ENUM-VALUE-REF>${r}</ENUM-VALUE-REF>`).join('')}</VALUES></ATTRIBUTE-VALUE-ENUMERATION>` : '';
+  const xV = (ad, t) => `<ATTRIBUTE-VALUE-XHTML><DEFINITION><ATTRIBUTE-DEFINITION-XHTML-REF>${ad}</ATTRIBUTE-DEFINITION-XHTML-REF></DEFINITION><THE-VALUE><xhtml:div>${String(t || '').split('\n').map(l => xe(l)).join('<xhtml:br/>')}</xhtml:div></THE-VALUE></ATTRIBUTE-VALUE-XHTML>`;
+  const objs = rs.map(r => { const vm = String(r.verif || '').split(/[,;\/]+/).map(x => x.trim()).map(x => VM.indexOf(x)).filter(i => i >= 0);
+    return `<SPEC-OBJECT IDENTIFIER="${r.id}" ${LC}><TYPE><SPEC-OBJECT-TYPE-REF>ST-REQ</SPEC-OBJECT-TYPE-REF></TYPE><VALUES>${sV('AD-ID', r.reqId)}${sV('AD-NAME', r.name)}${xV('AD-TEXT', r.text)}${eV('AD-LEVEL', ['DT-LEVEL-' + LV.indexOf(reqLevel(r))])}${sV('AD-SUB', reqLevel(r) === 'Sistem' ? '' : r.subsys)}${eV('AD-STATUS', ['DT-STATUS-' + REQ_STATUS.indexOf(reqStatus(r))])}${eV('AD-VERIF', vm.map(i => 'DT-VERIF-' + i))}${sV('AD-SRCNO', r.srcNo)}${sV('AD-SRCTEXT', r.srcText)}${c.attrs.map(a => sV(attrId(a.key), (r.attrs || {})[a.key])).join('')}</VALUES></SPEC-OBJECT>`; });
+  const grp = [['H-SYS', 'Sistem Gereksinimleri', rs.filter(r => reqLevel(r) === 'Sistem')]].concat(subsystems().map((s, i) => ['H-SUB-' + i, 'Alt Sistem Gereksinimleri — ' + s, rs.filter(r => reqLevel(r) !== 'Sistem' && String(r.subsys || '').trim() === s)]));
+  const nn = rs.filter(r => reqLevel(r) !== 'Sistem' && !String(r.subsys || '').trim()); if(nn.length) grp.push(['H-SUB-X', 'Alt Sistem Gereksinimleri', nn]);
+  const heads = grp.filter(g => g[2].length).map(([id, t]) => `<SPEC-OBJECT IDENTIFIER="${id}" ${LC}><TYPE><SPEC-OBJECT-TYPE-REF>ST-HEAD</SPEC-OBJECT-TYPE-REF></TYPE><VALUES>${sV('AD-CHAPTER', t)}</VALUES></SPEC-OBJECT>`);
+  const relT = [['DeriveReqt', 'RT-DERIVE', 'deriveReqt'], ['Refine', 'RT-REFINE', 'refine'], ['Trace', 'RT-TRACE', 'trace']], rset = new Set(rs.map(r => r.id));
+  const rels = []; relT.forEach(([k, t]) => Object.values(M.els).filter(e => e.kind === k && rset.has(e.src) && rset.has(e.tgt)).forEach(e => rels.push(`<SPEC-RELATION IDENTIFIER="${e.id}" ${LC}><TYPE><SPEC-RELATION-TYPE-REF>${t}</SPEC-RELATION-TYPE-REF></TYPE><SOURCE><SPEC-OBJECT-REF>${e.src}</SPEC-OBJECT-REF></SOURCE><TARGET><SPEC-OBJECT-REF>${e.tgt}</SPEC-OBJECT-REF></TARGET></SPEC-RELATION>`)));
+  let hn = 0; const hier = grp.filter(g => g[2].length).map(([id, , list]) => `<SPEC-HIERARCHY IDENTIFIER="SH-${++hn}" ${LC}><OBJECT><SPEC-OBJECT-REF>${id}</SPEC-OBJECT-REF></OBJECT><CHILDREN>${list.map(r => `<SPEC-HIERARCHY IDENTIFIER="SH-${++hn}" ${LC}><OBJECT><SPEC-OBJECT-REF>${r.id}</SPEC-OBJECT-REF></OBJECT></SPEC-HIERARCHY>`).join('')}</CHILDREN></SPEC-HIERARCHY>`).join('');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<REQ-IF xmlns="http://www.omg.org/spec/ReqIF/20110401/reqif.xsd" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<THE-HEADER><REQ-IF-HEADER IDENTIFIER="HDR-${M.uid || 'm'}"><CREATION-TIME>${now}</CREATION-TIME><REQ-IF-TOOL-ID>SysML Modelleyici</REQ-IF-TOOL-ID><REQ-IF-VERSION>1.0</REQ-IF-VERSION><SOURCE-TOOL-ID>SysML Modelleyici</SOURCE-TOOL-ID><TITLE>${xe(E(M.rootId).name)}</TITLE></REQ-IF-HEADER></THE-HEADER>
+<CORE-CONTENT><REQ-IF-CONTENT>
+<DATATYPES><DATATYPE-DEFINITION-STRING IDENTIFIER="DT-STR" LONG-NAME="Metin" MAX-LENGTH="65535" ${LC}/><DATATYPE-DEFINITION-XHTML IDENTIFIER="DT-XHTML" LONG-NAME="Biçimli metin" ${LC}/>${enumDT('DT-LEVEL', 'Seviye', LV)}${enumDT('DT-STATUS', 'Durum', REQ_STATUS)}${enumDT('DT-VERIF', 'Doğrulama Yöntemi', VM)}</DATATYPES>
+<SPEC-TYPES><SPEC-OBJECT-TYPE IDENTIFIER="ST-REQ" LONG-NAME="Gereksinim" ${LC}><SPEC-ATTRIBUTES>${sAD('AD-ID', 'ReqIF.ForeignID')}${sAD('AD-NAME', 'ReqIF.Name')}<ATTRIBUTE-DEFINITION-XHTML IDENTIFIER="AD-TEXT" LONG-NAME="ReqIF.Text" ${LC}><TYPE><DATATYPE-DEFINITION-XHTML-REF>DT-XHTML</DATATYPE-DEFINITION-XHTML-REF></TYPE></ATTRIBUTE-DEFINITION-XHTML>${eAD('AD-LEVEL', 'Seviye', 'DT-LEVEL')}${sAD('AD-SUB', 'Alt Sistem')}${eAD('AD-STATUS', 'Durum', 'DT-STATUS')}${eAD('AD-VERIF', 'Doğrulama Yöntemi', 'DT-VERIF', 1)}${sAD('AD-SRCNO', 'Müşteri İster No')}${sAD('AD-SRCTEXT', 'Müşteri İsteri')}${c.attrs.map(a => sAD(attrId(a.key), a.label)).join('')}</SPEC-ATTRIBUTES></SPEC-OBJECT-TYPE>
+<SPEC-OBJECT-TYPE IDENTIFIER="ST-HEAD" LONG-NAME="Başlık" ${LC}><SPEC-ATTRIBUTES>${sAD('AD-CHAPTER', 'ReqIF.ChapterName')}</SPEC-ATTRIBUTES></SPEC-OBJECT-TYPE>
+${relT.map(([, t, n]) => `<SPEC-RELATION-TYPE IDENTIFIER="${t}" LONG-NAME="${n}" ${LC}/>`).join('')}<SPECIFICATION-TYPE IDENTIFIER="SPT" LONG-NAME="Gereksinim Spesifikasyonu" ${LC}/></SPEC-TYPES>
+<SPEC-OBJECTS>${heads.join('')}${objs.join('\n')}</SPEC-OBJECTS>
+<SPEC-RELATIONS>${rels.join('')}</SPEC-RELATIONS>
+<SPECIFICATIONS><SPECIFICATION IDENTIFIER="SPEC-1" LONG-NAME="${xe(E(M.rootId).name)}" ${LC}><TYPE><SPECIFICATION-TYPE-REF>SPT</SPECIFICATION-TYPE-REF></TYPE><CHILDREN>${hier}</CHILDREN></SPECIFICATION></SPECIFICATIONS>
+</REQ-IF-CONTENT></CORE-CONTENT></REQ-IF>`;
+  download(new Blob([xml], {type:'application/xml'}), fileSafe(E(M.rootId).name) + '.reqif');
+  toast(`${rs.length} gereksinim ve ${rels.length} ilişki ReqIF olarak aktarıldı`);
+}
+function reqifToSheet(txt){
+  const doc = xmlDoc(txt); if(!tagsNS(doc, 'REQ-IF').length) return null;
+  const names = {}, enums = {};
+  ['ATTRIBUTE-DEFINITION-STRING', 'ATTRIBUTE-DEFINITION-XHTML', 'ATTRIBUTE-DEFINITION-ENUMERATION', 'ATTRIBUTE-DEFINITION-INTEGER', 'ATTRIBUTE-DEFINITION-REAL', 'ATTRIBUTE-DEFINITION-DATE', 'ATTRIBUTE-DEFINITION-BOOLEAN'].forEach(t => tagsNS(doc, t).forEach(a => names[a.getAttribute('IDENTIFIER')] = a.getAttribute('LONG-NAME') || a.getAttribute('IDENTIFIER')));
+  tagsNS(doc, 'ENUM-VALUE').forEach(v => enums[v.getAttribute('IDENTIFIER')] = v.getAttribute('LONG-NAME') || '');
+  const nice = n => ({'ReqIF.ForeignID':'Gereksinim ID', 'ReqIF.Name':'Başlık', 'ReqIF.Text':'Gereksinim Metni', 'ReqIF.ChapterName':'@chapter'})[n] || n;
+  const cols = [], ci = n => { let i = cols.indexOf(n); if(i < 0){ cols.push(n); i = cols.length - 1; } return i; };
+  const objs = new Map();
+  tagsNS(doc, 'SPEC-OBJECT').forEach(o => {
+    const row = [];
+    const vals = tagsNS(o, 'VALUES')[0]; if(!vals) return;
+    Array.from(vals.children).forEach(v => {
+      const def = v.querySelector('*|DEFINITION > *') || tagsNS(v, 'DEFINITION')[0]; const ref = def ? (def.firstElementChild ? def.firstElementChild.textContent : def.textContent).trim() : ''; const n = nice(names[ref] || ref); if(!n) return;
+      let val = v.getAttribute('THE-VALUE');
+      if(val == null){ const tv = tagsNS(v, 'THE-VALUE')[0]; if(tv) val = (tv.innerText !== undefined ? tv.textContent : tv.textContent); else val = tagsNS(v, 'ENUM-VALUE-REF').map(x => enums[x.textContent.trim()] || x.textContent.trim()).join(', '); }
+      row[ci(n)] = String(val || '').trim();
+    });
+    objs.set(o.getAttribute('IDENTIFIER'), row);
+  });
+  const chap = cols.indexOf('@chapter');
+  const pcol = ci('Üst gereksinim ID');
+  const idCol = cols.indexOf('Gereksinim ID');
+  tagsNS(doc, 'SPEC-RELATION').forEach(r => {
+    const s = (tagsNS(r, 'SOURCE')[0] || {}).textContent, t = (tagsNS(r, 'TARGET')[0] || {}).textContent; const so = objs.get((s || '').trim()), to = objs.get((t || '').trim());
+    if(so && to && idCol >= 0 && to[idCol]) so[pcol] = (so[pcol] ? so[pcol] + ', ' : '') + to[idCol];
+  });
+  const rows = [...objs.values()].filter(r => !(chap >= 0 && r[chap] && r.filter(Boolean).length === 1)).map(r => cols.map((_, i) => r[i] || ''));
+  const keep = cols.map((c0, i) => c0 !== '@chapter' && rows.some(r => r[i]));
+  return [{name:'ReqIF', rows:[cols.filter((_, i) => keep[i])].concat(rows.map(r => r.filter((_, i) => keep[i])))}];
+}
+function toolsMenuItems(){
+  return [{h:'Araçlar'},
+    {t:'Rapor oluştur (Word / HTML)…', f:reportDialog},
+    {t:'Model doğrulama', f:() => openD('@validation')},
+    '-',
+    {t:'Başka modeli birleştir…', f:mergeModelDialog},
+    {t:'ReqIF olarak dışa aktar (DOORS, Polarion…)', f:exportReqIF},
+    {t:'ReqIF / Excel\'den gereksinim aktar…', f:importReqs}];
+}
+(function(){
+  const V = $('#view');
+  V.addEventListener('click', ev => {
+    const xa = ev.target.closest('[data-xa]');
+    if(xa){ if(xa.dataset.xa === 'vrefresh'){ renderViewBar(); renderView(); toast('Model yeniden denetlendi'); } if(xa.dataset.xa === 'vdxl') exportValidationXlsx(); return; }
+    const vr = ev.target.closest('tr[data-vrow]'); if(vr && vr.dataset.vrow) showElement(vr.dataset.vrow);
+  });
+  V.addEventListener('change', ev => { const t = ev.target; if(t.dataset.xf && t.dataset.xf.startsWith('vd.')){ VD[t.dataset.xf.slice(3)] = t.value; renderView(); } });
 })();
 
 /* ================= MENU / TOAST / STATUS ================= */
@@ -4468,7 +4948,7 @@ function fileSafe(s){ return String(s || 'diyagram').replace(/[\\/:*?"<>|]+/g, '
 function download(blob, name){
   if(NATIVE){
     const ext = (name.split('.').pop() || '').toLowerCase();
-    const flt = {png:'PNG görüntü (*.png)|*.png', svg:'SVG görüntü (*.svg)|*.svg', html:'HTML (*.html)|*.html', json:'JSON (*.json)|*.json', xlsx:'Excel çalışma kitabı (*.xlsx)|*.xlsx', csv:'CSV (*.csv)|*.csv'}[ext] || 'Tüm dosyalar (*.*)|*.*';
+    const flt = {png:'PNG görüntü (*.png)|*.png', svg:'SVG görüntü (*.svg)|*.svg', html:'HTML (*.html)|*.html', json:'JSON (*.json)|*.json', xlsx:'Excel çalışma kitabı (*.xlsx)|*.xlsx', csv:'CSV (*.csv)|*.csv', docx:'Word belgesi (*.docx)|*.docx', reqif:'ReqIF (*.reqif)|*.reqif'}[ext] || 'Tüm dosyalar (*.*)|*.*';
     const rd = new FileReader();
     rd.onload = async () => {
       const b64 = String(rd.result).split(',')[1] || '';
@@ -4586,6 +5066,7 @@ const ACT = {
   new(){ if(NATIVE && dirty && !confirm('Kaydedilmemiş değişiklikler var. Devam edilsin mi?')) return; if(!NATIVE && !confirm('Yeni boş model oluşturulsun mu? (Mevcut model Geri Al ile geri getirilebilir; kalıcı yedek için önce Kaydet\'i kullanın.)')) return; snap(); const m = emptyModel(); m.ui = {open:[], cur:null, exp:[m.rootId]}; loadModel(m); curPath = ''; dirty = true; afterLoad(); updTitle(); },
   navBack, navFwd,
   reqMenu(){ const b = document.querySelector('[data-act="reqMenu"]').getBoundingClientRect(); setTimeout(() => menu(b.left, b.bottom + 4, reqMenuItems()), 0); },
+  toolsMenu(){ const b = document.querySelector('[data-act="toolsMenu"]').getBoundingClientRect(); setTimeout(() => menu(b.left, b.bottom + 4, toolsMenuItems()), 0); },
   layoutMenu(){ const b = document.querySelector('[data-act="layoutMenu"]').getBoundingClientRect(); setTimeout(() => menu(b.left, b.bottom + 4, layoutMenuItems()), 0); },
   iconMenu(){
     const d = cur(), ids = new Set();
@@ -4687,7 +5168,31 @@ function showHelp(){
   <tr><td>Sütunlar / özellikler</td><td>Sütunları gizleyin/gösterin, özel özellik (attribute) ekleyin/silin/yeniden adlandırın, ID öneklerini ayarlayın. Görünen sütunlar Excel'e aktarılır.</td></tr>
   <tr><td>İzlenebilirlik matrisi</td><td>Satır/sütun kümeleri: sistem, alt sistem, fonksiyonlar, bloklar, model elemanları, testler, use case'ler. Hücreye tıklayınca ilişki kurulur/kaldırılır. Kırmızı başlıklar ilişkisiz satır/sütunlardır.</td></tr>
   <tr><td>Kapsama analizi</td><td>Karşılanmayan sistem gereksinimleri, yetim alt sistem gereksinimleri, doğrulama yöntemi olmayanlar, gereksinime izlenmeyen bloklar/fonksiyonlar; yüzde göstergeleri.</td></tr>
-  <tr><td>Excel</td><td>İçe aktarmada sütunlar otomatik eşleşir, isterseniz değiştirin; bilinmeyen sütunlar yeni özellik olur. Üst gereksinim ID'leri Derive ilişkisine dönüşür. Dışa aktarma: gereksinimler + matrisler + kapsama sayfaları.</td></tr>
+  <tr><td>Excel / ReqIF</td><td>İçe aktarmada sütunlar otomatik eşleşir, isterseniz değiştirin; bilinmeyen sütunlar yeni özellik olur. Üst gereksinim ID'leri Derive ilişkisine dönüşür. ReqIF (.reqif) dosyaları da aynı pencereyle aktarılır. Dışa aktarma: gereksinimler + matrisler + kapsama + kalite + VCRM + test sayfaları; ayrıca ReqIF 1.2 (DOORS, Polarion vb.).</td></tr>
+  <tr><td>Durum ve geçmiş</td><td>Taslak → İncelemede → Onaylı → Değişiklikte → İptal. Onaylı gereksinimin metni/yöntemi/seviyesi değişirse otomatik "Değişiklikte" olur. Her değişiklik kim/ne zaman/eski→yeni ve gerekçeyle kaydedilir (Özellikler → Değişiklik geçmişi). Kullanıcı adı: Gereksinimler ▾ → Kullanıcı adım.</td></tr>
+  <tr><td>Kalite raporu</td><td>INCOSE kurallarıyla metin denetimi: zorunluluk ifadesi, belirsiz kelimeler, birden fazla ister, birimsiz sayı, TBD, aşırı uzunluk, yinelenen ID, çok benzer gereksinimler.</td></tr>
+  <tr><td>Taban çizgileri</td><td>Gereksinim setini adlandırarak dondurun (ör. SRR, PDR); iki taban çizgisini veya taban çizgisini güncel modelle karşılaştırın, farkı Excel'e alın.</td></tr>
+  <tr><td>Etki analizi</td><td>Sağ tık veya Özellikler → "Etki analizi": bir eleman değişirse etkilenen gereksinimler, elemanlar, testler ve diyagramlar.</td></tr>
+  </table>
+  <h3>Doğrulama ve test</h3>
+  <table>
+  <tr><td>Test durumu</td><td>Prosedür no, yöntem, doğrulama seviyesi, test edilen birim, standart, sorumlu, planlanan tarihler, sonuç (Planlandı / Yapılmadı / Geçti / Kaldı / Koşullu), sonuç tarihi, rapor no. Sonuç diyagramda rozet olarak görünür.</td></tr>
+  <tr><td>VCRM</td><td>Gereksinim × T/A/M/G, seviye, test/prosedür, sonuç, rapor no ve hesaplanan doğrulama durumu (Doğrulandı / Kısmen / Kaldı / Planlandı / Faaliyet yok).</td></tr>
+  <tr><td>Test kampanyası</td><td>Testlerin düzenlenebilir tablosu ve zaman çizelgesi (Gantt); seviyeye, sonuca, birime göre gruplama; gecikmiş testler kırmızı çerçeveli. Excel'den test sonuçları geri aktarılabilir (prosedür no veya ada göre eşleşir).</td></tr>
+  </table>
+  <h3>Araçlar ▾</h3>
+  <table>
+  <tr><td>Rapor oluştur</td><td>Seçilen bölümler ve diyagramlarla Word (.docx; içindekiler, sayfa numarası, şekil başlıkları) veya yazdırılabilir HTML rapor.</td></tr>
+  <tr><td>Model doğrulama</td><td>Tipsiz part, isimsiz/aynı adlı eleman, kopuk ilişki, başlangıç/bitişi olmayan aktivite, ulaşılamayan durum, aktörsüz use case, döngüsel kompozisyon/kalıtım, port yön uyumsuzluğu, bağlantısız test… Satıra tıklayınca eleman gösterilir.</td></tr>
+  <tr><td>Modeli birleştir</td><td>Başka bir .sysml dosyasından seçilen paketleri hedef pakete aktarır. Aynı kimlikli elemanlar güncellenir, atlanır veya kopya olarak eklenir.</td></tr>
+  </table>
+  <h3>Düzenleme kısayolları</h3>
+  <table>
+  <tr><td><kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd></td><td>Kopyala / yapıştır. Başka diyagrama yapıştırınca aynı elemanlar gösterilir; aynı diyagramda yeni eleman olarak kopyalanır. <kbd>Ctrl+Shift+V</kbd> her zaman yeni eleman, <kbd>Ctrl+D</kbd> çoğaltır.</td></tr>
+  <tr><td><kbd>Ctrl+F</kbd></td><td>Model içinde ara (ad, ID, metin, açıklama, özellik değerleri).</td></tr>
+  <tr><td>Ağaçta çoklu seçim</td><td><kbd>Ctrl</kbd>/<kbd>Shift</kbd> + tık; seçilenler diyagrama birlikte sürüklenir, aralarındaki ilişkiler çizilir.</td></tr>
+  <tr><td>Bağlantı ucu</td><td>Seçili bağlantının uç tutamacını başka elemana sürükleyerek yeniden bağlayın.</td></tr>
+  <tr><td>Görünüm</td><td>Özellikler → Görünüm: dolgu ve çizgi rengi, blok bölmelerini gizleme, diyagram yazı boyutu; aktivitede yatay kulvar.</td></tr>
   </table>
   <h3>Otomatik düzen ve hizalama</h3>
   <table>
