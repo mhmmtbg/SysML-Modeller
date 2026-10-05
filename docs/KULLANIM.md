@@ -14,6 +14,7 @@
 5e. [Analiz: parametrik hesap, bütçe, simülasyon, tahsis, tablo, ilişki haritası](#5e-analiz-parametrik-hesap-bütçe-simülasyon-tahsis-tablo-ilişki-haritası)
 5f. [XMI (Cameo / MagicDraw) ve şablonlar](#5f-xmi-cameo--magicdraw-ve-şablonlar)
 5g. [Çevresel test profilleri](#5g-çevresel-test-profilleri)
+5h. [FMEA / FMECA ve risk yönetimi](#5h-fmea--fmeca-ve-risk-yönetimi)
 6. [Otomatik düzen ve hizalama](#6-otomatik-düzen-ve-hizalama)
 7. [İkonlar](#7-ikonlar)
 8. [Özellikler paneli](#8-özellikler-paneli)
@@ -579,6 +580,35 @@ Seçili elemandan başlayarak ilişkileri (Derive, Satisfy, Verify, Allocate, ti
 - **Model doğrulama** eksik noktalı profilleri, log ölçekte geçersiz değerleri, hiçbir teste bağlı olmayan profilleri ve profili olmayan çevresel testleri listeler.
 
 > Hesaplar mühendislik ön değerlendirmesi içindir; test laboratuvarının kontrol sistemi çıktısıyla teyit edin.
+
+## 5h. FMEA / FMECA ve risk yönetimi
+
+### FMEA / FMECA (**Analiz ▾ → FMEA / FMECA**)
+
+Her satır bir **Arıza Modu** elemanıdır ve analiz edilen blok, part, aktivite veya aksiyonun altında model ağacında durur. **+ Arıza modu**, Eleman süzgecinde seçili elemana (yoksa ağaçta seçili elemana) yeni satır ekler.
+
+| Sütun | Açıklama |
+|---|---|
+| Fonksiyon, arıza modu, neden | Hücreye tıklayıp yazın; Enter alt satıra geçer |
+| Yerel / üst seviye / son etki | Arızanın etkisinin seviyelere yayılımı |
+| **Ş / O / T** | Şiddet, oluşma ve tespit (1 kesin tespit … 10 tespit edilemez), 1–10 |
+| **RPN** | Ş × O × T; RPN eşiğinin (varsayılan 100) üstü kırmızı, yarısının üstü turuncu |
+| Kontroller, önlem, sorumlu, hedef tarih, durum | Önlem takibi (Açık / Uygulanıyor / Kapandı) |
+| **Ş′ / O′ / T′ / RPN′** | Önlem sonrası puanlar ve artık RPN (*Önlem sonrası* kutusu) |
+| **FMECA** | *FMECA* kutusu açılınca MIL-STD-1629A şiddet sınıfı (I–IV), λp, α, β, t ve **mod kritikliği Cm = β·α·λp·t**; altta eleman kritikliği **Cr = Σ Cm** |
+| Önleyici gereksinimler | **+** ile bağlanan gereksinimler; bu gereksinimleri doğrulayan testler sonuçlarıyla otomatik gösterilir |
+
+Üstteki kartlar en yüksek RPN'i, eşik üstü arıza modlarının önlem öncesi → sonrası sayısını, **önleyici gereksinimi olmayan yüksek şiddetli (Ş ≥ 8)** arıza modlarını ve açık önlemleri gösterir. Satırdaki **⚑** düğmesi arıza modundan bir risk kaydı oluşturur (Ş ve O 1–5 ölçeğine çevrilir).
+
+### Risk kaydı (**Analiz ▾ → Risk kaydı ve risk matrisi**)
+
+- Her risk bir **Risk** elemanıdır (varsayılan *Risk Kaydı* paketinde); ID otomatik verilir (R-001…).
+- **Olasılık (O)** ve **Etki (E)** 1–5; skor = O × E → *Düşük* (1–4), *Orta* (5–9), *Yüksek* (10–14), *Çok yüksek* (15–25).
+- Kategori, strateji (azalt, kaçın, transfer et, kabul et, izle), önlem planı, sorumlu, hedef tarih (geçmişse kırmızı), durum ve **artık O′ / E′**.
+- **5×5 risk matrisi** önlem öncesi ve sonrası yan yana çizilir; hücreye tıklayınca tablo o hücredeki risklerle süzülür. Kapanan riskler matriste gösterilmez.
+- **İlgili elemanlar:** gereksinim, blok, part, test, aktivite veya arıza modu bağlanır.
+- **Çıktılar:** Excel (FMEA, Risk Kaydı ve Risk Matrisi sayfaları), matris PNG, Word/HTML raporunda *FMEA / FMECA ve risk kaydı* bölümü (tablo + iki matris görseli).
+- **Model doğrulama:** eksik Ş/O/T, önlemsiz yüksek RPN, gereksinimsiz yüksek şiddet, eksik olasılık/etki, önlem planı olmayan yüksek risk, sorumlusuz risk ve tarihi geçmiş önlemler.
 
 ## 6. Otomatik düzen ve hizalama
 

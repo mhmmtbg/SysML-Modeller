@@ -163,6 +163,20 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   });
   ok('Grms, karşılaştırma, zarf, sinüs, termal hesapları ve diyagram şekli doğru', pf.navmat === 6.06 && pf.flat === 8.899 && pf.covers === true && pf.minMargin === 0 && pf.envMax === 0.04 && pf.sineDpp === 4.97 && pf.sineMin === 8.64 && pf.thRate === 6.5 && pf.thTotal === 320 && pf.svg && pf.onDiagram, pf);
 
+  console.log('8d) FMEA / FMECA ve risk');
+  const fr = await run(async () => {
+    const b = Object.values(M.els).find(e => e.kind === 'Block');
+    const f = mk('FailureMode', b.id, { name: 'Test modu', S: 9, O: 4, D: 5, S2: 9, O2: 2, D2: 3, lam: '2', alpha: '0.5', beta: '1', top: '100', fst: 'Açık' });
+    const r = rkAdd({ P: 4, I: 5, P2: 2, I2: 3 });
+    openD('@fmea'); const fmeaRows = document.querySelectorAll('#view tr[data-row]').length;
+    openD('@risk'); const cells = document.querySelectorAll('#view [data-rkc]').length;
+    window.__dl = []; fmeaXlsx(); const x = window.__dl.pop(); const sh = await readXlsx(new Uint8Array(await x.blob.arrayBuffer()));
+    const o = { sec: {}, dia: [], risk: true }; const B = buildReport(o);
+    const v = validateModel().filter(q => q.id === f.id || q.id === r.id).map(q => q.rule);
+    return { rpn: rpnOf(f), rpn2: rpnOf(f, true), cm: cmOf(f), cat: sevCat(9), score: rkScore(r), lvl: rkLevel(rkScore(r)), res: rkLevel(rkScore(r, true)), rid: r.riskId, fmeaRows, cells, sheets: sh.length, reportImgs: B.filter(q => q.t === 'img').length, reportHas: B.some(q => q.t === 'h' && /FMEA/.test(q.x)), v };
+  }).catch(e => ({ error: e.message }));
+  ok('RPN, Cm, şiddet sınıfı, risk skoru/seviyesi, matris, Excel, rapor, doğrulama', !fr.error && fr.rpn === 180 && fr.rpn2 === 54 && fr.cm === 100 && fr.cat === 'I' && fr.score === 20 && fr.lvl === 'Çok yüksek' && fr.res === 'Orta' && /^R-\d{3}$/.test(fr.rid) && fr.fmeaRows >= 5 && fr.cells === 50 && fr.sheets === 3 && fr.reportImgs === 1 && fr.reportHas && fr.v.includes('FMEA önlemsiz yüksek RPN'), fr);
+
   console.log('9) Büyük model performansı');
   const perf = await run(() => {
     const T = {}; const tm = (k, f) => { const t0 = performance.now(); f(); T[k] = Math.round(performance.now() - t0); };

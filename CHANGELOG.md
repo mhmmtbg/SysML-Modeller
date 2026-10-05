@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.13.0 — 2026-10-05
+
+Güvenilirlik ve risk:
+
+- **FMEA / FMECA** (yeni *Arıza Modu* elemanı, **Analiz ▾ → FMEA / FMECA**): blok/part/fonksiyon bazında arıza modu, neden, yerel/üst/son etki, Ş/O/T ve RPN, eşik renklendirme, kontroller, önlem, sorumlu, tarih, durum; önlem sonrası puanlar ve artık RPN; MIL-STD-1629A şiddet sınıfı, mod kritikliği Cm ve eleman kritikliği Cr
+- Önleyici gereksinim bağlantısı ve doğrulayan testlerin sonuçlarıyla gösterimi; arıza modundan risk oluşturma
+- **Risk kaydı** (yeni *Risk* elemanı): O × E skoru ve seviye, kategori, strateji, önlem, sorumlu, hedef tarih, artık risk, ilgili elemanlar; önlem öncesi/sonrası **5×5 risk matrisi** ve hücre süzgeci
+- Excel (FMEA, Risk Kaydı, Risk Matrisi), matris PNG, rapora *FMEA / FMECA ve risk kaydı* bölümü, model doğrulama kuralları; örnek modele FMEA ve risk örnekleri
+
 ## v1.12.0 — 2026-10-05
 
 Çevresel test profilleri ve gereksinim çıktıları:
