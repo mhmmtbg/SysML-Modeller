@@ -9,6 +9,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 ## Öne çıkanlar
 
 - **9 SysML diyagram türü:** Blok Tanım (BDD), İç Blok (IBD), Use Case, Aktivite, Gereksinim, Durum Makinesi, Sıralama (Sequence), Parametrik, Paket
+- **SysML dil desteği:** arayüz blokları ve akış özellikleri, eşlenik portlar, değer tipleri ve SI birim kütüphanesi, numaralandırma, sinyal, kullanıcı tanımlı **stereotipler ve etiket değerleri**, pin ve aktivite parametreleri, sinyal gönder/olay kabul, kesilebilir bölge, sıralama diyagramında **fragmentler (alt/opt/loop/par…)** ve yürütme çubukları, **bileşik durumlar**, bölge ve geçmiş düğümleri
 - **Gereksinim yönetimi:**
   - Sistem ve alt sistem gereksinimleri için düzenlenebilir tablo: ID, başlık, metin, seviye, **alt sistem adı**, doğrulama yöntemi (Test / Analiz / Muayene / Gösterim), müşteri ister no ve isteri; sistem / alt sistem adına göre filtreleme
   - İstenen kadar özel özellik (attribute) ekleme, çıkarma ve yeniden adlandırma; sütun gizleme

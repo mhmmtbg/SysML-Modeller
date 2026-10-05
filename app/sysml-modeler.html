@@ -106,6 +106,10 @@ html,body{margin:0;height:100%;font:13px "Segoe UI",Arial,sans-serif;color:var(-
 .vb.pri2{background:#2e86c1;color:#fff;border-color:#2e86c1}
 .vsep{width:1px;height:20px;background:#d5dbe3;margin:0 3px}
 .vchk{font-size:12px;cursor:pointer}
+.stchip{display:inline-flex;align-items:center;gap:4px;background:#f8f3df;border:1px solid #d8cc9a;border-radius:10px;padding:1px 4px 1px 8px;font-size:11.5px;margin:2px 2px 2px 0}
+.stchip b{cursor:pointer;color:#8a6d00;padding:0 4px}
+.stchip b:hover{color:#c0392b}
+.stmeta{display:grid;grid-template-columns:1fr 1fr;gap:1px 8px;max-height:150px;overflow:auto;border:1px solid var(--line);padding:4px;border-radius:3px;background:#fff}
 .vbody{flex:1;overflow:auto;padding:10px}
 .vempty{padding:60px;text-align:center;color:var(--mut);line-height:1.6}
 .vfoot{padding:8px 2px;color:var(--mut);font-size:12px}
@@ -312,6 +316,22 @@ const KIND = {
   ConstraintBlock:{tr:'Kısıt Bloğu',en:'ConstraintBlock',ic:'CB',col:'#d35400',w:210,h:100},
   ConstraintProp:{tr:'Kısıt Özelliği',ic:'cp',col:'#d35400',w:200,h:90},
   Param:{tr:'Parametre',ic:'▫',col:'#d35400',w:16,h:16},
+  InterfaceBlock:{tr:'Arayüz Bloğu',en:'InterfaceBlock',ic:'IB',col:'#1f8a99',w:190,h:90},
+  FlowProp:{tr:'Akış Özelliği',ic:'fp',col:'#1f8a99'},
+  ValueType:{tr:'Değer Tipi',en:'ValueType',ic:'VT',col:'#6d4fb3',w:190,h:80},
+  Enumeration:{tr:'Numaralandırma',en:'Enumeration',ic:'En',col:'#6d4fb3',w:170,h:90},
+  Signal:{tr:'Sinyal',en:'Signal',ic:'Sg',col:'#b5551d',w:170,h:70},
+  Stereotype:{tr:'Stereotip',en:'Stereotype',ic:'«»',col:'#7b6a2e',w:180,h:70},
+  Pin:{tr:'Pin',ic:'▪',col:'#7a4fbf',w:12,h:12},
+  ActParam:{tr:'Aktivite Parametresi',ic:'AP',col:'#7a4fbf',w:120,h:36},
+  SendSignal:{tr:'Sinyal Gönder',ic:'▷',col:'#7a4fbf',w:150,h:50},
+  AcceptEvent:{tr:'Olay Kabul',ic:'⊳',col:'#7a4fbf',w:150,h:50},
+  AcceptTime:{tr:'Zaman Olayı',ic:'⧗',col:'#7a4fbf',w:30,h:36},
+  IRegion:{tr:'Kesilebilir Bölge',ic:'⌁',col:'#7a4fbf',w:300,h:200},
+  Fragment:{tr:'Birleşik Parça (Fragment)',ic:'Fr',col:'#16a085',w:360,h:140},
+  Region:{tr:'Bölge (Region)',ic:'Rg',col:'#c0392b',w:300,h:160},
+  History:{tr:'Geçmiş (History)',ic:'H',col:'#333',w:28,h:28},
+  Junction:{tr:'Kavşak (Junction)',ic:'•',col:'#333',w:16,h:16},
   Diagram:{tr:'Diyagram',ic:'D',col:'#445'},
   Association:{tr:'Association',rel:1},
   Composition:{tr:'Composition',rel:1},
@@ -382,6 +402,43 @@ const ER = {
   Transition:{tgt:'open'}, MsgSync:{tgt:'fill'}, MsgAsync:{tgt:'open'}, MsgReply:{dash:1,tgt:'open'}, Binding:{}, Import:{dash:1,tgt:'open',st:'«import»'}
 };
 const FILL = {Requirement:'#f6efff',TestCase:'#eafaf0',State:'#fff8d8',Lifeline:'#fff8d8',ConstraintBlock:'#fff1e6',ConstraintProp:'#fff1e6',Param:'#ffffff',Block:'#fff8d8',Part:'#fff8d8',Value:'#f3eeff',Action:'#fff8d8',UseCase:'#fff8d8',Comment:'#fffde9',Subject:'#ffffff',Partition:'#ffffff',Object:'#ffffff',Package:'#f6eed6',Port:'#ffffff',Actor:'none'};
+
+/* ---- v1.7: SysML dil tamlığı (arayüzler, tipler, pin, sinyal, fragment, bölge, stereotip) ---- */
+const TYPEDEF = ['InterfaceBlock','ValueType','Enumeration','Signal'];
+DT.bdd.shapes = ['Block','InterfaceBlock','ConstraintBlock','ValueType','Enumeration','Signal','Package','Actor','Comment'];
+DT.act.shapes = ['Action','SendSignal','AcceptEvent','AcceptTime','Pin','ActParam','Initial','Final','FlowFinal','Decision','Merge','Fork','Join','Object','Partition','PartitionH','IRegion','Comment'];
+DT.stm.shapes = ['State','Region','Initial','Final','Choice','Junction','History','Comment'];
+DT.sd.shapes = ['Lifeline','Fragment','Comment'];
+DT.pkg.shapes = ['Package','Block','InterfaceBlock','ValueType','Stereotype','Requirement','Comment'];
+['Model','Package'].forEach(k => { OWN[k] = OWN[k].concat(TYPEDEF, ['Stereotype']); });
+OWN.Block = OWN.Block.concat(['FlowProp']);
+OWN.InterfaceBlock = ['FlowProp','Value','Port','Comment'];
+OWN.Signal = ['Value','Comment'];
+OWN.Action = ['Pin'];
+OWN.SendSignal = ['Pin'];
+OWN.AcceptEvent = ['Pin'];
+OWN.Activity = OWN.Activity.concat(['SendSignal','AcceptEvent','AcceptTime','ActParam','IRegion']);
+OWN.StateMachine = ['State','Region','Initial','Final','Choice','Junction','History','Comment'];
+OWN.State = ['State','Region','Initial','Final','Choice','Junction','History','Comment'];
+OWN.Region = ['State','Initial','Final','Choice','Junction','History','Comment'];
+OWN.Interaction = ['Lifeline','Fragment','Comment'];
+Object.assign(BASE, {InterfaceBlock:'Arayüz', FlowProp:'akış', ValueType:'DeğerTipi', Enumeration:'Enum', Signal:'Sinyal', Stereotype:'Stereotip', Pin:'pin', ActParam:'param', SendSignal:'Gönder', AcceptEvent:'Kabul', AcceptTime:'', Region:'bölge', Fragment:''});
+RANK.splice(RANK.indexOf('Block') + 1, 0, 'InterfaceBlock', 'ValueType', 'Enumeration', 'Signal', 'Stereotype');
+RANK.splice(RANK.indexOf('State'), 0, 'Region');
+RANK.push('FlowProp', 'Pin', 'ActParam', 'SendSignal', 'AcceptEvent', 'AcceptTime', 'IRegion', 'Fragment', 'History', 'Junction');
+['History','Junction'].forEach(k => UNNAMED.add(k));
+ELL.add('History'); ELL.add('Junction');
+['Region','IRegion','Fragment'].forEach(k => CONT.add(k));
+const BORDER = new Set(['Port','Param','Pin']);
+const HOST = {Port:['Part'], Param:['ConstraintProp'], Pin:['Action','SendSignal','AcceptEvent']};
+Object.assign(FILL, {Activity:'#fff8d8', StateMachine:'#fff8d8', Interaction:'#fff8d8', InterfaceBlock:'#e8f6f8', ValueType:'#f3eeff', Enumeration:'#f3eeff', Signal:'#fff1e6', Stereotype:'#f8f3df', Pin:'#ffffff', ActParam:'#ffffff', SendSignal:'#fff8d8', AcceptEvent:'#fff8d8', AcceptTime:'#ffffff', IRegion:'none', Fragment:'none', Region:'none', History:'#ffffff', Junction:'#222222'});
+const UNIT_LIB = [
+  ['Kütle', 'kg', 'mass'], ['Uzunluk', 'm', 'length'], ['Zaman', 's', 'time'], ['Frekans', 'Hz', 'frequency'], ['İvme', 'm/s²', 'acceleration'],
+  ['İvme (g)', 'g', 'acceleration'], ['İvme Spektral Yoğunluğu', 'g²/Hz', 'accelerationSpectralDensity'], ['Ses Basınç Seviyesi', 'dB', 'soundPressureLevel'],
+  ['Sıcaklık', '°C', 'thermodynamicTemperature'], ['Gerilim', 'V', 'electricPotential'], ['Akım', 'A', 'electricCurrent'], ['Güç', 'W', 'power'],
+  ['Enerji', 'J', 'energy'], ['Kuvvet', 'N', 'force'], ['Basınç', 'Pa', 'pressure'], ['Hız', 'm/s', 'velocity'], ['Açı', 'deg', 'planeAngle'],
+  ['Açısal Hız', 'deg/s', 'angularVelocity'], ['Veri Hızı', 'bit/s', 'dataRate'], ['Bağıl Nem', '%', 'relativeHumidity'], ['Oran', '%', 'ratio'], ['Para', 'TL', 'currency']
+];
 
 /* ================= ICON LIBRARY ================= */
 const ICON_CATS = [
@@ -668,7 +725,7 @@ function iconInline(ic, px, col, sw){ return `<svg width="${px}" height="${px}" 
 let M = null;
 const ST = {back:[], fwd:[], open:[], cur:null, sel:new Set(), tool:null, exp:new Set(), tsel:null, focus:'canvas', grid:true, space:false, dragEl:null};
 const undoStack = [], redoStack = [];
-const clean = (k, v) => (k === '_pts' || k === '_rm' || k === '_num' || k === '_seqMsgs') ? undefined : v;
+const clean = (k, v) => (k === '_pts' || k === '_rm' || k === '_num' || k === '_seqMsgs' || k === '_po' || k === '_hy') ? undefined : v;
 const E = id => (id && M.els[id]) || null;
 const cur = () => E(ST.cur);
 function snap(){ if(ST.batch) return; markDirty(); undoStack.push(JSON.stringify(M)); if(undoStack.length > 150) undoStack.shift(); redoStack.length = 0; }
@@ -705,12 +762,32 @@ function nm(e){
   if(e.kind === 'Requirement') return (e.reqId ? e.reqId + ' – ' : '') + (e.name || '(Gereksinim)');
   if(e.kind === 'Lifeline'){ const t = E(e.type); return (e.name || '') + (t ? ' : ' + t.name : '') || '(Yaşam çizgisi)'; }
   if(e.kind === 'ConstraintProp'){ const t = E(e.type); return (e.name || '') + (t ? ' : ' + t.name : ''); }
+  if(e.kind === 'Fragment') return (e.op || 'alt') + (e.name ? ' ' + e.name : '');
+  if(e.kind === 'History') return e.deep ? 'H*' : 'H';
   return e.name || ('(' + KIND[e.kind].tr + ')');
 }
 function typeName(id){ const t = E(id); return t ? t.name : ''; }
 function partLabel(p){ return p.name + (p.type && E(p.type) ? ' : ' + typeName(p.type) : '') + (p.mult ? ' [' + p.mult + ']' : ''); }
 function valLabel(v){ return v.name + (v.vtype ? ' : ' + v.vtype : '') + (v.def ? ' = ' + v.def : ''); }
-function portLabel(p){ return (p.dir ? p.dir + ' ' : '') + p.name + (p.type && E(p.type) ? ' : ' + typeName(p.type) : ''); }
+function portLabel(p){ return (p.dir ? p.dir + ' ' : '') + p.name + (p.type && E(p.type) ? ' : ' + (p.conj ? '~' : '') + typeName(p.type) : '') + (p.mult ? ' [' + p.mult + ']' : ''); }
+function tName(x){ return x.type && E(x.type) ? typeName(x.type) : (x.vtype || ''); }
+function flowLabel(f){ const t = tName(f); return (f.dir || 'inout') + ' ' + f.name + (t ? ' : ' + t : '') + (f.mult ? ' [' + f.mult + ']' : ''); }
+function pinLabel(p){ const t = tName(p); return p.name + (t ? ' : ' + t : ''); }
+function typeOpts(sel, kinds){ return '<option value="">(yok)</option>' + Object.values(M.els).filter(e => kinds.includes(e.kind)).sort(sortEls).map(b => `<option value="${b.id}"${b.id === sel ? ' selected' : ''}>${esc(b.name)}${kinds.length > 1 ? ' ‹' + KIND[b.kind].tr + '›' : ''}</option>`).join(''); }
+const VT_KINDS = ['ValueType','Enumeration'];
+function vtypeList(){ return ['Real','Integer','Boolean','String'].concat(Object.values(M.els).filter(e => VT_KINDS.includes(e.kind)).map(e => e.name)).filter((v, i, a) => v && a.indexOf(v) === i); }
+function vtypeOf(name){ return Object.values(M.els).find(e => VT_KINDS.includes(e.kind) && e.name === name) || null; }
+function unitOf(v){ if(v.unit) return v.unit; const t = vtypeOf(v.vtype); return t && t.unit || ''; }
+/* port yönü: açıkça verilmemişse arayüz bloğunun akış özelliklerinden türetilir (eşlenik ~ ise ters) */
+function portDir(p){
+  if(p.dir) return p.dir;
+  const t = p.type && E(p.type); if(!t) return '';
+  const fs = kidsOf(t.id).filter(c => c.kind === 'FlowProp'); if(!fs.length) return '';
+  const ds = new Set(fs.map(f => f.dir || 'inout'));
+  let d = ds.size === 1 ? [...ds][0] : 'inout';
+  if(p.conj && d !== 'inout') d = d === 'in' ? 'out' : 'in';
+  return d;
+}
 function pathOf(id){ const a = []; let e = E(id); while(e){ a.unshift(e.name || KIND[e.kind].tr); e = E(e.owner); } return a.join(' ▸ '); }
 function canOwn(ownerKind, childKind, child){
   if(childKind === 'Diagram'){
@@ -774,12 +851,21 @@ function portSide(sh, P){
 }
 function showPorts(d, P){
   const p = E(P.el); if(!p) return [];
-  const pk = p.kind === 'ConstraintProp' ? 'Param' : 'Port';
-  const ports = [...(p.type ? kidsOf(p.type) : []), ...kidsOf(p.id)].filter(e => e.kind === pk);
+  const pk = p.kind === 'ConstraintProp' ? 'Param' : (p.kind === 'Part' ? 'Port' : 'Pin');
+  const ports = [...(p.type && pk !== 'Pin' ? kidsOf(p.type) : []), ...kidsOf(p.id)].filter(e => e.kind === pk);
   const existing = d.shapes.filter(s => s.parent === P.id);
   const have = new Set(existing.map(s => s.el));
   const todo = ports.filter(pt => !have.has(pt.id));
   if(!todo.length) return [];
+  if(pk === 'Pin'){
+    const cntP = {t:0, b:0}; existing.forEach(s => { const sd = portSide(s, P); if(sd === 't' || sd === 'b') cntP[sd]++; });
+    const need = {t:cntP.t, b:cntP.b}; todo.forEach(pt => need[pt.dir === 'out' ? 'b' : 't']++);
+    P.w = Math.max(P.w, snapv(40 + Math.max(need.t, need.b) * 36));
+    const addedP = [];
+    todo.forEach(pt => { const sd = pt.dir === 'out' ? 'b' : 't', sh = addShape(d, pt.id, 0, 0, 12, 12, P.id); snapPort(sh, P, P.x + 26 + cntP[sd]++ * 36, sd === 't' ? P.y : P.y + P.h); addedP.push(sh); });
+    addedP.forEach(sh => autoEdges(d, sh));
+    return addedP;
+  }
   const cnt = {l:0, r:0};
   existing.forEach(s => { const sd = portSide(s, P); if(sd === 'l' || sd === 'r') cnt[sd]++; });
   const sideOf = pt => pt.kind === 'Param' ? 'l' : (pt.dir === 'in' ? 'l' : 'r');
@@ -868,11 +954,13 @@ function validate(kind, a, b, d){
   if(kind === 'Anchor') return (a.kind === 'Comment' || b.kind === 'Comment') ? '' : 'Not bağlantısının bir ucu Not olmalı.';
   if(K.includes('Comment')) return 'Notlar yalnızca "Not Bağlantısı" ile bağlanır.';
   if(K.includes('Partition')) return 'Kulvarlar bağlantı ucu olamaz.';
+  if(K.some(k => k === 'IRegion' || k === 'Region' || k === 'Fragment')) return 'Bölge / fragment bağlantı ucu olamaz.';
+  if(K.includes('Stereotype') && kind !== 'Generalization') return 'Stereotip yalnızca Generalization ile bağlanır.';
   switch(kind){
-    case 'Composition': case 'Aggregation': return (a.kind === 'Block' && b.kind === 'Block') ? '' : 'Composition/Aggregation iki Blok arasında olmalı.';
+    case 'Composition': case 'Aggregation': return (['Block','InterfaceBlock'].includes(a.kind) && ['Block','InterfaceBlock'].includes(b.kind)) ? '' : 'Composition/Aggregation iki Blok arasında olmalı.';
     case 'Association':
       if(d.dtype === 'uc') return (K.includes('Actor') && (K.includes('UseCase') || K.includes('Subject'))) ? '' : 'Use Case diyagramında Association, Aktör ile Use Case arasında olmalı.';
-      return K.every(k => k === 'Block' || k === 'Actor') ? '' : 'Association Blok/Aktör arasında olmalı.';
+      return K.every(k => ['Block','Actor','InterfaceBlock','Signal'].includes(k)) ? '' : 'Association Blok/Aktör arasında olmalı.';
     case 'Generalization': return a.kind === b.kind ? '' : 'Generalization aynı türdeki elemanlar arasında olmalı.';
     case 'Include': case 'Extend': return (a.kind === 'UseCase' && b.kind === 'UseCase') ? '' : kind + ' iki Use Case arasında olmalı.';
     case 'Connector': return K.every(k => ['Part','Port','Value'].includes(k)) ? '' : 'Connector part/port/value arasında olmalı.';
@@ -885,9 +973,9 @@ function validate(kind, a, b, d){
     case 'Satisfy': return b.kind === 'Requirement' && a.kind !== 'Requirement' ? '' : 'Satisfy, model elemanından gereksinime çizilmeli.';
     case 'Verify': return b.kind === 'Requirement' && a.kind !== 'Requirement' ? '' : 'Verify, test durumundan gereksinime çizilmeli.';
     case 'Refine': case 'Trace': return (a.kind === 'Requirement' || b.kind === 'Requirement') ? '' : kind + ' ilişkisinin bir ucu gereksinim olmalı.';
-    case 'Allocate': return (['Activity','Action'].includes(a.kind) && ['Block','Part'].includes(b.kind)) ? '' : 'Allocate, fonksiyondan (aktivite/aksiyon) bloğa/part\'a çizilmeli.';
+    case 'Allocate': return (['Activity','Action','SendSignal','AcceptEvent','AcceptTime'].includes(a.kind) && ['Block','Part'].includes(b.kind)) ? '' : 'Allocate, fonksiyondan (aktivite/aksiyon) bloğa/part\'a çizilmeli.';
     case 'Transition':
-      if(![a.kind, b.kind].every(k => ['State','Initial','Final','Choice'].includes(k))) return 'Geçiş durumlar arasında olmalı.';
+      if(![a.kind, b.kind].every(k => ['State','Initial','Final','Choice','Junction','History'].includes(k))) return 'Geçiş durumlar arasında olmalı.';
       if(a.kind === 'Final') return 'Son durumdan geçiş çıkamaz.';
       if(b.kind === 'Initial') return 'Başlangıca geçiş giremez.';
       return '';
@@ -916,6 +1004,8 @@ function delModel(ids){
     if(del.has(x.behavior)) x.behavior = null;
     if(del.has(x.represents)) x.represents = null;
     if(del.has(x.link)) x.link = null;
+    if(del.has(x.signal)) x.signal = null;
+    if(x.st && x.st.some(i => del.has(i))) x.st = x.st.filter(i => !del.has(i));
     if(x.kind === 'Diagram') purgeDiagram(x);
   });
   ST.open = ST.open.filter(id => isView(id) || E(id));
@@ -1036,12 +1126,13 @@ function layered(N, Eg, o){
   N.forEach((v, i) => { const m = o.alignStart ? lst[L[i]] + ms(v) / 2 : lst[L[i]] + lsz[L[i]] / 2; res.set(v.id, TB ? {cx:C[i], cy:m} : {cx:m, cy:C[i]}); });
   return {pos:res, laneBox, mainSize:Math.max(0, acc - gm), crossSize:off};
 }
-function layoutEdges(d, nodeSet){
+function layoutEdges(d, nodeSet, mapTop){
   const res = [];
   d.edges.forEach(ed => {
     const k = edgeKind(ed); if(k === 'Anchor') return;
     const s0 = shapeOf(d, ed.s), t0 = shapeOf(d, ed.t); if(!s0 || !t0) return;
-    const S = topOf(d, s0), T2 = topOf(d, t0);
+    let S = topOf(d, s0), T2 = topOf(d, t0);
+    if(mapTop){ S = mapTop(S); T2 = mapTop(T2); }
     if(!nodeSet.has(S.id) || !nodeSet.has(T2.id) || S === T2) return;
     let a = S.id, b = T2.id;
     if(['Generalization','Extend','DeriveReqt','Satisfy','Verify','Refine','Trace','Import','Dependency'].includes(k) && d.dtype !== 'bdd') [a, b] = [b, a];
@@ -1054,7 +1145,12 @@ function layoutEdges(d, nodeSet){
 function layoutDiagram(d, mode){
   const geo = new Map(d.shapes.map(s => [s.id, {x:s.x, y:s.y, w:s.w, h:s.h}]));
   const g = id => geo.get(id);
-  const moveTo = (sh, nx, ny) => { const a = g(sh.id), dx = nx - a.x, dy = ny - a.y; a.x = nx; a.y = ny; d.shapes.forEach(c => { if(c.parent === sh.id){ const b = g(c.id); b.x += dx; b.y += dy; } }); };
+  /* iç içe: bileşik durum / bölge içindeki şekiller kapsayıcıyla birlikte taşınır */
+  const nestC = new Map();
+  const within = (a, c) => a.x >= c.x && a.y >= c.y && a.x + a.w <= c.x + c.w && a.y + a.h <= c.y + c.h;
+  if(d.dtype === 'stm') topShapes(d).forEach(s0 => { let best = null; topShapes(d).forEach(c => { if(c === s0) return; const ce = E(c.el); if(!(ce.kind === 'Region' || isComposite(ce))) return; if(within(s0, c) && (!best || c.w * c.h < best.w * best.h)) best = c; }); if(best) nestC.set(s0.id, best); });
+  const outer = s0 => { let c = s0; while(nestC.has(c.id)) c = nestC.get(c.id); return c; };
+  const moveTo = (sh, nx, ny) => { const a = g(sh.id), dx = nx - a.x, dy = ny - a.y; a.x = nx; a.y = ny; d.shapes.forEach(c => { if(c.parent === sh.id || (nestC.size && !c.parent && c !== sh && nestC.has(c.id) && outer(c) === sh)){ const b = g(c.id); b.x += dx; b.y += dy; d.shapes.forEach(q => { if(q.parent === c.id){ const bq = g(q.id); bq.x += dx; bq.y += dy; } }); } }); };
   const centerTo = (sh, cx, cy) => { const a = g(sh.id); moveTo(sh, Math.round(cx / 5) * 5 - a.w / 2, Math.round(cy / 5) * 5 - a.h / 2); };
   const tops = topShapes(d);
   if(!tops.length) return geo;
@@ -1070,8 +1166,14 @@ function layoutDiagram(d, mode){
     const msgs = d.edges.filter(ed => isMsg(edgeKind(ed))).sort((a, b) => (a.y || 0) - (b.y || 0));
     const H = 90 + msgs.length * 46 + 30;
     let x = 0;
+    const frs = tops.filter(s => kindOfSh(s) === 'Fragment').map(f => ({f, ll:lls.filter(l => l.x + l.w / 2 >= f.x && l.x + l.w / 2 <= f.x + f.w), ms:msgs.filter(ed => (ed.y || 0) >= f.y && (ed.y || 0) <= f.y + f.h).map(ed => msgs.indexOf(ed))}));
     lls.forEach(l => { const a = g(l.id); a.h = Math.max(160, H); moveTo(l, x, 0); x += Math.max(a.w, 120) + 70; });
     d._seqMsgs = msgs.map((ed, k) => [ed, 90 + k * 46]);
+    frs.forEach(({f, ll, ms}) => {
+      const a = g(f.id);
+      if(ll.length){ const xs = ll.map(l => g(l.id)); a.x = Math.min(...xs.map(b => b.x)) - 10; a.w = Math.max(...xs.map(b => b.x + b.w)) + 10 - a.x; }
+      if(ms.length){ const y0 = 90 + Math.min(...ms) * 46, y1 = 90 + Math.max(...ms) * 46; const oh = a.h; a.y = y0 - 34; a.h = Math.max(60, y1 - y0 + 58); if(f.seps) f.seps = f.seps.map(v => Math.round(v * a.h / oh)); }
+    });
   } else if(d.dtype === 'uc' && mode.startsWith('uc')){
     layoutUC(d, geo, mode, moveTo, centerTo);
   } else if(mode === 'grid' || mode === 'circle'){
@@ -1097,13 +1199,14 @@ function layoutDiagram(d, mode){
     if(d.dtype === 'ibd') placeValues(d, geo, tops, centerTo);
   } else {
     const dir = mode === 'lr' ? 'LR' : 'TB';
-    const nodes = tops.filter(s => { const k = kindOfSh(s); return k !== 'Comment' && k !== 'Partition' && !(d.dtype === 'ibd' && k === 'Value'); });
+    const nodes = tops.filter(s => { const k = kindOfSh(s); return k !== 'Comment' && k !== 'Partition' && k !== 'IRegion' && !nestC.has(s.id) && !(d.dtype === 'ibd' && k === 'Value'); });
+    const iregs = tops.filter(s => kindOfSh(s) === 'IRegion').map(R => ({R, inn:nodes.filter(n => within(n, R))}));
     if(d.dtype === 'act') nodes.forEach(s => { const k = kindOfSh(s); if(k === 'Fork' || k === 'Join'){ const a = g(s.id), Lg = Math.max(a.w, a.h, 80), t = Math.min(a.w, a.h); if(dir === 'TB'){ a.w = Lg; a.h = t; } else { a.w = t; a.h = Lg; } } });
     const allP = tops.filter(s => kindOfSh(s) === 'Partition');
     const parts = d.dtype === 'act' ? allP.filter(s => dir === 'TB' ? !s.horiz : s.horiz).sort((a, b) => dir === 'TB' ? a.x - b.x : a.y - b.y) : [];
     if(d.dtype === 'act' && allP.length && allP.length !== parts.length) toast(dir === 'TB' ? 'Yatay kulvarlar için "soldan sağa" düzenini kullanın; yön uymayan kulvarlar yerinde bırakıldı.' : 'Dikey kulvarlar için "yukarıdan aşağı" düzenini kullanın; yön uymayan kulvarlar yerinde bırakıldı.');
     const nodeSet = new Set(nodes.map(s => s.id));
-    const eg = layoutEdges(d, nodeSet);
+    const eg = layoutEdges(d, nodeSet, nestC.size ? outer : null);
     const gap = d.dtype === 'ibd' ? {gapMain:130, gapCross:60} : d.dtype === 'act' ? {gapMain:45, gapCross:50} : {gapMain:80, gapCross:40};
     const mkN = () => nodes.map(s => {
       const v = C0(s); const a = g(s.id); v.w = a.w; v.h = a.h;
@@ -1126,6 +1229,7 @@ function layoutDiagram(d, mode){
       arrangeAllPorts(d, geo, dir);
       if(d.dtype === 'ibd') placeValues(d, geo, tops, centerTo);
     }
+    iregs.forEach(({R, inn}) => { if(!inn.length) return; const a = g(R.id), bs = inn.map(n => g(n.id)); a.x = Math.min(...bs.map(b => b.x)) - 25; a.y = Math.min(...bs.map(b => b.y)) - 30; a.w = Math.max(...bs.map(b => b.x + b.w)) + 25 - a.x; a.h = Math.max(...bs.map(b => b.y + b.h)) + 25 - a.y; });
     if(parts.length && dir === 'TB'){
       const ys = nodes.map(s => [g(s.id).y, g(s.id).y + g(s.id).h]);
       const y0 = Math.min(...ys.map(v => v[0])), y1 = Math.max(...ys.map(v => v[1]));
@@ -1200,7 +1304,7 @@ function arrangeAllPorts(d, geo, dir){
   });
 }
 function tidy(d, geo, tops){
-  const movable = tops.filter(s => !['Subject','Partition','Package'].includes(kindOfSh(s)));
+  const movable = tops.filter(s => !['Subject','Partition','Package','IRegion','Region','Fragment'].includes(kindOfSh(s)) && !isComposite(E(s.el)));
   const sh = (s, dx, dy) => { const a = geo.get(s.id); a.x += dx; a.y += dy; d.shapes.forEach(c => { if(c.parent === s.id){ const b = geo.get(c.id); b.x += dx; b.y += dy; } }); };
   movable.forEach(s => { const a = geo.get(s.id); sh(s, snapv(a.x) - a.x, snapv(a.y) - a.y); });
   const M0 = 20;
@@ -1217,7 +1321,7 @@ function tidy(d, geo, tops){
     if(!moved) break;
   }
   // containers grow to enclose what they contained before
-  tops.filter(s => ['Subject','Partition'].includes(kindOfSh(s))).forEach(Cs => {
+  tops.filter(s => ['Subject','Partition','IRegion','Region'].includes(kindOfSh(s)) || isComposite(E(s.el))).sort((p, q) => p.w * p.h - q.w * q.h).forEach(Cs => {
     const inside = movable.filter(s => { const cx = s.x + s.w / 2, cy = s.y + s.h / 2; return cx >= Cs.x && cx <= Cs.x + Cs.w && cy >= Cs.y && cy <= Cs.y + Cs.h; });
     if(!inside.length) return;
     const a = geo.get(Cs.id);
@@ -1383,16 +1487,50 @@ function T(lines, x, y, o){
 }
 function Tc(lines, cx, cy, o){ o = o || {}; const sz = (o.size || 12) * FSC, lh = o.lh ? o.lh * FSC : Math.round(sz * 1.27); return T(lines, cx, cy - (lines.length - 1) * lh / 2 + sz * 0.36, o); }
 
+/* ================= SYSML 1.7 HELPERS ================= */
+const ST_TOP = new Set(['Part','Object','Action','UseCase','State','SendSignal','AcceptEvent','Lifeline','Value','Actor','ActParam']);
+function stNames(e){ return (e && e.st || []).map(E).filter(Boolean).map(s => s.name); }
+function kwd(e, base){ const n = (base ? [base] : []).concat(stNames(e)); return n.length ? '«' + n.join(', ') + '»' : ''; }
+function stFill(e){ const s = (e && e.st || []).map(E).find(x => x && x.fill); return s ? s.fill : ''; }
+function stTags(st){ return String(st.tags || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => { const m = l.match(/^([^:=]+?)\s*(?::\s*([^=]+?))?\s*(?:=\s*(.*))?$/); return m ? {key:m[1].trim(), type:(m[2] || '').trim(), def:(m[3] || '').trim()} : null; }).filter(Boolean); }
+function tagVal(e, st, key){ const v = e.tv && e.tv[st.id + '.' + key]; if(v != null && v !== '') return v; const t = stTags(st).find(q => q.key === key); return t ? t.def : ''; }
+function tagLines(e){ const out = []; (e.st || []).map(E).filter(Boolean).forEach(st => stTags(st).forEach(t => { const v = tagVal(e, st, t.key); if(v !== '') out.push(t.key + ' = ' + v); })); return out; }
+function enumLits(e){ return String(e.lits || '').split('\n').map(x => x.trim()).filter(Boolean); }
+function isComposite(e){ return !!e && e.kind === 'State' && kidsOf(e.id).some(c => ['State','Region','Initial','Final','Choice','Junction','History'].includes(c.kind)); }
+function fragOps(e){ const o = String(e.guards == null ? '' : e.guards).split('\n'); return o.length ? o : ['']; }
+function fragSeps(sh, n){
+  const seps = (sh.seps || []).slice(0, Math.max(0, n - 1));
+  for(let i = seps.length; i < n - 1; i++) seps.push(Math.round(sh.h * (i + 1) / n));
+  return seps.map(v => Math.max(24, Math.min(sh.h - 10, v)));
+}
+function compBox(sh, e, head, comps, fill, SW){
+  const x = sh.x, y = sh.y;
+  let needW = tw(e.name || '', true) + 24; comps.forEach(c => c[1].forEach(t => { needW = Math.max(needW, tw(t) + 16); }));
+  if(sh.w < needW) sh.w = Math.ceil(needW / G) * G;
+  const W = sh.w, lines = wrap(e.name, W - 12, true);
+  let b = T(head, x + W / 2, y + 15, {italic:1, size:11}) + T(lines, x + W / 2, y + 30, {bold:1});
+  let yy = y + 30 + (lines.length - 1) * 15 + 9;
+  comps.forEach(c => {
+    b += `<line x1="${x}" y1="${yy}" x2="${x + W}" y2="${yy}" ${SW}/>`;
+    if(c[0]){ b += T(c[0], x + W / 2, yy + 14, {italic:1, size:11, fill:'#444'}); yy += 15; }
+    b += T(c[1], x + 7, yy + 14, {anchor:'start'});
+    yy += 14 + (c[1].length - 1) * 15 + 8;
+  });
+  const needH = Math.ceil((yy - y + 2) / G) * G; if(sh.h < needH) sh.h = needH;
+  return `<rect x="${x}" y="${y}" width="${W}" height="${sh.h}" fill="${fill}" ${SW}/>` + b;
+}
+
 /* ================= SHAPE DRAWING ================= */
 function drawShape(sh, e, d, SM, exp){
   const x = sh.x, y = sh.y, k = e.kind;
-  const fill = sh.fill || FILL[k] || '#fff';
+  const fill = sh.fill || stFill(e) || FILL[k] || '#fff';
   const SW = `stroke="${sh.stroke || STROKE}" stroke-width="${sh.stroke ? 1.6 : 1.2}"`;
   let s = '';
   switch(k){
-    case 'Block': {
+    case 'Block': case 'InterfaceBlock': {
       const ch = kidsOf(e.id);
       const comps = [];
+      const flows = ch.filter(c => c.kind === 'FlowProp').map(flowLabel);
       const parts = ch.filter(c => c.kind === 'Part' && !c.shared).map(partLabel);
       const refs = ch.filter(c => c.kind === 'Part' && c.shared).map(partLabel);
       const vals = ch.filter(c => c.kind === 'Value').map(valLabel);
@@ -1402,13 +1540,15 @@ function drawShape(sh, e, d, SM, exp){
       if(refs.length && !hd.references) comps.push(['references', refs]);
       if(vals.length && !hd.values) comps.push(['values', vals]);
       if(ports.length && !hd.ports) comps.push(['ports', ports]);
+      if(flows.length && !hd.flows) comps.push(['flow properties', flows]);
+      const tg = tagLines(e); if(tg.length && !hd.tags) comps.push(['tags', tg]);
       let needW = 0; comps.forEach(c => c[1].forEach(t => { needW = Math.max(needW, tw(t) + 16); }));
       if(sh.w < needW) sh.w = Math.ceil(needW / G) * G;
       const io = iconOf(e), large = io && io.mode === 'large', top = y + (large ? 42 : 0);
       if(io && !large && sh.w < 140) sh.w = 140;
       const W = sh.w, lines = wrap(e.name, W - 12 - (io && !large ? 48 : 0), true);
       let body = io ? (large ? iconSVG(io.ic, x + W / 2 - 17, y + 7, 34, io.col) : iconSVG(io.ic, x + 6, y + 6, 22, io.col)) : '';
-      body += T('«block»', x + W / 2, top + 15, {italic:1, size:11});
+      body += T(kwd(e, k === 'Block' ? 'block' : 'interfaceBlock'), x + W / 2, top + 15, {italic:1, size:11});
       body += T(lines, x + W / 2, top + 30, {bold:1});
       let yy = top + 30 + (lines.length - 1) * 15 + 9;
       comps.forEach(c => {
@@ -1436,7 +1576,7 @@ function drawShape(sh, e, d, SM, exp){
     }
     case 'Requirement': {
       const W = sh.w, lines = wrap(e.name, W - 16, true);
-      let b = T('«requirement»', x + W / 2, y + 15, {italic:1, size:11});
+      let b = T(kwd(e, 'requirement'), x + W / 2, y + 15, {italic:1, size:11});
       b += T(lines, x + W / 2, y + 30, {bold:1});
       let yy = y + 30 + (lines.length - 1) * 15 + 9;
       b += `<line x1="${x}" y1="${yy}" x2="${x + W}" y2="${yy}" ${SW}/>`;
@@ -1454,8 +1594,8 @@ function drawShape(sh, e, d, SM, exp){
     }
     case 'TestCase': case 'Activity': case 'StateMachine': case 'Interaction': {
       const stp = {TestCase:'«testCase»', Activity:'«activity»', StateMachine:'«stateMachine»', Interaction:'«interaction»'}[k];
-      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="12" fill="${sh.fill || FILL[k] || '#fff8d8'}" ${SW}/>`;
-      s += T(stp, x + sh.w / 2, y + 17, {italic:1, size:11});
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="12" fill="${fill}" ${SW}/>`;
+      s += T(kwd(e, stp.slice(1, -1)), x + sh.w / 2, y + 17, {italic:1, size:11});
       s += T(wrap(e.name, sh.w - 16, true), x + sh.w / 2, y + 33, {bold:1});
       if(k === 'TestCase' && (e.result || e.procNo || e.tLevel)){
         const rs = testResult(e), rw = tw(rs, true, 9.5) + 12;
@@ -1468,6 +1608,17 @@ function drawShape(sh, e, d, SM, exp){
     case 'State': {
       const comp = [['entry', e.entry], ['do', e.doAct], ['exit', e.exit]].filter(c => c[1]).map(c => c[0] + ' / ' + c[1]);
       const nl = wrap(e.name, sh.w - 16, true);
+      if(isComposite(e)){
+        const st0 = stNames(e).length ? [kwd(e)] : [];
+        let hy = y + 18;
+        s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="14" fill="${fill}" ${SW}/>`;
+        if(st0.length){ s += T(st0, x + sh.w / 2, hy, {italic:1, size:10.5}); hy += 14; }
+        s += T(nl, x + sh.w / 2, hy, {bold:1}); hy += (nl.length - 1) * 15 + 8;
+        if(comp.length){ s += T(comp, x + 8, hy + 12, {anchor:'start', size:11}); hy += comp.length * 14 + 4; }
+        s += `<line x1="${x}" y1="${hy}" x2="${x + sh.w}" y2="${hy}" ${SW}/>`;
+        sh._hy = hy - y;
+        break;
+      }
       const needH = snapv(14 + nl.length * 15 + (comp.length ? 14 + comp.length * 14 : 10));
       if(sh.h < needH) sh.h = needH;
       s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="12" fill="${fill}" ${SW}/>`;
@@ -1553,23 +1704,24 @@ function drawShape(sh, e, d, SM, exp){
       s += Tc(wrap(valLabel(e), sh.w - 12), x + sh.w / 2, y + sh.h / 2);
       break;
     }
-    case 'Port': case 'Param': {
+    case 'Port': case 'Param': case 'Pin': {
       const P = sh.parent ? SM.get(sh.parent) : null;
       const side = P ? portSide(sh, P) : 't';
       s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/>`;
-      const cx = x + sh.w / 2, cy = y + sh.h / 2;
-      if(e.dir === 'in' || e.dir === 'out'){
+      const cx = x + sh.w / 2, cy = y + sh.h / 2, pd = k === 'Port' ? portDir(e) : e.dir, ar = k === 'Pin' ? 3 : 4;
+      if(pd === 'in' || pd === 'out'){
         let v = {l:[1,0], r:[-1,0], t:[0,1], b:[0,-1]}[side];
-        if(e.dir === 'out') v = [-v[0], -v[1]];
+        if(pd === 'out') v = [-v[0], -v[1]];
         const n = [-v[1], v[0]];
-        const tip = [cx + v[0] * 4, cy + v[1] * 4], b1 = [cx - v[0] * 4 + n[0] * 4, cy - v[1] * 4 + n[1] * 4], b2 = [cx - v[0] * 4 - n[0] * 4, cy - v[1] * 4 - n[1] * 4];
+        const tip = [cx + v[0] * ar, cy + v[1] * ar], b1 = [cx - v[0] * ar + n[0] * ar, cy - v[1] * ar + n[1] * ar], b2 = [cx - v[0] * ar - n[0] * ar, cy - v[1] * ar - n[1] * ar];
         s += `<polygon points="${tip.join(',')} ${b1.join(',')} ${b2.join(',')}" fill="#333"/>`;
-      } else if(e.dir === 'inout'){
-        s += `<path d="M${cx - 4},${cy} H${cx + 4} M${cx},${cy - 4} V${cy + 4}" stroke="#333" stroke-width="1.4"/>`;
+      } else if(pd === 'inout'){
+        s += `<path d="M${cx - ar},${cy} H${cx + ar} M${cx},${cy - ar} V${cy + ar}" stroke="#333" stroke-width="1.4"/>`;
       }
-      const lbl = e.name + (e.kind === 'Param' ? (e.vtype ? ' : ' + e.vtype : '') : (e.type && E(e.type) ? ' : ' + typeName(e.type) : ''));
-      const o = {size:11, halo:1};
-      if(!P) s += T(lbl, x + sh.w + 4, y + sh.h / 2 + 4, Object.assign({anchor:'start'}, o));
+      const lbl = k === 'Pin' ? pinLabel(e) : e.name + (e.kind === 'Param' ? (e.vtype ? ' : ' + e.vtype : '') : (e.type && E(e.type) ? ' : ' + (e.conj ? '~' : '') + typeName(e.type) : ''));
+      const o = {size:k === 'Pin' ? 10.5 : 11, halo:1};
+      if(k === 'Pin' && P){ const lf = cx < P.x + P.w / 2, ax = lf ? x - 3 : x + sh.w + 3, an = lf ? 'end' : 'start'; if(side === 't') s += T(lbl, ax, y - 4, Object.assign({anchor:an}, o)); else if(side === 'b') s += T(lbl, ax, y + sh.h + 12, Object.assign({anchor:an}, o)); else if(side === 'l') s += T(lbl, x - 4, y - 3, Object.assign({anchor:'end'}, o)); else s += T(lbl, x + sh.w + 4, y - 3, Object.assign({anchor:'start'}, o)); }
+      else if(!P) s += T(lbl, x + sh.w + 4, y + sh.h / 2 + 4, Object.assign({anchor:'start'}, o));
       else if(side === 'l') s += T(lbl, x + sh.w + 4, y + sh.h / 2 + 4, Object.assign({anchor:'start'}, o));
       else if(side === 'r') s += T(lbl, x - 4, y + sh.h / 2 + 4, Object.assign({anchor:'end'}, o));
       else if(side === 't') s += T(lbl, x + sh.w / 2, y + sh.h + 12, o);
@@ -1578,7 +1730,8 @@ function drawShape(sh, e, d, SM, exp){
     }
     case 'Action': {
       s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="12" fill="${fill}" ${SW}/>`;
-      s += Tc(wrap(e.name, sh.w - 16), x + sh.w / 2, y + sh.h / 2);
+      const bh = e.behavior && E(e.behavior), albl = bh && bh.name && e.name && bh.name.toLocaleLowerCase('tr') !== e.name.toLocaleLowerCase('tr') ? e.name + ' : ' + bh.name : (e.name || (bh ? bh.name : ''));
+      s += Tc(wrap(albl, sh.w - 16), x + sh.w / 2, y + sh.h / 2);
       if(e.behavior && E(e.behavior)){
         const rx = x + sh.w - 16, ry = y + sh.h - 14;
         s += `<path d="M${rx + 5},${ry} V${ry + 9} M${rx},${ry + 9} V${ry + 4} H${rx + 10} V${ry + 9}" fill="none" stroke="#333" stroke-width="1.1"/>`;
@@ -1601,6 +1754,65 @@ function drawShape(sh, e, d, SM, exp){
       break;
     }
     case 'Fork': case 'Join': s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="#222" stroke="#222"/>`; break;
+    case 'ValueType': case 'Enumeration': case 'Signal': case 'Stereotype': {
+      const base = {ValueType:'valueType', Enumeration:'enumeration', Signal:'signal', Stereotype:'stereotype'}[k];
+      const comps = [];
+      if(k === 'ValueType'){ const r = []; if(e.base) r.push('base = ' + e.base); if(e.unit) r.push('unit = ' + e.unit); if(e.qk) r.push('quantityKind = ' + e.qk); if(r.length) comps.push(['', r]); }
+      if(k === 'Enumeration'){ const l = enumLits(e); if(l.length) comps.push(['literals', l]); }
+      if(k === 'Signal'){ const v = kidsOf(e.id).filter(c => c.kind === 'Value').map(valLabel); if(v.length) comps.push(['attributes', v]); }
+      if(k === 'Stereotype'){ const m = (e.meta || []).map(q => KIND[q] ? KIND[q].en || q : q); comps.push(['', ['[' + (m.length ? m.join(', ') : 'tüm elemanlar') + ']']]); const tg = stTags(e).map(t => t.key + (t.type ? ' : ' + t.type : '') + (t.def ? ' = ' + t.def : '')); if(tg.length) comps.push(['tags', tg]); }
+      s = compBox(sh, e, kwd(e, base), comps, fill, SW);
+      break;
+    }
+    case 'ActParam': {
+      const lbl = pinLabel(e);
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/>` + Tc(wrap(lbl, sh.w - 10), x + sh.w / 2, y + sh.h / 2, {size:11.5});
+      if(e.dir) s += T(e.dir, x + 3, y - 3, {anchor:'start', size:9.5, fill:'#555'});
+      break;
+    }
+    case 'SendSignal': case 'AcceptEvent': {
+      const t = Math.min(sh.h / 2, 18);
+      const pts = k === 'SendSignal' ? [[x, y], [x + sh.w - t, y], [x + sh.w, y + sh.h / 2], [x + sh.w - t, y + sh.h], [x, y + sh.h]] : [[x, y], [x + sh.w, y], [x + sh.w, y + sh.h], [x, y + sh.h], [x + t, y + sh.h / 2]];
+      s = `<polygon points="${pts.map(q => q.join(',')).join(' ')}" fill="${fill}" ${SW}/>`;
+      const sg = e.signal && E(e.signal), lb = e.name || (sg ? sg.name : '');
+      s += Tc(wrap(lb, sh.w - 22 - t * 0.5), x + sh.w / 2 + (k === 'AcceptEvent' ? t / 3 : -t / 3), y + sh.h / 2);
+      break;
+    }
+    case 'AcceptTime': {
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="transparent" stroke="none"/><polygon points="${x},${y} ${x + sh.w},${y} ${x},${y + sh.h} ${x + sh.w},${y + sh.h}" fill="${fill}" ${SW}/>`;
+      if(e.name) s += T(wrap(e.name, 140), x + sh.w / 2, y + sh.h + 14, {size:11, halo:1});
+      break;
+    }
+    case 'IRegion': {
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="12" fill="transparent" stroke="${sh.stroke || STROKE}" stroke-width="1.2" stroke-dasharray="7 4"/>`;
+      if(e.name) s += T(e.name, x + 10, y + 16, {anchor:'start', size:11, italic:1, fill:'#555'});
+      break;
+    }
+    case 'Region': {
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="transparent" stroke="${sh.stroke || '#777'}" stroke-width="1" stroke-dasharray="6 4"/>`;
+      if(e.name) s += T(e.name, x + 8, y + 15, {anchor:'start', size:11, italic:1, fill:'#555'});
+      break;
+    }
+    case 'History': {
+      const r = Math.min(sh.w, sh.h) / 2;
+      s = `<circle cx="${x + sh.w / 2}" cy="${y + sh.h / 2}" r="${r}" fill="${fill}" ${SW}/>` + Tc([e.deep ? 'H*' : 'H'], x + sh.w / 2, y + sh.h / 2, {bold:1, size:11.5});
+      break;
+    }
+    case 'Junction': s = `<circle cx="${x + sh.w / 2}" cy="${y + sh.h / 2}" r="${Math.min(sh.w, sh.h) / 2}" fill="#222" stroke="#222"/>`; break;
+    case 'Fragment': {
+      const op = e.op || 'alt', lw = Math.max(44, tw(op, true, 11.5) + 22);
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="none" stroke="transparent" stroke-width="9" pointer-events="stroke"/><rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="none" stroke="${sh.stroke || STROKE}" stroke-width="1.3" pointer-events="none"/>`;
+      s += `<path d="M${x},${y} H${x + lw} V${y + 12} L${x + lw - 8},${y + 20} H${x} Z" fill="#ffffff" stroke="${sh.stroke || STROKE}" stroke-width="1.1"/>` + T(op, x + 7, y + 15, {anchor:'start', bold:1, size:11.5});
+      if(op === 'ref'){ const ld = e.link && E(e.link); s += Tc(wrap(e.name || (ld ? ld.name : ''), sh.w - 20, true), x + sh.w / 2, y + sh.h / 2 + 6, {bold:1}); break; }
+      const ops = fragOps(e), ys = fragSeps(sh, ops.length);
+      ops.forEach((g, i) => {
+        const oy = i ? y + ys[i - 1] : y;
+        if(i) s += `<line x1="${x}" y1="${oy}" x2="${x + sh.w}" y2="${oy}" stroke="${sh.stroke || STROKE}" stroke-width="1.1" stroke-dasharray="8 5"/>`;
+        if(g) s += T('[' + g + ']', x + (i ? 10 : lw + 10), oy + 15, {anchor:'start', size:11, halo:1});
+      });
+      if(e.name && op !== 'ref') s += T(e.name, x + sh.w - 8, y + 15, {anchor:'end', size:10.5, italic:1, fill:'#555'});
+      break;
+    }
     case 'Partition': {
       const rep = e.represents && E(e.represents) ? ' : ' + typeName(e.represents) : '';
       if(sh.horiz){
@@ -1623,7 +1835,8 @@ function drawShape(sh, e, d, SM, exp){
     }
     default: s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="#fff" ${SW}/>` + Tc([e.name], x + sh.w / 2, y + sh.h / 2);
   }
-  if(!exp && e.kind !== 'Port' && e.kind !== 'Lifeline' && e.kind !== 'Param' && !UNNAMED.has(e.kind) && !(e.kind === 'Action' && e.behavior && E(e.behavior)) && navTargets(e, d.id).length){
+  if(ST_TOP.has(k) && stNames(e).length && !(k === 'State' && isComposite(e))) s += T(kwd(e), x + sh.w / 2, k === 'Actor' ? y + sh.h + 30 : y + 11, {italic:1, size:9.5, fill:'#555', halo:k === 'Actor'});
+  if(!exp && !BORDER.has(e.kind) && e.kind !== 'Lifeline' && !UNNAMED.has(e.kind) && !(e.kind === 'Action' && e.behavior && E(e.behavior)) && navTargets(e, d.id).length){
     const ix = e.kind === 'Actor' ? sh.x + sh.w - 4 : sh.x + sh.w - 19, iy = e.kind === 'Actor' ? sh.y : (e.kind === 'UseCase' ? sh.y + sh.h - 22 : sh.y + sh.h - 15);
     const ux = e.kind === 'UseCase' ? sh.x + sh.w / 2 - 7 : ix;
     s += `<g class="navi"><title>Çift tık: alt diyagramı aç</title><rect x="${ux}" y="${iy}" width="15" height="11" rx="1.5" fill="#fff" stroke="#2d7ff9" stroke-width="1"/><path d="M${ux + 3},${iy + 3.5} h5 M${ux + 3},${iy + 6.5} h9 M${ux + 9},${iy + 3.5} l3,0" stroke="#2d7ff9" stroke-width="1.2"/></g>`;
@@ -1661,7 +1874,7 @@ function segHitsRect(a, b, r, pad){
   return t1 - t0 > 1e-6;
 }
 function routeCtx(d, SM){
-  const shapes = d.shapes.filter(s => { const e = E(s.el); return e && !s.parent && !['Partition','Subject','Lifeline'].includes(e.kind); });
+  const shapes = d.shapes.filter(s => { const e = E(s.el); return e && !s.parent && !['Partition','Subject','Lifeline'].includes(e.kind) && !(CONT.has(e.kind) && e.kind !== 'Package') && !isComposite(e); });
   const xs = [], ys = [];
   shapes.forEach(s => { xs.push(s.x - 20, s.x + s.w + 20); ys.push(s.y - 20, s.y + s.h + 20); });
   return {d, SM, obs:shapes, xs, ys, routed:[]};
@@ -1669,7 +1882,7 @@ function routeCtx(d, SM){
 function endInfo(sh, other, ctx){
   const e = E(sh.el), par = sh.parent && ctx.SM.get(sh.parent);
   const ocx = other.x + other.w / 2, ocy = other.y + other.h / 2, cx = sh.x + sh.w / 2, cy = sh.y + sh.h / 2;
-  if(par && e && (e.kind === 'Port' || e.kind === 'Param')){
+  if(par && e && BORDER.has(e.kind)){
     const sd = portSide(sh, par);
     const pt = {l:{x:sh.x, y:cy, nx:-1, ny:0}, r:{x:sh.x + sh.w, y:cy, nx:1, ny:0}, t:{x:cx, y:sh.y, nx:0, ny:-1}, b:{x:cx, y:sh.y + sh.h, nx:0, ny:1}}[sd];
     return [Object.assign({pen:0}, pt)];
@@ -1758,11 +1971,17 @@ function routeOrtho(S, T2, ctx){
   }
   return best;
 }
+function barOff(d, sh, y){ const B = d && BARS.get(d.id), arr = B && B.get(sh.id); if(!arr) return null; let best = null; arr.forEach(b => { if(y >= b.y1 - 0.5 && y <= b.y2 + 0.5 && (!best || b.lv > best.lv)) best = b; }); return best ? best.lv * 4 : null; }
 function edgeGeom(S, T2, ed, ctx){
   const ek = edgeKind(ed);
   if(isMsg(ek)){
-    const y = ed.y != null ? ed.y : Math.max(S.y, T2.y) + 70, xs = S.x + S.w / 2, xt = T2.x + T2.w / 2;
-    if(S === T2) return [{x:xs, y}, {x:xs + 45, y}, {x:xs + 45, y:y + 22}, {x:xs + 1, y:y + 22}];
+    const y = ed.y != null ? ed.y : Math.max(S.y, T2.y) + 70;
+    let xs = S.x + S.w / 2, xt = T2.x + T2.w / 2;
+    const dd = ctx && ctx.d;
+    if(S === T2){ const o = barOff(dd, S, y); const x0 = xs + (o != null ? o + 5 : 0); return [{x:x0, y}, {x:xs + 45, y}, {x:xs + 45, y:y + 22}, {x:x0 + 4 + 1, y:y + 22}]; }
+    const dir = xt >= xs ? 1 : -1, os = barOff(dd, S, y), ot = barOff(dd, T2, y + 0.01);
+    if(os != null) xs += os + dir * 5;
+    if(ot != null) xt += ot - dir * 5;
     return [{x:xs, y}, {x:xt, y}];
   }
   if(S === T2){
@@ -1773,7 +1992,9 @@ function edgeGeom(S, T2, ed, ctx){
   if(ctx && ed.mx == null && ed.my == null){
     let r = null;
     if(ed.route === 'straight'){
-      const st = straight(A, B);
+      const st = straight(A, B), po = ctx.pair && ctx.pair.get(ed);
+      ed._po = po ? po * (ed.s < ed.t ? 1 : -1) : 0;
+      if(po){ const dx = st[1].x - st[0].x, dy = st[1].y - st[0].y, L = Math.hypot(dx, dy) || 1, sg = ed.s < ed.t ? 1 : -1; st.forEach(q => { q.x += -dy / L * po * sg; q.y += dx / L * po * sg; }); }
       const pS = S.parent && ctx.SM.get(S.parent), pT = T2.parent && ctx.SM.get(T2.parent);
       if(!ctx.obs.some(o => o !== S && o !== T2 && o !== pS && o !== pT && segHitsRect(st[0], st[1], o, 2))) r = st;
     }
@@ -1841,7 +2062,14 @@ function drawEdge(d, ed, SM, pts, exp){
     let li = 0, lm = -1; for(let i = 0; i < n - 1; i++){ const L = Math.abs(pts[i].x - pts[i + 1].x) + Math.abs(pts[i].y - pts[i + 1].y) + (i > 0 && i < n - 2 ? 20 : 0); if(L > lm){ lm = L; li = i; } }
     const a = pts[li], b = pts[li + 1];
     const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, vert = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
-    s += vert ? T(lab.join(' '), mx + 6, my + 4, {anchor:'start', size:11, halo:1}) : T(lab.join(' '), mx, my - 6, {size:11, halo:1});
+    const pr = ed._po && ed.route === 'straight', side = pr ? Math.sign((vert ? -(b.y - a.y) : (b.x - a.x)) * ed._po) || 1 : 1;
+    s += vert ? T(lab.join(' '), mx + 6 * side, my + 4, {anchor:side < 0 ? 'end' : 'start', size:11, halo:1}) : T(lab.join(' '), mx, !pr || side < 0 ? my - 6 : my + 14, {size:11, halo:1});
+  }
+  if(r && r.interrupt && n >= 2){
+    let li = 0, lm = -1; for(let i = 0; i < n - 1; i++){ const L = Math.hypot(pts[i].x - pts[i + 1].x, pts[i].y - pts[i + 1].y); if(L > lm){ lm = L; li = i; } }
+    const a = pts[li], b = pts[li + 1], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, L = Math.hypot(b.x - a.x, b.y - a.y) || 1, ux = (b.x - a.x) / L, uy = (b.y - a.y) / L, nx = -uy, ny = ux;
+    const P = (t, q) => (mx + ux * t + nx * q).toFixed(1) + ',' + (my + uy * t + ny * q).toFixed(1);
+    s += `<polyline points="${P(-9, -7)} ${P(2, -2)} ${P(-2, 2)} ${P(9, 7)}" fill="none" stroke="${ec}" stroke-width="1.6"/>`;
   }
   if(r && (kind === 'Composition' || kind === 'Aggregation') && E(r.part)){
     const p = E(r.part), q = pts[n - 1], o = pts[n - 2];
@@ -1853,6 +2081,28 @@ function drawEdge(d, ed, SM, pts, exp){
 }
 
 /* ================= DIAGRAM RENDER ================= */
+const BARS = new Map();
+/* yürütme çubukları: senkron mesaj hedefte çubuk açar, aynı yaşam çizgisinden dönen yanıt kapatır */
+function seqBars(d, SM){
+  const out = new Map();
+  if(d.exec === false) return out;
+  const msgs = d.edges.filter(ed => isMsg(edgeKind(ed)) && SM.get(ed.s) && SM.get(ed.t)).sort((a, b) => (a.y || 0) - (b.y || 0));
+  const open = new Map(), push = (sid, b) => { if(!out.has(sid)) out.set(sid, []); out.get(sid).push(b); };
+  const lastY = new Map();
+  msgs.forEach(ed => { const y = ed.y || 0; [ed.s, ed.t].forEach(id => lastY.set(id, Math.max(lastY.get(id) || 0, y + (ed.s === ed.t ? 22 : 0)))); });
+  msgs.forEach(ed => {
+    const k = edgeKind(ed), y = ed.y || 0;
+    if(ed.s === ed.t){ const st = open.get(ed.s) || []; if(k !== 'MsgReply') push(ed.s, {y1:y + 14, y2:y + 30, lv:st.length}); return; }
+    if(k === 'MsgReply'){ const st = open.get(ed.s); if(st && st.length){ const b = st.pop(); b.y2 = y; } return; }
+    if(k === 'MsgSync' || k === 'MsgAsync'){
+      const st = open.get(ed.t) || []; open.set(ed.t, st);
+      const b = {y1:y, y2:null, lv:st.length}; st.push(b); push(ed.t, b);
+      if(k === 'MsgAsync'){ st.pop(); b.y2 = y + 24; }
+    }
+  });
+  out.forEach((arr, sid) => arr.forEach(b => { if(b.y2 == null) b.y2 = Math.max(b.y1 + 30, (lastY.get(sid) || b.y1) + 14); }));
+  return out;
+}
 function diagramSVG(d, exp){
   FSC = d.fs || 1;
   try { return diagramSVG0(d, exp); } finally { FSC = 1; }
@@ -1865,23 +2115,31 @@ function diagramSVG0(d, exp){
     const maxY = msgs.reduce((m, ed) => Math.max(m, (ed.y || 0) + 30), 0);
     d.shapes.forEach(sh => { const e = E(sh.el); if(e && e.kind === 'Lifeline' && maxY > sh.y + sh.h - 20) sh.h = snapv(maxY - sh.y + 40); });
   }
-  const cont = [], norm = [], ports = [];
+  const cont = [], norm = [], ports = [], over = [];
   d.shapes.forEach(sh => {
     const e = E(sh.el); if(!e) return;
     const str = drawShape(sh, e, d, SM, exp);
-    (CONT.has(e.kind) ? cont : ((e.kind === 'Port' || e.kind === 'Param') && sh.parent ? ports : norm)).push(str);
+    if(e.kind === 'Fragment') over.push(str);
+    else if(CONT.has(e.kind) || isComposite(e)) cont.push([sh.w * sh.h, str]);
+    else (BORDER.has(e.kind) && sh.parent ? ports : norm).push(str);
   });
+  cont.sort((a, b) => b[0] - a[0]);
+  let bars = '';
+  if(d.dtype === 'sd'){ const B = seqBars(d, SM); BARS.set(d.id, B); B.forEach((arr, sid) => { const L = SM.get(sid); if(!L) return; const cx = L.x + L.w / 2; arr.forEach(b => { bars += `<rect x="${cx - 5 + b.lv * 4}" y="${b.y1}" width="10" height="${Math.max(6, b.y2 - b.y1)}" fill="#ffffff" stroke="${STROKE}" stroke-width="1" pointer-events="none"/>`; }); }); }
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   const grow = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
   d.shapes.forEach(sh => {
     const e = E(sh.el); if(!e) return;
     grow(sh.x, sh.y); grow(sh.x + sh.w, sh.y + sh.h);
-    if(e.kind === 'Port' || e.kind === 'Param'){ const L = tw(e.name + (e.type ? ' : ' + typeName(e.type) : ''), false, 11); grow(sh.x - L - 6, sh.y - 14); grow(sh.x + sh.w + L + 6, sh.y + sh.h + 14); }
+    if(BORDER.has(e.kind)){ const L = tw(e.name + (e.type ? ' : ' + typeName(e.type) : ''), false, 11); grow(sh.x - L - 6, sh.y - 14); grow(sh.x + sh.w + L + 6, sh.y + sh.h + 14); }
+    if(e.kind === 'AcceptTime' && e.name){ grow(sh.x - 50, sh.y); grow(sh.x + sh.w + 50, sh.y + sh.h + 20); }
     if(e.kind === 'Actor'){ grow(sh.x - 30, sh.y); grow(sh.x + sh.w + 30, sh.y + sh.h + 14); }
   });
   let edges = '';
   const rctx = routeCtx(d, SM);
   const ord = d.edges.slice().sort((a, b) => (edgeKind(a) === 'Anchor') - (edgeKind(b) === 'Anchor'));
+  const pairN = new Map(); ord.forEach(ed => { if(ed.s === ed.t || isMsg(edgeKind(ed))) return; const k = ed.s < ed.t ? ed.s + '|' + ed.t : ed.t + '|' + ed.s; const a = pairN.get(k) || []; a.push(ed); pairN.set(k, a); });
+  rctx.pair = new Map(); pairN.forEach(a => { if(a.length > 1) a.forEach((ed, i) => rctx.pair.set(ed, (i - (a.length - 1) / 2) * 26)); });
   ord.forEach(ed => {
     const S = SM.get(ed.s), T2 = SM.get(ed.t); if(!S || !T2) return;
     if(ed.el && !E(ed.el)) return;
@@ -1901,7 +2159,7 @@ function diagramSVG0(d, exp){
       T(label, fx + 7, fy + 15, {anchor:'start', size:12}) + '</g>';
     bbox = {x:fx, y:fy, w:FW, h:fh};
   }
-  return {svg:frame + cont.join('') + norm.join('') + ports.join('') + edges, bbox};
+  return {svg:frame + cont.map(c => c[1]).join('') + norm.join('') + bars + over.join('') + ports.join('') + edges, bbox};
 }
 const svgEl = $('#svg'), wrapEl = $('#canvasWrap');
 function renderDiagram(){
@@ -1932,7 +2190,8 @@ function selSVG(d){
     if(!ST.sel.has(sh.id)) return;
     s += `<rect x="${sh.x - 3 / z}" y="${sh.y - 3 / z}" width="${sh.w + 6 / z}" height="${sh.h + 6 / z}" fill="none" stroke="#2d7ff9" stroke-width="${sw}" stroke-dasharray="${4 / z} ${3 / z}" pointer-events="none"/>`;
     const e = E(sh.el);
-    if(e && e.kind !== 'Port' && ST.sel.size === 1){
+    if(e && !BORDER.has(e.kind) && ST.sel.size === 1){
+      if(e.kind === 'Fragment' && (e.op || 'alt') !== 'ref'){ const n = fragOps(e).length; fragSeps(sh, n).forEach((v, i) => { s += `<rect data-sep="${i}" data-ss="${sh.id}" x="${sh.x + sh.w / 2 - hs}" y="${sh.y + v - hs / 2}" width="${hs * 2}" height="${hs}" fill="#2d7ff9" stroke="#fff" stroke-width="${sw / 2}" style="cursor:ns-resize"><title>Operand sınırını taşı</title></rect>`; }); }
       [['nw', sh.x, sh.y], ['ne', sh.x + sh.w, sh.y], ['sw', sh.x, sh.y + sh.h], ['se', sh.x + sh.w, sh.y + sh.h]].forEach(([h, hx, hy]) => {
         s += `<rect data-h="${h}" data-hs="${sh.id}" x="${hx - hs / 2}" y="${hy - hs / 2}" width="${hs}" height="${hs}" fill="#fff" stroke="#2d7ff9" stroke-width="${sw}" style="cursor:${h === 'nw' || h === 'se' ? 'nwse' : 'nesw'}-resize"/>`;
       });
@@ -1998,6 +2257,10 @@ function renderTree(){
 function treeName(e){
   if(e.kind === 'Part') return partLabel(e);
   if(e.kind === 'Port') return portLabel(e);
+  if(e.kind === 'FlowProp') return flowLabel(e);
+  if(e.kind === 'Pin' || e.kind === 'ActParam') return (e.dir ? e.dir + ' ' : '') + pinLabel(e);
+  if(e.kind === 'ValueType' && e.unit) return e.name + ' [' + e.unit + ']';
+  if(e.st && e.st.length && stNames(e).length) return '«' + stNames(e).join(', ') + '» ' + elLabel(e);
   if(e.kind === 'Value') return valLabel(e);
   return elLabel(e);
 }
@@ -2029,7 +2292,7 @@ function newChild(owner, kind){
   if(!UNNAMED.has(kind)) treeRename(e.id);
 }
 function openD(id, nav){
-  if(!isView(id) && !E(id)) return;
+  if(!isView(id) && (!E(id) || E(id).kind !== 'Diagram')) return;
   if(!nav && ST.cur && ST.cur !== id){ ST.back.push(ST.cur); if(ST.back.length > 100) ST.back.shift(); ST.fwd.length = 0; }
   if(!ST.open.includes(id)) ST.open.push(id);
   ST.cur = id; ST.sel.clear(); ST.tool = null; renderAll(); persist();
@@ -2198,6 +2461,21 @@ function palIcon(k){
     case 'ConstraintBlock': s = `<rect x="2" y="2" width="22" height="14" fill="#fff1e6" ${sw}/><line x1="2" y1="7" x2="24" y2="7" ${sw}/><path d="M6 11h1M19 11h1" stroke="#d35400" stroke-width="2"/>`; break;
     case 'ConstraintProp': s = `<rect x="2" y="3" width="22" height="12" rx="6" fill="#fff1e6" ${sw}/>`; break;
     case 'Param': s = `<rect x="2" y="4" width="14" height="10" rx="4" fill="#fff1e6" ${sw}/><rect x="13" y="6" width="6" height="6" fill="#fff" ${sw}/>`; break;
+    case 'InterfaceBlock': s = `<rect x="2" y="2" width="22" height="14" fill="#e8f6f8" ${sw}/><line x1="2" y1="8" x2="24" y2="8" ${sw}/><path d="M6 12h6M14 12l3-2v4z" stroke="#1f8a99" stroke-width="1.1" fill="#1f8a99"/>`; break;
+    case 'ValueType': s = `<rect x="2" y="2" width="22" height="14" fill="#f3eeff" ${sw}/><text x="13" y="13" font-size="8" text-anchor="middle" font-family="Arial" fill="#6d4fb3">kg</text>`; break;
+    case 'Enumeration': s = `<rect x="2" y="2" width="22" height="14" fill="#f3eeff" ${sw}/><path d="M6 7h14M6 10h10M6 13h12" stroke="#6d4fb3" stroke-width="1"/>`; break;
+    case 'Signal': s = `<path d="M2 3h18l4 6-4 6H2z" fill="#fff1e6" ${sw}/>`; break;
+    case 'Stereotype': s = `<rect x="2" y="2" width="22" height="14" fill="#f8f3df" ${sw}/><text x="13" y="12" font-size="8" text-anchor="middle" font-family="Arial" fill="#7b6a2e">«»</text>`; break;
+    case 'Pin': s = `<rect x="2" y="4" width="16" height="10" rx="3" fill="#fff8d8" ${sw}/><rect x="15" y="6" width="6" height="6" fill="#fff" ${sw}/>`; break;
+    case 'ActParam': s = `<rect x="2" y="1" width="22" height="16" fill="none" stroke="#999" stroke-dasharray="2 2"/><rect x="2" y="5" width="10" height="8" fill="#fff" ${sw}/>`; break;
+    case 'SendSignal': s = `<path d="M2 3h15l6 6-6 6H2z" fill="#fff8d8" ${sw}/>`; break;
+    case 'AcceptEvent': s = `<path d="M2 3h22v12H2l6-6z" fill="#fff8d8" ${sw}/>`; break;
+    case 'AcceptTime': s = `<path d="M8 2h10L8 16h10z" fill="#fff" ${sw}/>`; break;
+    case 'IRegion': s = `<rect x="2" y="2" width="22" height="14" rx="4" fill="none" ${sw} stroke-dasharray="3 2"/><path d="M10 6l4 3-3 1 4 3" fill="none" stroke="#333"/>`; break;
+    case 'Fragment': s = `<rect x="2" y="2" width="22" height="14" fill="#fff" ${sw}/><path d="M2 7h7l2-2V2" fill="none" ${sw}/><line x1="2" y1="11" x2="24" y2="11" stroke="#333" stroke-dasharray="2 2"/>`; break;
+    case 'Region': s = `<rect x="2" y="2" width="22" height="14" fill="#fff" stroke="#777" stroke-dasharray="3 2"/>`; break;
+    case 'History': s = `<circle cx="13" cy="9" r="7" fill="#fff" ${sw}/><text x="13" y="12.5" font-size="9" text-anchor="middle" font-weight="bold" font-family="Arial">H</text>`; break;
+    case 'Junction': s = `<circle cx="13" cy="9" r="4" fill="#222"/>`; break;
     default: {
       const st = ER[k] || {};
       const p = {x:22, y:9}, q = {x:4, y:9};
@@ -2246,7 +2524,8 @@ function shapeAt(ev){ const el = document.elementFromPoint(ev.clientX, ev.client
 function canDrop(d, e){
   if(!e || e.kind === 'Diagram' || KIND[e.kind].rel) return false;
   if(d.dtype === 'ibd' && e.kind === 'Block') return true;
-  if(d.dtype === 'act' && (e.kind === 'Activity' || e.kind === 'Block')) return true;
+  if(d.dtype === 'act' && (e.kind === 'Activity' || e.kind === 'Block' || e.kind === 'Signal')) return true;
+  if(d.dtype === 'bdd' && e.kind === 'Stereotype') return true;
   if(d.dtype === 'sd' && ['Block','Actor','Part'].includes(e.kind)) return true;
   if(d.dtype === 'par' && e.kind === 'ConstraintBlock') return true;
   if(d.dtype === 'req' && ['Requirement','Block','TestCase','Activity','Action','UseCase','Part','Actor','ConstraintBlock','StateMachine','Interaction','State'].includes(e.kind)) return true;
@@ -2262,17 +2541,20 @@ function ownerFor(kind, d){
 function placeNew(kind, p, target){
   const d = cur(); if(!d) return;
   const k = KIND[kind];
-  if(kind === 'Port' || kind === 'Param'){
-    const host = kind === 'Port' ? 'Part' : 'ConstraintProp';
-    const P = target && E(target.el) && E(target.el).kind === host ? target : (target && target.parent ? shapeOf(d, target.parent) : null);
+  if(BORDER.has(kind)){
+    const hosts = HOST[kind];
+    const P = target && E(target.el) && hosts.includes(E(target.el).kind) ? target : (target && target.parent && hosts.includes(E(shapeOf(d, target.parent).el).kind) ? shapeOf(d, target.parent) : null);
+    if(kind === 'Pin' && !P) return toast('Pin\'i bir aksiyonun üzerine bırakın.');
     snap();
     let port, sh;
+    const props = kind === 'Port' ? {dir:''} : kind === 'Pin' ? {dir:P && p.y > P.y + P.h / 2 ? 'out' : 'in'} : {vtype:'Real'};
+    const sz = kind === 'Pin' ? 12 : 16;
     if(P){
       const part = E(P.el);
-      port = mk(kind, part.type || part.id, kind === 'Port' ? {dir:''} : {vtype:'Real'});
-      sh = addShape(d, port.id, 0, 0, 16, 16, P.id); snapPort(sh, P, p.x, p.y);
+      port = mk(kind, kind === 'Pin' ? part.id : (part.type || part.id), props);
+      sh = addShape(d, port.id, 0, 0, sz, sz, P.id); snapPort(sh, P, p.x, p.y);
     } else {
-      port = mk(kind, d.owner, kind === 'Port' ? {dir:''} : {vtype:'Real'});
+      port = mk(kind, d.owner, props);
       sh = addShape(d, port.id, snapv(p.x) - 8, snapv(p.y) - 8, 16, 16);
       toast(kind === 'Port' ? 'İpucu: Port\'u bir part\'ın üzerine bırakırsanız kenarına yerleşir.' : 'İpucu: Parametreyi bir kısıt özelliğinin üzerine bırakın.');
     }
@@ -2290,9 +2572,12 @@ function placeNew(kind, p, target){
   const sh = addShape(d, e.id, snapv(p.x - w / 2), yy, w, h);
   if(horiz) sh.horiz = true;
   if(CONT.has(kind)){ d.shapes.splice(d.shapes.indexOf(sh), 1); d.shapes.unshift(sh); }
+  if(kind === 'Fragment'){ e.op = 'alt'; e.guards = 'koşul\nelse'; }
+  if(kind === 'AcceptTime') e.name = 'after (1 s)';
   ST.sel = new Set([sh.id]); ST.tsel = e.id;
+  syncNesting(d, [sh.id]);
   revealInTree(e.id); afterChange();
-  if(!UNNAMED.has(kind)) editShape(sh);
+  if(!UNNAMED.has(kind) && kind !== 'Fragment' && kind !== 'AcceptTime') editShape(sh);
 }
 function dropExisting(id, p, target){
   const d = cur(), e = E(id); if(!d || !e) return;
@@ -2308,6 +2593,10 @@ function dropExisting(id, p, target){
   } else if(d.dtype === 'act' && e.kind === 'Activity'){
     const a = mk('Action', d.owner, {name:e.name, behavior:e.id});
     sh = addShape(d, a.id, snapv(p.x - 70), snapv(p.y - 25), 140, 50);
+    syncPins(a, true);
+  } else if(d.dtype === 'act' && e.kind === 'Signal'){
+    const a = mk('SendSignal', d.owner, {name:'', signal:e.id});
+    sh = addShape(d, a.id, snapv(p.x - 75), snapv(p.y - 25), 150, 50);
   } else if(d.dtype === 'act' && e.kind === 'Block'){
     const o = mk('Object', d.owner, {name:'', type:e.id});
     sh = addShape(d, o.id, snapv(p.x - 65), snapv(p.y - 22), 130, 44);
@@ -2321,8 +2610,8 @@ function dropExisting(id, p, target){
     if(tp && tp.kind === 'ConstraintProp'){ tp.type = e.id; showPorts(d, target); afterChange(); return; }
     const cp = mk('ConstraintProp', d.owner, {name:uniqName(lcFirst(e.name) || 'kısıt', d.owner), type:e.id});
     sh = addShape(d, cp.id, snapv(p.x - 100), snapv(p.y - 45), 200, 90); showPorts(d, sh);
-  } else if(e.kind === 'Port' || e.kind === 'Param'){
-    const P = target && E(target.el) && E(target.el).kind === (e.kind === 'Port' ? 'Part' : 'ConstraintProp') ? target : null;
+  } else if(BORDER.has(e.kind)){
+    const P = target && E(target.el) && HOST[e.kind].includes(E(target.el).kind) ? target : null;
     if(P){ sh = addShape(d, e.id, 0, 0, 16, 16, P.id); snapPort(sh, P, p.x, p.y); }
     else sh = addShape(d, e.id, snapv(p.x) - 8, snapv(p.y) - 8, 16, 16);
     autoEdges(d, sh);
@@ -2333,10 +2622,66 @@ function dropExisting(id, p, target){
     const k = KIND[e.kind];
     sh = addShape(d, id, snapv(p.x - (k.w || 120) / 2), snapv(p.y - (k.h || 60) / 2));
     if(CONT.has(e.kind)){ d.shapes.splice(d.shapes.indexOf(sh), 1); d.shapes.unshift(sh); }
-    if(e.kind === 'Part' || e.kind === 'ConstraintProp') showPorts(d, sh);
+    if(['Part','ConstraintProp','Action','SendSignal','AcceptEvent'].includes(e.kind)) showPorts(d, sh);
     autoEdges(d, sh);
   }
+  syncNesting(d, [sh.id]);
   ST.sel = new Set([sh.id]); ST.tsel = E(sh.el).id; afterChange();
+}
+/* ---- stereotipler ---- */
+function stApplicable(st, el){ return !(st.meta && st.meta.length) || st.meta.includes(el.kind); }
+function stPropsHTML(el, pf){
+  const all = Object.values(M.els).filter(x => x.kind === 'Stereotype').sort(sortEls);
+  const cur0 = (el.st || []).map(E).filter(Boolean);
+  const avail = all.filter(x => stApplicable(x, el) && !(el.st || []).includes(x.id));
+  let h = `<div class="sub"><span>Stereotipler</span><button data-stnew="1" title="Bu eleman türü için yeni stereotip tanımla">+ Yeni</button></div>`;
+  h += `<div class="li">${cur0.map(x => `<span class="stchip">«${esc(x.name)}»<b data-strm="${x.id}" title="Kaldır">×</b></span>`).join(' ') || '<span class="muted">Uygulanmış stereotip yok</span>'}</div>`;
+  if(avail.length) h += pf('Uygula', `<select data-stadd="1"><option value="">Stereotip seç…</option>${avail.map(x => `<option value="${x.id}">«${esc(x.name)}»</option>`).join('')}</select>`);
+  cur0.forEach(st => stTags(st).forEach(t => {
+    const key = st.id + '.' + t.key, v = el.tv && el.tv[key] != null ? el.tv[key] : '';
+    const ty = (t.type || '').toLowerCase();
+    let inp;
+    if(ty === 'boolean') inp = `<label class="vchk"><input type="checkbox" data-tv="${key}"${(v || t.def) === 'true' ? ' checked' : ''}> ${esc(t.key)}</label>`;
+    else { const en = vtypeOf(t.type); inp = en && en.kind === 'Enumeration' ? `<select data-tv="${key}"><option value=""></option>${enumLits(en).map(l => `<option${(v || t.def) === l ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>` : `<input data-tv="${key}" value="${esc(v)}" placeholder="${esc(t.def || t.type || '')}">`; }
+    h += pf(esc(t.key), inp);
+  }));
+  return h;
+}
+function newStereotypeFor(el){
+  snap();
+  const pk = findOrMkPkg(M.rootId, 'Profil');
+  const st = mk('Stereotype', pk, {name:uniqName(KIND[el.kind].tr.replace(/\s+/g, '') + 'Tipi', pk), meta:[el.kind], tags:''});
+  el.st = (el.st || []).concat([st.id]);
+  ST.exp.add(pk); afterChange(); treeRename(st.id);
+  toast('Stereotip oluşturuldu ve uygulandı — etiketlerini stereotipin özelliklerinden tanımlayın');
+}
+/* çağrılan aktivitenin parametrelerinden pin üret */
+function syncPins(a, quiet){
+  const act = a && a.behavior && E(a.behavior); if(!act) return 0;
+  const have = new Set(kidsOf(a.id).filter(c => c.kind === 'Pin').map(c => c.name));
+  let n = 0;
+  kidsOf(act.id).filter(c => c.kind === 'ActParam').forEach(pp => { if(have.has(pp.name)) return; mk('Pin', a.id, {name:pp.name, dir:pp.dir || 'in', type:pp.type || null, vtype:pp.vtype || ''}); n++; });
+  if(n){ Object.values(M.els).forEach(d => { if(d.kind === 'Diagram' && d.dtype === 'act') d.shapes.filter(s => s.el === a.id && !s.parent).forEach(s => showPorts(d, s)); }); if(!quiet){ afterChange(); toast(n + ' pin aktivite parametrelerinden oluşturuldu'); } }
+  return n;
+}
+/* durum makinesinde iç içe yerleşim → model ağacındaki sahiplik (bileşik durum / bölge) */
+const NESTK = new Set(['State','Region','Initial','Final','Choice','Junction','History']);
+function syncNesting(d, ids){
+  if(!d || d.dtype !== 'stm') return 0;
+  let n = 0;
+  ids.forEach(id => {
+    const sh = shapeOf(d, id); if(!sh || sh.parent) return;
+    const e = E(sh.el); if(!e || !NESTK.has(e.kind)) return;
+    let best = null;
+    d.shapes.forEach(c => {
+      if(c === sh) return; const ce = E(c.el); if(!ce || (ce.kind !== 'State' && ce.kind !== 'Region')) return;
+      if(ce.id === e.id || isAnc(e.id, ce.id)) return;
+      if(sh.x >= c.x && sh.y >= c.y && sh.x + sh.w <= c.x + c.w && sh.y + sh.h <= c.y + c.h && (!best || c.w * c.h < best.w * best.h)) best = c;
+    });
+    const no = best ? best.el : d.owner;
+    if(no !== e.owner && E(no) && canOwn(E(no).kind, e.kind, e)){ e.owner = no; n++; }
+  });
+  return n;
 }
 function showRelated(d, sh){
   const allowed = DT[d.dtype].rels; let n = 0, i = 0;
@@ -2372,6 +2717,8 @@ svgEl.addEventListener('mousedown', ev => {
   if(h){ const sh = shapeOf(d, h.dataset.hs); drag = {type:'resize', h:h.dataset.h, sh, o:{x:sh.x, y:sh.y, w:sh.w, h:sh.h}, kids:d.shapes.filter(s => s.parent === sh.id), start:p, snapped:false}; return; }
   const ep = t.closest('[data-ep]');
   if(ep){ const ed = d.edges.find(x => x.id === ep.dataset.epe); if(ed){ drag = {type:'reconn', ed, end:ep.dataset.ep}; return; } }
+  const sp = t.closest('[data-sep]');
+  if(sp){ const sh0 = shapeOf(d, sp.dataset.ss); if(sh0){ drag = {type:'sep', sh:sh0, i:+sp.dataset.sep, snapped:false}; return; } }
   const mh = t.closest('[data-mid]');
   if(mh){ const ed = d.edges.find(x => x.id === mh.dataset.mid); const pts = ed._pts; drag = {type:'mid', ed, ax:isMsg(edgeKind(ed)) ? 'msg' : (Math.abs(pts[1].x - pts[2].x) < 0.5 ? 'x' : 'y'), snapped:false}; return; }
   const sg = t.closest('[data-sid]'), eg = t.closest('[data-eid]');
@@ -2391,10 +2738,12 @@ svgEl.addEventListener('mousedown', ev => {
     renderDiagram(); renderProps(); renderTree();
     // move set
     const set = new Set(d.shapes.filter(s => ST.sel.has(s.id)).map(s => s.id));
-    d.shapes.forEach(s => { if(set.has(s.id)){ const e = E(s.el); if(e && CONT.has(e.kind)) d.shapes.forEach(o => { if(o !== s && o.x >= s.x && o.y >= s.y && o.x + o.w <= s.x + s.w && o.y + o.h <= s.y + s.h) set.add(o.id); }); } });
+    d.shapes.forEach(s => { if(set.has(s.id)){ const e = E(s.el); if(e && (CONT.has(e.kind) || isComposite(e))) d.shapes.forEach(o => { if(o !== s && o.x >= s.x && o.y >= s.y && o.x + o.w <= s.x + s.w && o.y + o.h <= s.y + s.h) set.add(o.id); }); } });
     d.shapes.forEach(s => { if(s.parent && set.has(s.parent)) set.add(s.id); });
     const orig = new Map(); set.forEach(id => { const s = shapeOf(d, id); orig.set(id, {x:s.x, y:s.y}); });
-    drag = {type:'move', start:p, anchor:sh, orig, set, moved:false};
+    const msgs = new Map();
+    if(d.dtype === 'sd') d.shapes.forEach(f => { if(set.has(f.id) && E(f.el) && E(f.el).kind === 'Fragment') d.edges.forEach(ed => { if(isMsg(edgeKind(ed)) && ed._pts && ed.y >= f.y && ed.y <= f.y + f.h && ed._pts.every(q => q.x >= f.x - 2 && q.x <= f.x + f.w + 2)) msgs.set(ed, ed.y); }); });
+    drag = {type:'move', start:p, anchor:sh, orig, set, moved:false, msgs};
     return;
   }
   if(eg){
@@ -2418,13 +2767,14 @@ window.addEventListener('mousemove', ev => {
     if(!drag.moved){ if(Math.hypot(dx, dy) * d.z < 3) return; snap(); drag.moved = true; }
     const a = drag.orig.get(drag.anchor.id);
     const ae = E(drag.anchor.el);
-    const single = drag.set.size === 1 && ae && ae.kind === 'Port' && drag.anchor.parent;
+    const single = drag.set.size === 1 && ae && BORDER.has(ae.kind) && drag.anchor.parent;
     if(single){
       const P = shapeOf(d, drag.anchor.parent);
       snapPort(drag.anchor, P, a.x + drag.anchor.w / 2 + dx, a.y + drag.anchor.h / 2 + dy);
     } else {
       if(!ev.altKey){ dx = snapv(a.x + dx) - a.x; dy = snapv(a.y + dy) - a.y; }
       drag.set.forEach(id => { const s = shapeOf(d, id), o = drag.orig.get(id); s.x = o.x + dx; s.y = o.y + dy; });
+      if(drag.msgs) drag.msgs.forEach((y0, ed) => { ed.y = y0 + dy; });
     }
     renderDiagram(); return;
   }
@@ -2440,6 +2790,13 @@ window.addEventListener('mousemove', ev => {
     if(y2 - y1 < minH){ if(drag.h.includes('n')) y1 = y2 - minH; else y2 = y1 + minH; }
     sh.x = x1; sh.y = y1; sh.w = x2 - x1; sh.h = y2 - y1;
     drag.kids.forEach(c => snapPort(c, sh, c.x + c.w / 2, c.y + c.h / 2));
+    renderDiagram(); return;
+  }
+  if(drag.type === 'sep'){
+    if(!drag.snapped){ snap(); drag.snapped = true; }
+    const sh = drag.sh, n = fragOps(E(sh.el)).length; sh.seps = fragSeps(sh, n);
+    const lo = drag.i ? sh.seps[drag.i - 1] + 20 : 24, hi = drag.i < sh.seps.length - 1 ? sh.seps[drag.i + 1] - 20 : sh.h - 10;
+    sh.seps[drag.i] = Math.max(lo, Math.min(hi, snapv(p.y - sh.y)));
     renderDiagram(); return;
   }
   if(drag.type === 'mid'){
@@ -2469,7 +2826,9 @@ window.addEventListener('mouseup', ev => {
   const d = cur(), dr = drag; drag = null;
   if(!d) return;
   if(dr.type === 'pan'){ persistSoon(); return; }
-  if(dr.type === 'move' || dr.type === 'resize' || dr.type === 'mid'){ if(dr.moved || dr.snapped){ renderAll(); persist(); } return; }
+  if(dr.type === 'move' && dr.moved) syncNesting(d, [...dr.set]);
+  if(dr.type === 'resize' && dr.snapped && d.dtype === 'stm'){ const R = dr.sh; syncNesting(d, d.shapes.filter(o => o === R || (o.x >= R.x && o.y >= R.y && o.x + o.w <= R.x + R.w && o.y + o.h <= R.y + R.h) || (R.x >= o.x && R.y >= o.y)).map(o => o.id)); }
+  if(dr.type === 'move' || dr.type === 'resize' || dr.type === 'mid' || dr.type === 'sep'){ if(dr.moved || dr.snapped){ renderAll(); persist(); } return; }
   if(dr.type === 'rubber'){
     if(dr.r && dr.r.w > 2){
       const r = dr.r;
@@ -2843,12 +3202,12 @@ function editShape(sh){
   const multi = e.kind === 'Comment';
   let y = sh.y, h = sh.h;
   if(e.kind === 'Actor'){ y = sh.y + sh.h - 22; h = 26; }
-  else if(e.kind === 'Port' || e.kind === 'Param' || DIA.has(e.kind)){ y = sh.y - 28; h = 26; }
+  else if(BORDER.has(e.kind) || DIA.has(e.kind) || e.kind === 'AcceptTime'){ y = e.kind === 'AcceptTime' ? sh.y + sh.h + 2 : sh.y - 28; h = 26; }
   else if(e.kind === 'Lifeline'){ h = 40; }
   else if(['Block','Subject','Partition','Package','Requirement','ConstraintBlock','State','TestCase','ConstraintProp'].includes(e.kind)){ y = sh.y + 18; h = 28; }
   else if(!multi) { y = sh.y + sh.h / 2 - 15; h = 30; }
-  const x = e.kind === 'Port' || e.kind === 'Param' || DIA.has(e.kind) ? sh.x - 50 : (e.kind === 'Actor' ? sh.x - 30 : sh.x);
-  const w = e.kind === 'Port' || e.kind === 'Param' || DIA.has(e.kind) ? 120 : (e.kind === 'Actor' ? sh.w + 60 : sh.w);
+  const x = BORDER.has(e.kind) || DIA.has(e.kind) || e.kind === 'AcceptTime' ? sh.x - 50 : (e.kind === 'Actor' ? sh.x - 30 : sh.x);
+  const w = BORDER.has(e.kind) || DIA.has(e.kind) || e.kind === 'AcceptTime' ? 140 : (e.kind === 'Actor' ? sh.w + 60 : sh.w);
   inlineEdit(x, y, w, h, e.name, multi, v => { snap(); e.name = multi ? v : v.trim(); afterChange(); });
 }
 function editEdge(ed, field){
@@ -2893,17 +3252,58 @@ function renderProps(){
       h += pf('Çokluk', `<input data-f="mult" value="${esc(el.mult || '')}" placeholder="ör. 1, 0..1, 1..*">`);
       h += pf('Toplama', `<select data-f="shared"><option value="">composite (parça)</option><option value="1"${el.shared ? ' selected' : ''}>shared (referans)</option></select>`);
       break;
-    case 'Value':
-      h += pf('Tip', `<input data-f="vtype" list="vtypes" value="${esc(el.vtype || '')}"><datalist id="vtypes"><option>Real</option><option>Integer</option><option>Boolean</option><option>String</option></datalist>`);
+    case 'Value': {
+      const vt = vtypeOf(el.vtype);
+      h += pf('Tip', `<input data-f="vtype" list="vtypes" value="${esc(el.vtype || '')}"><datalist id="vtypes">${vtypeList().map(v => `<option>${esc(v)}</option>`).join('')}</datalist>`);
       h += pf('Varsayılan', `<input data-f="def" value="${esc(el.def || '')}">`);
-      h += pf('Birim', `<input data-f="unit" value="${esc(el.unit || '')}" placeholder="ör. V, kg, Hz">`);
+      h += pf('Birim', `<input data-f="unit" value="${esc(el.unit || '')}" placeholder="${vt && vt.unit ? esc(vt.unit) + ' (değer tipinden)' : 'ör. V, kg, Hz'}">`);
       break;
+    }
     case 'Port':
-      h += pf('Yön', `<select data-f="dir">${['', 'in', 'out', 'inout'].map(v => `<option value="${v}"${(el.dir || '') === v ? ' selected' : ''}>${v || '(belirsiz)'}</option>`).join('')}</select>`);
-      h += pf('Tip', `<select data-f="type">${blockOpts(el.type)}</select>`);
+      h += pf('Yön', `<select data-f="dir">${['', 'in', 'out', 'inout'].map(v => `<option value="${v}"${(el.dir || '') === v ? ' selected' : ''}>${v || (portDir(el) ? '(tipten: ' + portDir(el) + ')' : '(belirsiz)')}</option>`).join('')}</select>`);
+      h += pf('Tip', `<select data-f="type">${typeOpts(el.type, ['InterfaceBlock','Block','Signal','ValueType'])}</select>`);
+      h += pf('Eşlenik (~)', `<label class="vchk"><input type="checkbox" data-f="conj"${el.conj ? ' checked' : ''}> conjugated — akış yönleri ters</label>`);
+      h += pf('Port türü', `<select data-f="pkind">${[['', 'standart'], ['proxy', 'proxy'], ['full', 'full']].map(([v, t]) => `<option value="${v}"${(el.pkind || '') === v ? ' selected' : ''}>${t}</option>`).join('')}</select>`);
+      h += pf('Çokluk', `<input data-f="mult" value="${esc(el.mult || '')}" placeholder="ör. 1, 0..*">`);
       break;
     case 'Object':
-      h += pf('Tip', `<select data-f="type">${blockOpts(el.type)}</select>`); break;
+      h += pf('Tip', `<select data-f="type">${typeOpts(el.type, ['Block','InterfaceBlock','Signal','ValueType','Enumeration'])}</select>`); break;
+    case 'FlowProp': case 'Pin': case 'ActParam':
+      h += pf('Yön', `<select data-f="dir">${(el.kind === 'FlowProp' ? ['in', 'out', 'inout'] : ['in', 'out']).map(v => `<option${(el.dir || (el.kind === 'FlowProp' ? 'inout' : 'in')) === v ? ' selected' : ''}>${v}</option>`).join('')}</select>`);
+      h += pf('Tip', `<select data-f="type">${typeOpts(el.type, ['Signal','Block','InterfaceBlock','ValueType','Enumeration'])}</select>`);
+      if(!el.type) h += pf('veya ilkel tip', `<input data-f="vtype" list="vtypesF" value="${esc(el.vtype || '')}"><datalist id="vtypesF">${vtypeList().map(v => `<option>${esc(v)}</option>`).join('')}</datalist>`);
+      h += pf('Çokluk', `<input data-f="mult" value="${esc(el.mult || '')}" placeholder="ör. 1, 0..*">`);
+      break;
+    case 'ValueType':
+      h += pf('Temel tip', `<select data-f="base">${['Real', 'Integer', 'Boolean', 'String'].map(v => `<option${(el.base || 'Real') === v ? ' selected' : ''}>${v}</option>`).join('')}</select>`);
+      h += pf('Birim', `<input data-f="unit" value="${esc(el.unit || '')}" placeholder="ör. kg, Hz, g²/Hz">`);
+      h += pf('Büyüklük türü', `<input data-f="qk" value="${esc(el.qk || '')}" placeholder="ör. mass, frequency">`);
+      break;
+    case 'Enumeration':
+      h += pf('Değerler', `<textarea data-f="lits" placeholder="Her satıra bir değer">${esc(el.lits || '')}</textarea>`); break;
+    case 'SendSignal': case 'AcceptEvent':
+      h += pf('Sinyal', `<select data-f="signal">${typeOpts(el.signal, ['Signal'])}</select>`); break;
+    case 'AcceptTime':
+      h += pf('', '<span class="muted">Ad alanına zaman ifadesini yazın: <i>after (5 s)</i>, <i>at (08:00)</i></span>'); break;
+    case 'Fragment': {
+      const OPS = [['alt','alt — seçenekler'], ['opt','opt — isteğe bağlı'], ['loop','loop — döngü'], ['par','par — paralel'], ['break','break — kesme'], ['critical','critical — kritik bölge'], ['seq','seq — zayıf sıra'], ['strict','strict — kesin sıra'], ['neg','neg — geçersiz'], ['assert','assert'], ['ignore','ignore'], ['consider','consider'], ['ref','ref — etkileşim kullanımı']];
+      h += pf('Operatör', `<select data-f="op">${OPS.map(([v, t]) => `<option value="${v}"${(el.op || 'alt') === v ? ' selected' : ''}>${t}</option>`).join('')}</select>`);
+      if((el.op || 'alt') !== 'ref') h += pf('Operandlar', `<textarea data-f="guards" placeholder="Her satır bir operandın koşulu, ör.&#10;sıcaklık > 70&#10;else">${esc(el.guards || '')}</textarea><div class="muted">Her satır bir operand. Ayırıcıları diyagramda mavi tutamakla taşıyın.</div>`);
+      else h += pf('', '<span class="muted">Başvurulan etkileşimi aşağıdaki "Bağlı diyagram" alanından seçin; çift tıklayınca açılır.</span>');
+      break;
+    }
+    case 'History':
+      h += pf('Tür', `<label class="vchk"><input type="checkbox" data-f="deep"${el.deep ? ' checked' : ''}> Derin geçmiş (H*)</label>`); break;
+    case 'Stereotype': {
+      const kinds = Object.keys(KIND).filter(q => !['Model','Diagram','Stereotype'].includes(q) && !KIND[q].pseudo);
+      const meta = new Set(el.meta || []);
+      h += pf('Uygulanır', `<div class="stmeta">${kinds.map(q => `<label class="vchk"><input type="checkbox" data-stmeta="${q}"${meta.has(q) ? ' checked' : ''}> ${esc(KIND[q].tr)}</label>`).join('')}</div><div class="muted">Hiçbiri seçili değilse tüm elemanlara uygulanabilir.</div>`);
+      h += pf('Etiketler', `<textarea data-f="tags" placeholder="Her satır: ad : tip = varsayılan&#10;ör. üretici : String&#10;kütleSınırı : Real = 2.5">${esc(el.tags || '')}</textarea>`);
+      h += pf('Dolgu rengi', `<input type="color" data-f="fill" value="${el.fill || '#ffffff'}"> <button class="pbtn" data-stfillclr="1">Yok</button>`);
+      const users = Object.values(M.els).filter(x => (x.st || []).includes(el.id));
+      if(users.length) h += `<div class="sub"><span>Uygulandığı elemanlar (${users.length})</span></div>` + users.slice(0, 60).map(u => `<div class="li"><a class="lnk" data-goto="${u.id}">${esc(elLabel(u))}</a> <span class="muted">${esc(KIND[u.kind].tr)}</span></div>`).join('');
+      break;
+    }
     case 'State':
       h += pf('entry /', `<input data-f="entry" value="${esc(el.entry || '')}">`) + pf('do /', `<input data-f="doAct" value="${esc(el.doAct || '')}">`) + pf('exit /', `<input data-f="exit" value="${esc(el.exit || '')}">`); break;
     case 'Lifeline': {
@@ -2940,7 +3340,7 @@ function renderProps(){
     h += pf('Kaynak', `<a class="lnk" data-goto="${el.src}">${esc(E(el.src) ? nm(E(el.src)) : '?')}</a>`);
     h += pf('Hedef', `<a class="lnk" data-goto="${el.tgt}">${esc(E(el.tgt) ? nm(E(el.tgt)) : '?')}</a>`);
     if(el.kind === 'Transition'){ h += pf('Koşul [guard]', `<input data-f="guard" value="${esc(el.guard || '')}">`) + pf('Etki / effect', `<input data-f="effect" value="${esc(el.effect || '')}">`); }
-    if(el.kind === 'ControlFlow' || el.kind === 'ObjectFlow') h += pf('Koşul', `<input data-f="guard" value="${esc(el.guard || '')}" placeholder="guard, ör. başarılı">`);
+    if(el.kind === 'ControlFlow' || el.kind === 'ObjectFlow'){ h += pf('Koşul', `<input data-f="guard" value="${esc(el.guard || '')}" placeholder="guard, ör. başarılı">`); h += pf('Kesme', `<label class="vchk"><input type="checkbox" data-f="interrupt"${el.interrupt ? ' checked' : ''}> Kesme akışı (kesilebilir bölgeden çıkar)</label>`); }
     if(el.part && E(el.part)) h += pf('Oluşan part', `<a class="lnk" data-goto="${el.part}">${esc(partLabel(E(el.part)))}</a>`);
     if(el.kind === 'Connector'){ if(el.sp && E(el.sp)) h += pf('Kaynak part', esc(E(el.sp).name)); if(el.tp && E(el.tp)) h += pf('Hedef part', esc(E(el.tp).name)); }
   }
@@ -2953,13 +3353,16 @@ function renderProps(){
       if(el.kind === 'Block') h += pf('Gösterim', `<select data-f="iconMode"><option value="corner">Köşede küçük</option><option value="large"${el.iconMode === 'large' ? ' selected' : ''}>Başlıkta büyük</option></select>`);
     }
   }
-  if(el.kind === 'Block'){
+  if(['Block','InterfaceBlock','Signal'].includes(el.kind)){
     const ch = kidsOf(el.id);
     const sec = (title, kind, fmt) => {
       const list = ch.filter(c => c.kind === kind);
       return `<div class="sub"><span>${title} (${list.length})</span><button data-add="${kind}">+ Ekle</button></div>` + list.map(c => `<div class="li"><a class="lnk" data-goto="${c.id}">${esc(fmt(c))}</a></div>`).join('');
     };
-    h += sec('Parts', 'Part', partLabel) + sec('Value properties', 'Value', valLabel) + sec('Ports', 'Port', portLabel);
+    if(el.kind === 'Block') h += sec('Parts', 'Part', partLabel);
+    if(el.kind !== 'Signal') h += sec('Flow properties', 'FlowProp', flowLabel);
+    h += sec(el.kind === 'Signal' ? 'Attributes' : 'Value properties', 'Value', valLabel);
+    if(el.kind !== 'Signal') h += sec('Ports', 'Port', portLabel);
     const used = Object.values(M.els).filter(p => (p.kind === 'Part' || p.kind === 'Port' || p.kind === 'Object') && p.type === el.id);
     if(used.length) h += `<div class="sub"><span>Bu bloğu tip olarak kullananlar</span></div>` + used.map(p => `<div class="li"><a class="lnk" data-goto="${p.id}">${esc(pathOf(p.id))}</a></div>`).join('');
   }
@@ -2970,6 +3373,7 @@ function renderProps(){
     if(tg.length) h += `<div class="sub"><span>Alt diyagramlar (çift tıkla açılır)</span></div>` + tg.map(v => `<div class="li"><a class="lnk" data-opend="${v.id}">[${v.dtype}] ${esc(v.name)}</a></div>`).join('');
   }
   if(el.kind !== 'Diagram' && !k.rel) h += pf('', `<button class="pbtn" data-impact="${el.id}">⇶ Etki analizi</button>`);
+  if(el.kind !== 'Diagram' && el.kind !== 'Stereotype') h += stPropsHTML(el, pf);
   if(el.kind !== 'Diagram') h += pf('Açıklama', `<textarea data-f="doc">${esc(el.doc || '')}</textarea>`);
   if(el.kind !== 'Diagram' && !k.rel){
     const shown = diagramsShowing(el.id);
@@ -2979,9 +3383,9 @@ function renderProps(){
     h += `<div class="sub"><span>Görünüm</span></div>`;
     h += pf('Dolgu', `<input type="color" data-sf="fill" value="${sh.fill || (FILL[el.kind] && FILL[el.kind].startsWith('#') ? FILL[el.kind] : '#ffffff')}"> <button class="pbtn" data-resetfill="1">Varsayılan</button>`);
     h += pf('Çizgi rengi', `<input type="color" data-sf="stroke" value="${sh.stroke || '#3a3a3a'}"> <button class="pbtn" data-resetstroke="1">Varsayılan</button>`);
-    if(el.kind === 'Block'){
+    if(el.kind === 'Block' || el.kind === 'InterfaceBlock'){
       const hd = sh.hide || {};
-      h += pf('Bölmeler', ['parts', 'references', 'values', 'ports'].map(c => `<label class="vchk" style="margin-right:8px"><input type="checkbox" data-shide="${c}"${hd[c] ? '' : ' checked'}> ${c}</label>`).join(''));
+      h += pf('Bölmeler', ['parts', 'references', 'values', 'ports', 'flows', 'tags'].map(c => `<label class="vchk" style="margin-right:8px"><input type="checkbox" data-shide="${c}"${hd[c] ? '' : ' checked'}> ${c}</label>`).join(''));
     }
     if(el.kind === 'Partition') h += pf('Yön', `<select data-sf="horiz"><option value="">Dikey</option><option value="1"${sh.horiz ? ' selected' : ''}>Yatay</option></select>`);
     h += pf('Konum/Boyut', `<span class="muted">${Math.round(sh.x)}, ${Math.round(sh.y)} · ${Math.round(sh.w)}×${Math.round(sh.h)}</span>`);
@@ -2994,6 +3398,7 @@ function renderProps(){
   }
   if(el && el.kind === 'Diagram'){
     h += `<div class="sub"><span>Diyagram görünümü</span></div>`;
+    if(el.dtype === 'sd') h += pf('Yürütme çubukları', `<label class="vchk"><input type="checkbox" data-f="exec"${el.exec !== false ? ' checked' : ''}> Senkron mesajlarda otomatik göster</label>`);
     h += pf('Yazı boyutu', `<select data-f="fs">${[[0.9, '%90 (küçük)'], [1, '%100'], [1.15, '%115 (büyük)'], [1.3, '%130 (sunum)']].map(([v, t]) => `<option value="${v}"${(el.fs || 1) == v ? ' selected' : ''}>${t}</option>`).join('')}</select>`);
   }
   $('#props').innerHTML = h;
@@ -3001,11 +3406,16 @@ function renderProps(){
 const propsEl = $('#props');
 propsEl.addEventListener('change', ev => {
   const t = ev.target, tg = propTarget();
+  if(t.dataset.stmeta && tg.el){ snap(); const m = new Set(tg.el.meta || []); t.checked ? m.add(t.dataset.stmeta) : m.delete(t.dataset.stmeta); tg.el.meta = [...m]; afterChange(); return; }
+  if(t.dataset.stadd && tg.el){ if(!t.value) return; snap(); tg.el.st = (tg.el.st || []).concat([t.value]); afterChange(); return; }
+  if(t.dataset.tv && tg.el){ snap(); tg.el.tv = tg.el.tv || {}; tg.el.tv[t.dataset.tv] = t.type === 'checkbox' ? (t.checked ? 'true' : 'false') : t.value; afterChange(); return; }
   if(t.dataset.f && tg.el){
     if(t.dataset.f === 'level' && tg.el.kind === 'Requirement'){ changeLevel(tg.el, t.value); return; }
     snap();
-    const f = t.dataset.f; let v = t.value;
-    if(['type', 'behavior', 'represents', 'link'].includes(f) && !v) v = null;
+    const f = t.dataset.f; let v = t.type === 'checkbox' ? t.checked : t.value;
+    if(['type', 'behavior', 'represents', 'link', 'signal'].includes(f) && !v) v = null;
+    if(f === 'type' && v && tg.el.vtype && ['FlowProp','Pin','ActParam'].includes(tg.el.kind)) delete tg.el.vtype;
+    if(f === 'behavior' && v && tg.el.kind === 'Action') setTimeout(() => syncPins(tg.el), 0);
     if(f === 'shared') v = !!v;
     if(f === 'fs') v = parseFloat(v) || 1;
     if(f.startsWith('attr:')){ tg.el.attrs = tg.el.attrs || {}; tg.el.attrs[f.slice(5)] = v; afterChange(); return; }
@@ -3034,7 +3444,10 @@ propsEl.addEventListener('click', ev => {
   if(t.dataset.resetstroke){ const tg = propTarget(); if(tg.sh){ snap(); delete tg.sh.stroke; afterChange(); } return; }
   if(t.dataset.resetestroke){ const tg = propTarget(); if(tg.ed){ snap(); delete tg.ed.stroke; afterChange(); } return; }
   if(t.dataset.resetroute){ const tg = propTarget(); if(tg.ed){ snap(); delete tg.ed.mx; delete tg.ed.my; afterChange(); } return; }
-  if(t.dataset.resetfill){ const tg = propTarget(); if(tg.sh){ snap(); delete tg.sh.fill; afterChange(); } }
+  if(t.dataset.resetfill){ const tg = propTarget(); if(tg.sh){ snap(); delete tg.sh.fill; afterChange(); } return; }
+  if(t.dataset.strm){ const tg = propTarget(); if(tg.el){ snap(); tg.el.st = (tg.el.st || []).filter(x => x !== t.dataset.strm); afterChange(); } return; }
+  if(t.dataset.stfillclr){ const tg = propTarget(); if(tg.el){ snap(); delete tg.el.fill; afterChange(); } return; }
+  if(t.dataset.stnew){ const tg = propTarget(); if(tg.el) newStereotypeFor(tg.el); return; }
 });
 
 /* ================= REQUIREMENTS & TRACEABILITY ================= */
@@ -3067,7 +3480,7 @@ const TRACE_COLS = [
   {key:'_quality', label:'Kalite', trace:1, w:30}
 ];
 const FUNC_KINDS = new Set(['Activity','Action']);
-const ELEM_KINDS = ['Block','Part','Port','Value','UseCase','Actor','ConstraintBlock','StateMachine','Interaction','State'];
+const ELEM_KINDS = ['Block','InterfaceBlock','Part','Port','Value','FlowProp','Signal','UseCase','Actor','ConstraintBlock','StateMachine','Interaction','State'];
 function reqCfg(){ if(!M.reqCfg) M.reqCfg = {attrs:[], hidden:[], prefix:{'Sistem':'SYS-', 'Alt Sistem':'SUB-'}, digits:3}; return M.reqCfg; }
 function allCols(){ return STD_COLS.concat(reqCfg().attrs.map(a => ({key:'attr:' + a.key, label:a.label, custom:1, w:18}))).concat(TRACE_COLS); }
 function visCols(){ const h = new Set(reqCfg().hidden); return allCols().filter(c => !h.has(c.key)); }
@@ -4446,7 +4859,7 @@ async function importTests(){
 /* ================= PHASE 4: VALIDATION, REPORTS, MERGE, REQIF ================= */
 VIEWS['@validation'] = {tr:'Model Doğrulama', ic:'✔', note:'Model, SysML yazım ve tutarlılık kurallarına göre denetlenir: tipsiz part/port, isimsiz veya aynı adlı elemanlar, kopuk ilişkiler, başlangıç/bitiş düğümü eksik aktiviteler, ulaşılamayan durumlar, aktörü olmayan use case\'ler, döngüsel kompozisyon/kalıtım, yön uyumsuz port bağlantıları, gereksinim bağlanmamış testler.<br><br>Satıra tıklayınca eleman ağaçta ve diyagramda gösterilir.'};
 const SEV_COL = {'hata':'#c0392b', 'uyarı':'#d18a00', 'bilgi':'#5d8fc9'};
-const NAMED = new Set(['Package', 'Block', 'Part', 'Port', 'Value', 'Actor', 'UseCase', 'Activity', 'Action', 'State', 'StateMachine', 'Interaction', 'ConstraintBlock', 'TestCase', 'Partition', 'Subject']);
+const NAMED = new Set(['Package', 'Block', 'Part', 'Port', 'Value', 'Actor', 'UseCase', 'Activity', 'Action', 'State', 'StateMachine', 'Interaction', 'ConstraintBlock', 'TestCase', 'Partition', 'Subject', 'InterfaceBlock', 'ValueType', 'Enumeration', 'Signal', 'Stereotype', 'FlowProp', 'Pin', 'ActParam']);
 function validateModel(){
   const out = [], add = (sev, rule, e, msg) => out.push({sev, rule, id:e ? e.id : null, msg});
   const els = Object.values(M.els), idx = relIdx(), R = k => idx[k] || [];
@@ -4470,17 +4883,23 @@ function validateModel(){
     if(e.kind === 'Value' && !e.vtype) add('bilgi', 'Tipsiz değer', e, 'Value property tipi (Real, Integer…) boş');
     if(e.kind === 'ConstraintBlock' && !String(e.expr || '').trim()) add('uyarı', 'Boş kısıt', e, 'Kısıt ifadesi tanımlanmamış');
     if(e.kind === 'Action' && e.behavior && !E(e.behavior)) add('hata', 'Kopuk çağrı', e, 'Çağrılan aktivite silinmiş');
+    if((e.kind === 'FlowProp' || e.kind === 'Pin' || e.kind === 'ActParam') && !(e.type && E(e.type)) && !e.vtype) add('bilgi', 'Tipsiz ' + KIND[e.kind].tr.toLocaleLowerCase('tr'), e, 'Tip seçilmemiş');
+    if(e.kind === 'Enumeration' && !enumLits(e).length) add('uyarı', 'Boş numaralandırma', e, 'Hiç değer (literal) tanımlanmamış');
+    if((e.kind === 'SendSignal' || e.kind === 'AcceptEvent') && !e.signal && !String(e.name || '').trim()) add('bilgi', 'Sinyalsiz aksiyon', e, 'Gönderilen/beklenen sinyal seçilmemiş');
+    if(e.kind === 'Fragment' && ['alt', 'par'].includes(e.op || 'alt') && fragOps(e).length < 2) add('bilgi', 'Tek operandlı fragment', e, (e.op || 'alt') + ' fragmentinde en az iki operand beklenir');
+    (e.st || []).forEach(sid => { const st = E(sid); if(st && !stApplicable(st, e)) add('uyarı', 'Uygunsuz stereotip', e, `«${st.name}» bu eleman türüne (${KIND[e.kind].tr}) uygulanamaz`); });
   });
   // aktiviteler
   const flows = R('ControlFlow').concat(R('ObjectFlow'));
   els.filter(e => e.kind === 'Activity').forEach(a => {
-    const nodes = kidsOf(a.id).filter(n => ['Action', 'Initial', 'Final', 'FlowFinal', 'Decision', 'Merge', 'Fork', 'Join', 'Object'].includes(n.kind));
+    const nodes = kidsOf(a.id).filter(n => ['Action', 'SendSignal', 'AcceptEvent', 'AcceptTime', 'Initial', 'Final', 'FlowFinal', 'Decision', 'Merge', 'Fork', 'Join', 'Object'].includes(n.kind));
     if(!nodes.some(n => n.kind === 'Action')) return;
     if(!nodes.some(n => n.kind === 'Initial')) add('uyarı', 'Başlangıç düğümü yok', a, 'Aktivitede başlangıç düğümü yok');
     if(!nodes.some(n => n.kind === 'Final' || n.kind === 'FlowFinal')) add('uyarı', 'Bitiş düğümü yok', a, 'Aktivitede aktivite/akış sonu düğümü yok');
     nodes.forEach(n => {
-      const inc = flows.filter(f => f.tgt === n.id), outg = flows.filter(f => f.src === n.id);
-      if(n.kind === 'Action'){ if(!inc.length) add('uyarı', 'Gelen akış yok', n, `"${a.name}" içinde aksiyona gelen akış yok`); if(!outg.length) add('uyarı', 'Giden akış yok', n, `"${a.name}" içinde aksiyondan çıkan akış yok`); }
+      const pins = new Set([n.id].concat(kidsOf(n.id).filter(c => c.kind === 'Pin').map(c => c.id)));
+      const inc = flows.filter(f => pins.has(f.tgt)), outg = flows.filter(f => pins.has(f.src));
+      if(n.kind === 'Action' || n.kind === 'SendSignal'){ if(!inc.length) add('uyarı', 'Gelen akış yok', n, `"${a.name}" içinde aksiyona gelen akış yok`); if(!outg.length) add('uyarı', 'Giden akış yok', n, `"${a.name}" içinde aksiyondan çıkan akış yok`); }
       if(n.kind === 'Decision'){ if(outg.length < 2) add('uyarı', 'Eksik karar dalı', n, `Karar düğümünden ${outg.length} dal çıkıyor (en az 2 olmalı)`); else if(outg.some(f => !String(f.guard || f.name || '').trim())) add('bilgi', 'Koşulsuz karar dalı', n, 'Karar dallarından en az biri koşul [guard] içermiyor'); }
       if(n.kind === 'Initial' && !outg.length) add('uyarı', 'Giden akış yok', n, 'Başlangıç düğümünden akış çıkmıyor');
     });
@@ -4488,13 +4907,24 @@ function validateModel(){
   // durum makineleri
   const trs = R('Transition');
   els.filter(e => e.kind === 'StateMachine').forEach(sm => {
-    const nodes = kidsOf(sm.id).filter(n => ['State', 'Initial', 'Choice', 'Final'].includes(n.kind));
+    const SK = ['State', 'Initial', 'Choice', 'Final', 'Junction', 'History'];
+    const nodes = [], walk = id => kidsOf(id).forEach(n => { if(SK.includes(n.kind)) nodes.push(n); if(n.kind === 'State' || n.kind === 'Region') walk(n.id); });
+    walk(sm.id);
     if(!nodes.some(n => n.kind === 'State')) return;
-    const init = nodes.filter(n => n.kind === 'Initial');
+    const init = nodes.filter(n => n.kind === 'Initial' && n.owner === sm.id);
     if(!init.length) add('uyarı', 'Başlangıç durumu yok', sm, 'Durum makinesinde başlangıç (initial) yok');
     const seen = new Set(init.map(n => n.id)), st = [...seen];
-    while(st.length){ const x = st.pop(); trs.filter(t => t.src === x).forEach(t => { if(!seen.has(t.tgt)){ seen.add(t.tgt); st.push(t.tgt); } }); }
-    nodes.filter(n => n.kind === 'State').forEach(n => { if(init.length && !seen.has(n.id)) add('uyarı', 'Ulaşılamayan durum', n, `"${sm.name}" başlangıcından bu duruma ulaşılamıyor`); if(!trs.some(t => t.src === n.id) && nodes.length > 2) add('bilgi', 'Çıkışı olmayan durum', n, 'Durumdan çıkan geçiş yok (son durum mu?)'); });
+    const enter = id => { if(seen.has(id)) return; seen.add(id); st.push(id); };
+    while(st.length){
+      const x = st.pop();
+      trs.filter(t => t.src === x).forEach(t => enter(t.tgt));
+      const xe = E(x);
+      if(xe && (xe.kind === 'State' || xe.kind === 'Region')){ const sub = kidsOf(x); sub.filter(c => c.kind === 'Initial' || c.kind === 'History' || c.kind === 'Region').forEach(c => enter(c.id)); }
+      let o = xe && E(xe.owner); while(o && o.id !== sm.id){ if(o.kind === 'State') enter(o.id); o = E(o.owner); }
+    }
+    /* bileşik durumdan çıkan geçişler iç durumlardan da geçerlidir */
+    nodes.filter(n => isComposite(n) && seen.has(n.id)).forEach(c => trs.filter(t => t.src === c.id).forEach(t => { if(!seen.has(t.tgt)){ seen.add(t.tgt); const q = [t.tgt]; while(q.length){ const y = q.pop(); trs.filter(u => u.src === y).forEach(u => { if(!seen.has(u.tgt)){ seen.add(u.tgt); q.push(u.tgt); } }); } } }));
+    nodes.filter(n => n.kind === 'State').forEach(n => { if(init.length && !seen.has(n.id)) add('uyarı', 'Ulaşılamayan durum', n, `"${sm.name}" başlangıcından bu duruma ulaşılamıyor`); const ancOut = () => { let o = E(n.owner); while(o && o.id !== sm.id){ if(trs.some(t => t.src === o.id)) return true; o = E(o.owner); } return false; }; if(!trs.some(t => t.src === n.id) && nodes.length > 2 && !ancOut()) add('bilgi', 'Çıkışı olmayan durum', n, 'Durumdan çıkan geçiş yok (son durum mu?)'); });
     nodes.filter(n => n.kind === 'Choice').forEach(n => { if(trs.filter(t => t.src === n.id).length < 2) add('uyarı', 'Eksik seçim dalı', n, 'Seçim düğümünden en az 2 geçiş çıkmalı'); });
   });
   // use case
@@ -4514,7 +4944,8 @@ function validateModel(){
   cyc(R('Generalization').map(r => [r.src, r.tgt]), 'Döngüsel kalıtım', 'Generalization döngüsü');
   // port yönleri
   R('Connector').forEach(c => {
-    const a = E(c.src), b = E(c.tgt); if(!a || !b || a.kind !== 'Port' || b.kind !== 'Port') return;
+    const a0 = E(c.src), b0 = E(c.tgt); if(!a0 || !b0 || a0.kind !== 'Port' || b0.kind !== 'Port') return;
+    const a = Object.assign({}, a0, {dir:portDir(a0)}), b = Object.assign({}, b0, {dir:portDir(b0)});
     if(c.sp && c.tp && a.dir && b.dir && a.dir === b.dir && a.dir !== 'inout') add('uyarı', 'Port yön uyumsuzluğu', c, `${nm(a)} (${a.dir}) → ${nm(b)} (${b.dir}): iki part arasındaki bağlantıda yönler zıt olmalı`);
     if(!c.sp !== !c.tp && a.dir && b.dir && a.dir !== b.dir && a.dir !== 'inout' && b.dir !== 'inout') add('uyarı', 'Port yön uyumsuzluğu', c, `Delegasyon bağlantısında (sınır portu ↔ part portu) yönler aynı olmalı: ${nm(a)} (${a.dir}), ${nm(b)} (${b.dir})`);
     if(a.type && b.type && a.type !== b.type) add('bilgi', 'Port tipi farklı', c, `Bağlı portların tipleri farklı: ${nm(E(a.type) || {})} / ${nm(E(b.type) || {})}`);
@@ -4587,7 +5018,7 @@ function buildReport(o){
   if(o.summary){
     H(1, `${++sec}. Model özeti`);
     Pp(`Bu doküman "${root.name}" modelinden ${new Date().toLocaleDateString('tr-TR')} tarihinde SysML Modelleyici ile otomatik olarak üretilmiştir.`);
-    const kinds = ['Package', 'Block', 'Part', 'Port', 'Actor', 'UseCase', 'Activity', 'Action', 'StateMachine', 'State', 'Interaction', 'ConstraintBlock', 'Requirement', 'TestCase', 'Diagram'].filter(cnt);
+    const kinds = ['Package', 'Block', 'InterfaceBlock', 'Part', 'Port', 'FlowProp', 'ValueType', 'Enumeration', 'Signal', 'Stereotype', 'Actor', 'UseCase', 'Activity', 'Action', 'StateMachine', 'State', 'Interaction', 'ConstraintBlock', 'Requirement', 'TestCase', 'Diagram'].filter(cnt);
     TB(['Eleman türü', 'Adet'], kinds.map(k => [KIND[k].tr, String(cnt(k))]), [70, 30]);
     const ds = Object.values(M.els).filter(e => e.kind === 'Diagram' && (o.dia || []).includes(e.id));
     if(ds.length) TB(['Diyagram', 'Tür', 'Konum'], ds.map(d => [d.name, DT[d.dtype].tr, pathOf(d.owner)]), [35, 30, 35]);
@@ -4609,10 +5040,20 @@ function buildReport(o){
         const ch = kidsOf(b.id), parts = ch.filter(c => c.kind === 'Part'), vals = ch.filter(c => c.kind === 'Value'), ports = ch.filter(c => c.kind === 'Port');
         if(parts.length) TB(['Part', 'Tip', 'Çokluk', 'Toplama'], parts.map(p => [p.name || '', p.type && E(p.type) ? E(p.type).name : '—', p.mult || '1', p.shared ? 'shared' : 'composite']), [30, 30, 15, 25]);
         if(vals.length) TB(['Değer', 'Tip', 'Varsayılan', 'Birim'], vals.map(v => [v.name || '', v.vtype || '', v.def || '', v.unit || '']), [35, 25, 20, 20]);
-        if(ports.length) TB(['Port', 'Yön', 'Tip'], ports.map(p => [p.name || '', p.dir || '', p.type && E(p.type) ? E(p.type).name : '—']), [40, 20, 40]);
+        if(ports.length) TB(['Port', 'Yön', 'Tip'], ports.map(p => [p.name || '', portDir(p) || '', p.type && E(p.type) ? (p.conj ? '~' : '') + E(p.type).name : '—']), [40, 20, 40]);
+        const fps = ch.filter(c => c.kind === 'FlowProp'); if(fps.length) TB(['Akış özelliği', 'Yön', 'Tip'], fps.map(f => [f.name || '', f.dir || 'inout', tName(f) || '—']), [40, 20, 40]);
+        if(stNames(b).length) Pp('Stereotipler: «' + stNames(b).join(', ') + '»' + (tagLines(b).length ? ' — ' + tagLines(b).join('; ') : ''));
         const rs = (idx['Satisfy'] || []).filter(x => x.src === b.id).map(x => E(x.tgt)).filter(Boolean);
         if(rs.length) Pp('Karşıladığı gereksinimler: ' + rs.map(r => r.reqId || nm(r)).join(', '));
       });
+    }
+    const ibs = Object.values(M.els).filter(e => e.kind === 'InterfaceBlock').sort(sortEls), vts = Object.values(M.els).filter(e => e.kind === 'ValueType').sort(sortEls), ens = Object.values(M.els).filter(e => e.kind === 'Enumeration').sort(sortEls), sgs = Object.values(M.els).filter(e => e.kind === 'Signal').sort(sortEls);
+    if(ibs.length || vts.length || ens.length || sgs.length){
+      H(1, `${++sec}. Arayüzler ve tipler`);
+      if(ibs.length){ H(2, 'Arayüz blokları'); TB(['Arayüz bloğu', 'Akış özellikleri', 'Açıklama'], ibs.map(b => [b.name, kidsOf(b.id).filter(c => c.kind === 'FlowProp').map(flowLabel).join('\n') || '—', b.doc || '']), [25, 45, 30]); }
+      if(sgs.length){ H(2, 'Sinyaller'); TB(['Sinyal', 'Öznitelikler', 'Açıklama'], sgs.map(b => [b.name, kidsOf(b.id).filter(c => c.kind === 'Value').map(valLabel).join('\n') || '—', b.doc || '']), [25, 45, 30]); }
+      if(vts.length){ H(2, 'Değer tipleri'); TB(['Değer tipi', 'Temel tip', 'Birim', 'Büyüklük'], vts.map(v => [v.name, v.base || 'Real', v.unit || '', v.qk || '']), [35, 20, 20, 25]); }
+      if(ens.length){ H(2, 'Numaralandırmalar'); TB(['Numaralandırma', 'Değerler'], ens.map(v => [v.name, enumLits(v).join(', ')]), [35, 65]); }
     }
   }
   if(o.reqs && allReqs().length){
@@ -4768,7 +5209,7 @@ async function pickModelText(){
   if(NATIVE){ const r = await nDialog('open', '', 'Model dosyaları (*.sysml;*.json;*.html)|*.sysml;*.json;*.html;*.htm|Tüm dosyalar (*.*)|*.*'); if(r.error) throw new Error(r.error); return r.path ? {name:r.path, text:r.text} : null; }
   return new Promise(res => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.sysml,.json,.html,.htm'; inp.onchange = async () => { const f = inp.files[0]; if(!f) return res(null); res({name:f.name, text:await f.text()}); }; inp.click(); });
 }
-const REF_FIELDS = ['src', 'tgt', 'sp', 'tp', 'part', 'type', 'behavior', 'represents', 'link'];
+const REF_FIELDS = ['src', 'tgt', 'sp', 'tp', 'part', 'type', 'behavior', 'represents', 'link', 'signal'];
 async function mergeModelDialog(){
   let f; try { f = await pickModelText(); } catch(e){ return toast('Açılamadı: ' + e.message); }
   if(!f) return;
@@ -4799,6 +5240,7 @@ function mergeModel(O, sel, target, mode){
   const walk = id => { if(S.has(id)) return; S.add(id); (ch.get(id) || []).forEach(walk); };
   sel.forEach(walk);
   Object.values(O.els).forEach(e => { if(e.src && e.tgt && KIND[e.kind] && KIND[e.kind].rel && !S.has(e.id) && (S.has(e.src) || S.has(e.tgt))) S.add(e.id); });
+  [...S].forEach(id => { const e = O.els[id]; (e && e.st || []).forEach(sid => { if(O.els[sid] && !M.els[sid]) S.add(sid); }); });
   const map = new Map(); S.forEach(id => map.set(id, mode === 'copy' && M.els[id] ? uid() : id));
   const exists = id => map.has(id) || !!M.els[id];
   const R = id => map.has(id) ? map.get(id) : id;
@@ -4814,6 +5256,7 @@ function mergeModel(O, sel, target, mode){
     if(e.src && e.tgt && (!exists(e.src) || !exists(e.tgt))){ dropped++; return; }
     e.owner = selSet.has(oid) || !e.owner ? target : (map.has(e.owner) ? R(e.owner) : (M.els[e.owner] ? e.owner : target));
     REF_FIELDS.forEach(k => { if(e[k]){ if(exists(e[k])) e[k] = R(e[k]); else e[k] = (k === 'src' || k === 'tgt') ? e[k] : null; } });
+    if(e.st){ e.st = e.st.filter(exists).map(R); if(e.tv){ const tv = {}; Object.keys(e.tv).forEach(k => { const i = k.indexOf('.'), sid = k.slice(0, i); if(exists(sid)) tv[R(sid) + k.slice(i)] = e.tv[k]; }); e.tv = tv; } }
     if(e.kind === 'Diagram'){ e.shapes = (e.shapes || []).filter(s => exists(s.el)).map(s => Object.assign(s, {el:R(s.el)})); const sids = new Set(e.shapes.map(s => s.id)); e.edges = (e.edges || []).filter(x => sids.has(x.s) && sids.has(x.t) && (!x.el || exists(x.el))).map(x => Object.assign(x, {el:x.el ? R(x.el) : null})); }
     if(e.kind === 'Requirement' && e.reqId && reqIds.has(e.reqId) && reqIds.get(e.reqId) !== nid) dupReq.push(e.reqId);
     if(had){ updated++; if(M.els[nid].owner && M.els[nid].owner !== e.owner && !selSet.has(oid)) e.owner = M.els[nid].owner; } else added++;
@@ -4900,7 +5343,18 @@ function toolsMenuItems(){
     '-',
     {t:'Başka modeli birleştir…', f:mergeModelDialog},
     {t:'ReqIF olarak dışa aktar (DOORS, Polarion…)', f:exportReqIF},
-    {t:'ReqIF / Excel\'den gereksinim aktar…', f:importReqs}];
+    {t:'ReqIF / Excel\'den gereksinim aktar…', f:importReqs},
+    {h:'Kütüphaneler'},
+    {t:'Birim / değer tipi kütüphanesini ekle (SI)', f:addUnitLib}];
+}
+function addUnitLib(){
+  snap();
+  const pk = findOrMkPkg(M.rootId, 'Birimler');
+  const have = new Set(Object.values(M.els).filter(e => e.kind === 'ValueType').map(e => e.name));
+  let n = 0;
+  UNIT_LIB.forEach(([nm0, unit, qk]) => { if(have.has(nm0)) return; mk('ValueType', pk, {name:nm0, base:'Real', unit, qk}); n++; });
+  ST.exp.add(pk); afterChange(); revealInTree(pk);
+  toast(n ? n + ' değer tipi "Birimler" paketine eklendi — value property tipi olarak seçebilirsiniz' : 'Birim kütüphanesi zaten modelde');
 }
 (function(){
   const V = $('#view');
@@ -5162,6 +5616,16 @@ function showHelp(){
   <tr><td>Parametrik (par)</td><td>Kısıt bloğu (BDD paletinde, ifade + parametreler), kısıt özelliği, value'lar ve binding connector</td></tr>
   <tr><td>Paket (pkg)</td><td>Paketler ve içerikleri, Dependency / Import</td></tr>
   </table>
+  <h3>Arayüzler, tipler ve gelişmiş davranış</h3>
+  <table>
+  <tr><td>Arayüz bloğu</td><td>BDD paletinde. <i>Flow properties</i> (in/out/inout) içerir. Port'un tipi yapılınca port yönü akış özelliklerinden türetilir; <b>Eşlenik (~)</b> işaretlenirse yönler tersine döner.</td></tr>
+  <tr><td>Değer tipi / birim</td><td>BDD paletinde Değer Tipi (birim, büyüklük türü), Numaralandırma (her satır bir değer) ve Sinyal. <b>Araçlar ▾ → Birim kütüphanesi</b> SI tiplerini ekler; value property'nin tip listesinde görünür.</td></tr>
+  <tr><td>Pin / parametre</td><td>Pin'i aksiyonun üzerine bırakın (üst yarı = in, alt yarı = out). Aktiviteye <i>Aktivite Parametresi</i> eklerseniz onu çağıran aksiyonda pinler otomatik oluşur.</td></tr>
+  <tr><td>Sinyal / olay</td><td>Sinyal Gönder, Olay Kabul, Zaman Olayı (<i>after (5 s)</i>). Ağaçtan sinyali aktivite diyagramına bırakmak Sinyal Gönder aksiyonu oluşturur. Akışa <i>Kesme akışı</i> işareti ve Kesilebilir Bölge eklenebilir.</td></tr>
+  <tr><td>Fragment</td><td>Sıralama diyagramında alt/opt/loop/par/break/ref… Operand koşulları Özellikler'de her satıra bir tane; ayırıcılar mavi tutamakla taşınır. Fragment taşınınca içindeki mesajlar da taşınır. Yürütme çubukları otomatik çizilir.</td></tr>
+  <tr><td>Bileşik durum</td><td>Bir durumu büyütüp içine durum/başlangıç/geçmiş (H, H*) sürükleyin: model ağacında da o durumun altına taşınır. Bölge (region) ile paralel bölgeler oluşturulur.</td></tr>
+  <tr><td>Stereotip</td><td>Elemanın Özellikler panelinde <b>Stereotipler → + Yeni</b> veya listeden uygula. Stereotipin etiketleri (<i>ad : tip = varsayılan</i>) ve dolgu rengi tanımlanır; değerler elemanda doldurulur ve blokta <i>tags</i> bölmesinde görünür.</td></tr>
+  </table>
   <h3>Gereksinim yönetimi (Gereksinimler ▾)</h3>
   <table>
   <tr><td>Gereksinim tablosu</td><td>Sistem ve alt sistem gereksinimlerini ekleyin (alt sistem eklerken alt sistem adı sorulur; filtrede alt sistemler adlarıyla listelenir), hücreye tıklayıp düzenleyin. Doğrulama yöntemi T/A/M/G (Test, Analiz, Muayene, Gösterim) düğmeleriyle. İzlenebilirlik sütunlarındaki <b>+</b> ile üst gereksinim, alt gereksinim, karşılayan model elemanı, fonksiyon ve test bağlanır.</td></tr>
@@ -5243,6 +5707,7 @@ $('#modal').addEventListener('mousedown', ev => { if(ev.target.id === 'modal') $
 })();
 
 /* ================= DEMO ================= */
+function d0Front(d, sh){ d.shapes.splice(d.shapes.indexOf(sh), 1); d.shapes.unshift(sh); }
 function demo(){
   M = {uid:uid(), v:1, els:{}, rootId:null};
   const root = mk('Model', null, {name:'Örnek Model'}); M.rootId = root.id;
@@ -5355,7 +5820,42 @@ function demo(){
   [pk, pu, pa, E(rqPkg)].forEach((p, i) => addShape(pgd, p.id, 40 + (i % 2) * 300, 40 + Math.floor(i / 2) * 220, 220, 110));
   mk('Dependency', root.id, {src:pa.id, tgt:pk.id, name:''}); mk('Import', root.id, {src:pu.id, tgt:pk.id, name:''});
   pgd.shapes.slice().forEach(sh => autoEdges(pgd, sh));
-  M.ui = {open:[bdd.id, ibd.id, uc.id, ad.id, rd.id, sm.id, sq.id, pd.id, pgd.id, '@reqtable', '@matrix', '@coverage'], cur:bdd.id, exp:[root.id, pk.id, pu.id, pa.id, act.id, sys.id, rqPkg]};
+  // --- v1.7: arayüzler, değer tipleri, sinyal, stereotip ---
+  const pi = mk('Package', root.id, {name:'Arayüzler ve Tipler'});
+  const vtV = mk('ValueType', pi.id, {name:'Gerilim', base:'Real', unit:'V', qk:'electricPotential'});
+  const vtM = mk('ValueType', pi.id, {name:'Kütle', base:'Real', unit:'kg', qk:'mass'});
+  const enM = mk('Enumeration', pi.id, {name:'ÇalışmaModu', lits:'Kapalı\nTest\nHazır\nArıza'});
+  const sgD = mk('Signal', pi.id, {name:'SensörVerisi'}); mk('Value', sgD.id, {name:'zamanDamgası', vtype:'Real', unit:'s'}); mk('Value', sgD.id, {name:'ölçüm', vtype:'Real'});
+  const ibG = mk('InterfaceBlock', pi.id, {name:'GüçArayüzü'}); mk('FlowProp', ibG.id, {name:'güç', dir:'out', vtype:'Gerilim'});
+  const ibD = mk('InterfaceBlock', pi.id, {name:'VeriArayüzü'}); mk('FlowProp', ibD.id, {name:'veri', dir:'out', type:sgD.id});
+  pGo.type = ibG.id; pKg.type = ibG.id; pKg.conj = true; pSv.type = ibD.id; pKv.type = ibD.id; pKv.conj = true;
+  [pGo, pKg, pKv, pSv].forEach(q => q.dir = '');
+  E(Object.values(M.els).find(e => e.kind === 'Value' && e.name === 'gerilim').id).vtype = 'Gerilim';
+  E(Object.values(M.els).find(e => e.kind === 'Value' && e.name === 'kütle').id).vtype = 'Kütle';
+  mk('Value', kb.id, {name:'mod', vtype:'ÇalışmaModu', def:'Kapalı'});
+  const prof = mk('Package', root.id, {name:'Profil'});
+  const stL = mk('Stereotype', prof.id, {name:'LRU', meta:['Block'], tags:'parçaNo : String\ntedarikçi : String\nMTBF : Real', fill:'#fdf1d6'});
+  [[gb, 'GB-1001', 'ASELSAN', '12000'], [kb, 'KB-2002', 'TÜBİTAK', '20000'], [sb, 'SB-3003', 'ROKETSAN', '9000']].forEach(([b, pn, td0, mt]) => { b.st = [stL.id]; b.tv = {[stL.id + '.parçaNo']:pn, [stL.id + '.tedarikçi']:td0, [stL.id + '.MTBF']:mt}; });
+  const ifd = mk('Diagram', pi.id, {name:'Arayüzler ve Tipler', dtype:'bdd', shapes:[], edges:[], vx:60, vy:80, z:1});
+  addShape(ifd, ibG.id, 0, 0, 200, 90); addShape(ifd, ibD.id, 250, 0, 200, 90); addShape(ifd, sgD.id, 500, 0, 200, 90);
+  addShape(ifd, vtV.id, 0, 170, 200, 80); addShape(ifd, vtM.id, 250, 170, 200, 80); addShape(ifd, enM.id, 500, 170, 200, 110); addShape(ifd, stL.id, 750, 0, 200, 110);
+  // aktivite parametresi ve pinler
+  const apR = mk('ActParam', actT.id, {name:'sonuç', dir:'out', vtype:'Boolean'});
+  addShape(td, apR.id, 300, 270, 120, 36);
+  connect(td, 'ObjectFlow', t5, td.shapes.find(x => x.el === apR.id));
+  syncPins(E(n2.el), true); { const s2 = ad.shapes.find(x => x.el === n2.el); showPorts(ad, s2); }
+  // bileşik durum + geçmiş
+  const cmp = mk('State', sm.owner, {name:'Görevde', entry:'görev kaydı aç'});
+  const sCmp = addShape(sm, cmp.id, 300, 430, 340, 230);
+  const SI = (k, n, x0, y0, extra) => addShape(sm, mk(k, cmp.id, Object.assign(n ? {name:n} : {}, extra || {})).id, x0, y0);
+  const g0 = SI('Initial', null, 320, 500), g1 = SI('State', 'Arama', 380, 485), g2 = SI('State', 'Takip', 380, 585), g3 = SI('History', null, 590, 500);
+  connect(sm, 'Transition', g0, g1); E(connect(sm, 'Transition', g1, g2).el).name = 'hedefBulundu'; E(connect(sm, 'Transition', g2, g1).el).name = 'hedefKayıp';
+  E(connect(sm, 'Transition', q4, sCmp).el).name = 'görevBaşlat';
+  E(connect(sm, 'Transition', sCmp, q4).el).name = 'görevBitti';
+  // sequence fragment
+  const fr = mk('Fragment', sq.owner, {op:'loop', guards:'1..3'});
+  const fsh = addShape(sq, fr.id, 210, 140, 620, 95); d0Front(sq, fsh);
+  M.ui = {open:[bdd.id, ibd.id, ifd.id, uc.id, ad.id, td.id, rd.id, sm.id, sq.id, pd.id, pgd.id, '@reqtable', '@matrix', '@coverage'], cur:bdd.id, exp:[root.id, pk.id, pu.id, pa.id, act.id, sys.id, rqPkg, pi.id]};
   return M;
 }
 

@@ -85,7 +85,7 @@ Paneller arasındaki ayırıcılar sürüklenerek boyutlandırılabilir.
 ## 4. Diyagram türleri
 
 ### Blok Tanım Diyagramı (BDD)
-**Elemanlar:** Blok, Paket, Aktör, Not
+**Elemanlar:** Blok, Arayüz Bloğu, Kısıt Bloğu, Değer Tipi, Numaralandırma, Sinyal, Paket, Aktör, Not
 **İlişkiler:** Composition, Aggregation, Association, Generalization, Dependency, Not bağlantısı
 
 - Bloklar *parts / references / values / ports* bölmelerini otomatik gösterir.
@@ -105,7 +105,7 @@ Paneller arasındaki ayırıcılar sürüklenerek boyutlandırılabilir.
 **İlişkiler:** Association, Include, Extend, Generalization, Dependency, Not bağlantısı
 
 ### Aktivite Diyagramı
-**Elemanlar:** Aksiyon, Başlangıç, Aktivite Sonu, Akış Sonu, Karar, Birleştirme, Fork, Join, Nesne Düğümü, Kulvar, Not
+**Elemanlar:** Aksiyon, Sinyal Gönder, Olay Kabul, Zaman Olayı, Pin, Aktivite Parametresi, Başlangıç, Aktivite Sonu, Akış Sonu, Karar, Birleştirme, Fork, Join, Nesne Düğümü, Kulvar, Kesilebilir Bölge, Not
 **İlişkiler:** Control Flow, Object Flow, Dependency, Not bağlantısı
 
 - Karar düğümünden çıkan akışa çift tıklanınca **koşul** (guard) yazılır, ör. `[başarılı]`.
@@ -119,7 +119,7 @@ Paneller arasındaki ayırıcılar sürüklenerek boyutlandırılabilir.
 - Diyagramda çizilen her ilişki gereksinim tablosuna, matrise ve kapsama analizine anında yansır. Tersi de geçerlidir: tabloda kurulan bir ilişki, iki eleman da diyagramdaysa bağlantı olarak çizilebilir (sağ tık → *İlişkili elemanları göster*).
 
 ### Durum Makinesi Diyagramı (stm)
-**Elemanlar:** Durum, Başlangıç, Son durum, Seçim (choice), Not
+**Elemanlar:** Durum, Bölge, Başlangıç, Son durum, Seçim (choice), Kavşak (junction), Geçmiş (history), Not
 **İlişki:** Geçiş (Transition)
 
 - Durumların Özellikler panelinden `entry /`, `do /`, `exit /` davranışları yazılır.
@@ -127,7 +127,7 @@ Paneller arasındaki ayırıcılar sürüklenerek boyutlandırılabilir.
 - Durum makinesi bir bloğa aittir: bloğa sağ tık → *Yeni alt diyagram* veya ağaçta *Yeni diyagram → Durum Makinesi*.
 
 ### Sıralama (Sequence) Diyagramı (sd)
-**Elemanlar:** Yaşam çizgisi, Not
+**Elemanlar:** Yaşam çizgisi, Birleşik parça (fragment), Not
 **İlişkiler:** Senkron mesaj (dolu ok), Asenkron mesaj (açık ok), Yanıt mesajı (kesikli)
 
 - Ağaçtan bir **blok, aktör veya part** bırakmak o tipte yaşam çizgisi oluşturur.
@@ -144,10 +144,58 @@ Paneller arasındaki ayırıcılar sürüklenerek boyutlandırılabilir.
 - Bloğun value property'lerini parametrelere binding connector ile bağlayın.
 
 ### Paket Diyagramı (pkg)
-**Elemanlar:** Paket, Blok, Gereksinim, Not
+**Elemanlar:** Paket, Blok, Arayüz Bloğu, Değer Tipi, Stereotip, Gereksinim, Not
 **İlişkiler:** Dependency, Import
 
 Paket şekilleri içerdikleri elemanları (türleriyle birlikte) listeler.
+
+### Arayüzler, değer tipleri ve stereotipler (v1.7)
+
+**Arayüz bloğu (InterfaceBlock):** BDD paletindedir. *Flow properties* bölmesinde akış özellikleri (`in`/`out`/`inout`, tip, çokluk) tanımlanır.
+
+- Bir port'un tipi arayüz bloğu yapıldığında port yönü boş bırakılırsa akış özelliklerinden türetilir.
+- Port'ta **Eşlenik (~)** işaretlenirse yönler ters çevrilir ve etiket `~GüçArayüzü` olarak gösterilir. Böylece aynı arayüz iki uçta da kullanılır.
+- Port türü (standart / proxy / full) Özellikler panelinden seçilir.
+
+**Değer tipi (ValueType), numaralandırma (Enumeration), sinyal (Signal):**
+
+- Değer tipinde temel tip, birim ve büyüklük türü (quantity kind) girilir.
+- Value property'nin *Tip* listesi modeldeki değer tiplerini ve numaralandırmaları önerir. Birim boşsa değer tipinin birimi kullanılır.
+- **Araçlar ▾ → Birim / değer tipi kütüphanesini ekle (SI)** kütle, frekans, ivme (g), PSD (g²/Hz), ses basınç seviyesi (dB), sıcaklık, gerilim gibi 22 tipi "Birimler" paketine ekler.
+- Numaralandırmanın değerleri her satıra bir tane yazılır.
+- Sinyallerin öznitelikleri value property olarak eklenir.
+
+**Stereotipler:** Kendi profilinizi oluşturmanızı sağlar (ör. «LRU», «COTS», «yazılımBileşeni»).
+
+1. Herhangi bir elemanı seçin, Özellikler panelinde **Stereotipler → + Yeni**'ye basın. "Profil" paketinde, bu eleman türüne uygulanabilen yeni bir stereotip oluşur ve elemana uygulanır.
+2. Stereotipi seçip **Etiketler** alanına her satıra bir etiket yazın: `ad : tip = varsayılan` (ör. `MTBF : Real = 10000`). Tip `Boolean` ise onay kutusu, bir numaralandırma adıysa açılır liste olarak sorulur.
+3. **Uygulanır** listesinden hangi eleman türlerine uygulanabileceğini seçin; isteğe bağlı **dolgu rengi** verin.
+4. Elemanlarda etiket değerlerini doldurun. Değerler blokta *tags* bölmesinde, stereotip adı başlıkta `«block, LRU»` olarak görünür.
+
+### Aktivite: pin, parametre, sinyal ve kesme (v1.7)
+
+- **Pin:** Paletten aksiyonun üzerine bırakın. Üst yarıya bırakılan pin `in`, alt yarıya bırakılan `out` olur. Object flow pinler arasında çizilir.
+- **Aktivite parametresi:** Aktiviteye giriş/çıkış parametresi ekler. Bu aktiviteyi çağıran aksiyonlarda pinler parametrelerden otomatik oluşur.
+- **Sinyal Gönder / Olay Kabul:** Özellikler panelinden sinyali seçin. Ağaçtan bir sinyali aktivite diyagramına bırakmak *Sinyal Gönder* aksiyonu oluşturur.
+- **Zaman olayı:** Kum saati simgesidir; adına `after (5 s)` gibi zaman ifadesini yazın.
+- **Kesilebilir bölge** kesikli çerçevedir. Bölgeden çıkan akışta Özellikler → *Kesme akışı* işaretlenince akış üzerinde şimşek simgesi görünür.
+- Aksiyon farklı adlı bir aktiviteyi çağırıyorsa etiket `aksiyon : Aktivite` biçiminde gösterilir.
+
+### Sıralama: fragmentler ve yürütme çubukları (v1.7)
+
+- **Birleşik parça (fragment):** Paletten diyagrama yerleştirin. Özelliklerden operatörü seçin: `alt`, `opt`, `loop`, `par`, `break`, `critical`, `seq`, `strict`, `neg`, `ref`…
+- *Operandlar* alanına her satıra bir operandın koşulunu yazın (ör. `sıcaklık > 70` / `else`). Operand ayırıcılarını seçili fragmentteki mavi tutamaklarla yukarı/aşağı taşıyın.
+- Fragment taşınınca içindeki mesajlar da birlikte taşınır. *Sıralı yerleşim* düzeni fragmentleri kapsadıkları mesajlara göre yeniden boyutlandırır.
+- `ref` fragmenti başka bir etkileşime başvurur: *Bağlı diyagram* alanından seçin, çift tıklayınca açılır.
+- **Yürütme çubukları** senkron mesajın hedefinde açılır, aynı yaşam çizgisinden dönen yanıtla kapanır. Diyagram özelliklerinden kapatılabilir.
+
+### Durum makinesi: bileşik durum, bölge, geçmiş (v1.7)
+
+- Bir durumu büyütüp içine başka durumlar, başlangıç ve **Geçmiş (H / H\*)** düğümleri sürükleyin. Durum bileşik görünüme geçer (ad üstte, ayırıcı çizgi). Model ağacında iç durumlar da o durumun altına taşınır; dışarı sürüklenince geri çıkar.
+- **Bölge (region)** paralel (ortogonal) bölgeler için kullanılır.
+- **Kavşak (junction)** ve **seçim (choice)** sözde durumları geçişlerde kullanılabilir.
+- İki durum arasındaki karşılıklı geçişler artık üst üste binmez, etiketleri iki yana yerleşir.
+- Model doğrulama bileşik durumları dikkate alır: bileşik duruma giriş, içindeki başlangıçtan iç durumlara ulaşır sayılır.
 
 ## 5. İç içe diyagramlar ve gezinme
 

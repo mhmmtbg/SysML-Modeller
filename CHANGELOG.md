@@ -1,5 +1,20 @@
 # Değişiklik Günlüğü
 
+## v1.7.0 — 2026-10-05
+
+SysML dil tamlığı:
+
+- **Arayüz bloğu** ve **akış özellikleri** (in/out/inout); port tipi arayüz bloğu olunca port yönü akış özelliklerinden türetilir; **eşlenik (~) port**, port türü (proxy/full), port çokluğu
+- **Değer tipi** (temel tip, birim, büyüklük türü), **numaralandırma**, **sinyal**; value property tip listesi modeldeki tipleri önerir; **SI birim kütüphanesi** (Araçlar ▾)
+- **Stereotipler:** profil paketinde kullanıcı tanımlı stereotip, uygulanabileceği eleman türleri, etiket tanımları (`ad : tip = varsayılan`), dolgu rengi; elemanda etiket değerleri, şekillerde «stereotip» ve *tags* bölmesi
+- **Aktivite:** pin (in/out), aktivite parametresi ve çağıran aksiyonda otomatik pin üretimi, Sinyal Gönder / Olay Kabul / Zaman Olayı aksiyonları, kesilebilir bölge ve kesme akışı; aksiyon etiketi `ad : ÇağrılanAktivite`
+- **Sıralama:** birleşik parçalar (alt, opt, loop, par, break, critical, seq, strict, neg, assert, ignore, consider, ref), sürüklenebilir operand ayırıcıları, fragment ile birlikte taşınan mesajlar; otomatik **yürütme çubukları**
+- **Durum makinesi:** bileşik durum (iç içe yerleşim model ağacına yansır), bölge (region), geçmiş (H / H*), kavşak (junction)
+- Karşılıklı iki bağlantı (A→B, B→A) artık üst üste binmez; etiketleri iki yana yerleşir
+- Otomatik düzen bileşik durumları, kesilebilir bölgeleri ve fragmentleri birlikte taşır
+- Model doğrulama, Word/HTML rapor, birleştirme ve izlenebilirlik yeni elemanları tanır (arayüzler ve tipler bölümü, uygunsuz stereotip, boş numaralandırma, tek operandlı fragment…)
+- Örnek modele arayüzler, değer tipleri, «LRU» stereotipi, pinler, bileşik durum ve loop fragmenti eklendi
+
 ## v1.6.0 — 2026-10-03
 
 - **Araçlar ▾** menüsü
