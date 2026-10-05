@@ -177,6 +177,22 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message }));
   ok('RPN, Cm, şiddet sınıfı, risk skoru/seviyesi, matris, Excel, rapor, doğrulama', !fr.error && fr.rpn === 180 && fr.rpn2 === 54 && fr.cm === 100 && fr.cat === 'I' && fr.score === 20 && fr.lvl === 'Çok yüksek' && fr.res === 'Orta' && /^R-\d{3}$/.test(fr.rid) && fr.fmeaRows >= 5 && fr.cells === 50 && fr.sheets === 3 && fr.reportImgs === 1 && fr.reportHas && fr.v.includes('FMEA önlemsiz yüksek RPN'), fr);
 
+  console.log('8e) N² ve ICD, arayüz uyumsuzluğu');
+  const ic = await run(async () => {
+    const pk = mk('Package', M.rootId, { name: 'ICD testi' });
+    const ctx = mk('Block', pk.id, { name: 'Bağlam' }), A = mk('Block', pk.id, { name: 'A' }), Bb = mk('Block', pk.id, { name: 'B' });
+    const ib = mk('InterfaceBlock', pk.id, { name: 'IF' }); mk('FlowProp', ib.id, { name: 'akım', dir: 'out', vtype: 'Real', unit: 'A' });
+    const ib2 = mk('InterfaceBlock', pk.id, { name: 'IF2' }); mk('FlowProp', ib2.id, { name: 'akım', dir: 'in', vtype: 'Real', unit: 'mA' });
+    const pa = mk('Port', A.id, { name: 'o', type: ib.id }), pb = mk('Port', Bb.id, { name: 'i', type: ib2.id }), pa2 = mk('Port', A.id, { name: 'x', dir: 'out' }), pb2 = mk('Port', Bb.id, { name: 'y', dir: 'out' });
+    const a = mk('Part', ctx.id, { name: 'a', type: A.id }), b = mk('Part', ctx.id, { name: 'b', type: Bb.id });
+    const c1 = mk('Connector', ctx.id, { src: pa.id, tgt: pb.id, sp: a.id, tp: b.id, name: 'c1' }), c2 = mk('Connector', ctx.id, { src: pa2.id, tgt: pb2.id, sp: a.id, tp: b.id, name: 'c2' });
+    IV.ctx = ctx.id; IV.mode = 'part'; const D = n2Data(); openD('@n2'); openD('@icd');
+    const n = ensureIfIds(); window.__dl = []; icdXlsx(); const x = window.__dl.pop(); const sh = await readXlsx(new Uint8Array(await x.blob.arrayBuffer()));
+    await icdDocx(); const dx = window.__dl.pop(); IV.ctx = 'all';
+    return { i1: icdIssues(c1).map(q => q[0] + ':' + q[1]), i2: icdIssues(c2).map(q => q[0]), dir1: cFlowDir(cEnd(c1, 0), cEnd(c1, 1)), nodes: D.nodes.length, ab: (D.cells.get(a.id + '|' + b.id) || []).length, ba: (D.cells.get(b.id + '|' + a.id) || []).length, ids: n, sheets: sh.length, docx: dx && dx.size > 3000, val: validateModel().filter(q => q.id === c1.id).length };
+  }).catch(e => ({ error: e.message }));
+  ok('N² hücreleri, yön, birim uyumsuzluğu, yön çelişkisi, ICD Excel/Word', !ic.error && ic.i1.some(q => /birim uyumsuz/.test(q)) && ic.i2.includes('hata') && ic.dir1 === 1 && ic.nodes === 2 && ic.ab === 2 && ic.ba === 1 && ic.ids >= 2 && ic.sheets === 2 && ic.docx && ic.val >= 1, ic);
+
   console.log('9) Büyük model performansı');
   const perf = await run(() => {
     const T = {}; const tm = (k, f) => { const t0 = performance.now(); f(); T[k] = Math.round(performance.now() - t0); };

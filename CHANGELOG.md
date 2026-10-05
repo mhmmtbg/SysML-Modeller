@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.14.0 — 2026-10-05
+
+Arayüz yönetimi:
+
+- **N² arayüz matrisi** (**Analiz ▾ → N² arayüz matrisi**): bağlam bloğunun part'ları veya blok tipleri köşegende; hücrelerde satırdan sütuna giden arayüzler (ID, akış öğeleri), ileri/geri besleme renkleri, çift yönlü gösterim, sınır portları için *Dış ortam*; tıklayınca bağlantıyı seçme, çift tıklayınca IBD'yi açma
+- **Arayüz kontrol tablosu (ICD)**: connector başına kaynak/hedef, türetilmiş yön, arayüz bloğu ve akış öğeleri (yön, tip, birim) modelden; arayüz ID, ek taşınan öğeler, tür, protokol/standart, konnektör ve özellikler düzenlenebilir; otomatik ID atama; bağlantısız portlar listesi
+- **Arayüz uyumsuzluğu denetimi:** yön çelişkisi, delegasyon yönü, eksik/eşleşmeyen akış özelliği, eşlenik eksikliği, tip ve birim uyumsuzluğu, tanımsız port tipi; model doğrulamaya eklendi
+- Bağlantı Özellikler panelinde ICD alanları; Excel (ICD + N²), Word ICD dokümanı, rapora ICD bölümü
+
 ## v1.13.0 — 2026-10-05
 
 Güvenilirlik ve risk:

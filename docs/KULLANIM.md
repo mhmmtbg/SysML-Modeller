@@ -15,6 +15,7 @@
 5f. [XMI (Cameo / MagicDraw) ve şablonlar](#5f-xmi-cameo--magicdraw-ve-şablonlar)
 5g. [Çevresel test profilleri](#5g-çevresel-test-profilleri)
 5h. [FMEA / FMECA ve risk yönetimi](#5h-fmea--fmeca-ve-risk-yönetimi)
+5i. [Arayüz yönetimi: N² matrisi ve ICD](#5i-arayüz-yönetimi-n²-matrisi-ve-icd)
 6. [Otomatik düzen ve hizalama](#6-otomatik-düzen-ve-hizalama)
 7. [İkonlar](#7-ikonlar)
 8. [Özellikler paneli](#8-özellikler-paneli)
@@ -609,6 +610,35 @@ Her satır bir **Arıza Modu** elemanıdır ve analiz edilen blok, part, aktivit
 - **İlgili elemanlar:** gereksinim, blok, part, test, aktivite veya arıza modu bağlanır.
 - **Çıktılar:** Excel (FMEA, Risk Kaydı ve Risk Matrisi sayfaları), matris PNG, Word/HTML raporunda *FMEA / FMECA ve risk kaydı* bölümü (tablo + iki matris görseli).
 - **Model doğrulama:** eksik Ş/O/T, önlemsiz yüksek RPN, gereksinimsiz yüksek şiddet, eksik olasılık/etki, önlem planı olmayan yüksek risk, sorumlusuz risk ve tarihi geçmiş önlemler.
+
+## 5i. Arayüz yönetimi: N² matrisi ve ICD
+
+Arayüzler IBD'deki **bağlantılardan (connector)** üretilir; ayrıca bir şey çizmeniz gerekmez. Bağlantının iki ucundaki part ve port, port yönleri (veya port tipindeki arayüz bloğunun akış özellikleri, eşlenik ~ ise ters) modelden okunur.
+
+### N² arayüz matrisi (**Analiz ▾ → N² arayüz matrisi**)
+
+- **Bağlam:** bir blok seçin → o bloğun part'ları köşegene dizilir; *Düzey: Blok* seçilirse part'lar tip bloklarına toplanır. *Tüm model* bütün bağlantıları blok tipleri düzeyinde birleştirir. Sınır portlarına giden bağlantılar *Dış ortam* satırında görünür.
+- **Hücre (satır → sütun):** satır elemanının çıkışının sütun elemanına gittiği arayüzler: arayüz ID'si ve akış öğeleri. Üst üçgen mavi (ileri), alt üçgen turuncu (geri besleme); yönü belirsiz/çift yönlü arayüzler iki hücrede de ↔ ile gösterilir.
+- Hücredeki öğeye tıklayınca bağlantı Özellikler panelinde açılır, çift tıklayınca bağlantının çizildiği IBD açılır. Uyarı/hata içeren hücreler sarı/kırmızı çerçevelidir.
+
+### Arayüz kontrol tablosu (**Analiz ▾ → Arayüz kontrol tablosu (ICD)**)
+
+| Sütun | Kaynak |
+|---|---|
+| Arayüz ID | Tabloda yazılır; **ID'leri ata** boş olanlara IF-001… verir |
+| Arayüz adı | Bağlantının adı |
+| Kaynak / yön / hedef | part.port ve port yönleri (→ ← ↔) |
+| Arayüz bloğu, akış öğeleri | Port tipleri ve akış özellikleri (yön, ad, tip, birim) |
+| Ek taşınan öğeler | Tabloda yazılır (virgülle) — akış özelliği olarak modellenmemiş öğeler |
+| Arayüz türü | Elektriksel (güç/sinyal), veri, mekanik, termal, akışkan, RF, optik, yazılım, insan |
+| Protokol / standart, konnektör, özellikler | Tabloda yazılır (ör. *RS-422*, *MIL-DTL-38999 J1*, *28 V DC, en çok 10 A*) |
+| **Uyum** | Otomatik denetim (aşağıda) |
+
+**Uyumsuzluk denetimi:** iki part arasındaki bağlantıda iki ucun aynı yönde olması (ikisi de *out*), delegasyonda (sınır portu ↔ part portu) yönlerin farklı olması, akış özelliğinin karşı uçta olmaması, aynı adlı akış özelliklerinde yön çelişkisi (eşlenik eksik), **tip** ve **birim** uyumsuzluğu (ör. A / mA), port tipinin tanımsız olması. Bulgular model doğrulamada da *Arayüz uyumsuzluğu* kuralıyla listelenir. Tablonun altında **bağlantısız portlar** listelenir.
+
+Bağlantı seçiliyken Özellikler panelinde de arayüz ID, tür, taşınan öğeler, protokol ve uyum bulguları görünür.
+
+**Çıktılar:** Excel (ICD ve N² sayfaları), **Word ICD** (bağlama göre arayüz tabloları, uyum bulguları ve N² matrisi), Word/HTML raporda *Arayüz kontrol dokümanı (ICD)* bölümü.
 
 ## 6. Otomatik düzen ve hizalama
 
