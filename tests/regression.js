@@ -208,6 +208,19 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message }));
   ok('Metin/Word çıkarımı (bölüm no, ister no, tablo), fark + uygulama, not aç/kapat', !p9.error && JSON.stringify(p9.c1) === JSON.stringify(['Md. 3.1.1/1', 'Md. 3.1.1/2', 'TŞ-014', 'TŞ-020']) && p9.c2.length === 2 && p9.c2[1].startsWith('TŞ-1|') && /Değişen/.test(p9.st) && /Eklenen/.test(p9.st) && p9.applied && p9.open1 >= 1 && p9.open2 === p9.open1 - 1, p9);
 
+  console.log('8g) Komut paleti, tema, durum geçiş tablosu, kullanıldığı yerler');
+  await page.keyboard.press('Control+k'); await page.waitForTimeout(100); await page.keyboard.type('risk kayd'); await page.waitForTimeout(100); await page.keyboard.press('Enter'); await page.waitForTimeout(200);
+  const p10 = await run(() => {
+    const viaPalette = ST.cur;
+    const items = paletteItems().length;
+    const sm = stmList()[0]; STV.sm = sm.id; STV.mode = 'table'; openD('@stt'); const rowsT = document.querySelectorAll('#view tr[data-row]').length; STV.mode = 'matrix'; renderView();
+    const b = Object.values(M.els).find(e => e.kind === 'Block' && kidsOf(e.id).some(c => c.kind === 'Port'));
+    const wu = whereUsed(b.id).map(g => g[0]); ST.tsel = b.id; renderProps(); const hasWU = !!document.querySelector('#props details.wu');
+    ACT.theme(); const dark = document.body.classList.contains('dark'); ACT.theme();
+    return { viaPalette, items, rowsT, wu, hasWU, dark, light: !document.body.classList.contains('dark') };
+  });
+  ok('Ctrl+K ile görünüm açılıyor, geçiş tablosu ve matris, kullanıldığı yerler, tema geçişi', p10.viaPalette === '@risk' && p10.items > 60 && p10.rowsT >= 5 && p10.wu.includes('Gösterildiği diyagramlar') && p10.hasWU && p10.dark && p10.light, p10);
+
   console.log('9) Büyük model performansı');
   const perf = await run(() => {
     const T = {}; const tm = (k, f) => { const t0 = performance.now(); f(); T[k] = Math.round(performance.now() - t0); };

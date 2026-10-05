@@ -23,6 +23,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 - **Arayüz yönetimi:** IBD bağlantılarından **N² arayüz matrisi** (part veya blok düzeyinde) ve **arayüz kontrol tablosu (ICD)**: kaynak/hedef, yön, arayüz bloğu ve akış öğeleri, tür, protokol, konnektör; yön/tip/birim **uyumsuzluk denetimi**; Excel ve Word ICD
 - **Şartnameden gereksinim çıkarma:** Word/metin şartnameden zorunluluk cümlelerini bölüm ve ister numaralarıyla bulup önizleyerek ekleme
 - **Model karşılaştırma ve inceleme:** iki model dosyası arasında eleman bazında fark (kimlik veya yol eşleştirmesi), farkları seçerek uygulama; elemanlara yanıtlanabilir inceleme notları ve diyagramda rozet
+- **Kullanım kolaylığı:** `Ctrl+K` komut paleti, karanlık tema, durum geçiş tablosu ve durum × olay matrisi, seçili eleman için "kullanıldığı yerler"
 - **Güvenilirlik ve risk:** FMEA / FMECA tablosu (Ş×O×T = RPN, önlem sonrası RPN, MIL-STD-1629A kritiklik Cm ve Cr), arıza modundan önleyici gereksinime ve teste izlenebilirlik, risk kaydı ve önlem öncesi/sonrası 5×5 risk matrisi
 - **Analiz ve simülasyon:** parametrik denklem çözücü, kütle/güç/maliyet **bütçe toplama** ve marj, aktivite ve durum makinesi **simülasyonu**, tahsis matrisi, genel düzenlenebilir tablolar, ilişki haritası
 - **Araçlar:** **Word (.docx) ve yazdırılabilir HTML rapor**, model doğrulama kuralları, başka modelle birleştirme, **ReqIF** içe/dışa aktarma (DOORS, Polarion…)

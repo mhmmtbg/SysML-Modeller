@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v1.16.0 — 2026-10-05
+
+Kullanım kolaylığı:
+
+- **Komut paleti** (`Ctrl+K`, araç çubuğunda ⌕ Komut): komutlar, tüm menü öğeleri, görünümler, diyagramlar ve elemanlar (ad, gereksinim/arayüz/risk ID, prosedür no) için bulanık arama, klavyeyle seçim
+- **Karanlık tema** (☾): arayüz panelleri koyu, diyagram alanı ve çıktılar açık; tercih hatırlanır
+- **Durum geçiş tablosu** (**Analiz ▾**): geçiş listesi ve durum × olay matrisi, olay/koşul/etki düzenleme, ulaşılamayan / çıkışsız durum ve belirsiz geçiş göstergeleri, Excel
+- **Kullanıldığı yerler** (Özellikler paneli): diyagramlar, tip kullanımları, çağıran aksiyonlar, alt tipler, ilişkiler, test durumları, arıza modları, riskler
+- Regresyon testi 18 adıma çıktı
+
 ## v1.15.0 — 2026-10-05
 
 Şartname, karşılaştırma ve inceleme:

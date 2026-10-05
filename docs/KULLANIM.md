@@ -17,6 +17,7 @@
 5h. [FMEA / FMECA ve risk yönetimi](#5h-fmea--fmeca-ve-risk-yönetimi)
 5i. [Arayüz yönetimi: N² matrisi ve ICD](#5i-arayüz-yönetimi-n²-matrisi-ve-icd)
 5j. [Şartnameden gereksinim çıkarma, model karşılaştırma, inceleme notları](#5j-şartnameden-gereksinim-çıkarma-model-karşılaştırma-inceleme-notları)
+5k. [Komut paleti, karanlık tema, durum geçiş tablosu, kullanıldığı yerler](#5k-komut-paleti-karanlık-tema-durum-geçiş-tablosu-kullanıldığı-yerler)
 6. [Otomatik düzen ve hizalama](#6-otomatik-düzen-ve-hizalama)
 7. [İkonlar](#7-ikonlar)
 8. [Özellikler paneli](#8-özellikler-paneli)
@@ -670,6 +671,13 @@ Bağlantı seçiliyken Özellikler panelinde de arayüz ID, tür, taşınan öğ
 - **Araçlar ▾ → İnceleme notları** tüm notları durum, yazan ve metne göre süzerek listeler; Excel'e aktarılır. Açık notlar model doğrulamada *bilgi* olarak da görünür.
 - Notlar model dosyasıyla birlikte kaydedilir; dosyayı paylaştığınız kişi notları görür, yanıtlar ve **Model karşılaştır** ile notları içeren sürümü kendi modelinize alabilirsiniz.
 
+## 5k. Komut paleti, karanlık tema, durum geçiş tablosu, kullanıldığı yerler
+
+- **Komut paleti (`Ctrl+K` veya araç çubuğundaki ⌕ Komut):** tek kutudan tüm araç çubuğu komutları, Gereksinimler / Analiz / Araçlar / Düzen menülerinin öğeleri, tüm görünümler, diyagramlar ve elemanlar (ad, gereksinim ID, arayüz ID, risk ID, prosedür no) aranır. Harflerin sırayla geçmesi yeterlidir (*"fmea"*, *"risk kayd"*, *"sys-002"*). ↑↓ ile seçip Enter; eleman seçilirse ağaçta gösterilir ve Özellikler'de açılır.
+- **Karanlık tema (☾ / ☀):** model ağacı, palet, Özellikler, tablolar ve pencereler koyu renge geçer; diyagram alanı ve tüm çıktılar (PNG, PDF, Word) açık renkte kalır. Seçim bu bilgisayarda hatırlanır.
+- **Durum geçiş tablosu (Analiz ▾ veya durum makinesinin Özellikler panelindeki düğme):** seçilen durum makinesinin geçişleri *kaynak durum – olay – koşul – etki – hedef durum* olarak (hedefin entry/do/exit davranışlarıyla) veya **durum × olay matrisi** olarak. Olay, koşul ve etki hücrede düzenlenir, diyagrama yansır. Üstte ulaşılamayan, çıkışı olmayan durumlar ve aynı durumda aynı olaya bağlı koşulsuz birden çok geçiş (**belirsizlik**) sayılır. Excel'e aktarılır.
+- **Kullanıldığı yerler:** bir eleman seçildiğinde Özellikler panelinin altında açılır bölüm; elemanın gösterildiği diyagramlar, tip olarak kullanıldığı part/port/value'lar, onu çağıran aksiyonlar, alt tipleri, tüm ilişkileri (yönüyle), bağlı olduğu test durumları, arıza modları ve riskler. Öğeye tıklayınca o elemana veya diyagrama gidilir.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.
@@ -771,6 +779,7 @@ Seçili elemana göre alanlar değişir:
 | `Ctrl+A` | Diyagramdaki tümünü seç |
 | `Ctrl+C` / `Ctrl+V` | Kopyala / yapıştır (başka diyagramda aynı elemanı gösterir, aynı diyagramda kopyalar) |
 | `Ctrl+Shift+V` / `Ctrl+D` | Yeni eleman olarak yapıştır / çoğalt |
+| `Ctrl+K` | Komut paleti (komutlar, görünümler, diyagramlar, elemanlar) |
 | `Ctrl+F` | Model içinde ara |
 | `Ctrl+Shift+L` | Diyagram türünün varsayılan otomatik düzeni |
 | `Del` / `Shift+Del` | Modelden sil / diyagramdan kaldır |
