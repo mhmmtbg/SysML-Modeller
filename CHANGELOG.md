@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.23.0 — 2026-10-05
+
+- **Modüller:** paketi `.sysmod` dosyası olarak dışa aktarma (revizyonlu); başka modellere **salt okunur** ekleme; modül elemanlarındaki değişikliklerin otomatik geri alınması
+- **Modül güncelleme:** yeni sürümü karşılaştırma ekranında seçerek veya doğrudan alma; yerel ilişki ve notlar korunur; bağlantıyı koparma, kaldırma
+- **Dosya kilidi (masaüstü):** açık model dosyasının yanına `.lock`; başkası açmışsa uyarı, araç çubuğunda 🔒 ve kaydetmeden önce onay; modül dosyası için "Düzenliyorum" kilidi
+- Modüller ekranı (Araçlar ▾ → Modüller…); masaüstü uygulamasına dosya okuma ve kilit fonksiyonları eklendi
+- Regresyon testi 25 adım
+
 ## v1.22.0 — 2026-10-05
 
 - **IBD üret / eşitle:** BDD'deki bloklar için IBD oluşturma veya mevcut IBD'ye eksik part, value, port ve connector ekleme; part'ı olmayan Composition'lar için part

@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 	"unicode/utf16"
 	"unsafe"
 
@@ -249,6 +250,61 @@ func main() {
 	w.Bind("nativeWrite", func(path, data string) error {
 		return writeAtomic(path, []byte(data))
 	})
+	// Ağ klasöründe ekip çalışması: dosya okuma ve basit kilit dosyası (<dosya>.lock)
+	myLocks := map[string]bool{}
+	w.Bind("nativeRead", func(path string) map[string]interface{} {
+		res := map[string]interface{}{}
+		b, err := os.ReadFile(path)
+		if err != nil {
+			res["error"] = err.Error()
+			return res
+		}
+		res["text"] = string(b)
+		if st, err := os.Stat(path); err == nil {
+			res["mtime"] = st.ModTime().UTC().Format(time.RFC3339)
+		}
+		return res
+	})
+	w.Bind("nativeWho", func() map[string]string {
+		h, _ := os.Hostname()
+		return map[string]string{"user": os.Getenv("USERNAME"), "host": h}
+	})
+	w.Bind("nativeLockGet", func(path string) map[string]interface{} {
+		b, err := os.ReadFile(path + ".lock")
+		if err != nil {
+			return nil
+		}
+		res := map[string]interface{}{}
+		if json.Unmarshal(b, &res) != nil {
+			res["user"] = "?"
+		}
+		if st, err := os.Stat(path + ".lock"); err == nil {
+			res["mtime"] = st.ModTime().UTC().Format(time.RFC3339)
+		}
+		return res
+	})
+	w.Bind("nativeLockSet", func(path, user, note string) error {
+		h, _ := os.Hostname()
+		js, _ := json.Marshal(map[string]string{"user": user, "winUser": os.Getenv("USERNAME"), "host": h, "time": time.Now().UTC().Format(time.RFC3339), "note": note})
+		if err := os.WriteFile(path+".lock", js, 0644); err != nil {
+			return err
+		}
+		myLocks[path] = true
+		return nil
+	})
+	w.Bind("nativeLockClear", func(path string) error {
+		delete(myLocks, path)
+		err := os.Remove(path + ".lock")
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	})
+	defer func() {
+		for p := range myLocks {
+			os.Remove(p + ".lock")
+		}
+	}()
 	w.Bind("nativeSetTitle", func(t string) {
 		w.Dispatch(func() { w.SetTitle(t) })
 	})

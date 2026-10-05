@@ -318,6 +318,39 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message }));
   ok('IBD üretim/eşitleme, bağlam dış elemanları, bul-değiştir, toplu düzenleme, lejant kuralı', !mh.error && mh.ibd && mh.sync === 1 && mh.ext === 'Dış H,Kullanıcı H' && mh.ext2 === 1 && mh.ctx === 2 && mh.hits === 1 && mh.ren === 'H-BDD' && mh.bulk && mh.fill && mh.leg, mh);
 
+  console.log('8n) Modüller: dışa aktarma, salt okunur ekleme, koruma, güncelleme');
+  const md = await run(async () => {
+    const o = {};
+    /* kaynak model: paket + blok + gereksinim */
+    const src = JSON.parse(JSON.stringify(M));
+    const pk = mk('Package', M.rootId, { name: 'Ortak Arayüzler' }), b1 = mk('Block', pk.id, { name: 'Ortak Blok' }), rq = mk('Requirement', pk.id, { name: 'Ortak', text: 'Sistem 5 V ile çalışacaktır.' });
+    const mod1 = buildModule(pk); o.n1 = Object.keys(mod1.els).length;
+    b1.name = 'Ortak Blok v2'; mk('Block', pk.id, { name: 'Yeni Blok' }); pk.modOut = { rev: 1 }; const mod2 = buildModule(pk); o.rev2 = mod2.rev;
+    /* hedef model: kaynağı içermeyen kopya */
+    loadModel(src); afterLoad();
+    await importModule('', { m: mod1, path: '', fname: 'ortak.sysmod' });
+    o.ro = isRO(b1.id) && !!M.mods[pk.id];
+    const my = mk('Block', M.rootId, { name: 'Benim' }); mk('Association', M.rootId, { src: my.id, tgt: b1.id, name: '' }); afterChange();
+    o.link = Object.values(M.els).some(r => r.kind === 'Association' && r.tgt === b1.id);
+    snap(); E(b1.id).name = 'Değiştirdim'; mk('Block', pk.id, { name: 'İçeri' }); afterChange();
+    o.guard = E(b1.id).name === 'Ortak Blok' && !kidsOf(pk.id).some(x => x.name === 'İçeri') && Object.values(M.els).some(x => x.name === 'İçeri' && x.owner === M.rootId);
+    E(b1.id).notes = [{ id: 'n1', t: new Date().toISOString(), u: 'X', txt: 'not', st: 'Açık' }]; afterChange(); o.notes = (E(b1.id).notes || []).length === 1;
+    await moduleUpdate(pk.id, { m: mod2, path: '', fname: 'ortak.sysmod' }, true);
+    o.cmp = ST.cur === '@compare' && CMP && CMP.rows.length >= 2;
+    CMP.rows.forEach(r => CMP.sel.add(r)); try { cmpApply(); } catch (e) { o.cmpErr = e.message; }
+    o.after = E(b1.id) && E(b1.id).name === 'Ortak Blok v2' && kidsOf(pk.id).some(x => x.name === 'Yeni Blok') && M.mods[pk.id].rev === 2;
+    o.keep = Object.values(M.els).some(r => r.kind === 'Association' && r.tgt === b1.id);
+    snap(); E(b1.id).name = 'Yine'; afterChange(); o.guard2 = E(b1.id).name === 'Ortak Blok v2';
+    undo(); o.undo = E(b1.id).name === 'Ortak Blok v2';
+    await moduleUpdate(pk.id, { m: mod1, path: '', fname: 'ortak.sysmod' }, false); o.direct = E(b1.id).name === 'Ortak Blok' && M.mods[pk.id].rev === 1 && !kidsOf(pk.id).some(x => x.name === 'Yeni Blok');
+    openD('@modules'); o.view = /Ortak Arayüzler/.test(document.querySelector('#view').textContent);
+    ST.tsel = b1.id; renderProps(); o.props = !!document.querySelector('#props .robar') && document.querySelector('#props input[data-f="name"]') && document.querySelector('#props input[data-f="name"]').disabled;
+    window.confirm = () => true; moduleDetach(pk.id); E(b1.id).name = 'Serbest'; afterChange(); o.detach = E(b1.id).name === 'Serbest' && !M.mods[pk.id];
+    delModel([pk.id, my.id]); afterChange();
+    return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Modül dışa aktarma, salt okunur ekleme, koruma, not, karşılaştırarak ve doğrudan güncelleme, kopma', !md.error && md.n1 === 3 && md.rev2 === 2 && md.ro && md.link && md.guard && md.notes && md.cmp && md.after && md.keep && md.guard2 && md.undo && md.direct && md.view && md.props && md.detach, md);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

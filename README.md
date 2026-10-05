@@ -28,6 +28,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 - **Test takvimi:** test kaynakları, bitiş→başlangıç bağımlılıkları, kritik yol ve bolluk, kaynak/numune çakışması, kalibrasyon uyarısı, kayma etkisi önizlemesi
 - **Doküman üretimi:** test prosedürü ve test raporu (Word), bölüm şablonları, kapakta revizyon geçmişi ve imza tablosu
 - **Modelleme yardımcıları:** BDD'den IBD üretme / eşitleme, bağlam diyagramı, bul ve değiştir (Ctrl+H), toplu düzenleme, kurala göre renklendiren lejant
+- **Ekip çalışması:** paketleri `.sysmod` modülü olarak paylaşma, salt okunur ekleme ve karşılaştırarak güncelleme, masaüstünde dosya kilidi
 - **İngilizce arayüz:** araç çubuğundaki EN / TR düğmesiyle menüler, paneller, pencereler ve mesajlar İngilizceye geçer; model içeriği ve çıktılar Türkçe kalır
 - **Kullanım kolaylığı:** `Ctrl+K` komut paleti, karanlık tema, durum geçiş tablosu ve durum × olay matrisi, seçili eleman için "kullanıldığı yerler"
 - **Güvenilirlik ve risk:** FMEA / FMECA tablosu (Ş×O×T = RPN, önlem sonrası RPN, MIL-STD-1629A kritiklik Cm ve Cr), arıza modundan önleyici gereksinime ve teste izlenebilirlik, risk kaydı ve önlem öncesi/sonrası 5×5 risk matrisi

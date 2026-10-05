@@ -793,6 +793,30 @@ Diyagramda birden çok şekil seçilince (Shift+tık veya alan seçimi) Özellik
 
 Lejantın Özellikler panelindeki **Renk kuralı** seçilince diyagramdaki elemanların dolgu rengi o özelliğe göre otomatik verilir ve lejant öğeleri (değer ve adet) kendiliğinden oluşur: gereksinim durumu, doğrulama durumu, test sonucu, eleman türü, stereotip, açık NCR, FMEA en yüksek RPN veya bir stereotip etiketinin değeri (ör. «LRU».tedarikçi). Model değiştikçe renkler güncellenir. Kural, elle verilen dolgu rengini geçersiz kılar; "Elle" seçilince eski davranışa dönülür.
 
+## 5p. Ağ klasöründe ekip çalışması: modüller ve dosya kilidi
+
+Bir modeli birkaç kişi birlikte geliştirirken her kişi kendi modelinde çalışır; ortak kullanılan paketler **modül dosyası** (`.sysmod`) olarak ağ klasöründe paylaşılır. **Araçlar ▾ → Modüller…** ekranı bu işlemlerin merkezidir.
+
+### Modülü paylaşma (paketin sahibi)
+
+- Ağaçta pakete sağ tık → **Modül olarak dışa aktar…** (veya Modüller ekranında **⤒ Modül olarak dışa aktar**). Paket, alt elemanları, ilişkileri ve diyagramlarıyla tek dosyaya yazılır; her dışa aktarmada revizyon numarası bir artar.
+- Masaüstü uygulamasında dosya yolu hatırlanır; **Yeniden dışa aktar** aynı dosyanın üzerine yazar.
+- Paylaşılan paketler ağaçta ⇪ işaretiyle görünür.
+
+### Modülü kullanma (diğer kişiler)
+
+- **⤓ Modül ekle…** ile `.sysmod` dosyası seçilir; paket **salt okunur** olarak modelin köküne eklenir (ağaçta 🔒). Modül elemanlarına kendi elemanlarınızdan ilişki kurabilir, onları diyagramlarınızda gösterebilir ve inceleme notu yazabilirsiniz.
+- Modül elemanlarında yapılan değişiklikler (ad, özellik, silme, modülün içine eleman ekleme) **otomatik geri alınır**; modülün içine eklenen yeni eleman modelin köküne taşınır. Özellikler panelinin üstünde modülün adı ve revizyonu yazar, alanlar kilitlidir.
+- **⇄ Karşılaştır ve güncelle…** modül dosyasının yeni sürümünü okur ve farkları **Model karşılaştırma** ekranında gösterir; seçilen farklar **Uygula** ile alınır. **Doğrudan güncelle** tüm modülü yeni sürümle değiştirir. Her iki durumda da kendi ilişkileriniz ve notlarınız korunur.
+- **Bağlantıyı kopar** modülü modelin düzenlenebilir parçası yapar; **✕** modülü kaldırır.
+
+### Dosya kilidi (yalnız masaüstü uygulaması)
+
+- Bir model dosyası açıldığında yanına `<dosya>.lock` yazılır (kullanıcı adı, bilgisayar, zaman); uygulama kapanınca veya başka dosyaya geçince silinir.
+- Aynı dosyayı başka biri açmışsa açılışta uyarı verilir, araç çubuğunda 🔒 kişi adı görünür ve kaydetmeden önce onay istenir.
+- Modüller ekranında paylaşılan bir paket için **🔒 Düzenliyorum** modül dosyasını kilitler; o modülü kullananlar Modüller ekranında "🔒 kişi düzenliyor" bilgisini görür. **Kilidi bırak** kilidi kaldırır.
+- Tarayıcıda açılan HTML sürümü ağ klasörüne dosya yazamadığı için kilit kullanılamaz; modüller indirme / dosya seçme ile çalışır.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.
