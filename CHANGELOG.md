@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v1.20.0 — 2026-10-05
+
+- **Test kaynakları:** sarsıcı, iklim odası, akustik oda, ölçüm cihazı, fikstür, personel…; tür, konum, kalibrasyon geçerliliği, doluluk
+- **Bağımlılıklar:** test kampanyasında "Önce gelen testler" (bitiş → başlangıç); çizelgede oklar, ihlaller kırmızı
+- **Kritik yol ve bolluk:** planlanan tarihlere göre toplam bolluk; kritik testler kalın çerçeveli
+- **Çakışma denetimi:** aynı kaynak veya numuneyi aynı günlerde kullanan testler, test bitişinden önce dolan kalibrasyon
+- **Kaynak satırları:** test kampanyası çizelgesi kaynak bazında gösterilebilir
+- **Kayma etkisi:** bir testi n gün kaydırınca ardılların ve kampanya bitişinin nasıl değişeceğini önizleme ve uygulama
+- Takvim PNG, Plan Excel (test planı, kaynak planı, çakışmalar), rapor bölümü, model doğrulama kuralları
+- Regresyon testi 22 adım
+
 ## v1.19.0 — 2026-10-05
 
 - **Test yürütme** (**Gereksinimler ▾**): test durumu başına prosedür adımları (işlem, beklenen, ölçülen, Geçti/Kaldı); tüm adımlar sonuçlanınca test sonucu adımlardan hesaplanır; Excel'den adım yapıştırma; tekrar test oluşturma

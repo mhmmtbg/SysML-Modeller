@@ -256,6 +256,28 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   tx.mid = mid;
   ok('Adımlar düzenleniyor, sonuç adımlardan, NCR adımdan açılıyor, VCRM/kalite, tekrar test, Excel, rapor', !tx.error && tx.mid === 'Planlandı' && tx.steps.join('|') === 'Gerilim uygula:Geçti|Akımı ölç:Kaldı' && tx.res === 'Kaldı' && /^NCR-\d{3}$/.test(tx.ncr) && tx.ncrReqs === 1 && tx.ncrArt && tx.stepLinked && tx.view === '@ncr' && tx.vcrm.length === 1 && tx.q.length === 1 && tx.v1.length >= 2 && !tx.v2.length && tx.t2.join() === '2,Geçti,1' && tx.hist >= 2 && tx.sheets.length === 3 && tx.rep, tx);
 
+  console.log('8k) Test kaynakları, bağımlılık, kritik yol, kayma');
+  const pl = await run(async () => {
+    const td = '2030-01-10', A = newTest({ name: 'Plan A', procNo: 'PA', pStart: td, pEnd: addDaysISO(td, 4) }), Bt = newTest({ name: 'Plan B', procNo: 'PB', pStart: addDaysISO(td, 3), pEnd: addDaysISO(td, 6) }), Cc = newTest({ name: 'Plan C', procNo: 'PC', pStart: addDaysISO(td, 2), pEnd: addDaysISO(td, 3) });
+    const r = resAdd({ name: 'Sarsıcı X', rtype: 'Sarsıcı (titreşim)', cal: addDaysISO(td, 5) });
+    A.res = [r.id]; Bt.res = [r.id]; Bt.deps = [A.id];
+    const S = schedInfo(), o = {};
+    o.pair = S.pairs.filter(x => x.x === r).map(x => x.a.procNo + '/' + x.b.procNo); o.dep = S.depBad.filter(x => x.t === Bt).map(x => x.d); o.critB = S.crit.has(Bt.id); o.tfC = S.tf.get(Cc.id);
+    o.cyc = isSucc(A.id, Bt.id) && !isSucc(Bt.id, A.id);
+    const sh = slipPlan(A, 2); o.slip = [sh.get(A.id), sh.get(Bt.id) || 0];
+    const v = validateModel().map(q => q.rule); o.val = ['Kaynak çakışması', 'Bağımlılık ihlali', 'Kalibrasyon'].map(k => v.includes(k));
+    CP.mode = 'res'; openD('@campaign'); o.resRows = document.querySelectorAll('#view svg.gantt [data-goto="' + r.id + '"]').length; CP.mode = 'tests'; renderView();
+    o.arrows = document.querySelectorAll('#view svg.gantt path[marker-end]').length;
+    openD('@resources'); o.view = !!document.querySelector('#view tr[data-row="' + r.id + '"]');
+    window.__dl = []; planXlsx(); const x = window.__dl.pop(); const shs = await readXlsx(new Uint8Array(await x.blob.arrayBuffer())); o.sheets = shs.length;
+    const g = ganttSVG(allTests(), { raw: true }); o.png = new Blob([await svgToPng(g, 1)]).size > 1000;
+    snap(); slipPlan(A, 2).forEach((d, id) => { const t = E(id); t.pStart = addDaysISO(t.pStart, d); t.pEnd = addDaysISO(t.pEnd, d); });
+    o.after = schedInfo().depBad.filter(q => q.t === Bt).length;
+    [A, Bt, Cc, r].forEach(e => delModel([e.id]));
+    return o;
+  }).catch(e => ({ error: e.message }));
+  ok('Kaynak/bağımlılık çakışması, bolluk, döngü engeli, kayma, kaynak satırları, Excel, PNG', !pl.error && pl.pair.join() === 'PA/PB' && pl.dep.join() === '2' && pl.critB && pl.tfC > 0 && pl.cyc && pl.slip.join() === '2,4' && pl.val.every(Boolean) && pl.resRows >= 1 && pl.arrows >= 1 && pl.view && pl.sheets === 3 && pl.png && pl.after === 0, pl);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

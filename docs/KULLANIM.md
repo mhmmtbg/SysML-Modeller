@@ -720,6 +720,36 @@ Bağlantı seçiliyken Özellikler panelinde de arayüz ID, tür, taşınan öğ
 
 **⤒ Excel'e aktar** (üç görünümde de): *Uygunsuzluklar (NCR)*, *Test Numuneleri* ve *Test Adımları* sayfaları. **Araçlar ▾ → Rapor oluştur**'da "Test yürütme, numuneler ve uygunsuzluklar" bölümü numune tablosunu, adımları olan testlerin prosedür tablolarını ve NCR listesini ekler.
 
+## 5m. Test kaynakları, bağımlılıklar, kritik yol ve kayma etkisi
+
+### Test kaynakları (**Gereksinimler ▾ → Test kaynakları** veya test kampanyasındaki **Test kaynakları** düğmesi)
+
+- Kaynak: testlerin paylaştığı imkân — sarsıcı, iklim / termal oda, termal vakum, akustik oda, şok düzeneği, EMI/EMC odası, ölçüm / güç cihazı, fikstür, personel, dış laboratuvar.
+- Sütunlar: ad, tür, konum, **kalibrasyon geçerlilik** tarihi, kullanan testler, dolu gün sayısı, çakışma sayısı.
+- Kaynaklar testlere **test kampanyası tablosundaki "Kaynaklar" sütunundan** (+) veya test durumunun Özellikler panelinden atanır.
+
+### Bağımlılıklar ve kritik yol
+
+- Test kampanyası tablosundaki **"Önce gelen testler"** sütunu bitiş → başlangıç bağımlılığı tanımlar (döngü oluşturacak seçimler listede çıkmaz).
+- Zaman çizelgesinde bağımlılıklar ok ile çizilir; ardıl test öncül bitmeden başlıyorsa ok kırmızı kesiklidir (**bağımlılık ihlali**).
+- **Kritik yol:** planlanan tarihlere göre her testin toplam bolluğu (kampanya bitişini geciktirmeden kaç gün kayabileceği) hesaplanır; bolluğu 0 olan, henüz geçmemiş testler kalın çerçeveyle gösterilir. Bolluk Özellikler panelinde ve Plan Excel'inde yazar.
+
+### Çakışma denetimi
+
+- Aynı **kaynağı** veya aynı **numuneyi** aynı günlerde kullanan testler çakışma olarak işaretlenir (çubuğun köşesinde kırmızı üçgen, kaynak satırında ⚠).
+- Kalibrasyon geçerliliği, kaynağı kullanan testin bitişinden önce doluyorsa turuncu nokta ve uyarı gösterilir.
+- Kartlarda kampanya bitişi, kritik yoldaki test, kaynak / numune çakışması, bağımlılık ihlali ve kalibrasyonu dolan kaynak sayısı yer alır; aynı kurallar **Model doğrulama**'da da denetlenir.
+
+### Kaynak satırları
+
+Test kampanyasında **Satırlar: Kaynaklar** seçilince çizelge her kaynak için bir satır gösterir; kaynağın hangi günlerde hangi testlerle dolu olduğu ve çakışmalar tek bakışta görülür. Kaynak atanmamış testler en altta toplanır.
+
+### Kayma etkisi (⇥)
+
+Tablodaki **⇥** düğmesi (veya Özellikler'deki **⇥ Kaydır…**) testi seçilen gün kadar kaydırmanın etkisini önizler: ardıl testler bitiş → başlangıç kuralıyla ötelenir, her testin eski ve yeni tarihi ile kampanya bitişindeki değişim listelenir. **Uygula** ile tarihler güncellenir (Ctrl+Z ile geri alınır). Çakışma listesindeki **⇥ Kaydır…** düğmesi ihlali giderecek gün sayısıyla açılır.
+
+**⤓ Takvim PNG** çizelgeyi görüntü olarak, **⤒ Plan Excel** *Test Planı* (süre, kaynak, öncül, bolluk, kritik yol, çakışmalar), *Kaynak Planı* ve *Çakışmalar* sayfalarını kaydeder. Raporda "Test planı, kaynaklar ve çakışmalar" bölümü test ve kaynak takvimi şekillerini ekler.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.
