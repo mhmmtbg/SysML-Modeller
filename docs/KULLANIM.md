@@ -767,6 +767,32 @@ Tablodaki **⇥** düğmesi (veya Özellikler'deki **⇥ Kaydır…**) testi se�
 
 Kuruluş, proje, kontrol eden ve onaylayan bilgileri ile "kapakta imza tablosu" ve "kapakta revizyon geçmişi" seçenekleri tüm Word çıktılarına uygulanır: gereksinim spesifikasyonu, ICD, model raporu, test prosedürü ve test raporu. Gereksinim spesifikasyonu, ICD ve model raporu için doküman no, revizyon ve revizyon geçmişi de burada tutulur. Bilgiler modelle birlikte kaydedilir.
 
+## 5o. Modelleme yardımcıları
+
+Hepsi **Araçlar ▾ → Modelleme yardımcıları** altındadır; bazıları sağ tık menüsünde de bulunur.
+
+### IBD üret / modelle eşitle
+
+- **BDD'deki bloklar için IBD üret / güncelle:** açık BDD'de part'ı veya Composition ilişkisi olan her blok için IBD yoksa oluşturulur (part'lar, portlar ve connector'lar yerleştirilir), varsa eksikler eklenir. Part'ı olmayan Composition ilişkileri için hedef blok tipinde part oluşturulur.
+- **Açık IBD'yi modelle eşitle:** modelde sonradan eklenen part, value, port ve connector'lar mevcut yerleşim bozulmadan IBD'ye eklenir.
+- BDD'de bir bloğa sağ tık → **IBD üret (part'lardan)** veya **IBD'yi modelle eşitle**.
+
+### Bağlam diyagramı
+
+Bir bloğa sağ tık → **Bağlam diyagramı üret** (veya menüden blok seçerek). Sistem bloğu ortada, dış elemanlar çevresinde yer alan bir BDD oluşturulur. Dış elemanlar: sistemle doğrudan ilişkisi (Association, Dependency, Allocate, Trace, ItemFlow) olan blok ve aktörler; IBD'lerde sistemin part'larına veya portlarına connector ile bağlanan elemanlar; adı sistemle aynı olan sistem sınırı içindeki kullanım senaryolarına bağlı aktörler. Sistemin kendi part tipleri dış eleman sayılmaz. İsteğe bağlı olarak doğrudan ilişkisi olmayan dış elemanlara Association eklenir.
+
+### Bul ve değiştir (**Ctrl+H**)
+
+Ad, gereksinim metni, açıklama, kimlikler (gereksinim ID, prosedür no, seri no…), etiket değerleri ve diğer metin alanlarında (test, NCR, FMEA, risk, adımlar) arar. Büyük/küçük harf ve tam kelime seçenekleri, eleman türü süzgeci vardır. Eşleşmeler mevcut ve yeni hâliyle listelenir; işaretlenenler **Seçilenleri değiştir** ile tek adımda değiştirilir (Ctrl+Z ile geri alınır). Onaylı gereksinimin metni değişirse durum her zamanki gibi "Değişiklikte"ye geçer ve geçmişe yazılır.
+
+### Toplu düzenleme
+
+Diyagramda birden çok şekil seçilince (Shift+tık veya alan seçimi) Özellikler paneli **Toplu düzenleme** olur: dolgu ve çizgi rengi, stereotip ekle / kaldır, pakete taşı, aynı genişlik / yükseklik. Hepsi gereksinim ise durum ve doğrulama yöntemi, hepsi test durumu ise sonuç, doğrulama seviyesi ve sorumlu da toplu değiştirilir.
+
+### Lejant kuralları
+
+Lejantın Özellikler panelindeki **Renk kuralı** seçilince diyagramdaki elemanların dolgu rengi o özelliğe göre otomatik verilir ve lejant öğeleri (değer ve adet) kendiliğinden oluşur: gereksinim durumu, doğrulama durumu, test sonucu, eleman türü, stereotip, açık NCR, FMEA en yüksek RPN veya bir stereotip etiketinin değeri (ör. «LRU».tedarikçi). Model değiştikçe renkler güncellenir. Kural, elle verilen dolgu rengini geçersiz kılar; "Elle" seçilince eski davranışa dönülür.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.
@@ -869,6 +895,7 @@ Seçili elemana göre alanlar değişir:
 | `Ctrl+C` / `Ctrl+V` | Kopyala / yapıştır (başka diyagramda aynı elemanı gösterir, aynı diyagramda kopyalar) |
 | `Ctrl+Shift+V` / `Ctrl+D` | Yeni eleman olarak yapıştır / çoğalt |
 | `Ctrl+K` | Komut paleti (komutlar, görünümler, diyagramlar, elemanlar) |
+| `Ctrl+H` | Bul ve değiştir |
 | `Ctrl+F` | Model içinde ara |
 | `Ctrl+Shift+L` | Diyagram türünün varsayılan otomatik düzeni |
 | `Del` / `Shift+Del` | Modelden sil / diyagramdan kaldır |

@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.22.0 — 2026-10-05
+
+- **IBD üret / eşitle:** BDD'deki bloklar için IBD oluşturma veya mevcut IBD'ye eksik part, value, port ve connector ekleme; part'ı olmayan Composition'lar için part
+- **Bağlam diyagramı:** sistem bloğu ortada; ilişkili bloklar, aktörler ve IBD bağlantılarından bulunan dış elemanlar çevresinde
+- **Bul ve değiştir (Ctrl+H):** ad, metin, açıklama, kimlik, etiket ve diğer alanlarda; önizlemeli, seçerek, tek adımda geri alınabilir
+- **Toplu düzenleme:** çoklu seçimde renk, stereotip, paket, boyut; gereksinim durumu/yöntemi, test sonucu/seviyesi/sorumlusu
+- **Lejant kuralları:** dolgu rengi gereksinim/doğrulama durumu, test sonucu, tür, stereotip, açık NCR, RPN veya etiket değerine göre; lejant öğeleri otomatik
+- Regresyon testi 24 adım
+
 ## v1.21.0 — 2026-10-05
 
 - **Test prosedürü (Word):** amaç/kapsam, referanslar, gereksinimler, numune, düzenek ve kaynaklar, profil grafikleri, ön koşullar, doldurulacak adım tablosu, kabul kriterleri, imza

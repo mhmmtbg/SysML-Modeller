@@ -296,6 +296,28 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message }));
   ok('Bölüm sırası/seçimi şablondan, TP/TR blokları, kapak bilgisi birleşimi, Word, pencere', !dc.error && dc.order === 'steps,scope' && dc.off === 'refs,sign' && dc.h1[0] === '1. Test adımları' && dc.h1.length === 8 && dc.tr && dc.ap === 'SRS-9,B,K,true,1' && dc.zip && dc.srs && dc.dlg, dc);
 
+  console.log('8m) IBD eşitleme, bağlam diyagramı, bul-değiştir, toplu düzenleme, lejant kuralı');
+  const mh = await run(() => {
+    const o = {}, pk = mk('Package', M.rootId, { name: 'Hız testi' });
+    const A = mk('Block', pk.id, { name: 'Sistem H' }), Bk = mk('Block', pk.id, { name: 'Alt H' }), X = mk('Block', pk.id, { name: 'Dış H' }), act = mk('Actor', pk.id, { name: 'Kullanıcı H' });
+    const bdd = newDiagramCore(pk.id, 'bdd', 'H BDD'); addShape(bdd, A.id, 40, 40); addShape(bdd, Bk.id, 40, 240);
+    mk('Composition', pk.id, { src: A.id, tgt: Bk.id, name: '' }); mk('Association', pk.id, { src: A.id, tgt: X.id, name: '' });
+    const sb = mk('Subject', pk.id, { name: 'Sistem H' }), uc = mk('UseCase', sb.id, { name: 'Kullan H' }); mk('Association', pk.id, { src: act.id, tgt: uc.id, name: '' });
+    openD(bdd.id); ibdsFromBDD(bdd); const ibd = ibdsOf(A)[0]; o.ibd = !!ibd && ibd.shapes.some(s => E(s.el).kind === 'Part' && E(s.el).type === Bk.id);
+    const ex = contextExternals(A).map(x => x.e.name).sort(); o.ext = ex.join();
+    mk('Part', A.id, { name: 'ek', type: X.id }); openD(ibd.id); const r = syncIBD(ibd); o.sync = r.parts; o.ext2 = contextExternals(A).length;
+    const cd = contextDiagram(A.id, true); o.ctx = cd && cd.shapes.length;
+    FR = Object.assign(FR, { f: 'H BDD', r: 'H-BDD', cs: true, ww: false, kind: 'all', off: new Set() }); FR.g.name = true;
+    const hits = frHits(); o.hits = hits.length; hits.forEach(h => { h.e[h.f] = frReplaceVal(h.e[h.f]); }); o.ren = bdd.name;
+    openD(bdd.id); ST.sel = new Set(bdd.shapes.map(s => s.id)); renderProps(); o.bulk = /Toplu düzenleme/.test($('#props').textContent);
+    const T = bulkTargets(); T.L.forEach(x => { x.sh.fill = '#123456'; }); o.fill = bdd.shapes.every(s => s.fill === '#123456');
+    const rq = allReqs()[0], rd = newDiagramCore(pk.id, 'req', 'H REQ'); addShape(rd, rq.id, 40, 40); const L = mk('Legend', rd.owner, { name: 'L', rule: 'reqStatus' }); addShape(rd, L.id, 400, 40, 200, 80);
+    const c = legendCalc(rd); o.leg = c.items.get(L.id).length === 1 && !!legendFill(rd, rq);
+    ST.sel.clear(); delModel([pk.id]);
+    return o;
+  }).catch(e => ({ error: e.message }));
+  ok('IBD üretim/eşitleme, bağlam dış elemanları, bul-değiştir, toplu düzenleme, lejant kuralı', !mh.error && mh.ibd && mh.sync === 1 && mh.ext === 'Dış H,Kullanıcı H' && mh.ext2 === 1 && mh.ctx === 2 && mh.hits === 1 && mh.ren === 'H-BDD' && mh.bulk && mh.fill && mh.leg, mh);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);
