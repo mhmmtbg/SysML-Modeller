@@ -10,7 +10,7 @@ html,body{margin:0;height:100%;font:13px "Segoe UI",Arial,sans-serif;color:var(-
 #app{display:flex;flex-direction:column;height:100vh}
 #toolbar{display:flex;align-items:center;gap:3px;padding:5px 8px;background:#26364b;color:#fff;flex-wrap:wrap}
 #toolbar .brand{font-weight:600;margin-right:10px;letter-spacing:.3px}
-#toolbar button{background:#34475f;color:#fff;border:1px solid #46607f;border-radius:4px;padding:4px 7px;font:inherit;font-size:12.5px;cursor:pointer}
+#toolbar button{background:#34475f;color:#fff;border:1px solid #46607f;border-radius:4px;padding:4px 6px;font:inherit;font-size:12.5px;cursor:pointer}
 #toolbar button:hover{background:#41597a}
 #toolbar .sep{width:1px;height:20px;background:#4b5f7a;margin:0 5px}
 #toolbar #zoomLbl{min-width:44px;text-align:center;font-variant-numeric:tabular-nums}
@@ -106,6 +106,10 @@ html,body{margin:0;height:100%;font:13px "Segoe UI",Arial,sans-serif;color:var(-
 .vb.pri2{background:#2e86c1;color:#fff;border-color:#2e86c1}
 .vsep{width:1px;height:20px;background:#d5dbe3;margin:0 3px}
 .vchk{font-size:12px;cursor:pointer}
+#minimap{position:absolute;right:12px;bottom:12px;display:none;background:rgba(255,255,255,.94);border:1px solid #bfc8d3;border-radius:6px;padding:4px;box-shadow:0 2px 10px rgba(0,0,0,.12);cursor:pointer;z-index:20}
+#minimap svg{display:block}
+#canvasWrap.paint, #canvasWrap.paint svg{cursor:copy!important}
+#btnPainter.on{background:#d18a00;border-color:#f0b240}
 #simbar{position:absolute;right:12px;top:12px;width:380px;max-height:46%;display:none;flex-direction:column;background:#fff;border:1px solid #9fd3b2;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.14);z-index:30;font-size:12px}
 #simbar .simh{display:flex;align-items:center;gap:4px;padding:6px 8px;background:#eaf7ef;border-bottom:1px solid #cfe9d8;border-radius:8px 8px 0 0}
 #simbar .simb{background:#fff;border-radius:0;flex-wrap:wrap}
@@ -235,15 +239,15 @@ tr.d-add td{background:#f0faf3}tr.d-del td{background:#fdf1f2}tr.d-chg td{backgr
     <button data-act="undo" title="Geri al (Ctrl+Z)">↶ Geri</button>
     <button data-act="redo" title="Yinele (Ctrl+Y)">↷ İleri</button>
     <span class="sep"></span>
-    <button data-act="png" title="Diyagramı PNG olarak indir">PNG</button>
-    <button data-act="svg" title="Diyagramı SVG olarak indir">SVG</button>
-    <button data-act="copy" title="Diyagramı panoya resim olarak kopyala (Word/PowerPoint’e yapıştırmak için)">Panoya</button>
+    <button data-act="exportMenu" title="PNG, SVG, PDF olarak kaydet; panoya kopyala; yazdır">Dışa aktar ▾</button>
     <span class="sep"></span>
     <button data-act="zout" title="Uzaklaş">−</button>
     <span id="zoomLbl">100%</span>
     <button data-act="zin" title="Yakınlaş">+</button>
     <button data-act="fit" title="Diyagramı ekrana sığdır">Sığdır</button>
     <button data-act="grid" title="Izgara göster/gizle">Izgara</button>
+    <button data-act="mini" title="Mini harita göster/gizle">Harita</button>
+    <button data-act="painter" id="btnPainter" title="Biçim boyacısı: seçili şeklin/bağlantının renk ve görünümünü kopyalayıp tıkladığınız elemanlara uygular (Esc ile çıkış)">🖌 Biçim</button>
     <span class="sep"></span>
  <button data-act="reqMenu" title="Gereksinim tablosu, izlenebilirlik matrisi, kapsama analizi, Excel" style="background:#6c3483;border-color:#8e44ad">Gereksinimler ▾</button>
     <button data-act="analysisMenu" title="Parametrik hesap, bütçe analizi, simülasyon, tahsis matrisi, genel tablo, ilişki haritası">Analiz ▾</button>
@@ -339,6 +343,7 @@ const KIND = {
   Region:{tr:'Bölge (Region)',ic:'Rg',col:'#c0392b',w:300,h:160},
   History:{tr:'Geçmiş (History)',ic:'H',col:'#333',w:28,h:28},
   Junction:{tr:'Kavşak (Junction)',ic:'•',col:'#333',w:16,h:16},
+  Legend:{tr:'Lejant',ic:'≡',col:'#556',w:220,h:90},
   Diagram:{tr:'Diyagram',ic:'D',col:'#445'},
   Association:{tr:'Association',rel:1},
   Composition:{tr:'Composition',rel:1},
@@ -436,9 +441,12 @@ RANK.push('FlowProp', 'Pin', 'ActParam', 'SendSignal', 'AcceptEvent', 'AcceptTim
 ['History','Junction'].forEach(k => UNNAMED.add(k));
 ELL.add('History'); ELL.add('Junction');
 ['Region','IRegion','Fragment'].forEach(k => CONT.add(k));
+Object.keys(DT).forEach(k => { const i = DT[k].shapes.indexOf('Comment'); DT[k].shapes.splice(i < 0 ? DT[k].shapes.length : i, 0, 'Legend'); });
+Object.keys(OWN).forEach(k => { if(OWN[k].includes('Comment')) OWN[k].push('Legend'); });
+BASE.Legend = 'Lejant';
 const BORDER = new Set(['Port','Param','Pin']);
 const HOST = {Port:['Part'], Param:['ConstraintProp'], Pin:['Action','SendSignal','AcceptEvent']};
-Object.assign(FILL, {Activity:'#fff8d8', StateMachine:'#fff8d8', Interaction:'#fff8d8', InterfaceBlock:'#e8f6f8', ValueType:'#f3eeff', Enumeration:'#f3eeff', Signal:'#fff1e6', Stereotype:'#f8f3df', Pin:'#ffffff', ActParam:'#ffffff', SendSignal:'#fff8d8', AcceptEvent:'#fff8d8', AcceptTime:'#ffffff', IRegion:'none', Fragment:'none', Region:'none', History:'#ffffff', Junction:'#222222'});
+Object.assign(FILL, {Legend:'#ffffff', Activity:'#fff8d8', StateMachine:'#fff8d8', Interaction:'#fff8d8', InterfaceBlock:'#e8f6f8', ValueType:'#f3eeff', Enumeration:'#f3eeff', Signal:'#fff1e6', Stereotype:'#f8f3df', Pin:'#ffffff', ActParam:'#ffffff', SendSignal:'#fff8d8', AcceptEvent:'#fff8d8', AcceptTime:'#ffffff', IRegion:'none', Fragment:'none', Region:'none', History:'#ffffff', Junction:'#222222'});
 const UNIT_LIB = [
   ['Kütle', 'kg', 'mass'], ['Uzunluk', 'm', 'length'], ['Zaman', 's', 'time'], ['Frekans', 'Hz', 'frequency'], ['İvme', 'm/s²', 'acceleration'],
   ['İvme (g)', 'g', 'acceleration'], ['İvme Spektral Yoğunluğu', 'g²/Hz', 'accelerationSpectralDensity'], ['Ses Basınç Seviyesi', 'dB', 'soundPressureLevel'],
@@ -961,6 +969,7 @@ function validate(kind, a, b, d){
   if(kind === 'Anchor') return (a.kind === 'Comment' || b.kind === 'Comment') ? '' : 'Not bağlantısının bir ucu Not olmalı.';
   if(K.includes('Comment')) return 'Notlar yalnızca "Not Bağlantısı" ile bağlanır.';
   if(K.includes('Partition')) return 'Kulvarlar bağlantı ucu olamaz.';
+  if(K.includes('Legend')) return 'Lejant bağlantı ucu olamaz.';
   if(K.some(k => k === 'IRegion' || k === 'Region' || k === 'Fragment')) return 'Bölge / fragment bağlantı ucu olamaz.';
   if(K.includes('Stereotype') && kind !== 'Generalization') return 'Stereotip yalnızca Generalization ile bağlanır.';
   switch(kind){
@@ -1404,7 +1413,7 @@ function layoutUC(d, geo, mode, moveTo, centerTo){
 }
 function applyGeo(d, geo, label){
   snap();
-  d.edges.forEach(ed => { delete ed.mx; delete ed.my; });
+  d.edges.forEach(ed => { delete ed.mx; delete ed.my; delete ed.wp; delete ed.lo; });
   if(d._seqMsgs){ d._seqMsgs.forEach(([ed, y]) => ed.y = y); delete d._seqMsgs; }
   const from = new Map(d.shapes.map(s => [s.id, {x:s.x, y:s.y, w:s.w, h:s.h}]));
   const t0 = performance.now(), dur = 340;
@@ -1502,6 +1511,13 @@ function stFill(e){ const s = (e && e.st || []).map(E).find(x => x && x.fill); r
 function stTags(st){ return String(st.tags || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => { const m = l.match(/^([^:=]+?)\s*(?::\s*([^=]+?))?\s*(?:=\s*(.*))?$/); return m ? {key:m[1].trim(), type:(m[2] || '').trim(), def:(m[3] || '').trim()} : null; }).filter(Boolean); }
 function tagVal(e, st, key){ const v = e.tv && e.tv[st.id + '.' + key]; if(v != null && v !== '') return v; const t = stTags(st).find(q => q.key === key); return t ? t.def : ''; }
 function tagLines(e){ const out = []; (e.st || []).map(E).filter(Boolean).forEach(st => stTags(st).forEach(t => { const v = tagVal(e, st, t.key); if(v !== '') out.push(t.key + ' = ' + v); })); return out; }
+function legendItems(e){ return String(e.items || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => { const m = l.match(/^(-?)(#[0-9a-fA-F]{3,8})\s+(.*)$/); return m ? {line:!!m[1], c:m[2], t:m[3]} : {c:'', t:l}; }); }
+function legendAuto(d){
+  const out = [], seen = new Set();
+  d.shapes.forEach(s0 => { const e = E(s0.el); if(!e || e.kind === 'Legend') return; const f = s0.fill || stFill(e); if(f && !seen.has(f)){ seen.add(f); const st = (e.st || []).map(E).find(x => x && x.fill === f); out.push(f + ' ' + (st ? '«' + st.name + '»' : KIND[e.kind].tr + ' (açıklama)')); } });
+  d.edges.forEach(ed => { if(ed.stroke && !seen.has('-' + ed.stroke)){ seen.add('-' + ed.stroke); out.push('-' + ed.stroke + ' ' + KIND[edgeKind(ed)].tr + ' (açıklama)'); } });
+  return out.join('\n');
+}
 function enumLits(e){ return String(e.lits || '').split('\n').map(x => x.trim()).filter(Boolean); }
 function isComposite(e){ return !!e && e.kind === 'State' && kidsOf(e.id).some(c => ['State','Region','Initial','Final','Choice','Junction','History'].includes(c.kind)); }
 function fragOps(e){ const o = String(e.guards == null ? '' : e.guards).split('\n'); return o.length ? o : ['']; }
@@ -1806,6 +1822,21 @@ function drawShape(sh, e, d, SM, exp){
       break;
     }
     case 'Junction': s = `<circle cx="${x + sh.w / 2}" cy="${y + sh.h / 2}" r="${Math.min(sh.w, sh.h) / 2}" fill="#222" stroke="#222"/>`; break;
+    case 'Legend': {
+      const items = legendItems(e);
+      let need = tw(e.name || 'Lejant', true) + 30; items.forEach(it => { need = Math.max(need, tw(it.t, false, 11.5) + 44); });
+      if(sh.w < need) sh.w = Math.ceil(need / G) * G;
+      const H = snapv(30 + Math.max(1, items.length) * 20 + 8); if(sh.h < H) sh.h = H;
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/><rect x="${x}" y="${y}" width="${sh.w}" height="24" fill="#eef1f5" ${SW}/>` + T(e.name || 'Lejant', x + 8, y + 16, {anchor:'start', bold:1, size:11.5});
+      items.forEach((it, i) => {
+        const yy = y + 34 + i * 20;
+        if(it.line) s += `<line x1="${x + 8}" y1="${yy + 6}" x2="${x + 30}" y2="${yy + 6}" stroke="${it.c}" stroke-width="2.4"/>`;
+        else if(it.c) s += `<rect x="${x + 8}" y="${yy}" width="22" height="13" rx="2" fill="${it.c}" stroke="#555" stroke-width=".8"/>`;
+        s += T(it.t, x + (it.c ? 38 : 10), yy + 10.5, {anchor:'start', size:11.5});
+      });
+      if(!items.length) s += T('(Özelliklerden öğe ekleyin)', x + 10, y + 44, {anchor:'start', size:11, italic:1, fill:'#888'});
+      break;
+    }
     case 'Fragment': {
       const op = e.op || 'alt', lw = Math.max(44, tw(op, true, 11.5) + 22);
       s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="none" stroke="transparent" stroke-width="9" pointer-events="stroke"/><rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="none" stroke="${sh.stroke || STROKE}" stroke-width="1.3" pointer-events="none"/>`;
@@ -1979,8 +2010,30 @@ function routeOrtho(S, T2, ctx){
   return best;
 }
 function barOff(d, sh, y){ const B = d && BARS.get(d.id), arr = B && B.get(sh.id); if(!arr) return null; let best = null; arr.forEach(b => { if(y >= b.y1 - 0.5 && y <= b.y2 + 0.5 && (!best || b.lv > best.lv)) best = b; }); return best ? best.lv * 4 : null; }
+/* elle bükme noktaları (waypoint) */
+function wpEnd(sh, w, ortho, ctx){
+  const e = E(sh.el), par = sh.parent && ctx && ctx.SM.get(sh.parent);
+  if(par && e && BORDER.has(e.kind)){ const sd = portSide(sh, par), cx = sh.x + sh.w / 2, cy = sh.y + sh.h / 2; const pt = {l:{x:sh.x, y:cy}, r:{x:sh.x + sh.w, y:cy}, t:{x:cx, y:sh.y}, b:{x:cx, y:sh.y + sh.h}}[sd]; return ortho ? [pt, (sd === 'l' || sd === 'r') ? {x:w.x, y:pt.y} : {x:pt.x, y:w.y}] : [pt]; }
+  const b = bx(sh);
+  if(!ortho){ const dx = w.x - b.cx, dy = w.y - b.cy; if(!dx && !dy) return [{x:b.cx, y:b.cy}]; const t = clipT(b, dx, dy); return [{x:b.cx + dx * t, y:b.cy + dy * t}]; }
+  if((w.x < sh.x || w.x > sh.x + sh.w) && w.y > sh.y + 3 && w.y < sh.y + sh.h - 3) return [{x:sideX(b, w.y, w.x < sh.x ? -1 : 1), y:w.y}];
+  if((w.y < sh.y || w.y > sh.y + sh.h) && w.x > sh.x + 3 && w.x < sh.x + sh.w - 3) return [{x:w.x, y:sideY(b, w.x, w.y < sh.y ? -1 : 1)}];
+  const gx = Math.max(sh.x - w.x, w.x - sh.x - sh.w), gy = Math.max(sh.y - w.y, w.y - sh.y - sh.h);
+  if(gx >= gy){ const dir = w.x < b.cx ? -1 : 1; return [{x:sideX(b, b.cy, dir), y:b.cy}, {x:w.x, y:b.cy}]; }
+  const dir = w.y < b.cy ? -1 : 1; return [{x:b.cx, y:sideY(b, b.cx, dir)}, {x:b.cx, y:w.y}];
+}
+function wpPath(S, T2, ed, ctx){
+  const w = ed.wp.map(q => ({x:q.x, y:q.y})), ortho = ed.route !== 'straight';
+  const a = wpEnd(S, w[0], ortho, ctx), b = wpEnd(T2, w[w.length - 1], ortho, ctx).reverse();
+  const mid = [];
+  for(let i = 0; i < w.length; i++){ mid.push(w[i]); if(ortho && i < w.length - 1 && w[i].x !== w[i + 1].x && w[i].y !== w[i + 1].y) mid.push({x:w[i + 1].x, y:w[i].y}); }
+  let pts = a.concat(mid, b);
+  if(ortho){ const out = [pts[0]]; for(let i = 1; i < pts.length; i++){ const p = out[out.length - 1], q = pts[i]; if(Math.abs(p.x - q.x) > 0.5 && Math.abs(p.y - q.y) > 0.5) out.push({x:q.x, y:p.y}); out.push(q); } pts = out; }
+  return simplifyPath(pts);
+}
 function edgeGeom(S, T2, ed, ctx){
   const ek = edgeKind(ed);
+  if(ed.wp && ed.wp.length && !isMsg(ek) && S !== T2){ const r = wpPath(S, T2, ed, ctx); if(ctx) for(let i = 0; i < r.length - 1; i++) ctx.routed.push({a:r[i], b:r[i + 1]}); return r; }
   if(isMsg(ek)){
     const y = ed.y != null ? ed.y : Math.max(S.y, T2.y) + 70;
     let xs = S.x + S.w / 2, xt = T2.x + T2.w / 2;
@@ -2061,16 +2114,17 @@ function drawEdge(d, ed, SM, pts, exp){
     if(r && r.name) lab.push(r.name);
     if(r && r.guard) lab.push('[' + r.guard + ']');
   }
+  const lo = ed.lo || {x:0, y:0}, LG = t0 => `<g data-lab="${ed.id}"${!exp ? ' style="cursor:move"' : ''}>${t0}</g>`;
   if(isMsg(kind)){
     const a = pts[0], b = pts[1];
-    if(pts.length === 4) s += T(lab.join(' '), a.x + 50, a.y + 4, {anchor:'start', size:11, halo:1});
-    else s += T(lab.join(' '), (a.x + b.x) / 2, a.y - 6, {size:11, halo:1});
+    if(pts.length === 4) s += LG(T(lab.join(' '), a.x + 50 + lo.x, a.y + 4 + lo.y, {anchor:'start', size:11, halo:1}));
+    else s += LG(T(lab.join(' '), (a.x + b.x) / 2 + lo.x, a.y - 6 + lo.y, {size:11, halo:1}));
   } else if(lab.length){
     let li = 0, lm = -1; for(let i = 0; i < n - 1; i++){ const L = Math.abs(pts[i].x - pts[i + 1].x) + Math.abs(pts[i].y - pts[i + 1].y) + (i > 0 && i < n - 2 ? 20 : 0); if(L > lm){ lm = L; li = i; } }
     const a = pts[li], b = pts[li + 1];
     const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, vert = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
     const pr = ed._po && ed.route === 'straight', side = pr ? Math.sign((vert ? -(b.y - a.y) : (b.x - a.x)) * ed._po) || 1 : 1;
-    s += vert ? T(lab.join(' '), mx + 6 * side, my + 4, {anchor:side < 0 ? 'end' : 'start', size:11, halo:1}) : T(lab.join(' '), mx, !pr || side < 0 ? my - 6 : my + 14, {size:11, halo:1});
+    s += LG(vert ? T(lab.join(' '), mx + 6 * side + lo.x, my + 4 + lo.y, {anchor:side < 0 ? 'end' : 'start', size:11, halo:1}) : T(lab.join(' '), mx + lo.x, (!pr || side < 0 ? my - 6 : my + 14) + lo.y, {size:11, halo:1}));
   }
   if(r && r.interrupt && n >= 2){
     let li = 0, lm = -1; for(let i = 0; i < n - 1; i++){ const L = Math.hypot(pts[i].x - pts[i + 1].x, pts[i].y - pts[i + 1].y); if(L > lm){ lm = L; li = i; } }
@@ -2155,7 +2209,8 @@ function diagramSVG0(d, exp){
     edges += drawEdge(d, ed, SM, pts, exp);
   });
   let frame = '', bbox = null;
-  if(isFinite(x0)){
+  if(isFinite(x0) && d.noFrame){ bbox = {x:x0 - 20, y:y0 - 20, w:(x1 - x0) + 40, h:(y1 - y0) + 40}; }
+  else if(isFinite(x0)){
     const owner = E(d.owner);
     const label = d.dtype + ' [' + (owner ? (KIND[owner.kind].en || owner.kind) : '') + '] ' + (owner ? owner.name : '') + ' [' + d.name + ']';
     const fx = x0 - 30, fy = y0 - 50, fw = (x1 - x0) + 60, fh = (y1 - y0) + 80;
@@ -2172,6 +2227,7 @@ const svgEl = $('#svg'), wrapEl = $('#canvasWrap');
 function renderDiagram(){
   const d = cur();
   const emp = $('#empty'), vw = $('#view');
+  if(isView(ST.cur) || !d) renderMini(null);
   if(isView(ST.cur)){ svgEl.style.display = 'none'; emp.style.display = 'none'; vw.style.display = 'flex'; $('#zoomLbl').textContent = '—'; renderView(); renderStatus(); return; }
   vw.style.display = 'none'; svgEl.style.display = '';
   if(!d){
@@ -2183,12 +2239,37 @@ function renderDiagram(){
   }
   emp.style.display = d.shapes.length ? 'none' : 'flex';
   emp.innerHTML = d.shapes.length ? '' : 'Diyagram boş.<br>Soldaki <b>paletten</b> eleman sürükleyip bırakın ya da <b>model ağacından</b> mevcut elemanları sürükleyin.';
-  const {svg} = diagramSVG(d, false);
+  const {svg, bbox} = diagramSVG(d, false);
   const z = d.z;
   const grid = ST.grid ? `<defs><pattern id="gp" width="${G * 2}" height="${G * 2}" patternUnits="userSpaceOnUse"><circle cx="0.8" cy="0.8" r="0.8" fill="#c9d1dc"/></pattern></defs><rect x="-20000" y="-20000" width="40000" height="40000" fill="url(#gp)"/>` : '';
   svgEl.innerHTML = `<g id="vp" transform="translate(${d.vx},${d.vy}) scale(${z})">${grid}${svg}${simOverlay(d)}${selSVG(d)}<g id="ovl"></g></g>`;
   $('#zoomLbl').textContent = Math.round(z * 100) + '%';
+  renderMini(d, bbox);
   renderStatus();
+}
+/* ---- mini harita ---- */
+ST.mini = (() => { try { return localStorage.getItem('sysml-mini') !== '0'; } catch(e){ return true; } })();
+function renderMini(d, bbox){
+  let mm = $('#minimap');
+  if(!mm){
+    mm = document.createElement('div'); mm.id = 'minimap'; $('#canvasWrap').appendChild(mm);
+    const go = ev => { const r = mm.getBoundingClientRect(), k = mm._k, d0 = cur(); if(!k || !d0) return; const x = k.x + (ev.clientX - r.left) / k.s, y = k.y + (ev.clientY - r.top) / k.s, W = svgEl.getBoundingClientRect(); d0.vx = W.width / 2 - x * d0.z; d0.vy = W.height / 2 - y * d0.z; renderDiagram(); persistSoon(); };
+    mm.addEventListener('mousedown', ev => { ev.preventDefault(); ev.stopPropagation(); go(ev); const mv = e2 => go(e2), up = () => { window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); }; window.addEventListener('mousemove', mv); window.addEventListener('mouseup', up); });
+  }
+  if(!ST.mini || !d || !bbox || !d.shapes.length){ mm.style.display = 'none'; return; }
+  const W = svgEl.getBoundingClientRect(); if(!W.width) { mm.style.display = 'none'; return; }
+  const vx0 = -d.vx / d.z, vy0 = -d.vy / d.z, vw = W.width / d.z, vh = W.height / d.z;
+  if(vx0 <= bbox.x && vy0 <= bbox.y && vx0 + vw >= bbox.x + bbox.w && vy0 + vh >= bbox.y + bbox.h){ mm.style.display = 'none'; return; }
+  const x0 = Math.min(bbox.x, vx0), y0 = Math.min(bbox.y, vy0), x1 = Math.max(bbox.x + bbox.w, vx0 + vw), y1 = Math.max(bbox.y + bbox.h, vy0 + vh);
+  const MW = 190, MH = 130, sc = Math.min(MW / (x1 - x0), MH / (y1 - y0));
+  mm._k = {x:x0, y:y0, s:sc};
+  const R = (x, y, w, h) => `x="${((x - x0) * sc).toFixed(1)}" y="${((y - y0) * sc).toFixed(1)}" width="${Math.max(1, w * sc).toFixed(1)}" height="${Math.max(1, h * sc).toFixed(1)}"`;
+  let g = '';
+  d.shapes.forEach(sh => { const e = E(sh.el); if(!e || sh.parent) return; const c = CONT.has(e.kind) || isComposite(e); g += `<rect ${R(sh.x, sh.y, sh.w, sh.h)} fill="${c ? 'none' : (sh.fill || FILL[e.kind] || '#dde3ea')}" stroke="#7b8796" stroke-width=".6"/>`; });
+  d.edges.forEach(ed => { if(ed._pts) g += `<polyline points="${ed._pts.map(q => ((q.x - x0) * sc).toFixed(1) + ',' + ((q.y - y0) * sc).toFixed(1)).join(' ')}" fill="none" stroke="#9aa4b1" stroke-width=".6"/>`; });
+  g += `<rect ${R(vx0, vy0, vw, vh)} fill="rgba(45,127,249,.10)" stroke="#2d7ff9" stroke-width="1.2"/>`;
+  mm.style.display = 'block';
+  mm.innerHTML = `<svg width="${Math.ceil((x1 - x0) * sc)}" height="${Math.ceil((y1 - y0) * sc)}">${g}</svg>`;
 }
 function selSVG(d){
   let s = '';
@@ -2213,10 +2294,14 @@ function selSVG(d){
       s += `<circle data-ep="s" data-epe="${ed.id}" cx="${p[0].x}" cy="${p[0].y}" r="${r0}" fill="#fff" stroke="#2d7ff9" stroke-width="${sw}" style="cursor:crosshair"><title>Sürükleyip başka elemana bırakın</title></circle>`;
       s += `<circle data-ep="t" data-epe="${ed.id}" cx="${p[p.length - 1].x}" cy="${p[p.length - 1].y}" r="${r0}" fill="#fff" stroke="#2d7ff9" stroke-width="${sw}" style="cursor:crosshair"><title>Sürükleyip başka elemana bırakın</title></circle>`;
     }
+    if(!isMsg(edgeKind(ed)) && ST.sel.size === 1 && ed.s !== ed.t){
+      (ed.wp || []).forEach((q, i) => { s += `<rect data-wp="${i}" data-wpe="${ed.id}" x="${q.x - hs / 2}" y="${q.y - hs / 2}" width="${hs}" height="${hs}" fill="#fff" stroke="#e67e22" stroke-width="${sw * 1.4}" style="cursor:move"><title>Bükme noktası — sürükleyin; çift tık: sil</title></rect>`; });
+      for(let i = 0; i < p.length - 1; i++){ const L = Math.hypot(p[i + 1].x - p[i].x, p[i + 1].y - p[i].y); if(L * z < 34) continue; s += `<circle data-wpadd="${i}" data-wpe="${ed.id}" cx="${(p[i].x + p[i + 1].x) / 2}" cy="${(p[i].y + p[i + 1].y) / 2}" r="${4 / z}" fill="#fff" stroke="#e67e22" stroke-width="${sw}" style="cursor:copy"><title>Sürükleyerek bükme noktası ekleyin</title></circle>`; }
+    }
     if(isMsg(edgeKind(ed))){
       const mx = p.length === 4 ? p[1].x : (p[0].x + p[1].x) / 2, my = p[0].y;
       s += `<rect data-mid="${ed.id}" x="${mx - hs / 2}" y="${my - hs / 2}" width="${hs}" height="${hs}" fill="#2d7ff9" stroke="#fff" stroke-width="${sw / 2}" style="cursor:ns-resize"/>`;
-    } else if(p.length === 4 && ed.s !== ed.t){
+    } else if(p.length === 4 && ed.s !== ed.t && !(ed.wp && ed.wp.length)){
       const mx = (p[1].x + p[2].x) / 2, my = (p[1].y + p[2].y) / 2;
       s += `<rect data-mid="${ed.id}" x="${mx - hs / 2}" y="${my - hs / 2}" width="${hs}" height="${hs}" fill="#2d7ff9" stroke="#fff" stroke-width="${sw / 2}" style="cursor:move"/>`;
     }
@@ -2483,6 +2568,7 @@ function palIcon(k){
     case 'Region': s = `<rect x="2" y="2" width="22" height="14" fill="#fff" stroke="#777" stroke-dasharray="3 2"/>`; break;
     case 'History': s = `<circle cx="13" cy="9" r="7" fill="#fff" ${sw}/><text x="13" y="12.5" font-size="9" text-anchor="middle" font-weight="bold" font-family="Arial">H</text>`; break;
     case 'Junction': s = `<circle cx="13" cy="9" r="4" fill="#222"/>`; break;
+    case 'Legend': s = `<rect x="2" y="1" width="22" height="16" fill="#fff" ${sw}/><rect x="5" y="5" width="5" height="3.5" fill="#fdf1d6" stroke="#555" stroke-width=".6"/><rect x="5" y="11" width="5" height="3.5" fill="#d9ecf7" stroke="#555" stroke-width=".6"/><path d="M12 7h9M12 13h9" stroke="#555"/>`; break;
     default: {
       const st = ER[k] || {};
       const p = {x:22, y:9}, q = {x:4, y:9};
@@ -2540,6 +2626,7 @@ function canDrop(d, e){
   return DT[d.dtype].shapes.includes(e.kind);
 }
 function ownerFor(kind, d){
+  if(kind === 'Legend') return d.owner;
   if(d.dtype === 'bdd') return kind === 'Comment' ? d.owner : nearestPkg(d.owner);
   if(d.dtype === 'uc' || d.dtype === 'pkg') return nearestPkg(d.owner);
   if(d.dtype === 'req') return kind === 'Requirement' ? reqHome(nearestPkg(d.owner)) : nearestPkg(d.owner);
@@ -2581,10 +2668,11 @@ function placeNew(kind, p, target){
   if(CONT.has(kind)){ d.shapes.splice(d.shapes.indexOf(sh), 1); d.shapes.unshift(sh); }
   if(kind === 'Fragment'){ e.op = 'alt'; e.guards = 'koşul\nelse'; }
   if(kind === 'AcceptTime') e.name = 'after (1 s)';
+  if(kind === 'Legend'){ e.name = 'Lejant'; e.items = legendAuto(d) || '#fff8d8 Açıklama'; }
   ST.sel = new Set([sh.id]); ST.tsel = e.id;
   syncNesting(d, [sh.id]);
   revealInTree(e.id); afterChange();
-  if(!UNNAMED.has(kind) && kind !== 'Fragment' && kind !== 'AcceptTime') editShape(sh);
+  if(!UNNAMED.has(kind) && !['Fragment','AcceptTime','Legend'].includes(kind)) editShape(sh);
 }
 function dropExisting(id, p, target){
   const d = cur(), e = E(id); if(!d || !e) return;
@@ -2724,12 +2812,31 @@ svgEl.addEventListener('mousedown', ev => {
   if(h){ const sh = shapeOf(d, h.dataset.hs); drag = {type:'resize', h:h.dataset.h, sh, o:{x:sh.x, y:sh.y, w:sh.w, h:sh.h}, kids:d.shapes.filter(s => s.parent === sh.id), start:p, snapped:false}; return; }
   const ep = t.closest('[data-ep]');
   if(ep){ const ed = d.edges.find(x => x.id === ep.dataset.epe); if(ed){ drag = {type:'reconn', ed, end:ep.dataset.ep}; return; } }
+  const wph = t.closest('[data-wp]'), wpa = t.closest('[data-wpadd]');
+  if(wph || wpa){
+    const ed = d.edges.find(x => x.id === (wph || wpa).dataset.wpe);
+    if(ed){
+      snap();
+      if(wpa){ const i = +wpa.dataset.wpadd; if(!ed.wp || !ed.wp.length) ed.wp = ed._pts.slice(1, -1).map(q => ({x:snapv(q.x), y:snapv(q.y)})); const pi = Math.min(i, ed.wp.length); ed.wp.splice(pi, 0, {x:snapv(p.x), y:snapv(p.y)}); delete ed.mx; delete ed.my; drag = {type:'wp', ed, i:pi, snapped:true}; }
+      else drag = {type:'wp', ed, i:+wph.dataset.wp, snapped:true};
+      renderDiagram(); return;
+    }
+  }
+  const lbh = t.closest('[data-lab]');
+  if(lbh && ST.sel.has(lbh.dataset.lab)){ const ed = d.edges.find(x => x.id === lbh.dataset.lab); if(ed){ drag = {type:'lab', ed, start:p, o:Object.assign({x:0, y:0}, ed.lo), snapped:false}; return; } }
   const sp = t.closest('[data-sep]');
   if(sp){ const sh0 = shapeOf(d, sp.dataset.ss); if(sh0){ drag = {type:'sep', sh:sh0, i:+sp.dataset.sep, snapped:false}; return; } }
   const mh = t.closest('[data-mid]');
   if(mh){ const ed = d.edges.find(x => x.id === mh.dataset.mid); const pts = ed._pts; drag = {type:'mid', ed, ax:isMsg(edgeKind(ed)) ? 'msg' : (Math.abs(pts[1].x - pts[2].x) < 0.5 ? 'x' : 'y'), snapped:false}; return; }
   const sg = t.closest('[data-sid]'), eg = t.closest('[data-eid]');
   const sh = sg ? shapeOf(d, sg.dataset.sid) : null;
+  if(ST.painter){
+    const P = ST.painter;
+    if(sh && P.kind === 'shape'){ snap(); ['fill', 'stroke'].forEach(k => { if(P.st[k]) sh[k] = P.st[k]; else delete sh[k]; }); if(P.st.hide && ['Block','InterfaceBlock'].includes(E(sh.el).kind)) sh.hide = Object.assign({}, P.st.hide); if(P.size && !sh.parent && !UNNAMED.has(E(sh.el).kind)){ sh.w = P.size.w; sh.h = P.size.h; } afterChange(); return; }
+    if(eg && P.kind === 'edge'){ const ed = d.edges.find(x => x.id === eg.dataset.eid); if(ed){ snap(); if(P.st.stroke) ed.stroke = P.st.stroke; else delete ed.stroke; if(P.st.route) ed.route = P.st.route; afterChange(); } return; }
+    if(!sh && !eg){ fmtPainter(true); }
+    return;
+  }
   if(ST.tool && ST.tool.type === 'rel'){
     if(sh) drag = {type:'link', s:sh, p};
     return;
@@ -2750,7 +2857,8 @@ svgEl.addEventListener('mousedown', ev => {
     const orig = new Map(); set.forEach(id => { const s = shapeOf(d, id); orig.set(id, {x:s.x, y:s.y}); });
     const msgs = new Map();
     if(d.dtype === 'sd') d.shapes.forEach(f => { if(set.has(f.id) && E(f.el) && E(f.el).kind === 'Fragment') d.edges.forEach(ed => { if(isMsg(edgeKind(ed)) && ed._pts && ed.y >= f.y && ed.y <= f.y + f.h && ed._pts.every(q => q.x >= f.x - 2 && q.x <= f.x + f.w + 2)) msgs.set(ed, ed.y); }); });
-    drag = {type:'move', start:p, anchor:sh, orig, set, moved:false, msgs};
+    const wps = new Map(); d.edges.forEach(ed => { if(ed.wp && ed.wp.length && set.has(ed.s) && set.has(ed.t)) wps.set(ed, ed.wp.map(q => ({x:q.x, y:q.y}))); });
+    drag = {type:'move', start:p, anchor:sh, orig, set, moved:false, msgs, wps};
     return;
   }
   if(eg){
@@ -2782,6 +2890,7 @@ window.addEventListener('mousemove', ev => {
       if(!ev.altKey){ dx = snapv(a.x + dx) - a.x; dy = snapv(a.y + dy) - a.y; }
       drag.set.forEach(id => { const s = shapeOf(d, id), o = drag.orig.get(id); s.x = o.x + dx; s.y = o.y + dy; });
       if(drag.msgs) drag.msgs.forEach((y0, ed) => { ed.y = y0 + dy; });
+      if(drag.wps) drag.wps.forEach((w0, ed) => { ed.wp = w0.map(q => ({x:q.x + dx, y:q.y + dy})); });
     }
     renderDiagram(); return;
   }
@@ -2799,6 +2908,8 @@ window.addEventListener('mousemove', ev => {
     drag.kids.forEach(c => snapPort(c, sh, c.x + c.w / 2, c.y + c.h / 2));
     renderDiagram(); return;
   }
+  if(drag.type === 'wp'){ const q = drag.ed.wp[drag.i]; if(q){ q.x = ev.altKey ? Math.round(p.x) : snapv(p.x); q.y = ev.altKey ? Math.round(p.y) : snapv(p.y); } renderDiagram(); return; }
+  if(drag.type === 'lab'){ if(!drag.snapped){ snap(); drag.snapped = true; } drag.ed.lo = {x:Math.round(drag.o.x + p.x - drag.start.x), y:Math.round(drag.o.y + p.y - drag.start.y)}; renderDiagram(); return; }
   if(drag.type === 'sep'){
     if(!drag.snapped){ snap(); drag.snapped = true; }
     const sh = drag.sh, n = fragOps(E(sh.el)).length; sh.seps = fragSeps(sh, n);
@@ -2835,7 +2946,8 @@ window.addEventListener('mouseup', ev => {
   if(dr.type === 'pan'){ persistSoon(); return; }
   if(dr.type === 'move' && dr.moved) syncNesting(d, [...dr.set]);
   if(dr.type === 'resize' && dr.snapped && d.dtype === 'stm'){ const R = dr.sh; syncNesting(d, d.shapes.filter(o => o === R || (o.x >= R.x && o.y >= R.y && o.x + o.w <= R.x + R.w && o.y + o.h <= R.y + R.h) || (R.x >= o.x && R.y >= o.y)).map(o => o.id)); }
-  if(dr.type === 'move' || dr.type === 'resize' || dr.type === 'mid' || dr.type === 'sep'){ if(dr.moved || dr.snapped){ renderAll(); persist(); } return; }
+  if(dr.type === 'wp'){ if(dr.ed.wp){ dr.ed.wp = dr.ed.wp.filter((q, i, a) => !a.some((o, j) => j < i && Math.abs(o.x - q.x) < 2 && Math.abs(o.y - q.y) < 2)); } renderAll(); persist(); return; }
+  if(dr.type === 'move' || dr.type === 'resize' || dr.type === 'mid' || dr.type === 'sep' || dr.type === 'lab'){ if(dr.moved || dr.snapped){ renderAll(); persist(); } return; }
   if(dr.type === 'rubber'){
     if(dr.r && dr.r.w > 2){
       const r = dr.r;
@@ -2866,6 +2978,8 @@ window.addEventListener('mouseup', ev => {
 function handleDbl(ev){
   const d = cur(); if(!d) return;
   const hit = document.elementFromPoint(ev.clientX, ev.clientY) || ev.target;
+  const wph = hit.closest && hit.closest('[data-wp]');
+  if(wph){ const ed = d.edges.find(x => x.id === wph.dataset.wpe); if(ed && ed.wp){ snap(); ed.wp.splice(+wph.dataset.wp, 1); if(!ed.wp.length) delete ed.wp; afterChange(); } return; }
   const sg = hit.closest && hit.closest('[data-sid]'), eg = hit.closest && hit.closest('[data-eid]');
   if(sg){
     const sh = shapeOf(d, sg.dataset.sid), e = E(sh.el);
@@ -2911,7 +3025,8 @@ svgEl.addEventListener('contextmenu', ev => {
     if(ed.el) it.push({t:'Adı düzenle', f:() => editEdge(ed, 'name')});
     if(ed.el && ['ControlFlow','ObjectFlow'].includes(edgeKind(ed))) it.push({t:'Koşul (guard) düzenle', f:() => editEdge(ed, 'guard')});
     it.push({t:ed.route === 'straight' ? 'Dik açılı çizgi yap' : 'Düz çizgi yap', f:() => { snap(); ed.route = ed.route === 'straight' ? 'ortho' : 'straight'; afterChange(); }});
-    it.push({t:'Rotayı sıfırla', f:() => { snap(); delete ed.mx; delete ed.my; afterChange(); }});
+    it.push({t:'Rotayı sıfırla (bükme noktalarını sil)', f:() => { snap(); delete ed.mx; delete ed.my; delete ed.wp; afterChange(); }});
+    if(ed.lo) it.push({t:'Etiket konumunu sıfırla', f:() => { snap(); delete ed.lo; afterChange(); }});
     if(ed.el) it.push({t:'Ağaçta göster', f:() => revealInTree(ed.el)});
     it.push('-');
     it.push({t:'Diyagramdan kaldır', k:'Shift+Del', f:() => { snap(); removeFromDiagram(d, [...ST.sel]); afterChange(); }});
@@ -3046,7 +3161,7 @@ function copySel(){
   const set = new Set(tops.map(s => s.id));
   d.shapes.forEach(s => { if(s.parent && set.has(s.parent)) set.add(s.id); });
   const shapes = d.shapes.filter(s => set.has(s.id)).map(s => JSON.parse(JSON.stringify(s)));
-  const edges = d.edges.filter(ed => set.has(ed.s) && set.has(ed.t) && !isMsg(edgeKind(ed))).map(ed => ({el:ed.el, kind:ed.kind, s:ed.s, t:ed.t, route:ed.route, stroke:ed.stroke}));
+  const edges = d.edges.filter(ed => set.has(ed.s) && set.has(ed.t) && !isMsg(edgeKind(ed))).map(ed => ({el:ed.el, kind:ed.kind, s:ed.s, t:ed.t, route:ed.route, stroke:ed.stroke, wp:ed.wp ? ed.wp.map(q => ({x:q.x, y:q.y})) : undefined, lo:ed.lo}));
   ST.clip = {from:d.id, dtype:d.dtype, shapes, edges};
   toast(tops.length + ' şekil kopyalandı');
   return true;
@@ -3104,7 +3219,8 @@ function pasteClip(forceCopy){
       M.els[nr.id] = nr; el = nr.id;
     }
     if(el && d.edges.some(x => x.el === el)) return;
-    d.edges.push({id:uid(), el:el || null, kind:ed.kind, s:S, t:T0, route:ed.route, stroke:ed.stroke});
+    const ne = {id:uid(), el:el || null, kind:ed.kind, s:S, t:T0, route:ed.route, stroke:ed.stroke}; if(ed.wp) ne.wp = ed.wp.map(q => ({x:q.x + ox, y:q.y + oy})); if(ed.lo) ne.lo = Object.assign({}, ed.lo);
+    d.edges.push(ne);
   });
   d.shapes.filter(s => [...smap.values()].includes(s.id)).forEach(s => autoEdges(d, s));
   ST.sel = new Set([...smap.values()].filter(id => { const s = shapeOf(d, id); return s && !s.parent; }));
@@ -3170,7 +3286,7 @@ function reconnectEdge(d, ed, end, tsh){
   const kind = edgeKind(ed), a = E(S.el), b = E(T0.el);
   const err = validate(kind, a, b, d); if(err) return toast(err);
   snap();
-  ed[end] = tsh.id; delete ed.mx; delete ed.my;
+  ed[end] = tsh.id; delete ed.mx; delete ed.my; delete ed.wp;
   if(ed.el){
     const r = E(ed.el);
     if(end === 's') r.src = a.id; else r.tgt = b.id;
@@ -3286,6 +3402,9 @@ function renderProps(){
       h += pf('Birim', `<input data-f="unit" value="${esc(el.unit || '')}" placeholder="ör. kg, Hz, g²/Hz">`);
       h += pf('Büyüklük türü', `<input data-f="qk" value="${esc(el.qk || '')}" placeholder="ör. mass, frequency">`);
       break;
+    case 'Legend':
+      h += pf('Öğeler', `<textarea data-f="items" rows="6" placeholder="Her satır: #renk açıklama&#10;ör. #fdf1d6 Tedarikçi ürünü&#10;Çizgi için: -#c0392b Kritik arayüz">${esc(el.items || '')}</textarea>`);
+      h += pf('', `<button class="pbtn" data-legauto="1">Diyagramdaki renklerden doldur</button>`); break;
     case 'Enumeration':
       h += pf('Değerler', `<textarea data-f="lits" placeholder="Her satıra bir değer">${esc(el.lits || '')}</textarea>`); break;
     case 'SendSignal': case 'AcceptEvent':
@@ -3401,10 +3520,13 @@ function renderProps(){
     h += `<div class="sub"><span>Görünüm</span></div>`;
     h += pf('Çizgi', `<select data-ef="route"><option value="ortho"${ed.route !== 'straight' ? ' selected' : ''}>Dik açılı</option><option value="straight"${ed.route === 'straight' ? ' selected' : ''}>Düz</option></select>`);
     h += pf('Çizgi rengi', `<input type="color" data-ef="stroke" value="${ed.stroke || '#3a3a3a'}"> <button class="pbtn" data-resetestroke="1">Varsayılan</button>`);
-    if(ed.mx != null || ed.my != null) h += pf('', `<button class="pbtn" data-resetroute="1">Otomatik rotaya dön</button>`);
+    if(ed.mx != null || ed.my != null || (ed.wp && ed.wp.length)) h += pf('', `<button class="pbtn" data-resetroute="1">Otomatik rotaya dön</button>`);
+    if(ed.lo) h += pf('', `<button class="pbtn" data-resetlab="1">Etiketi yerine koy</button>`);
+    h += pf('', '<span class="muted">Turuncu noktaları sürükleyerek bükme noktası ekleyin; etiketi sürükleyerek taşıyın.</span>');
   }
   if(el && el.kind === 'Diagram'){
     h += `<div class="sub"><span>Diyagram görünümü</span></div>`;
+    h += pf('Çerçeve', `<label class="vchk"><input type="checkbox" data-f="noFrame"${el.noFrame ? ' checked' : ''}> SysML diyagram çerçevesini gizle</label>`);
     if(el.dtype === 'sd') h += pf('Yürütme çubukları', `<label class="vchk"><input type="checkbox" data-f="exec"${el.exec !== false ? ' checked' : ''}> Senkron mesajlarda otomatik göster</label>`);
     h += pf('Yazı boyutu', `<select data-f="fs">${[[0.9, '%90 (küçük)'], [1, '%100'], [1.15, '%115 (büyük)'], [1.3, '%130 (sunum)']].map(([v, t]) => `<option value="${v}"${(el.fs || 1) == v ? ' selected' : ''}>${t}</option>`).join('')}</select>`);
   }
@@ -3450,11 +3572,13 @@ propsEl.addEventListener('click', ev => {
   if(bt && bt.dataset.iccol){ const tg = propTarget(); if(tg.el){ snap(); delete tg.el.iconColor; afterChange(); } return; }
   if(t.dataset.resetstroke){ const tg = propTarget(); if(tg.sh){ snap(); delete tg.sh.stroke; afterChange(); } return; }
   if(t.dataset.resetestroke){ const tg = propTarget(); if(tg.ed){ snap(); delete tg.ed.stroke; afterChange(); } return; }
-  if(t.dataset.resetroute){ const tg = propTarget(); if(tg.ed){ snap(); delete tg.ed.mx; delete tg.ed.my; afterChange(); } return; }
+  if(t.dataset.resetroute){ const tg = propTarget(); if(tg.ed){ snap(); delete tg.ed.mx; delete tg.ed.my; delete tg.ed.wp; afterChange(); } return; }
+  if(t.dataset.resetlab){ const tg = propTarget(); if(tg.ed){ snap(); delete tg.ed.lo; afterChange(); } return; }
   if(t.dataset.resetfill){ const tg = propTarget(); if(tg.sh){ snap(); delete tg.sh.fill; afterChange(); } return; }
   if(t.dataset.strm){ const tg = propTarget(); if(tg.el){ snap(); tg.el.st = (tg.el.st || []).filter(x => x !== t.dataset.strm); afterChange(); } return; }
   if(t.dataset.stfillclr){ const tg = propTarget(); if(tg.el){ snap(); delete tg.el.fill; afterChange(); } return; }
   if(t.dataset.stnew){ const tg = propTarget(); if(tg.el) newStereotypeFor(tg.el); return; }
+  if(t.dataset.legauto){ const tg = propTarget(), d = cur(); if(tg.el && d){ const v = legendAuto(d); if(!v) return toast('Diyagramda özel renk yok — önce şekillere dolgu/çizgi rengi verin'); snap(); tg.el.items = v; afterChange(); } return; }
 });
 
 /* ================= REQUIREMENTS & TRACEABILITY ================= */
@@ -5413,7 +5537,7 @@ function fileSafe(s){ return String(s || 'diyagram').replace(/[\\/:*?"<>|]+/g, '
 function download(blob, name){
   if(NATIVE){
     const ext = (name.split('.').pop() || '').toLowerCase();
-    const flt = {png:'PNG görüntü (*.png)|*.png', svg:'SVG görüntü (*.svg)|*.svg', html:'HTML (*.html)|*.html', json:'JSON (*.json)|*.json', xlsx:'Excel çalışma kitabı (*.xlsx)|*.xlsx', csv:'CSV (*.csv)|*.csv', docx:'Word belgesi (*.docx)|*.docx', reqif:'ReqIF (*.reqif)|*.reqif'}[ext] || 'Tüm dosyalar (*.*)|*.*';
+    const flt = {png:'PNG görüntü (*.png)|*.png', svg:'SVG görüntü (*.svg)|*.svg', html:'HTML (*.html)|*.html', json:'JSON (*.json)|*.json', xlsx:'Excel çalışma kitabı (*.xlsx)|*.xlsx', pdf:'PDF belgesi (*.pdf)|*.pdf', csv:'CSV (*.csv)|*.csv', docx:'Word belgesi (*.docx)|*.docx', reqif:'ReqIF (*.reqif)|*.reqif'}[ext] || 'Tüm dosyalar (*.*)|*.*';
     const rd = new FileReader();
     rd.onload = async () => {
       const b64 = String(rd.result).split(',')[1] || '';
@@ -5546,6 +5670,10 @@ const ACT = {
   png:exportPNG, svg:exportSVG, copy:copyImage,
   zin(){ zoomBtn(1.2); }, zout(){ zoomBtn(1 / 1.2); }, fit,
   grid(){ ST.grid = !ST.grid; renderDiagram(); },
+  mini(){ ST.mini = !ST.mini; try { localStorage.setItem('sysml-mini', ST.mini ? '1' : '0'); } catch(e){} renderDiagram(); toast(ST.mini ? 'Mini harita açık (diyagram ekrana sığmadığında görünür)' : 'Mini harita kapalı'); },
+  painter(){ fmtPainter(); },
+  pdf(){ pdfMenu(); },
+  exportMenu(){ pdfMenu(true); },
   expandAll(){ Object.values(M.els).forEach(e => { if(!KIND[e.kind].rel) ST.exp.add(e.id); }); renderTree(); persistSoon(); },
   collapseAll(){ ST.exp = new Set([M.rootId]); renderTree(); persistSoon(); },
   help:showHelp
@@ -5563,6 +5691,7 @@ document.addEventListener('keydown', ev => {
   if(c && (k === 's' || k === 'S')){ ev.preventDefault(); saveJSON(ev.shiftKey); return; }
   if(c && ev.shiftKey && (k === 'l' || k === 'L')){ ev.preventDefault(); const d0 = cur(); if(d0) runLayout(LAYOUTS[d0.dtype][0][0]); return; }
   if(c && (k === 'o' || k === 'O')){ ev.preventDefault(); openFile(); return; }
+  if(k === 'Escape' && ST.painter){ fmtPainter(true); return; }
   if(k === 'Escape'){ if($('#modal').style.display === 'flex'){ $('#modal').style.display = 'none'; return; } setTool(null); ST.sel.clear(); hideMenu(); renderDiagram(); renderProps(); return; }
   const d = cur();
   if(c && (k === 'f' || k === 'F')){ ev.preventDefault(); searchModel(); return; }
@@ -5619,6 +5748,11 @@ function showHelp(){
   <tr><td><kbd>Ctrl+Tekerlek</kbd></td><td>Yakınlaş; tekerlek kaydırır; <kbd>Boşluk</kbd> veya orta tuş + sürükle tuvali kaydırır</td></tr>
   <tr><td>Ok tuşları</td><td>Seçiliyi 10 px (Shift ile 1 px) taşır; <kbd>Alt</kbd>+sürükle ızgarasız taşır</td></tr>
   <tr><td>Bağlantı orta tutamağı</td><td>Seçili dik açılı bağlantının orta parçasını sürükleyerek rota ayarlanır</td></tr>
+  <tr><td>Bükme noktası</td><td>Seçili bağlantıdaki turuncu yuvarlakları sürükleyerek bükme noktası ekleyin; kare noktaları taşıyın, çift tıkla silin. Düz çizgide eğik, dik açılıda basamaklı çizilir.</td></tr>
+  <tr><td>Etiket taşıma</td><td>Seçili bağlantının etiketini (ad, koşul, «stereotip») sürükleyin; sağ tık → Etiket konumunu sıfırla.</td></tr>
+  <tr><td>🖌 Biçim</td><td>Bir şekil/bağlantı seçip Biçim'e basın; tıkladığınız diğer elemanlara renk ve görünüm uygulanır. Esc ile çıkılır.</td></tr>
+  <tr><td>Harita</td><td>Diyagram ekrana sığmadığında sağ altta mini harita çıkar; tıklayarak/sürükleyerek gezinin.</td></tr>
+  <tr><td>Lejant</td><td>Paletteki Lejant renk açıklamalarını gösterir; Özellikler → "Diyagramdaki renklerden doldur".</td></tr>
   </table>
   <h3>Diyagram türleri</h3>
   <table>
@@ -5704,7 +5838,7 @@ function showHelp(){
   <tr><td>Otomatik</td><td>Model tarayıcının yerel deposunda otomatik saklanır (aynı bilgisayar/tarayıcı).</td></tr>
   <tr><td>Kaydet</td><td>.sysml.json dosyası indirir; "Aç" ile geri yüklenir.</td></tr>
   <tr><td>HTML olarak kaydet</td><td>Modeli içine gömülü uygulama dosyası üretir; paylaştığınız kişi açınca modeli hazır görür.</td></tr>
-  <tr><td>PNG / SVG / Panoya kopyala</td><td>Açık diyagramı çerçevesiyle birlikte görüntü olarak verir.</td></tr>
+  <tr><td>Dışa aktar ▾</td><td>PNG, SVG, panoya kopyalama; tek diyagram, açık sekmeler veya tüm diyagramlar için çok sayfalı <b>PDF</b> (A4/A3, yön otomatik); yazdırma. Diyagram özelliklerinden SysML çerçevesi gizlenebilir.</td></tr>
   </table>
   <p style="text-align:right;margin:12px 0 0"><button class="pbtn" onclick="document.getElementById('modal').style.display='none'">Kapat</button></p>`;
   $('#modal').style.display = 'flex';
@@ -5883,6 +6017,89 @@ function demo(){
   const fsh = addShape(sq, fr.id, 210, 140, 620, 95); d0Front(sq, fsh);
   M.ui = {open:[bdd.id, ibd.id, ifd.id, uc.id, ad.id, td.id, rd.id, sm.id, sq.id, pd.id, pgd.id, '@reqtable', '@matrix', '@coverage'], cur:bdd.id, exp:[root.id, pk.id, pu.id, pa.id, act.id, sys.id, rqPkg, pi.id]};
   return M;
+}
+
+/* ================= v1.9: BİÇİM BOYACISI, PDF ================= */
+function fmtPainter(off){
+  if(ST.painter || off){ ST.painter = null; wrapEl.classList.remove('paint'); const b = $('#btnPainter'); if(b) b.classList.remove('on'); if(!off) toast('Biçim boyacısı kapandı'); return; }
+  const d = cur(); if(!d) return toast('Önce bir diyagram açın');
+  const id = [...ST.sel][0], sh = id && shapeOf(d, id), ed = id && d.edges.find(x => x.id === id);
+  if(ST.sel.size !== 1 || (!sh && !ed)) return toast('Önce biçimi kopyalanacak tek bir şekil veya bağlantı seçin');
+  if(sh) ST.painter = {kind:'shape', st:{fill:sh.fill, stroke:sh.stroke, hide:sh.hide}, size:null};
+  else ST.painter = {kind:'edge', st:{stroke:ed.stroke, route:ed.route}};
+  wrapEl.classList.add('paint'); const b = $('#btnPainter'); if(b) b.classList.add('on');
+  toast('Biçim kopyalandı — uygulamak için ' + (sh ? 'şekillere' : 'bağlantılara') + ' tıklayın · Esc veya boş alana tık: çıkış');
+}
+/* ---- PDF: JPEG görüntülü, bağımlılıksız PDF yazıcı ---- */
+function svgToJpeg(r, scale){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(r.w * scale)); c.height = Math.max(1, Math.round(r.h * scale)); const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height); c.toBlob(async b => res({bytes:new Uint8Array(await b.arrayBuffer()), w:c.width, h:c.height}), 'image/jpeg', 0.92); };
+    img.onerror = () => rej(new Error('görüntü oluşturulamadı'));
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
+  });
+}
+function buildPdf(pages){
+  const enc = new TextEncoder(), parts = [], offs = [];
+  let len = 0; const push = x => { const b = typeof x === 'string' ? enc.encode(x) : x; parts.push(b); len += b.length; };
+  const objs = [];
+  const add = f => { objs.push(f); return objs.length; };
+  const catalog = add(null), pagesId = add(null);
+  const kids = [];
+  pages.forEach(pg => {
+    const im = add({img:pg});
+    const cs = `q ${pg.dw.toFixed(2)} 0 0 ${pg.dh.toFixed(2)} ${pg.dx.toFixed(2)} ${pg.dy.toFixed(2)} cm /Im0 Do Q`;
+    const ct = add({str:`<< /Length ${cs.length} >>\nstream\n${cs}\nendstream`});
+    kids.push(add({str:`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${pg.pw} ${pg.ph}] /Resources << /XObject << /Im0 ${im} 0 R >> >> /Contents ${ct} 0 R >>`}));
+  });
+  objs[catalog - 1] = {str:`<< /Type /Catalog /Pages ${pagesId} 0 R >>`};
+  objs[pagesId - 1] = {str:`<< /Type /Pages /Kids [${kids.map(k => k + ' 0 R').join(' ')}] /Count ${kids.length} >>`};
+  push('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+  objs.forEach((o, i) => {
+    offs.push(len); push(`${i + 1} 0 obj\n`);
+    if(o.img){ push(`<< /Type /XObject /Subtype /Image /Width ${o.img.w} /Height ${o.img.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${o.img.bytes.length} >>\nstream\n`); push(o.img.bytes); push('\nendstream'); }
+    else push(o.str);
+    push('\nendobj\n');
+  });
+  const xref = len;
+  push(`xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offs.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join(''));
+  push(`trailer\n<< /Size ${objs.length + 1} /Root ${catalog} 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(parts, {type:'application/pdf'});
+}
+async function exportPDF(ids, opt){
+  opt = opt || {};
+  const ds = ids.map(E).filter(d => d && d.kind === 'Diagram' && d.shapes.length);
+  if(!ds.length) return toast('Dışa aktarılacak dolu diyagram yok');
+  toast('PDF hazırlanıyor… (' + ds.length + ' diyagram)');
+  const pages = [];
+  for(const d of ds){
+    const r = diagramSVGStr(d); if(!r) continue;
+    const land = opt.orient === 'auto' ? r.w >= r.h : opt.orient === 'land';
+    const pw = opt.size === 'A3' ? (land ? 1190.55 : 841.89) : (land ? 841.89 : 595.28), ph = opt.size === 'A3' ? (land ? 841.89 : 1190.55) : (land ? 595.28 : 841.89);
+    const m = 28, k = Math.min((pw - 2 * m) / r.w, (ph - 2 * m) / r.h, 1.6);
+    const scale = Math.min(3, Math.max(1.2, 2600 / Math.max(r.w, r.h)));
+    const im = await svgToJpeg(r, scale);
+    pages.push(Object.assign(im, {pw, ph, dw:r.w * k, dh:r.h * k, dx:(pw - r.w * k) / 2, dy:(ph - r.h * k) / 2}));
+  }
+  const name = ds.length === 1 ? fileSafe(ds[0].name) : fileSafe(E(M.rootId).name) + ' - diyagramlar';
+  download(buildPdf(pages), name + '.pdf');
+}
+function pdfMenu(){
+  const b = document.querySelector('[data-act="exportMenu"]').getBoundingClientRect(), d = cur(), all = Object.values(M.els).filter(e => e.kind === 'Diagram' && e.shapes.length).sort(sortEls);
+  setTimeout(() => menu(b.left, b.bottom + 4, [{h:'Görüntü'},
+    {t:'PNG olarak kaydet', dis:!d, f:exportPNG}, {t:'SVG olarak kaydet', dis:!d, f:exportSVG}, {t:'Panoya resim olarak kopyala', dis:!d, f:copyImage},
+    {h:'PDF olarak kaydet'},
+    {t:'Açık diyagram — A4 (yön otomatik)', dis:!d, f:() => exportPDF([d.id], {size:'A4', orient:'auto'})},
+    {t:'Açık diyagram — A3 (yön otomatik)', dis:!d, f:() => exportPDF([d.id], {size:'A3', orient:'auto'})},
+    {t:'Açık sekmelerdeki diyagramlar — A4', f:() => exportPDF(ST.open.filter(id => !isView(id)), {size:'A4', orient:'auto'})},
+    {t:'Tüm diyagramlar (' + all.length + ') — A4', f:() => exportPDF(all.map(x => x.id), {size:'A4', orient:'auto'})},
+    '-', {t:'Yazdır (tarayıcı yazdırma penceresi)…', dis:!d || NATIVE, f:() => printDiagram(d)}]), 0);
+}
+function printDiagram(d){
+  const r = diagramSVGStr(d); if(!r) return;
+  const w = window.open('', '_blank'); if(!w) return toast('Açılır pencere engellendi — PDF olarak kaydedin');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(d.name)}</title><style>@page{size:${r.w >= r.h ? 'landscape' : 'portrait'};margin:10mm}body{margin:0;display:flex;justify-content:center}svg{max-width:100%;height:auto}</style></head><body>${r.str}<script>onload=()=>setTimeout(()=>print(),200)<\/script></body></html>`);
+  w.document.close();
 }
 
 /* ================= v1.8: ANALİZ VE SİMÜLASYON ================= */

@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v1.9.0 — 2026-10-05
+
+Editör ergonomisi:
+
+- **Bükme noktaları:** bağlantılara sürükleyerek bükme noktası ekleme, taşıma, çift tıkla silme; düz çizgide eğik, dik açılıda basamaklı rota; uçları birlikte taşınınca bükme noktaları da taşınır
+- **Taşınabilir etiketler:** bağlantı adı, koşul, «stereotip» ve mesaj etiketleri sürüklenebilir
+- **Mini harita:** diyagram ekrana sığmadığında görünen, tıklanıp sürüklenerek gezinilen genel görünüm
+- **Biçim boyacısı:** seçili şeklin/bağlantının renk ve görünümünü diğerlerine uygulama
+- **Lejant** elemanı: renk açıklamaları, diyagramdaki renklerden otomatik doldurma
+- **PDF:** bağımlılıksız PDF yazıcı; açık diyagram, açık sekmeler veya tüm diyagramlar tek PDF'te (A4/A3, otomatik yön); tarayıcıda yazdırma
+- Diyagram çerçevesini gizleme seçeneği; PNG/SVG/pano **Dışa aktar ▾** menüsünde toplandı
+
 ## v1.8.0 — 2026-10-05
 
 Analiz ve simülasyon (yeni **Analiz ▾** menüsü):

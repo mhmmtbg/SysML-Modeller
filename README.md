@@ -32,7 +32,8 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 - **Engelden kaçan bağlantılar:** Bağlantılar elemanların üzerinden geçmez, aynı kenara gelenler ayrı noktalara dağılır.
 - **Otomatik düzen:** Diyagram türüne göre hiyerarşik, akış, kulvarlı, aktörler-solda, ızgara, dairesel ve "toparla" düzenleri; hizalama ve dağıtma araçları
 - **İkon kütüphanesi:** 10 kategoride 200'ü aşkın ikon (otomotiv, havacılık ve uzay, bilgisayar, savunma, enerji, sensör ve haberleşme, mekanik, yazılım, organizasyon, genel)
-- **Dışa aktarma:** Diyagramlar SysML çerçevesiyle PNG/SVG olarak indirilebilir veya panoya resim olarak kopyalanıp Word/PowerPoint'e yapıştırılabilir.
+- **Dışa aktarma:** Diyagramlar SysML çerçevesiyle PNG/SVG, tek veya çok sayfalı **PDF** olarak kaydedilebilir ya da panoya resim olarak kopyalanıp Word/PowerPoint'e yapıştırılabilir.
+- **Editör kolaylıkları:** bağlantılarda elle bükme noktaları ve eğik çizgi, taşınabilir etiketler, mini harita, biçim boyacısı, lejant
 - **Kayıt:**
   - Otomatik kayıt
   - `.sysml` (JSON) model dosyası
@@ -60,7 +61,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 4. Dağınık mı oldu? **Düzen ▾** menüsünden bir düzen seçin (`Ctrl+Shift+L`).
 5. **Gereksinimler ▾** menüsünden gereksinim tablosunu açın, Excel'den isterleri aktarın, izlenebilirliği kurun, kapsama analizine ve VCRM'e bakın.
 6. **Araçlar ▾ → Rapor oluştur** ile modelin Word raporunu alın.
-7. Bloklara **İkon** atayın, sonra **PNG** ile görüntüyü indirin.
+7. Bloklara **İkon** atayın, sonra **Dışa aktar ▾** menüsünden PNG veya PDF alın.
 8. **Kaydet** (`Ctrl+S`) ile modeli `.sysml` dosyası olarak saklayın.
 
 Ayrıntılı kullanım için: **[docs/KULLANIM.md](docs/KULLANIM.md)**

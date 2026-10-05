@@ -26,7 +26,7 @@
 
 | Bölge | Görevi |
 |---|---|
-| **Araç çubuğu** (üst) | Yeni / Aç / Kaydet, gezinme (◀ ▶), geri al, PNG/SVG/pano, yakınlaştırma, **Düzen ▾**, **İkon**, Yardım |
+| **Araç çubuğu** (üst) | Yeni / Aç / Kaydet, gezinme (◀ ▶), geri al, **Dışa aktar ▾** (PNG/SVG/PDF/pano), yakınlaştırma, Izgara, **Harita**, **🖌 Biçim**, **Gereksinimler ▾**, **Analiz ▾**, **Araçlar ▾**, **Düzen ▾**, **İkon**, Yardım |
 | **Model ağacı** (sol üst) | Modelin tamamı: paketler, bloklar, part'lar, aktörler, aktiviteler, diyagramlar, ilişkiler |
 | **Özellikler** (sol alt) | Seçili elemanın adı, tipi, çokluğu, ikonu, açıklaması vb. |
 | **Palet** | Açık diyagram türüne özel elemanlar ve ilişkiler |
@@ -68,6 +68,8 @@ Paneller arasındaki ayırıcılar sürüklenerek boyutlandırılabilir.
   - Bağlantılar otomatik olarak elemanların etrafından dolaşır. Aynı kenara gelen bağlantılar ayrı noktalara dağıtılır, paralel hatlar üst üste binmez.
   - Düz çizgili bağlantılar (use case, durum makinesi, not bağlantısı) bir elemanı keserse dik açılı olarak etrafından dolaşır.
   - Elle ayar: seçili bağlantının ortasındaki mavi tutamak sürüklenir. Sağ tık → *Rotayı sıfırla* otomatik rotaya döndürür.
+  - **Bükme noktaları:** Seçili bağlantının parçalarının ortasındaki turuncu yuvarlakları sürükleyerek bükme noktası ekleyin. Turuncu kare noktalar taşınır, çift tıklayınca silinir. *Düz* çizgide eğik (serbest açılı), *dik açılı* çizgide basamaklı çizilir. İki ucu birlikte taşınan bağlantının bükme noktaları da taşınır.
+  - **Etiket taşıma:** Seçili bağlantının etiketini (ad, koşul, «stereotip», mesaj) sürükleyerek yerini değiştirin. Sağ tık → *Etiket konumunu sıfırla*.
   - Bağlantı ucunu yeniden bağlama: seçili bağlantının uç tutamacını başka bir elemana sürükleyin; model ilişkisi de güncellenir.
 - **Kopyala / yapıştır:** `Ctrl+C` / `Ctrl+V`. Başka bir diyagrama yapıştırınca aynı model elemanları orada da gösterilir; aynı diyagrama yapıştırınca yeni eleman olarak kopyalanır (bloklar part, port ve değerleriyle). `Ctrl+Shift+V` her zaman yeni eleman olarak yapıştırır, `Ctrl+D` seçimi çoğaltır.
 - **Ağaçtan toplu ekleme:** Ağaçta `Ctrl`/`Shift` + tık ile birden çok eleman seçip diyagrama birlikte sürükleyin; aralarındaki ilişkiler otomatik çizilir.
@@ -80,6 +82,9 @@ Paneller arasındaki ayırıcılar sürüklenerek boyutlandırılabilir.
 - **Silme:**
   - `Del`: elemanı **modelden** siler; tüm diyagramlardan kalkar.
   - `Shift+Del`: yalnızca **bu diyagramdan** kaldırır, eleman modelde kalır.
+- **Biçim boyacısı (🖌 Biçim):** Bir şekil veya bağlantı seçip **Biçim**'e basın. Tıkladığınız diğer şekillere dolgu, çizgi rengi ve bölme görünümü, bağlantılara çizgi rengi ve rota türü uygulanır. Boş alana tıklayınca veya `Esc` ile çıkılır.
+- **Lejant:** Her diyagram paletinde *Lejant* vardır. Öğeler her satıra `#renk açıklama` biçiminde yazılır (çizgi için `-#renk açıklama`). *Diyagramdaki renklerden doldur* düğmesi kullanılan dolgu, stereotip ve çizgi renklerini otomatik listeler.
+- **Mini harita:** Diyagram ekrana sığmadığında sağ altta görünür. Tıklayarak veya sürükleyerek gezinilir. Araç çubuğundaki **Harita** ile açılıp kapatılır.
 - **Yakınlaştırma:** `Ctrl` + fare tekerleği, araç çubuğundaki − / + ya da **Sığdır**.
 - **Kaydırma:** Fare tekerleği, `Boşluk` + sürükleme veya orta tuşla sürükleme.
 
@@ -589,8 +594,10 @@ Seçili elemana göre alanlar değişir:
 - **PNG:** Yüksek çözünürlüklü (2×) beyaz arka planlı görüntü
 - **SVG:** Vektörel; ölçeklenebilir, düzenlenebilir
 - **Panoya:** Word, PowerPoint veya e-postaya doğrudan yapıştırılır.
+- **PDF:** **Dışa aktar ▾** menüsünden açık diyagram, açık sekmelerdeki diyagramlar veya tüm diyagramlar tek bir çok sayfalı PDF olarak kaydedilir. Her diyagram bir sayfadır; A4 veya A3 seçilir, sayfa yönü diyagramın en/boy oranına göre otomatik belirlenir. PDF, internet ve eklenti gerektirmeden uygulamanın içinde üretilir.
+- **Yazdır:** Tarayıcı sürümünde yazdırma penceresini açar.
 
-Çıktıya SysML diyagram çerçevesi (`bdd [Package] Yapı [Sistem Yapısı]` gibi) dahil edilir. Seçim işaretleri ve gezinme simgeleri dahil edilmez.
+Çıktıya SysML diyagram çerçevesi (`bdd [Package] Yapı [Sistem Yapısı]` gibi) dahil edilir. İstenmezse diyagram özelliklerinden *SysML diyagram çerçevesini gizle* seçilir. Seçim işaretleri ve gezinme simgeleri çıktıya girmez.
 
 ## 11. Klavye kısayolları
 
