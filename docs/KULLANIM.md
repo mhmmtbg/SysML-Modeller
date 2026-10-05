@@ -692,6 +692,34 @@ Bağlantı seçiliyken Özellikler panelinde de arayüz ID, tür, taşınan öğ
 - **Durum geçiş tablosu (Analiz ▾ veya durum makinesinin Özellikler panelindeki düğme):** seçilen durum makinesinin geçişleri *kaynak durum – olay – koşul – etki – hedef durum* olarak (hedefin entry/do/exit davranışlarıyla) veya **durum × olay matrisi** olarak. Olay, koşul ve etki hücrede düzenlenir, diyagrama yansır. Üstte ulaşılamayan, çıkışı olmayan durumlar ve aynı durumda aynı olaya bağlı koşulsuz birden çok geçiş (**belirsizlik**) sayılır. Excel'e aktarılır.
 - **Kullanıldığı yerler:** bir eleman seçildiğinde Özellikler panelinin altında açılır bölüm; elemanın gösterildiği diyagramlar, tip olarak kullanıldığı part/port/value'lar, onu çağıran aksiyonlar, alt tipleri, tüm ilişkileri (yönüyle), bağlı olduğu test durumları, arıza modları ve riskler. Öğeye tıklayınca o elemana veya diyagrama gidilir.
 
+## 5l. Test yürütme, test numuneleri ve uygunsuzluk (NCR)
+
+Üç görünüm **Gereksinimler ▾** menüsündedir; test durumunun Özellikler panelindeki **Yürütme → ▶ Aç** düğmesi de test yürütmeyi açar.
+
+### Test yürütme (**Gereksinimler ▾ → Test yürütme**)
+
+- Üstteki listeden test seçilir. Kartlar: test sonucu, tamamlanan adım, başarısız adım, açık NCR.
+- **Prosedür adımları:** her satırda işlem / adım, beklenen, ölçülen / gözlenen ve sonuç (Geçti / Kaldı). Hücreye tıklayıp yazın; Enter alt satıra geçer. ↑ ↓ ile sıralanır.
+- **Tüm adımlara sonuç girilince test sonucu adımlardan hesaplanır:** bir adım Kaldı ise test Kaldı, hepsi Geçti ise test Geçti; sonuç tarihi boşsa bugün yazılır.
+- **⎘ Adımları yapıştır:** Excel'den veya Word tablosundan kopyalanan satırlar alınır (sütunlar: işlem, beklenen, ölçülen, sonuç). Baştaki sıra numarası ve başlık satırı atlanır.
+- **Numuneler** satırındaki **+** ile teste numune bağlanır (listede yoksa *+ Yeni numune*).
+- Başarısız bir adımın yanındaki **+** o adıma bağlı NCR açar: test, adım, numune ve testin doğruladığı gereksinimler otomatik doldurulur.
+- **↻ Tekrar test oluştur:** test; adımları (sonuçsuz), numuneleri, profilleri ve Verify ilişkileriyle kopyalanır. **Adım sonuçlarını temizle** aynı testi baştan yürütmek içindir.
+
+### Uygunsuzluk kaydı (**Gereksinimler ▾ → Uygunsuzluk kaydı (NCR)**)
+
+- Sütunlar: NCR no (NCR-001…), başlık, açıklama, tarih, test, numune, önem (Kritik / Majör / Minör), kök neden, düzeltici faaliyet, karar (tamir, yeniden işle, olduğu gibi kullan, hurda, tekrar test, tasarım değişikliği), sorumlu, hedef tarih, durum (Açık → İnceleniyor → Düzeltici faaliyet → Tekrar test → Kapandı), gereksinimler, arıza modu, tekrar test.
+- Tekrar test sütunundaki **↻** testi adımlarıyla kopyalayıp NCR'a bağlar; tekrar testin sonucu yanında görünür.
+- Kapatırken kök neden boşsa veya karar "Tekrar test" olduğu hâlde tekrar test geçmemişse uyarı verilir; aynı kurallar **Model doğrulama**'da da denetlenir.
+- Açık NCR'lar **VCRM**'de "Açık NCR" sütununda, **kalite raporunda** onaylı gereksinim için uyarı olarak görünür (kritik NCR hata sayılır).
+
+### Test numuneleri (**Gereksinimler ▾ → Test numuneleri**)
+
+- Numune: test edilen fiziksel ürün — ad, seri no, parça no, ürün (blok), konfigürasyon / sürüm, konum, durum (Hazır, Testte, Beklemede, Arızalı, Tamirde, Hurda, Teslim edildi).
+- Her satırda numunenin geçtiği testler (renkli nokta = sonuç) ve NCR'ları; satıra tıklayınca **numune geçmişi** tarih sırasıyla aşağıda gösterilir.
+
+**⤒ Excel'e aktar** (üç görünümde de): *Uygunsuzluklar (NCR)*, *Test Numuneleri* ve *Test Adımları* sayfaları. **Araçlar ▾ → Rapor oluştur**'da "Test yürütme, numuneler ve uygunsuzluklar" bölümü numune tablosunu, adımları olan testlerin prosedür tablolarını ve NCR listesini ekler.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

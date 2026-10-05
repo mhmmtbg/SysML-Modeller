@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.19.0 — 2026-10-05
+
+- **Test yürütme** (**Gereksinimler ▾**): test durumu başına prosedür adımları (işlem, beklenen, ölçülen, Geçti/Kaldı); tüm adımlar sonuçlanınca test sonucu adımlardan hesaplanır; Excel'den adım yapıştırma; tekrar test oluşturma
+- **Test numuneleri:** seri no, parça no, ürün bloğu, konfigürasyon, konum, durum; numune başına test ve NCR geçmişi
+- **Uygunsuzluk kaydı (NCR):** test, adım, numune, önem, kök neden, düzeltici faaliyet, karar, durum; gereksinim, arıza modu ve tekrar test bağlantısı; başarısız adımdan tek tıkla NCR
+- VCRM'de "Açık NCR" sütunu; kalite raporunda onaylı gereksinimdeki açık NCR uyarısı; model doğrulamada NCR ve adım/sonuç tutarlılık kuralları
+- Excel (NCR, numuneler, test adımları) ve rapor bölümü; örnek modele numune, adım ve NCR'lar eklendi
+- İngilizce arayüz sözlüğüne yeni metinler eklendi; regresyon testi 21 adım
+
 ## v1.18.0 — 2026-10-05
 
 - **İngilizce arayüz:** araç çubuğundaki **EN / TR** düğmesiyle arayüz dili değişir; seçim bu bilgisayarda hatırlanır, varsayılan Türkçe

@@ -230,6 +230,32 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   const pr = await run(id => { const k = kidsOf(id); const rels = Object.values(M.els).filter(r => KIND[r.kind].rel && (r.src === id || r.tgt === id)).map(r => r.kind + ':' + nm(E(r.src)) + '→' + nm(E(r.tgt))); const d = cur(); const ov = d.shapes.filter(a => !a.parent).some(a => d.shapes.filter(b2 => !b2.parent && b2 !== a).some(b2 => a.x < b2.x + b2.w && a.x + a.w > b2.x && a.y < b2.y + b2.h && a.y + a.h > b2.y)); return { kids: k.map(x => x.kind + ':' + x.name + (x.mult ? '[' + x.mult + ']' : '')), rels, shapes: d.shapes.length, edges: d.edges.length, overlap: ov }; }, pb.bid);
   ok('Part (yeni blok + Composition), value, yeni üst tip; çakışma yok', pr.kids.some(k => /^Part:.*\[2\]$/.test(k)) && pr.kids.includes('Value:kütle') && pr.rels.some(r => r.startsWith('Composition:Ana→Alt Blok')) && pr.rels.some(r => r === 'Generalization:Ana→Temel') && pr.shapes === 3 && pr.edges === 2 && !pr.overlap, pr);
 
+  console.log('8j) Test yürütme, numune ve NCR');
+  const tx0 = await run(() => { const tc = newTest({ name: 'Yürütme testi', procNo: 'TP-X-1' }); const rq = allReqs()[0]; addRel('Verify', tc.id, rq.id); rq.status = 'Onaylı'; const a = taAdd({ name: 'Numune X', sn: 'X-01' }); tc.articles = [a.id]; openTestRun(tc.id); return { tc: tc.id, rq: rq.id, a: a.id }; });
+  for (let i = 0; i < 2; i++) { await page.click('#view [data-tx="add"]'); await page.waitForTimeout(80); }
+  await page.click('#view .ce2[data-si="0"][data-sk="a"]'); await page.keyboard.type('Gerilim uygula'); await page.keyboard.press('Enter'); await page.waitForTimeout(80);
+  await page.keyboard.type('Akımı ölç'); await page.click('#view h3'); await page.waitForTimeout(100);
+  await page.selectOption('#view [data-sx="0"]', 'Geçti'); await page.waitForTimeout(80);
+  const mid = await run(id => testResult(E(id)), tx0.tc);
+  await page.selectOption('#view [data-sx="1"]', 'Kaldı'); await page.waitForTimeout(80);
+  await page.click('#view [data-tx="ncrstep"][data-i="1"]'); await page.waitForTimeout(150);
+  const tx = await run(async o => {
+    const tc = E(o.tc), n = allNCRs().find(x => x.test === o.tc);
+    const r = { steps: tcSteps(tc).map(s => s.a + ':' + s.r), res: testResult(tc), mid: null, ncr: n && n.ncrId, ncrReqs: n && n.reqs.length, ncrArt: n && n.article === o.a, view: ST.cur, stepLinked: n && n.stepId === tcSteps(tc)[1].id };
+    openD('@vcrm'); r.vcrm = [...document.querySelectorAll(`#view tr[data-row="${o.rq}"] .ncrc`)].map(x => x.textContent);
+    r.q = reqQuality(E(o.rq)).map(x => x[1]).filter(x => /NCR/.test(x));
+    const t2 = cloneRetest(tc); n.retest = t2.id; n.disp = 'Tekrar test'; n.nst = 'Kapandı';
+    r.v1 = validateModel().filter(q => q.id === n.id).map(q => q.rule);
+    t2.steps.forEach(s => s.r = 'Geçti'); applyStepsResult(t2); n.cause = 'x';
+    r.v2 = validateModel().filter(q => q.id === n.id).map(q => q.rule); r.t2 = [t2.steps.length, testResult(t2), testReqs(t2).length];
+    openD('@articles'); r.hist = articleHistory(E(o.a)).length;
+    window.__dl = []; ncrXlsx(); const x = window.__dl.pop(); const sh = await readXlsx(new Uint8Array(await x.blob.arrayBuffer())); r.sheets = sh.map(s => s.name + ':' + s.rows.length);
+    const B = buildReport({ sec: {}, dia: [], testexec: true }); r.rep = B.some(q => q.t === 'h' && /Test yürütme/.test(q.txt || q.t2 || JSON.stringify(q)));
+    return r;
+  }, tx0).catch(e => ({ error: e.message }));
+  tx.mid = mid;
+  ok('Adımlar düzenleniyor, sonuç adımlardan, NCR adımdan açılıyor, VCRM/kalite, tekrar test, Excel, rapor', !tx.error && tx.mid === 'Planlandı' && tx.steps.join('|') === 'Gerilim uygula:Geçti|Akımı ölç:Kaldı' && tx.res === 'Kaldı' && /^NCR-\d{3}$/.test(tx.ncr) && tx.ncrReqs === 1 && tx.ncrArt && tx.stepLinked && tx.view === '@ncr' && tx.vcrm.length === 1 && tx.q.length === 1 && tx.v1.length >= 2 && !tx.v2.length && tx.t2.join() === '2,Geçti,1' && tx.hist >= 2 && tx.sheets.length === 3 && tx.rep, tx);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);
