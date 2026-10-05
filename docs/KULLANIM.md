@@ -94,6 +94,19 @@ Paneller arasındaki ayırıcılar sürüklenerek boyutlandırılabilir.
 - **Yakınlaştırma:** `Ctrl` + fare tekerleği, araç çubuğundaki − / + ya da **Sığdır**.
 - **Kaydırma:** Fare tekerleği, `Boşluk` + sürükleme veya orta tuşla sürükleme.
 
+### Seçili bloğa hızlı ekleme ("+" düğmesi)
+
+Diyagramda bir **blok, arayüz bloğu, kısıt bloğu veya sinyal** (IBD'de bir **part**) seçildiğinde sağ üst köşesinin yanında mavi bir **+** düğmesi çıkar. Aynı menü sağ tık → **Ekle / ilişkilendir (+)…** ile de açılır.
+
+| Grup | Seçenekler |
+|---|---|
+| **Bölmeye ekle** | *Part property* (tip olarak var olan blok veya **yeni blok**; çokluk; BDD'de isterseniz Composition çizgisiyle tip bloğunu da gösterir), *Reference property* (paylaşımlı, Aggregation), *Value property* (ad, tip, varsayılan, birim), *Flow property* (ad, in/out/inout, tip, birim), *Port* (yön, arayüz bloğu tipi, eşlenik ~), kısıt bloğunda *Parametre* |
+| **İlişki + yeni blok** | Composition → yeni parça bloğu (part adı ve çokluk ile), Aggregation, Association, Generalization → yeni alt tip / yeni üst tip, Dependency. Yeni blok kaynağın yakınında boş bir yere yerleşir. |
+| **İlişki → var olan eleman** | Aynı ilişkiler için listeden bir veya birden çok hedef seçilir; diyagramda olmayan hedefler otomatik eklenir, zaten var olan ilişkiler atlanır. |
+| **IBD'de part** | Port (part'ın kenarına yerleşir), value / flow property (tip bloğuna), Connector → başka part |
+
+Eklenen öğe bloğun bölmesinde hemen görünür, model ağacında seçilir. Blok büyüyüp altındaki şekillerle çakışırsa o şekiller otomatik olarak aşağı kaydırılır. Her ekleme **Ctrl+Z** ile geri alınır; formlarda **Enter** ekler, **Esc** kapatır.
+
 ## 4. Diyagram türleri
 
 ### Blok Tanım Diyagramı (BDD)

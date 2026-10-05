@@ -221,6 +221,15 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   });
   ok('Ctrl+K ile görünüm açılıyor, geçiş tablosu ve matris, kullanıldığı yerler, tema geçişi', p10.viaPalette === '@risk' && p10.items > 60 && p10.rowsT >= 5 && p10.wu.includes('Gösterildiği diyagramlar') && p10.hasWU && p10.dark && p10.light, p10);
 
+  console.log('8h) Seçili bloğun "+" düğmesiyle ekleme');
+  const pb = await run(() => { const pk = mk('Package', M.rootId, { name: 'Plus testi' }); const b = mk('Block', pk.id, { name: 'Ana' }); const d = newDiagramCore(pk.id, 'bdd', 'Plus BDD'); const sh = addShape(d, b.id, 100, 100, 170, 80); openD(d.id); ST.sel = new Set([sh.id]); renderDiagram(); return { sid: sh.id, bid: b.id }; });
+  const clickPlus = async () => { const bb = await page.locator('[data-plus]').boundingBox(); await page.mouse.click(bb.x + bb.width / 2, bb.y + bb.height / 2); await page.waitForTimeout(120); };
+  await clickPlus(); await page.click('#ctx .mi:has-text("Part property")'); await page.fill('[data-qf="tname"]', 'Alt Blok'); await page.selectOption('[data-qf="mult"]', '2'); await page.click('#qfO'); await page.waitForTimeout(120);
+  await run(s0 => { ST.sel = new Set([s0]); renderDiagram(); }, pb.sid); await clickPlus(); await page.click('#ctx .mi:has-text("Value property")'); await page.fill('[data-qf="name"]', 'kütle'); await page.fill('[data-qf="def"]', '3'); await page.keyboard.press('Enter'); await page.waitForTimeout(120);
+  await run(s0 => { ST.sel = new Set([s0]); renderDiagram(); }, pb.sid); await clickPlus(); await page.click('#ctx .mi:has-text("Generalization → yeni üst tip")'); await page.fill('[data-qf="name"]', 'Temel'); await page.click('#qfO'); await page.waitForTimeout(120);
+  const pr = await run(id => { const k = kidsOf(id); const rels = Object.values(M.els).filter(r => KIND[r.kind].rel && (r.src === id || r.tgt === id)).map(r => r.kind + ':' + nm(E(r.src)) + '→' + nm(E(r.tgt))); const d = cur(); const ov = d.shapes.filter(a => !a.parent).some(a => d.shapes.filter(b2 => !b2.parent && b2 !== a).some(b2 => a.x < b2.x + b2.w && a.x + a.w > b2.x && a.y < b2.y + b2.h && a.y + a.h > b2.y)); return { kids: k.map(x => x.kind + ':' + x.name + (x.mult ? '[' + x.mult + ']' : '')), rels, shapes: d.shapes.length, edges: d.edges.length, overlap: ov }; }, pb.bid);
+  ok('Part (yeni blok + Composition), value, yeni üst tip; çakışma yok', pr.kids.some(k => /^Part:.*\[2\]$/.test(k)) && pr.kids.includes('Value:kütle') && pr.rels.some(r => r.startsWith('Composition:Ana→Alt Blok')) && pr.rels.some(r => r === 'Generalization:Ana→Temel') && pr.shapes === 3 && pr.edges === 2 && !pr.overlap, pr);
+
   console.log('9) Büyük model performansı');
   const perf = await run(() => {
     const T = {}; const tm = (k, f) => { const t0 = performance.now(); f(); T[k] = Math.round(performance.now() - t0); };

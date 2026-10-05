@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.17.0 — 2026-10-05
+
+- **Akıllı "+" düğmesi:** diyagramda seçili blok, arayüz bloğu, kısıt bloğu, sinyal (IBD'de part) yanında; sağ tık → *Ekle / ilişkilendir* ile de açılır
+  - Bölmeye ekleme: part property (var olan veya yeni tip bloğu, çokluk, isteğe bağlı Composition çizgisi), reference (Aggregation), value property, flow property, port, parametre — kısa formlarla
+  - İlişki + yeni blok: Composition (part adı, çokluk), Aggregation, Association, Generalization (yeni alt / üst tip), Dependency
+  - İlişki → var olan eleman: çoklu hedef seçimi, diyagramda olmayan hedefi ekleme, yinelenen ilişkiyi atlama
+  - IBD'de part: port (kenara yerleşir), tip bloğuna value/flow property, connector
+- Blok büyüyünce çakışan şekiller zincirleme aşağı kaydırılır
+
 ## v1.16.0 — 2026-10-05
 
 Kullanım kolaylığı:
