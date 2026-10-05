@@ -230,6 +230,25 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   const pr = await run(id => { const k = kidsOf(id); const rels = Object.values(M.els).filter(r => KIND[r.kind].rel && (r.src === id || r.tgt === id)).map(r => r.kind + ':' + nm(E(r.src)) + '→' + nm(E(r.tgt))); const d = cur(); const ov = d.shapes.filter(a => !a.parent).some(a => d.shapes.filter(b2 => !b2.parent && b2 !== a).some(b2 => a.x < b2.x + b2.w && a.x + a.w > b2.x && a.y < b2.y + b2.h && a.y + a.h > b2.y)); return { kids: k.map(x => x.kind + ':' + x.name + (x.mult ? '[' + x.mult + ']' : '')), rels, shapes: d.shapes.length, edges: d.edges.length, overlap: ov }; }, pb.bid);
   ok('Part (yeni blok + Composition), value, yeni üst tip; çakışma yok', pr.kids.some(k => /^Part:.*\[2\]$/.test(k)) && pr.kids.includes('Value:kütle') && pr.rels.some(r => r.startsWith('Composition:Ana→Alt Blok')) && pr.rels.some(r => r === 'Generalization:Ana→Temel') && pr.shapes === 3 && pr.edges === 2 && !pr.overlap, pr);
 
+  console.log('8i) İngilizce arayüz (TR | EN)');
+  await run(() => { setLang('en'); openD('@reqtable'); });
+  await page.waitForTimeout(150);
+  const en1 = await run(() => ({ reqView: document.querySelector('#view .vbar').textContent }));
+  await run(() => openD('@fmea')); await page.waitForTimeout(150);
+  const en = await run(en1 => {
+    const q = s => (document.querySelector(s) || {}).textContent;
+    const r = Object.assign({}, en1, { save: q('[data-act="save"]'), req: q('[data-act="reqMenu"]'), btn: q('[data-act="lang"]'), fmeaHead: [...document.querySelectorAll('#view th')].map(t => t.textContent).join('|') });
+    const names0 = Object.values(M.els).map(e => e.name).join('|');
+    const pk = mk('Package', M.rootId, {}); const b = mk('Block', pk.id, {}); r.newName = b.name;
+    r.tr = tr('Kaydet'); r.tpl = tr('Hata: x');
+    r.namesSame = Object.values(M.els).filter(e => e.id !== pk.id && e.id !== b.id).map(e => e.name).join('|') === names0;
+    setLang('tr');
+    r.saveTR = q('[data-act="save"]'); r.reqTR = q('[data-act="reqMenu"]'); r.btnTR = q('[data-act="lang"]');
+    r.newNameTR = mk('Block', pk.id, {}).name;
+    return r;
+  }, en1);
+  ok('EN: araç çubuğu/görünüm/yeni ad İngilizce, model içeriği değişmiyor, TR\'ye dönüş', /Save/.test(en.save) && /Requirements/.test(en.req) && en.btn === 'TR' && en.newName.startsWith('Block') && en.tr === 'Save' && en.tpl === 'Error: x' && /Subsystem requirement/.test(en.reqView) && !/ereksinim/.test(en.reqView) && /Failure mode/.test(en.fmeaHead) && !/Arıza/.test(en.fmeaHead) && en.namesSame && /Kaydet/.test(en.saveTR) && /Gereksinimler/.test(en.reqTR) && en.btnTR === 'EN' && en.newNameTR.startsWith('Blok'), en);
+
   console.log('9) Büyük model performansı');
   const perf = await run(() => {
     const T = {}; const tm = (k, f) => { const t0 = performance.now(); f(); T[k] = Math.round(performance.now() - t0); };

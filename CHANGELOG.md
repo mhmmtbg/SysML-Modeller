@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.18.0 — 2026-10-05
+
+- **İngilizce arayüz:** araç çubuğundaki **EN / TR** düğmesiyle arayüz dili değişir; seçim bu bilgisayarda hatırlanır, varsayılan Türkçe
+  - İngilizce olanlar: araç çubuğu, menüler, palet, Özellikler paneli, tüm görünümler, pencereler, bildirimler ve onay soruları, doğrulama/kalite mesajları, yardım, komut paleti, eleman türü adları, yeni elemanların varsayılan adları
+  - Türkçe kalanlar: model içeriği (adlar, gereksinim metinleri), çıktılar (Word, Excel, ReqIF, PDF), Türkçe gereksinim yazım kuralları, şablon gereksinim metinleri, KULLANIM.md
+  - Sözlük uygulamanın içinde (~2400 kayıt); internet veya ek dosya gerekmez
+- Regresyon testi 20 adıma çıktı (İngilizce arayüz adımı)
+
 ## v1.17.0 — 2026-10-05
 
 - **Akıllı "+" düğmesi:** diyagramda seçili blok, arayüz bloğu, kısıt bloğu, sinyal (IBD'de part) yanında; sağ tık → *Ekle / ilişkilendir* ile de açılır
