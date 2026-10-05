@@ -750,6 +750,23 @@ Tablodaki **⇥** düğmesi (veya Özellikler'deki **⇥ Kaydır…**) testi se�
 
 **⤓ Takvim PNG** çizelgeyi görüntü olarak, **⤒ Plan Excel** *Test Planı* (süre, kaynak, öncül, bolluk, kritik yol, çakışmalar), *Kaynak Planı* ve *Çakışmalar* sayfalarını kaydeder. Raporda "Test planı, kaynaklar ve çakışmalar" bölümü test ve kaynak takvimi şekillerini ekler.
 
+## 5n. Doküman üretimi: test prosedürü, test raporu ve doküman şablonları
+
+### Test prosedürü ve test raporu (Word)
+
+**Test yürütme** ekranındaki **📄 Test prosedürü** / **📄 Test raporu** düğmeleri, test durumunun Özellikler panelindeki **📄 TP / 📄 TR** düğmeleri veya **Gereksinimler ▾ → Test prosedürü / test raporu (Word)…** ile açılır.
+
+- **Test prosedürü bölümleri:** amaç ve kapsam, referans dokümanlar, doğrulanan gereksinimler, test numunesi ve konfigürasyonu, test düzeneği ve kaynaklar (kalibrasyon tarihiyle), test seviyeleri ve profiller (grafik ve kırılma noktası tablosu), ön koşullar ve güvenlik, test adımları (ölçülen ve sonuç sütunları boş — elle doldurmak için), kabul kriterleri, onay ve imza.
+- **Test raporu bölümleri:** özet ve sonuç, amaç ve kapsam, referanslar, numune, düzenek, uygulanan seviyeler, adım sonuçları (ölçülen değer ve renkli sonuç), uygunsuzluklar ve sapmalar (NCR'lar), gereksinim doğrulama durumu, değerlendirme ve sonuç, onay ve imza (testi yapan, kontrol, onay, müşteri temsilcisi / tanık).
+- Bölümler işaretlenerek seçilir, ↑ ↓ ile sıralanır; seçim ve sıra o doküman türü için **şablon olarak saklanır**.
+- **Teste özel metinler:** amaç ve kapsam, ön koşullar (her satır bir madde), kabul kriterleri, değerlendirme. Boş bırakılırsa modelden otomatik metin oluşturulur (ör. kabul kriterleri adımların beklenen değerlerinden, değerlendirme test sonucundan ve NCR'lardan).
+- **Kapak:** doküman no (varsayılan prosedür no / rapor no), revizyon, hazırlayan, kontrol eden, onaylayan, proje, kuruluş; yatay sayfa seçeneği. **Revizyon geçmişi** tablosuna her yayında bir satır eklenir (**+ Revizyon** sonraki harfi önerir).
+- **Kaydet** bilgileri modelde saklar; **Word (.docx)** dokümanı oluşturur. Altbilgide doküman no, başlık, revizyon ve sayfa numarası yer alır; içindekiler tablosu Word'de F9 ile güncellenir.
+
+### Doküman şablonları (**Araçlar ▾ → Doküman şablonları…**)
+
+Kuruluş, proje, kontrol eden ve onaylayan bilgileri ile "kapakta imza tablosu" ve "kapakta revizyon geçmişi" seçenekleri tüm Word çıktılarına uygulanır: gereksinim spesifikasyonu, ICD, model raporu, test prosedürü ve test raporu. Gereksinim spesifikasyonu, ICD ve model raporu için doküman no, revizyon ve revizyon geçmişi de burada tutulur. Bilgiler modelle birlikte kaydedilir.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

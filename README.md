@@ -26,6 +26,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 - **Akıllı "+" düğmesi:** seçili bloğa part, reference, value, flow property ve port ekleme; yeni veya var olan bloklarla Composition, Aggregation, Association, Generalization, Dependency ilişkisi kurma
 - **Test yürütme ve NCR:** prosedür adımları ve adımlardan test sonucu, test numuneleri (seri no, geçmiş), uygunsuzluk kaydı (kök neden, düzeltici faaliyet, tekrar test), VCRM'de açık NCR
 - **Test takvimi:** test kaynakları, bitiş→başlangıç bağımlılıkları, kritik yol ve bolluk, kaynak/numune çakışması, kalibrasyon uyarısı, kayma etkisi önizlemesi
+- **Doküman üretimi:** test prosedürü ve test raporu (Word), bölüm şablonları, kapakta revizyon geçmişi ve imza tablosu
 - **İngilizce arayüz:** araç çubuğundaki EN / TR düğmesiyle menüler, paneller, pencereler ve mesajlar İngilizceye geçer; model içeriği ve çıktılar Türkçe kalır
 - **Kullanım kolaylığı:** `Ctrl+K` komut paleti, karanlık tema, durum geçiş tablosu ve durum × olay matrisi, seçili eleman için "kullanıldığı yerler"
 - **Güvenilirlik ve risk:** FMEA / FMECA tablosu (Ş×O×T = RPN, önlem sonrası RPN, MIL-STD-1629A kritiklik Cm ve Cr), arıza modundan önleyici gereksinime ve teste izlenebilirlik, risk kaydı ve önlem öncesi/sonrası 5×5 risk matrisi

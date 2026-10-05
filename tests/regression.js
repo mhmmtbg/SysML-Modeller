@@ -278,6 +278,24 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message }));
   ok('Kaynak/bağımlılık çakışması, bolluk, döngü engeli, kayma, kaynak satırları, Excel, PNG', !pl.error && pl.pair.join() === 'PA/PB' && pl.dep.join() === '2' && pl.critB && pl.tfC > 0 && pl.cyc && pl.slip.join() === '2,4' && pl.val.every(Boolean) && pl.resRows >= 1 && pl.arrows >= 1 && pl.view && pl.sheets === 3 && pl.png && pl.after === 0, pl);
 
+  console.log('8l) Test prosedürü / raporu ve doküman şablonları');
+  const dc = await run(async () => {
+    const tc = allTests().find(t => tcSteps(t).length) || newTest({ name: 'Doküman testi', steps: [{ id: uid(), a: 'Adım', exp: 'Beklenen', meas: '1', r: 'Geçti' }] });
+    const c = docCfg(); c.checker = 'K'; c.approver = 'O'; c.sign = true; c.revs.srs = [{ rev: 'A', date: '2026-01-01', desc: 'İlk', by: 'X' }]; c.meta.srs = { docNo: 'SRS-9', rev: 'B' };
+    c.tpl.tp = { order: ['steps', 'scope'], off: ['refs', 'sign'] };
+    const r = {}, secs = docSecs('tp'); r.order = secs.slice(0, 2).map(x => x.k).join(); r.off = secs.filter(x => !x.on).map(x => x.k).join();
+    const B = testDocBlocks('tp', tc, {}); r.h1 = B.filter(b => b.t === 'h' && b.lv === 1).map(b => b.x);
+    const Btr = testDocBlocks('tr', tc, {}); r.tr = Btr.some(b => b.t === 'table' && b.head.includes('Ölçülen / gözlenen'));
+    const ap = docTplApply({ kind: 'srs', title: 'x', docNo: '' }); r.ap = [ap.docNo, ap.rev, ap.checker, ap.sign, ap.revs.length].join();
+    window.__dl = []; const o = { kind: 'tp', title: nm(tc) }; const bl = await buildDocx(B, o); const t = new TextDecoder().decode(new Uint8Array(await bl.arrayBuffer()));
+    r.zip = bl.size > 2000;
+    exportReqsDocx && (await exportReqsDocx()); const x = window.__dl.pop(); r.srs = !!x && /Gereksinimler\.docx$/.test(x.name);
+    delete c.tpl.tp; c.sign = false;
+    docDialog('tr', tc.id); r.dlg = !!document.querySelector('#modalBox #ddRev') && document.querySelectorAll('#modalBox [data-dsec]').length === 11; $('#modal').style.display = 'none';
+    return r;
+  }).catch(e => ({ error: e.message }));
+  ok('Bölüm sırası/seçimi şablondan, TP/TR blokları, kapak bilgisi birleşimi, Word, pencere', !dc.error && dc.order === 'steps,scope' && dc.off === 'refs,sign' && dc.h1[0] === '1. Test adımları' && dc.h1.length === 8 && dc.tr && dc.ap === 'SRS-9,B,K,true,1' && dc.zip && dc.srs && dc.dlg, dc);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

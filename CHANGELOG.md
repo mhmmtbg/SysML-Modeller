@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.21.0 — 2026-10-05
+
+- **Test prosedürü (Word):** amaç/kapsam, referanslar, gereksinimler, numune, düzenek ve kaynaklar, profil grafikleri, ön koşullar, doldurulacak adım tablosu, kabul kriterleri, imza
+- **Test raporu (Word):** özet ve sonuç, adım sonuçları, NCR'lar, gereksinim doğrulama durumu, otomatik değerlendirme metni, imza
+- Bölüm seçimi ve sırası doküman türü başına şablon olarak saklanır; teste özel metinler (amaç, ön koşul, kabul, değerlendirme)
+- **Doküman şablonları:** kuruluş, proje, kontrol/onay, kapakta imza tablosu ve revizyon geçmişi — gereksinim spesifikasyonu, ICD ve model raporu da kullanır
+- Regresyon testi 23 adım
+
 ## v1.20.0 — 2026-10-05
 
 - **Test kaynakları:** sarsıcı, iklim odası, akustik oda, ölçüm cihazı, fikstür, personel…; tür, konum, kalibrasyon geçerliliği, doluluk
