@@ -16,9 +16,10 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
   - Sistem → alt sistem türetme (Derive), model elemanı ve fonksiyon karşılama (Satisfy), test doğrulama (Verify) izlenebilirliği
   - **İzlenebilirlik matrisi:** sistem × alt sistem, gereksinim × fonksiyon, gereksinim × blok, test, use case; hücreye tıklayarak ilişki kurma
   - **Kapsama analizi:** karşılanmayan sistem gereksinimleri, üst gereksinimi olmayan (yetim) alt sistem gereksinimleri, doğrulama yöntemi eksikleri, gereksinime izlenmeyen bloklar ve fonksiyonlar
-  - **Excel:** `.xlsx`/`.csv` içe aktarma (sütunlar otomatik eşleşir, bilinmeyenler yeni özellik olur, üst gereksinim ID'leri ilişkiye dönüşür); gereksinim + matris + kapsama sayfalarıyla `.xlsx` dışa aktarma
-- **Gereksinim kalitesi ve konfigürasyon yönetimi:** INCOSE kurallarıyla kalite denetimi, durum iş akışı (Taslak → Onaylı → Değişiklikte), gerekçeli değişiklik geçmişi, taban çizgileri ve karşılaştırma, etki analizi
+  - **Excel:** `.xlsx`/`.csv` içe aktarma (sütunlar otomatik eşleşir, bilinmeyenler yeni özellik olur, üst gereksinim ID'leri ilişkiye dönüşür); **sütun (attribute) seçimiyle** `.xlsx`, Word gereksinim spesifikasyonu ve ReqIF dışa aktarma
+- **Gereksinim kalitesi ve konfigürasyon yönetimi:** INCOSE kurallarıyla kalite denetimi (Türkçe "-ecek / -acak / -ecektir / -acaktır" cümle sonu kuralı), durum iş akışı (Taslak → Onaylı → Değişiklikte), gerekçeli değişiklik geçmişi, taban çizgileri ve karşılaştırma, etki analizi
 - **Doğrulama yönetimi:** test durumu alanları (prosedür, seviye, tarih, sonuç, rapor no), **VCRM**, gereksinim bazında doğrulama durumu, **test kampanyası zaman çizelgesi (Gantt)**, test sonuçlarını Excel'den geri alma
+- **Çevresel test profilleri:** rastgele titreşim (PSD → Grms, yer değiştirme), sinüs süpürme, şok tepki spektrumu (SRS) ve termal döngü profilleri; tolerans bantları, profil karşılaştırma ve marj, zarf oluşturma; test durumlarına, VCRM'e ve rapora bağlı
 - **Analiz ve simülasyon:** parametrik denklem çözücü, kütle/güç/maliyet **bütçe toplama** ve marj, aktivite ve durum makinesi **simülasyonu**, tahsis matrisi, genel düzenlenebilir tablolar, ilişki haritası
 - **Araçlar:** **Word (.docx) ve yazdırılabilir HTML rapor**, model doğrulama kuralları, başka modelle birleştirme, **ReqIF** içe/dışa aktarma (DOORS, Polarion…)
 - **Cameo / MagicDraw ile alışveriş:** **XMI** içe/dışa aktarma (UML 2.5 / SysML 1.6), içe aktarılan model için otomatik diyagramlar

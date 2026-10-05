@@ -13,6 +13,7 @@
 5d. [Araçlar: rapor, model doğrulama, birleştirme, ReqIF](#5d-araçlar-rapor-model-doğrulama-birleştirme-reqif)
 5e. [Analiz: parametrik hesap, bütçe, simülasyon, tahsis, tablo, ilişki haritası](#5e-analiz-parametrik-hesap-bütçe-simülasyon-tahsis-tablo-ilişki-haritası)
 5f. [XMI (Cameo / MagicDraw) ve şablonlar](#5f-xmi-cameo--magicdraw-ve-şablonlar)
+5g. [Çevresel test profilleri](#5g-çevresel-test-profilleri)
 6. [Otomatik düzen ve hizalama](#6-otomatik-düzen-ve-hizalama)
 7. [İkonlar](#7-ikonlar)
 8. [Özellikler paneli](#8-özellikler-paneli)
@@ -329,13 +330,23 @@ Araç çubuğundaki **Gereksinimler ▾** menüsü üç görünüm açar. Bunlar
 
 Doğrulama yöntemi metinleri (*T, A, Test, Analiz, Muayene, Inspection, Gösterim, Demo…*) standart değerlere çevrilir.
 
-### Excel'e dışa aktarma
+### Dışa aktarma ve sütun (attribute) seçimi
 
-**⤒ Excel'e aktar** tek bir `.xlsx` dosyası üretir:
+**Gereksinimler ▾ → Excel'e aktar… / Word'e aktar… / ReqIF olarak dışa aktar…** (ve tablodaki **⤒ Excel'e aktar**) önce bir seçim penceresi açar:
+
+- **Sütunlar:** çıktıya girecek attribute'ları işaretleyin (standart alanlar, özel özellikler, izlenebilirlik sütunları ve *Açıklama, Paket, Son Değişiklik* gibi ek alanlar). Sırayı ▲▼ ile değiştirin. **Tablodaki görünür sütunlar** düğmesi, tabloda gördüğünüz sütunları seçer.
+- **Kapsam:** tüm gereksinimler, yalnız sistem, tüm alt sistemler veya tek bir alt sistem; isterseniz iptal edilenler hariç.
+- **Excel'de ek sayfalar:** izlenebilirlik matrisleri, kapsama analizi, kalite bulguları, VCRM ve test durumları ayrı ayrı açılıp kapatılır.
+- **Word:** seçilen sütunlarla, sistem ve alt sistemlere göre gruplanmış bir *Gereksinim Spesifikasyonu* (.docx) üretilir; çok sütunda yatay sayfa önerilir. **Araçlar ▾ → Rapor oluştur** içindeki gereksinim tablosu da aynı seçimi kullanır.
+- **ReqIF:** ID ve metin her zaman aktarılır; diğer attribute'lar seçime göre eklenir.
+
+Seçim modelle birlikte kaydedilir; bir sonraki dışa aktarmada aynı sütunlar hazır gelir.
+
+Excel çıktısı tek bir `.xlsx` dosyasıdır:
 
 | Sayfa | İçerik |
 |---|---|
-| Gereksinimler | Görünen tüm sütunlar (özel özellikler ve izlenebilirlik dahil), filtreli başlık, renkli kapsama durumu |
+| Gereksinimler | Seçilen sütunlar (özel özellikler ve izlenebilirlik dahil), filtreli başlık, renkli kapsama durumu |
 | Sistem-Alt Sistem | Sistem × alt sistem türetme matrisi (X) |
 | Gereksinim-Fonksiyon | Gereksinim × fonksiyon karşılama matrisi |
 | Gereksinim-Blok | Gereksinim × blok karşılama matrisi |
@@ -359,10 +370,12 @@ Her gereksinimin bir **durumu** vardır: *Taslak → İncelemede → Onaylı →
 
 Gereksinim metinleri INCOSE yazım kurallarına göre otomatik denetlenir. Tablodaki **Kalite** sütununda rozet, Özellikler panelinde uyarı listesi görünür; tüm bulgular **Gereksinimler ▾ → Kalite raporu** görünümündedir.
 
+Kalite raporu çubuğundaki **Yazım kuralı** seçimi modelle kaydedilir: *"-ecek / -acak / -ecektir / -acaktır" ile biter* (varsayılan), *"-malıdır / -melidir" ile biter* veya *ikisi de kabul edilir*.
+
 | Kural | Örnek |
 |---|---|
-| Zorunluluk ifadesi yok | "-malıdır / -melidir", *shall* bulunmuyor |
-| Birden fazla ister | Bir cümlede iki "-malıdır" |
+| Cümle sonu | Türkçe gereksinim cümlesi **"-ecek / -acak / -ecektir / -acaktır"** ile bitmelidir (ör. *"…28 V ile çalışacaktır."*, *"…45 kg'ı aşmayacaktır."*). "-malıdır / -melidir" ile biten cümle için doğru biçim önerilir (*çalışmalıdır → çalışacaktır*). Sondaki parantez içi açıklamalar (*bkz. Tablo 3*) dikkate alınmaz; İngilizce *shall* de kabul edilir. |
+| Birden fazla ister | Birden fazla cümle ya da "ve / veya" ile bağlanmış birden çok zorunluluk fiili (*"…kaydedecek ve iletecektir."*) |
 | Belirsiz ifade | uygun, yeterli, hızlı, kolay, kullanıcı dostu, vb., ve/veya… |
 | Belirlenmemiş değer | TBD, TBC, belirlenecek |
 | Birimsiz sayı | "30 ağırlıkta" (yüzde ve standart/yöntem numaraları hariç) |
@@ -545,6 +558,27 @@ Seçili elemandan başlayarak ilişkileri (Derive, Satisfy, Verify, Allocate, ti
 - **Proje iskeleti:** `01 Gereksinimler` … `07 Doğrulama` paketleri, SI birim kütüphanesi ve «LRU» stereotipi.
 
 > Standart yöntem ve sürüm numaralarını kendi sözleşmenizdeki revizyona göre kontrol edin; şablon metinleri başlangıç taslağıdır.
+
+## 5g. Çevresel test profilleri
+
+**Analiz ▾ → Test profilleri** görünümü dört tür profili yönetir. Her profil model ağacında bir **Test Profili** elemanıdır; gereksinim diyagramına sürüklenebilir (kutuda küçük grafik ve ana değer görünür). Ağaçta veya diyagramda çift tıklama profili düzenleyicide açar.
+
+| Tür | Kırılma noktaları | Otomatik hesaplananlar |
+|---|---|---|
+| **Rastgele titreşim (PSD)** | Frekans (Hz) – ASD (g²/Hz) | Grms (log-log bölüm integrali), bölüm eğimleri (dB/oktav) ve bölüm g² katkısı, 3σ tepe-tepe yer değiştirme (mm), rms hız, ±dB tolerans bandı, eksen başına ve toplam süre |
+| **Sinüs süpürme** | Frekans (Hz) – genlik (g tepe) | Her noktada tepe-tepe yer değiştirme ve hız, oktav sayısı, süpürme hızına göre bir süpürme süresi, toplam süre |
+| **Şok tepki spektrumu (SRS)** | Doğal frekans (Hz) – tepe ivme (g) | En yüksek seviye, köşe (knee) frekansı, eğimler, Q ve sönüm oranı, ±dB tolerans, toplam şok sayısı |
+| **Termal döngü** | Zaman (dk) – sıcaklık (°C) | Sıcaklık aralığı, en yüksek değişim hızı (°C/dk), sıcak/soğuk bekleme süreleri, döngü ve toplam süre |
+
+- **Giriş:** noktaları tabloya yazın, **+ Nokta** ile ekleyin veya **Excel'den yapıştır…** ile iki sütunu doğrudan yapıştırın (virgüllü ondalık da okunur).
+- **Karşılaştır:** aynı türden ikinci bir profil seçin. Grafikte üst üste çizilir; ortak frekans aralığında her noktadaki marj (dB), en düşük/en yüksek marj ve "kapsıyor / kapsamıyor" sonucu gösterilir. PSD'de Grms oranı da verilir; termal profillerde sıcaklık uçları, değişim hızı ve döngü sayısı karşılaştırılır.
+- **Zarf oluştur:** soldaki listede aynı türden birden çok profili işaretleyin; her frekanstaki en yüksek değerden yeni bir zarf profili oluşturulur (gereksiz ara noktalar sadeleştirilir).
+- **± dB ölçekle:** seçili profilin ölçeklenmiş kopyasını üretir (ör. kalifikasyondan −3 dB kabul seviyesi) ve otomatik karşılaştırmaya alır.
+- **Bağlantılar:** **Kullanan test durumları** (test durumunun Özellikler panelinden de bağlanır) ve **İlgili gereksinimler** («refine» ilişkisi).
+- **Çıktılar:** grafik PNG, profil özeti ve kırılma noktalarıyla Excel; VCRM'de *Test Profili* sütunu; Word/HTML raporunun *Doğrulama* bölümünde her profil için grafik, değerler ve nokta tablosu.
+- **Model doğrulama** eksik noktalı profilleri, log ölçekte geçersiz değerleri, hiçbir teste bağlı olmayan profilleri ve profili olmayan çevresel testleri listeler.
+
+> Hesaplar mühendislik ön değerlendirmesi içindir; test laboratuvarının kontrol sistemi çıktısıyla teyit edin.
 
 ## 6. Otomatik düzen ve hizalama
 

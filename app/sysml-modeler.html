@@ -188,6 +188,12 @@ table.tct tr.late td.rn{border-left:3px solid #c0392b}
 .rpgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}.rpgrid label{display:flex;flex-direction:column;font-size:12px;color:#445;gap:2px}
 .rpgrid input{font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid #bfc8d3;border-radius:4px}
 .rpsec{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin-bottom:6px}
+.pfwrap{display:flex;gap:12px;min-height:100%}.pflist{width:250px;flex:none;background:#fff;border:1px solid #dde3ea;border-radius:8px;padding:6px;align-self:flex-start;max-height:calc(100vh - 170px);overflow:auto}
+.pfgh{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;padding:8px 6px 3px}.pfli{display:flex;align-items:center;gap:6px;padding:5px 6px;border-radius:5px;cursor:pointer;font-size:12.5px;flex-wrap:wrap}.pfli:hover{background:#eef4fb}.pfli.on{background:#d6e6fb}.pfli .pfn{flex:1;min-width:120px}.pfli .muted{flex-basis:100%;padding-left:22px;font-size:11px}
+.pfmain{flex:1;min-width:0}.pfhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}.pfname{font:600 15px "Segoe UI",Arial,sans-serif;padding:4px 8px;border:1px solid #bfc8d3;border-radius:4px;min-width:260px}
+.pfgrid{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}.pfchart{background:#fff;border:1px solid #dde3ea;border-radius:8px;padding:4px;flex:none;max-width:100%;overflow:auto}.pfside{flex:1;min-width:260px}.pfkv td{padding:4px 8px}.pfkv td:first-child{color:#556}
+.pfprm{display:flex;flex-wrap:wrap;gap:10px}.pfprm label{display:flex;flex-direction:column;font-size:11.5px;color:#556;gap:2px}.pfprm input{font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid #bfc8d3;border-radius:4px;width:190px}
+.pfpt input{width:110px;font:inherit;font-size:12.5px;padding:2px 5px;border:1px solid #d5dde8;border-radius:3px}.pfpt td{padding:3px 8px}.pfverd{padding:8px 12px;border-radius:6px;margin:4px 0 8px;font-size:12.5px}.pfverd.ok{background:#eaf7ef;border:1px solid #bfe3cc}.pfverd.bad{background:#fdf2f2;border:1px solid #f1c4c4}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:16px}
 .card{background:#fff;border:1px solid #dde3ea;border-radius:8px;padding:12px 14px}
 .cv{font-size:26px;font-weight:700;color:#26364b}
@@ -287,7 +293,7 @@ tr.d-add td{background:#f0faf3}tr.d-del td{background:#fdf1f2}tr.d-chg td{backgr
 'use strict';
 const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const LSK = 'sysml-modeler-v1';
-const APP_VER = '1.11.0';
+const APP_VER = '1.12.0';
 const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1628,6 +1634,16 @@ function drawShape(sh, e, d, SM, exp){
       s = `<rect x="${x}" y="${y}" width="${W}" height="${sh.h}" fill="${fill}" ${SW}/>` + b;
       break;
     }
+    case 'TestProfile': {
+      const W = sh.w, t0 = PT[e.ptype || 'psd'], mx = pfMetrics(e), nl = wrap(e.name, W - 12, true);
+      s = `<rect x="${x}" y="${y}" width="${W}" height="${sh.h}" fill="${fill}" ${SW}/>`;
+      s += T(kwd(e, 'testProfile'), x + W / 2, y + 15, {italic:1, size:11}) + T(nl, x + W / 2, y + 30, {bold:1});
+      const cy = y + 30 + (nl.length - 1) * 15 + 8, chH = Math.max(40, sh.h - (cy - y) - 22);
+      s += `<line x1="${x}" y1="${cy}" x2="${x + W}" y2="${cy}" ${SW}/>`;
+      s += pfChart([{p:e}], {w:W - 12, h:chH, mini:true}).replace('<svg ', `<svg x="${x + 6}" y="${cy + 4}" `);
+      s += T(t0.sh + ' · ' + (mx.main || '—'), x + W / 2, y + sh.h - 7, {size:10.5, fill:'#0f5f5f', bold:1});
+      break;
+    }
     case 'TestCase': case 'Activity': case 'StateMachine': case 'Interaction': {
       const stp = {TestCase:'«testCase»', Activity:'«activity»', StateMachine:'«stateMachine»', Interaction:'«interaction»'}[k];
       s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="12" fill="${fill}" ${SW}/>`;
@@ -2428,6 +2444,7 @@ function openD(id, nav){
 function navBack(){ while(ST.back.length){ const id = ST.back.pop(); if((isView(id) || E(id)) && id !== ST.cur){ if(ST.cur) ST.fwd.push(ST.cur); openD(id, true); return; } } toast('Geri gidilecek diyagram yok'); }
 function navFwd(){ while(ST.fwd.length){ const id = ST.fwd.pop(); if((isView(id) || E(id)) && id !== ST.cur){ if(ST.cur) ST.back.push(ST.cur); openD(id, true); return; } } toast('İleri gidilecek diyagram yok'); }
 function goTargets(e, x, y){
+  if(e && e.kind === 'TestProfile'){ PF.sel = e.id; PF.cmp = ''; openD('@profiles'); return true; }
   const t = navTargets(e, ST.cur);
   if(!t.length) return false;
   if(t.length === 1){ openD(t[0].id); return true; }
@@ -2583,6 +2600,7 @@ function palIcon(k){
     case 'Comment': s = `<path d="M3,2 H19 L23,6 V16 H3 Z M19,2 V6 H23" fill="#fffde9" ${sw}/>`; break;
     case 'Requirement': s = `<rect x="2" y="2" width="22" height="14" fill="#f6efff" ${sw}/><line x1="2" y1="7" x2="24" y2="7" ${sw}/><path d="M5 10h12M5 13h9" stroke="#8e44ad" stroke-width="1"/>`; break;
     case 'TestCase': s = `<rect x="2" y="3" width="22" height="12" rx="4" fill="#eafaf0" ${sw}/><path d="M8 9l3 3 6-6" fill="none" stroke="#27ae60" stroke-width="1.4"/>`; break;
+    case 'TestProfile': s = `<rect x="2" y="1" width="22" height="16" fill="#f2fbfb" ${sw}/><path d="M4 14L8 9L14 9L22 13" fill="none" stroke="#0f8a8a" stroke-width="1.5"/>`; break;
     case 'State': s = `<rect x="2" y="3" width="22" height="12" rx="5" fill="#fff8d8" ${sw}/>`; break;
     case 'Choice': s = `<polygon points="13,2 21,9 13,16 5,9" fill="#fff" ${sw}/>`; break;
     case 'Lifeline': s = `<rect x="5" y="1" width="16" height="6" fill="#fff8d8" ${sw}/><path d="M13 7v11" stroke="#333" stroke-dasharray="2 2"/>`; break;
@@ -3494,6 +3512,12 @@ function renderProps(){
       h += reqPropsHTML(el, pf); break;
     case 'TestCase':
       h += testPropsHTML(el, pf); break;
+    case 'TestProfile': {
+      const mx = pfMetrics(el);
+      h += pf('Tür', esc(PT[el.ptype || 'psd'].tr)) + pf('Değer', `<b>${esc(mx.main || '—')}</b>`) + (el.plevel ? pf('Seviye', esc(el.plevel)) : '') + (el.std ? pf('Standart', esc(el.std)) : '');
+      h += `<div style="margin:6px 0">${pfChart([{p:el}], {w:270, h:150})}</div>` + pf('', `<button class="pbtn" data-openpf="${el.id}">Profil düzenleyicide aç</button>`);
+      break;
+    }
     case 'Partition':
       h += pf('Temsil eder', `<select data-f="represents">${blockOpts(el.represents)}</select>`); break;
     case 'Action': {
@@ -3863,7 +3887,7 @@ function renderViewBar(){
       <label>İlişki <select data-mf="rel">${so(MX.rel, [['auto','Otomatik'], ['DeriveReqt','Derive'], ['Satisfy','Satisfy'], ['Verify','Verify'], ['Refine','Refine'], ['Trace','Trace']])}</select></label>
       <label class="vchk"><input type="checkbox" data-mf="empty"${MX.empty ? ' checked' : ''}> Yalnız boş satırlar</label>${xl}`;
   } else if(ST.cur === '@quality'){
-    bar.innerHTML = `<label class="vchk"><input type="checkbox" data-cf="qall"${CV.qall ? ' checked' : ''}> Sorunsuzları da göster</label><span class="vsep"></span><button class="vb" data-va="export">⤒ Excel'e aktar (Kalite sayfası dahil)</button>`;
+    bar.innerHTML = `<label class="vchk">Yazım kuralı: <select data-cf="qstyle">${RQ_STYLES.map(([k, t]) => `<option value="${k}"${reqStyle() === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label><span class="vsep"></span><label class="vchk"><input type="checkbox" data-cf="qall"${CV.qall ? ' checked' : ''}> Sorunsuzları da göster</label><span class="vsep"></span><button class="vb" data-va="export">⤒ Excel'e aktar (Kalite sayfası dahil)</button>`;
   } else if(ST.cur === '@vcrm'){
     bar.innerHTML = vcrmBar(); const ls = bar.querySelector('[data-xf="vc.lvl"]'); ls.value = VC.lvl; if(ls.value !== VC.lvl){ VC.lvl = 'all'; ls.value = 'all'; }
   } else if(ST.cur === '@campaign'){
@@ -4054,7 +4078,7 @@ function coverageHTML(){
         if(a === 'addSys') add('Sistem'); else askSubsys('Yeni alt sistem gereksinimi', RV.lvl.startsWith('sub:') ? RV.lvl.slice(4) : '', ss => add('Alt Sistem', ss));
       }
       if(a === 'import') importReqs();
-      if(a === 'export') exportReqsXlsx();
+      if(a === 'export') reqExportDialog('xlsx');
       if(a === 'cols') columnManager();
       if(a === 'matrix') openD('@matrix');
       if(a === 'mkbl') createBaseline();
@@ -4083,6 +4107,7 @@ function coverageHTML(){
     if(t.dataset.c === 'status'){ const r = E(t.dataset.r); if(r){ snap(); r.status = t.value; afterChange(); } return; }
     if(t.dataset.vf === 'st'){ RV.st = t.value; renderView(); return; }
     if(t.dataset.cf === 'qall'){ CV.qall = t.checked; renderView(); return; }
+    if(t.dataset.cf === 'qstyle'){ snap(); reqCfg().style = t.value; markDirty(); persist(); renderView(); toast('Yazım kuralı: ' + RQ_STYLES.find(x => x[0] === t.value)[1]); return; }
     if(t.dataset.blf){ const k = t.dataset.blf; BL[k] = t.type === 'checkbox' ? t.checked : t.value; renderView(); return; }
     if(t.dataset.vf === 'lvl'){ RV.lvl = t.value; renderView(); }
     if(t.dataset.vf === 'gaps'){ RV.gaps = t.checked; renderView(); }
@@ -4237,11 +4262,91 @@ function traceText(key, t, c, r0){
   const ids = a => a.map(x => x.reqId || nm(x)).join('\n'), names = a => a.map(x => x.name).join('\n');
   return {_parents:ids(t.parents), _children:ids(t.children), _satisfy:names(t.elems), _funcs:names(t.funcs), _verifyBy:names(t.verifyBy), _verst:verStatus(r0 || {}, t), _status:c.st + (c.gaps.length ? ' — ' + c.gaps.join('; ') : '')}[key];
 }
+/* ---- v1.12: gereksinim dışa aktarma seçenekleri (sütun / attribute seçimi) ---- */
+const EXTRA_COLS = [{key:'doc', label:'Açıklama', w:40}, {key:'_pkg', label:'Paket', w:24}, {key:'_lastChg', label:'Son Değişiklik', w:22}];
+function expAllCols(){ return allCols().concat(EXTRA_COLS); }
+function expCfg(){
+  const c = reqCfg(); if(!c.exp || typeof c.exp !== 'object') c.exp = {};
+  const x = c.exp; if(!Array.isArray(x.cols) || !x.cols.length) x.cols = visCols().map(k => k.key);
+  if(!x.sheets) x.sheets = {mx:true, cov:true, q:true, vc:true}; if(!x.scope) x.scope = 'all'; if(x.noCancel == null) x.noCancel = false;
+  return x;
+}
+function expCols(){ const m = new Map(expAllCols().map(c => [c.key, c])); const r = expCfg().cols.map(k => m.get(k)).filter(Boolean); return r.length ? r : visCols(); }
+function expReqs(){ const x = expCfg(); return allReqs().filter(r => lvlMatch(r, x.scope) && (!x.noCancel || activeReq(r))); }
+let LCH = null, LCH_N = -1;
+function lastChg(){ const L = M.reqLog || []; if(LCH_N !== L.length){ LCH = new Map(); L.forEach(e => LCH.set(e.id, e)); LCH_N = L.length; } return LCH; }
+function expVal(r, col, t, c, sim){
+  if(col.key === '_pkg') return pathOf(r.owner);
+  if(col.key === '_lastChg'){ const h = lastChg().get(r.id); return h ? [new Date(h.t).toLocaleDateString('tr-TR'), h.u, h.f].filter(Boolean).join(' · ') : ''; }
+  if(col.key === 'level') return reqLevel(r);
+  if(col.key === 'status') return reqStatus(r);
+  if(col.trace) return col.key === '_quality' ? reqQuality(r, sim).map(x => x[1]).join('\n') : traceText(col.key, t, c, r);
+  return cellVal(r, col.key);
+}
+function reqExportDialog(fmt){
+  if(!allReqs().length) return toast('Dışa aktarılacak gereksinim yok');
+  const x = expCfg(), all = expAllCols(), sel = new Set(x.cols);
+  let order = x.cols.filter(k => all.some(c => c.key === k)).concat(all.map(c => c.key).filter(k => !sel.has(k)));
+  const FN = {xlsx:['Excel\'e aktar', '⤒ Excel (.xlsx)'], docx:['Word\'e aktar — gereksinim spesifikasyonu', '⤒ Word (.docx)'], reqif:['ReqIF olarak dışa aktar', '⤒ ReqIF (.reqif)']}[fmt];
+  const box = $('#modalBox'); box.style.width = 'min(640px, 96vw)'; box.style.maxWidth = 'none';
+  const lab = c => esc(c.label) + (c.trace ? ' <span class="kd">izlenebilirlik</span>' : c.custom ? ' <span class="kd">özel</span>' : EXTRA_COLS.includes(c) ? ' <span class="kd">ek</span>' : '');
+  const list = () => order.map((k, i) => { const c = all.find(y => y.key === k); return `<div class="pli" data-ek="${esc(k)}"><input type="checkbox" data-ec="${esc(k)}"${sel.has(k) ? ' checked' : ''}${fmt === 'reqif' && (k === 'reqId' || k === 'text') ? ' disabled' : ''}> <span style="flex:1">${lab(c)}</span><button class="pbtn" data-mv="-1" data-i="${i}" title="Yukarı">▲</button><button class="pbtn" data-mv="1" data-i="${i}" title="Aşağı">▼</button></div>`; }).join('');
+  box.innerHTML = `<h2>${FN[0]}</h2>
+    <div class="sub"><span>Çıktıya alınacak sütunlar (attribute'lar) — sırası ▲▼ ile</span><span><button class="pbtn" id="exAll">Tümü</button> <button class="pbtn" id="exNone">Hiçbiri</button> <button class="pbtn" id="exVis">Tablodaki görünür sütunlar</button></span></div>
+    <div class="plist" id="exList" style="max-height:40vh">${list()}</div>
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:10px"><span>Kapsam <select id="exScope">${lvlOptions()}</select></span><label class="vchk"><input type="checkbox" id="exNC"${x.noCancel ? ' checked' : ''}> İptal edilmiş gereksinimleri hariç tut</label></div>
+    ${fmt === 'xlsx' ? `<div class="sub" style="margin-top:8px"><span>Ek sayfalar</span></div><div class="rpsec">${[['mx', 'İzlenebilirlik matrisleri'], ['cov', 'Kapsama analizi'], ['q', 'Kalite bulguları'], ['vc', 'VCRM ve test durumları']].map(([k, t]) => `<label class="vchk"><input type="checkbox" data-es="${k}"${x.sheets[k] !== false ? ' checked' : ''}> ${t}</label>`).join('')}</div>` : ''}
+    ${fmt === 'reqif' ? '<p class="muted" style="margin:8px 0 0">ID ve gereksinim metni ReqIF için her zaman aktarılır. İzlenebilirlik ve ek sütunlar metin attribute olarak aktarılır; Derive / Refine / Trace ilişkileri ayrıca SPEC-RELATION olarak yazılır.</p>' : ''}
+    ${fmt === 'docx' ? `<div class="icbar" style="margin-top:8px"><label class="vchk"><input type="checkbox" id="exLand"${x.land ? ' checked' : ''}> Yatay sayfa (5'ten fazla sütunda önerilir)</label></div>` : ''}
+    <p style="text-align:right;margin:10px 0 0"><span class="muted" id="exSt"></span> &nbsp; <button class="pbtn" id="exC">Vazgeç</button> <button class="pbtn pri" id="exO">${FN[1]}</button></p>`;
+  const sc = $('#exScope'); sc.value = x.scope; if(sc.value !== x.scope) sc.value = 'all';
+  $('#modal').style.display = 'flex';
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null; box.onchange = null; };
+  const redraw = () => { $('#exList').innerHTML = list(); };
+  box.onchange = ev => { const k = ev.target.dataset.ec; if(k){ if(ev.target.checked) sel.add(k); else sel.delete(k); } };
+  box.onclick = async ev => {
+    const t = ev.target, id = t.id;
+    if(t.dataset.mv){ const i = +t.dataset.i, j = i + +t.dataset.mv; if(j >= 0 && j < order.length){ [order[i], order[j]] = [order[j], order[i]]; redraw(); } return; }
+    if(id === 'exAll'){ order.forEach(k => sel.add(k)); redraw(); }
+    if(id === 'exNone'){ sel.clear(); redraw(); }
+    if(id === 'exVis'){ sel.clear(); const v = visCols().map(c => c.key); v.forEach(k => sel.add(k)); order = v.concat(order.filter(k => !v.includes(k))); redraw(); }
+    if(id === 'exC') close();
+    if(id === 'exO'){
+      if(fmt === 'reqif'){ sel.add('reqId'); sel.add('text'); }
+      const cols = order.filter(k => sel.has(k)); if(!cols.length) return $('#exSt').textContent = 'En az bir sütun seçin';
+      x.cols = cols; x.scope = $('#exScope').value; x.noCancel = $('#exNC').checked;
+      box.querySelectorAll('[data-es]').forEach(c => x.sheets[c.dataset.es] = c.checked);
+      if($('#exLand')) x.land = $('#exLand').checked;
+      markDirty(); persist();
+      if(!expReqs().length) return $('#exSt').textContent = 'Seçilen kapsamda gereksinim yok';
+      t.disabled = true; $('#exSt').textContent = 'Hazırlanıyor…';
+      try { if(fmt === 'xlsx') exportReqsXlsx(); else if(fmt === 'reqif') exportReqIF(); else await exportReqsDocx(); close(); }
+      catch(e){ $('#exSt').textContent = 'Hata: ' + e.message; t.disabled = false; }
+    }
+  };
+}
+function reqSpecBlocks(){
+  const B = [], cols = expCols(), rs = expReqs(), idx = relIdx(), sim = simIndex();
+  const tw = cols.map(c => Math.max(6, Math.min(40, c.w || 14))), sw = tw.reduce((a, b) => a + b, 0), w = tw.map(v => Math.round(v / sw * 100));
+  const row = r => { const t = trace(r, idx), c = covStatus(r, t); return cols.map(col => expVal(r, col, t, c, sim) || ''); };
+  const grp = [['Sistem gereksinimleri', rs.filter(r => reqLevel(r) === 'Sistem')]].concat(subsystems().map(s => ['Alt sistem: ' + s, rs.filter(r => reqLevel(r) !== 'Sistem' && String(r.subsys || '').trim() === s)]));
+  const noName = rs.filter(r => reqLevel(r) !== 'Sistem' && !String(r.subsys || '').trim()); if(noName.length) grp.push(['Alt sistem gereksinimleri', noName]);
+  return {grp:grp.filter(g => g[1].length).map(([t, list]) => ({t, head:cols.map(c => c.label), rows:list.map(row), w})), n:rs.length};
+}
+async function exportReqsDocx(){
+  const S = reqSpecBlocks(), B = [], x = expCfg();
+  B.push({t:'h', lv:1, x:'1. Kapsam'}, {t:'p', x:`Bu doküman "${E(M.rootId).name}" modelindeki ${S.n} gereksinimi içerir. Sütunlar: ${expCols().map(c => c.label).join(', ')}.`});
+  B.push({t:'h', lv:1, x:'2. Gereksinimler'});
+  S.grp.forEach((g, i) => { B.push({t:'h', lv:2, x:`2.${i + 1}. ${g.t}`}); B.push({t:'table', head:g.head, rows:g.rows, w:g.w}); });
+  const o = {title:E(M.rootId).name + ' Gereksinim Spesifikasyonu', subtitle:'Gereksinim Spesifikasyonu', author:userName(), land:x.land != null ? x.land : expCols().length > 5};
+  download(await buildDocx(B, o), fileSafe(E(M.rootId).name) + ' - Gereksinimler.docx');
+  toast(S.n + ' gereksinim Word dosyasına aktarıldı');
+}
 function exportReqsXlsx(){
-  const cols = visCols(), idx = relIdx(), rs = allReqs();
+  const cols = expCols(), idx = relIdx(), rs = expReqs(), XS = expCfg().sheets, SIM0 = simIndex();
   if(!rs.length) return toast('Dışa aktarılacak gereksinim yok');
   const R1 = [cols.map(c => ({v:c.label, s:c.trace ? 9 : 1}))];
-  rs.forEach(r => { const t = trace(r, idx), c = covStatus(r, t); R1.push(cols.map(col => col.trace ? (col.key === '_status' ? {v:traceText(col.key, t, c), s:stStyle(c.st)} : col.key === '_quality' ? reqQuality(r, simIndex()).map(x => x[1]).join('\n') : traceText(col.key, t, c, r)) : (col.key === 'reqId' ? {v:cellVal(r, 'reqId'), s:6} : (col.key === 'level' ? reqLevel(r) : cellVal(r, col.key))))); });
+  rs.forEach(r => { const t = trace(r, idx), c = covStatus(r, t); R1.push(cols.map(col => col.key === '_status' ? {v:traceText(col.key, t, c), s:stStyle(c.st)} : col.key === 'reqId' ? {v:cellVal(r, 'reqId'), s:6} : expVal(r, col, t, c, SIM0))); });
   const sheets = [{name:'Gereksinimler', rows:R1, widths:cols.map(c => c.w), header:true, freeze:[1, 1], filter:1}];
   const mat = (name, rows, colsE, kindF) => {
     const hdr = [{v:name, s:1}].concat(colsE.map(c => ({v:(c.reqId ? c.reqId + ' ' : '') + c.name, s:8})));
@@ -4253,19 +4358,20 @@ function exportReqsXlsx(){
   const sys = rs.filter(r => reqLevel(r) === 'Sistem'), sub = rs.filter(r => reqLevel(r) !== 'Sistem');
   const funcs = Object.values(M.els).filter(e => FUNC_KINDS.has(e.kind)).sort(sortEls);
   const elems = Object.values(M.els).filter(e => e.kind === 'Block').sort(sortEls);
-  if(sys.length && sub.length) sheets.push(mat('Sistem-Alt Sistem', sys, sub, (r, c) => rel.has('DeriveReqt|' + c.id + '|' + r.id)));
-  if(funcs.length) sheets.push(mat('Gereksinim-Fonksiyon', rs, funcs, (r, c) => rel.has('Satisfy|' + c.id + '|' + r.id)));
-  if(elems.length) sheets.push(mat('Gereksinim-Blok', rs, elems, (r, c) => rel.has('Satisfy|' + c.id + '|' + r.id)));
+  if(XS.mx !== false && sys.length && sub.length) sheets.push(mat('Sistem-Alt Sistem', sys, sub, (r, c) => rel.has('DeriveReqt|' + c.id + '|' + r.id)));
+  if(XS.mx !== false && funcs.length) sheets.push(mat('Gereksinim-Fonksiyon', rs, funcs, (r, c) => rel.has('Satisfy|' + c.id + '|' + r.id)));
+  if(XS.mx !== false && elems.length) sheets.push(mat('Gereksinim-Blok', rs, elems, (r, c) => rel.has('Satisfy|' + c.id + '|' + r.id)));
   const D = coverageData();
   const cv = [[{v:'Kapsama Analizi — ' + E(M.rootId).name, s:10}], [], [{v:'Gösterge', s:1}, {v:'Değer', s:1}]];
   D.cards.forEach(([t, v, sub0, isPct]) => cv.push([t + (sub0 ? ' (' + sub0 + ')' : ''), {v:isPct ? '%' + v : v, s:6}]));
   cv.push([], [{v:'ID', s:1}, {v:'Seviye', s:1}, {v:'Gereksinim', s:1}, {v:'Durum', s:1}, {v:'Eksikler', s:1}, {v:'Doğrulama Durumu', s:1}]);
-  D.sys.concat(D.sub).forEach(({r, c, t}) => cv.push([{v:r.reqId || '', s:6}, reqLevel(r), (r.name ? r.name + ': ' : '') + (r.text || ''), {v:c.st, s:stStyle(c.st)}, c.gaps.join('\n'), verStatus(r, t)]));
-  sheets.push({name:'Kapsama Analizi', rows:cv, widths:[44, 14, 60, 12, 50, 16]});
+  const rsSet = new Set(rs.map(r => r.id));
+  D.sys.concat(D.sub).filter(({r}) => rsSet.has(r.id)).forEach(({r, c, t}) => cv.push([{v:r.reqId || '', s:6}, reqLevel(r), (r.name ? r.name + ': ' : '') + (r.text || ''), {v:c.st, s:stStyle(c.st)}, c.gaps.join('\n'), verStatus(r, t)]));
+  if(XS.cov !== false) sheets.push({name:'Kapsama Analizi', rows:cv, widths:[44, 14, 60, 12, 50, 16]});
   const SIMQ = simIndex(), qr = [[{v:'ID', s:1}, {v:'Gereksinim', s:1}, {v:'Önem', s:1}, {v:'Bulgu', s:1}]];
   rs.filter(activeReq).forEach(r => reqQuality(r, SIMQ).forEach(([sv, m]) => qr.push([{v:r.reqId || '', s:6}, r.text || '', {v:sv, s:sv === 'hata' ? 4 : sv === 'uyarı' ? 5 : 2}, m])));
-  sheets.push({name:'Kalite', rows:qr, widths:[12, 70, 10, 60], header:true, freeze:[0, 1], filter:1});
-  vcrmSheets().forEach(x => sheets.push(x));
+  if(XS.q !== false) sheets.push({name:'Kalite', rows:qr, widths:[12, 70, 10, 60], header:true, freeze:[0, 1], filter:1});
+  if(XS.vc !== false) vcrmSheets().forEach(x => sheets.push(x));
   const blob = buildXlsx(sheets);
   download(blob, fileSafe(E(M.rootId).name) + ' - Gereksinimler.xlsx');
 }
@@ -4493,7 +4599,8 @@ function reqMenuItems(){
     {t:'Kapsama analizi', f:() => openD('@coverage')},
     '-',
     {t:'Excel\'den gereksinim aktar…', f:importReqs},
-    {t:'Excel\'e aktar (gereksinimler + matrisler + kapsama)', f:exportReqsXlsx},
+    {t:'Excel\'e aktar… (sütun seçimiyle)', f:() => reqExportDialog('xlsx')},
+    {t:'Word\'e aktar… (gereksinim spesifikasyonu)', f:() => reqExportDialog('docx')},
     {t:'Sütunlar ve özellikler…', f:columnManager},
     '-',
     {t:'Doğrulama matrisi (VCRM)', f:() => openD('@vcrm')},
@@ -4501,7 +4608,7 @@ function reqMenuItems(){
     {t:'Excel\'e aktar (VCRM + test durumları)', f:exportVcrmXlsx},
     {t:'Excel\'den test durumu / sonuç aktar…', f:importTests},
     '-',
-    {t:'ReqIF olarak dışa aktar…', f:exportReqIF},
+    {t:'ReqIF olarak dışa aktar…', f:() => reqExportDialog('reqif')},
     '-',
     {t:'Kalite raporu', f:() => openD('@quality')},
     {t:'Taban çizgileri ve karşılaştırma', f:() => openD('@baseline')},
@@ -4516,7 +4623,7 @@ const REQ_STATUS = ['Taslak', 'İncelemede', 'Onaylı', 'Değişiklikte', 'İpta
 const STATUS_COL = {'Taslak':'#7f8c8d', 'İncelemede':'#d18a00', 'Onaylı':'#2e7d32', 'Değişiklikte':'#c0392b', 'İptal':'#95a5a6'};
 const reqStatus = r => REQ_STATUS.includes(r.status) ? r.status : 'Taslak';
 const activeReq = r => reqStatus(r) !== 'İptal';
-VIEWS['@quality'] = {tr:'Gereksinim Kalite Raporu', ic:'QA', note:'Gereksinim metinleri INCOSE yazım kurallarına göre denetlenir: zorunluluk ifadesi, belirsiz kelimeler, birden fazla ister, birimsiz değerler, TBD, aşırı uzunluk ve çok benzer gereksinimler.<br><br>Satıra tıklayınca gereksinim Özellikler panelinde açılır.'};
+VIEWS['@quality'] = {tr:'Gereksinim Kalite Raporu', ic:'QA', note:'Gereksinim metinleri INCOSE yazım kurallarına göre denetlenir: cümlenin "-ecek / -acak / -ecektir / -acaktır" ile bitmesi (çubuktaki Yazım kuralı ile "-malıdır / -melidir" de seçilebilir), belirsiz kelimeler, birden fazla ister, birimsiz değerler, TBD, aşırı uzunluk ve çok benzer gereksinimler.<br><br>Satıra tıklayınca gereksinim Özellikler panelinde açılır.'};
 VIEWS['@baseline'] = {tr:'Taban Çizgileri', ic:'BL', note:'Gereksinim setinin adlandırılmış anlık kopyalarını oluşturun ve iki taban çizgisini (veya taban çizgisi ile güncel modeli) karşılaştırın.<br><br>Değişen metinler kelime düzeyinde renklendirilir.'};
 
 /* ---- kalite denetimi ---- */
@@ -4538,12 +4645,54 @@ function simIndex(){
   }
   qCache = {sig, sim}; return sim;
 }
+/* Türkçe gereksinim yazım kuralı: cümle "-ecek / -acak / -ecektir / -acaktır" ile biter (varsayılan).
+   Kalite raporu çubuğundan "-malıdır / -melidir" ya da ikisi birden seçilebilir. */
+const RQ_STYLES = [['gelecek', '"-ecek / -acak / -ecektir / -acaktır" ile biter'], ['mali', '"-malıdır / -melidir" ile biter'], ['ikisi', 'İkisi de kabul edilir']];
+const reqStyle = () => (M && M.reqCfg && M.reqCfg.style) || 'gelecek';
+const FUT_W = /(?:acak|ecek)(?:t[ıi]r)?$/, MALI_W = /m[ae]l[ıi](?:d[ıi]r)?$/, OTHER_W = /^(?:zorundadır|zorunludur|shall|must|will)$/;
+const trWords = s => s.match(/[a-zçğıöşüâîû]+/g) || [];
+function reqSentences(t){
+  let x0 = String(t || '').replace(/\s+/g, ' '), z0; do { z0 = x0; x0 = x0.replace(/[\(\[][^()\[\]]*[\)\]]/g, ' '); } while(x0 !== z0); /* parantez içleri yok sayılır */
+  x0 = x0.replace(/(^|[^A-Za-zÇĞİÖŞÜçğıöşü])(bkz|vb|vs|vd|örn|ör|no|şek|tab|md|mad|ref|rev|min|maks|max|yakl|yön|std)\.(?=\s)/gi, '$1$2');
+  return x0.split(/(?<=[.;!?])\s+(?=[A-ZÇĞİÖŞÜ0-9(])/).map(x => {
+    let y = x.trim(), z; do { z = y; y = y.replace(/\s*[\(\[][^()\[\]]*[\)\]]\s*([.;:!?]*)\s*$/, '$1'); } while(y !== z); /* sondaki (bkz. …) açıklamaları atla */
+    return y.toLocaleLowerCase('tr');
+  }).filter(x => trWords(x).length);
+}
+function futSuggest(w){
+  let st = w.replace(MALI_W, ''); if(/et$|git$/.test(st)) st = st.slice(0, -1) + 'd';
+  const v = (st.match(/[aeıioöuü](?=[^aeıioöuü]*$)/) || ['e'])[0], back = /[aıou]/.test(v);
+  return st + (/[aeıioöuü]$/.test(st) ? 'y' : '') + (back ? 'acaktır' : 'ecektir');
+}
+function modalHits(low, st){ /* low parametresi özgün metindir; cümleler içeride küçültülür */
+  /* cümle sonundaki fiiller + "ve / veya / ," ile bağlanan ara fiiller */
+  const okW = w => (st !== 'mali' && FUT_W.test(w)) || (st !== 'gelecek' && MALI_W.test(w)) || OTHER_W.test(w);
+  let n = 0;
+  reqSentences(low).forEach(sn => { /* low: özgün metin */
+    const ws = trWords(sn); if(okW(ws[ws.length - 1])) n++;
+    const re = /([a-zçğıöşüâîû]+)(?=\s*(?:,|;)?\s+(?:ve|veya|ayrıca|hem de)\s)/g; let m;
+    while((m = re.exec(sn))){ const w = m[1]; if((st !== 'mali' && /(?:acak|ecek)(?:t[ıi]r)?$/.test(w) && w.length > 5) || (st !== 'gelecek' && MALI_W.test(w))) n++; }
+  });
+  return n;
+}
+function modalIssues(t, low){
+  const st = reqStyle(), out = [], sents = reqSentences(t);
+  if(/\b(shall|must)\b/.test(low)){ const n = (low.match(/\b(shall|must)\b/g) || []).length; if(n > 1) out.push(['uyarı', `Birden fazla ister içeriyor olabilir (${n} "shall") — bölmeyi düşünün`]); return out; }
+  const bad = sents.filter(sn => { const ws = trWords(sn), w = ws[ws.length - 1] || ''; return !((st !== 'mali' && FUT_W.test(w)) || (st !== 'gelecek' && MALI_W.test(w)) || OTHER_W.test(w)); });
+  if(bad.length){
+    const w = (trWords(bad[bad.length - 1]).pop() || '');
+    if(st === 'gelecek') out.push(['uyarı', MALI_W.test(w) ? `Cümle "${w}" ile bitiyor — kurala göre "-ecektir / -acaktır" kullanın (ör. "${futSuggest(w)}")` : `Cümle "-ecek / -acak / -ecektir / -acaktır" ekiyle bitmiyor (son kelime: "${w}")`]);
+    else if(st === 'mali') out.push(['uyarı', FUT_W.test(w) ? `Cümle "${w}" ile bitiyor — kurala göre "-malıdır / -melidir" kullanın` : 'Zorunluluk ifadesi yok ("-malıdır / -melidir")']);
+    else out.push(['uyarı', 'Cümle zorunluluk ifadesiyle bitmiyor ("-ecektir / -acaktır" veya "-malıdır / -melidir")']);
+  }
+  const n = modalHits(t, st);
+  if(n > 1) out.push(['uyarı', 'Birden fazla ister içeriyor olabilir (' + n + ' zorunluluk fiili) — bölmeyi düşünün']);
+  return out;
+}
 function reqQuality(r, sim){
   const out = [], t = String(r.text || '').trim(), low = t.toLocaleLowerCase('tr');
   if(!t){ out.push(['hata', 'Gereksinim metni boş']); return out; }
-  const modal = low.match(/m[ae]l[ıi](d[ıi]r)?(?![a-zçğıöşü])|zorundadır|zorunludur|\bshall\b|\bmust\b/g) || [];
-  if(!modal.length) out.push(['uyarı', 'Zorunluluk ifadesi yok ("-malıdır / -melidir")']);
-  if(modal.length > 1) out.push(['uyarı', 'Birden fazla ister içeriyor olabilir (' + modal.length + ' zorunluluk ifadesi) — bölmeyi düşünün']);
+  modalIssues(t, low).forEach(x => out.push(x));
   const vg = VAGUE.filter(v => new RegExp('(^|[^a-zçğıöşü])' + v.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&') + '($|[^a-zçğıöşü])', 'i').test(low));
   if(vg.length) out.push(['uyarı', 'Belirsiz / doğrulanamaz ifade: ' + vg.map(v => '"' + v + '"').join(', ')]);
   if(/\b(tbd|tbr|tbc)\b|belirlenecek|daha sonra belirlenecek|ileride tanımlanacak|\?\?/i.test(t)) out.push(['uyarı', 'Belirlenmemiş değer (TBD / belirlenecek)']);
@@ -4835,6 +4984,8 @@ function testPropsHTML(el, pf){
   TEST_FIELDS.slice(1).forEach(([f, l]) => { h += pf(l, testFieldInput(el, f)); });
   h += testItemList();
   if(overdue(el)) h += `<div class="gaps" style="background:#fdf2f2;border-color:#f1c4c4;color:#8a2a2a">⚠ Planlanan bitiş tarihi geçti, sonuç girilmedi</div>`;
+  const pfs = (el.profiles || []).map(E).filter(Boolean);
+  h += `<div class="sub"><span>Test profilleri (${pfs.length})</span><button data-tcpf="${el.id}">+ / −</button></div>` + (pfs.length ? pfs.map(p => `<div class="li"><a class="lnk" data-openpf="${p.id}">${esc(p.name)}</a> <span class="muted">${esc(pfShort(p))}</span></div>`).join('') : '<div class="muted" style="font-size:12px">Profil bağlı değil (PSD, sinüs, SRS, termal)</div>');
   const rs = testReqs(el);
   h += `<div class="sub"><span>Doğruladığı gereksinimler (${rs.length})</span><button data-tcreq="${el.id}">+ / −</button></div>`;
   h += rs.length ? rs.map(r => `<div class="li"><a class="lnk" data-goto="${r.id}"><b>${esc(r.reqId || '')}</b> ${esc(r.name || '')}</a> ${verChip(verStatus(r))}</div>`).join('') : '<div class="muted" style="font-size:12px">Henüz bağlı gereksinim yok (Verify ilişkisi)</div>';
@@ -4854,7 +5005,7 @@ function vcrmHTML(){
   if(!allReqs().length) return `<div class="vempty">Henüz gereksinim yok.<br><br><button class="vb pri" data-va="table">Gereksinim tablosunu aç</button></div>`;
   const rows = vcrmRows(), all = allReqs().filter(activeReq).map(r => verStatus(r));
   let h = '<div class="cards">' + VER_ST.map(s => { const n = all.filter(x => x === s).length, p = all.length ? Math.round(n / all.length * 100) : 0; return `<div class="card"><div class="cv" style="color:${VST_COL[s]}">${n}</div><div class="ct">${s}</div><div class="cbar"><i style="width:${p}%;background:${VST_COL[s]}"></i></div><div class="cs">%${p}</div></div>`; }).join('') + '</div>';
-  h += `<table class="rt vcrm"><thead><tr><th class="rn">#</th><th>Gereksinim ID</th><th>Gereksinim</th><th>Seviye</th>${VERIF.map(([v, a]) => `<th class="vm" title="${v}">${a}</th>`).join('')}<th>Doğrulama Seviyesi</th><th>Test / Prosedür</th><th>Sonuç</th><th>Rapor No</th><th>Doğrulama Durumu</th></tr></thead><tbody>`;
+  h += `<table class="rt vcrm"><thead><tr><th class="rn">#</th><th>Gereksinim ID</th><th>Gereksinim</th><th>Seviye</th>${VERIF.map(([v, a]) => `<th class="vm" title="${v}">${a}</th>`).join('')}<th>Doğrulama Seviyesi</th><th>Test / Prosedür</th><th>Test Profili</th><th>Sonuç</th><th>Rapor No</th><th>Doğrulama Durumu</th></tr></thead><tbody>`;
   rows.forEach(({r, tests, meth, vs}, i) => {
     const lv = [...new Set(tests.map(x => x.tLevel).filter(Boolean))].join(', ');
     h += `<tr data-row="${r.id}" class="${ST.tsel === r.id ? 'sel' : ''} lv-${reqLevel(r) === 'Sistem' ? 's' : 'a'}"><td class="rn">${i + 1}</td><td style="white-space:nowrap"><a class="lnk" data-goto="${r.id}"><b>${esc(r.reqId || '')}</b></a></td>
@@ -4866,6 +5017,7 @@ function vcrmHTML(){
     });
     h += `<td>${esc(lv) || '<span class="muted">—</span>'}</td>
       <td><div class="tcell">${tests.map(x => `<span class="chip2"><a class="lnk" data-goto="${x.id}">${esc(nm(x))}${x.procNo ? ' · ' + esc(x.procNo) : ''}</a></span>`).join('')}<button class="tadd" data-trpick="test" data-rid="${r.id}" title="Test bağla / çıkar">+</button></div></td>
+      <td>${[...new Set(tests.flatMap(x => x.profiles || []))].map(E).filter(Boolean).map(p => `<span class="chip2" title="${esc(pfShort(p))}"><a class="lnk" data-openpf="${p.id}">∿ ${esc(p.name)}</a></span>`).join('') || '<span class="muted">—</span>'}</td>
       <td>${tests.map(x => resChip(testResult(x))).join(' ') || '<span class="muted">—</span>'}</td><td>${esc(tests.map(x => x.reportNo).filter(Boolean).join(', ')) || '<span class="muted">—</span>'}</td><td>${verChip(vs)}</td></tr>`;
   });
   h += '</tbody></table>';
@@ -4961,14 +5113,14 @@ function campaignBar(){
 }
 function vcrmSheets(){
   const idx = relIdx(), rs = allReqs().filter(activeReq);
-  const V = [[{v:'Gereksinim ID', s:1}, {v:'Seviye', s:1}, {v:'Alt Sistem', s:1}, {v:'Gereksinim', s:1}].concat(VERIF.map(([v]) => ({v, s:1}))).concat(['Doğrulama Seviyesi', 'Test / Prosedür', 'Sonuç', 'Rapor No', 'Doğrulama Durumu'].map(v => ({v, s:1})))];
+  const V = [[{v:'Gereksinim ID', s:1}, {v:'Seviye', s:1}, {v:'Alt Sistem', s:1}, {v:'Gereksinim', s:1}].concat(VERIF.map(([v]) => ({v, s:1}))).concat(['Doğrulama Seviyesi', 'Test / Prosedür', 'Test Profili', 'Sonuç', 'Rapor No', 'Doğrulama Durumu'].map(v => ({v, s:1})))];
   rs.forEach(r => {
     const t = trace(r, idx), tests = t.verifyBy.filter(x => x.kind === 'TestCase'), meth = new Set(String(r.verif || '').split(/[,;\/]+/).map(x => x.trim())), vs = verStatus(r, t);
-    V.push([{v:r.reqId || '', s:6}, reqLevel(r), reqLevel(r) === 'Sistem' ? '' : (r.subsys || ''), (r.name ? r.name + ': ' : '') + (r.text || '')].concat(VERIF.map(([v]) => meth.has(v) ? {v:'X', s:7} : '')).concat([[...new Set(tests.map(x => x.tLevel).filter(Boolean))].join(', '), tests.map(x => nm(x) + (x.procNo ? ' (' + x.procNo + ')' : '')).join('\n'), tests.map(x => testResult(x)).join('\n'), tests.map(x => x.reportNo).filter(Boolean).join('\n'), {v:vs, s:vs === 'Doğrulandı' ? 3 : vs === 'Kaldı' || vs === 'Faaliyet yok' ? 4 : 5}]));
+    V.push([{v:r.reqId || '', s:6}, reqLevel(r), reqLevel(r) === 'Sistem' ? '' : (r.subsys || ''), (r.name ? r.name + ': ' : '') + (r.text || '')].concat(VERIF.map(([v]) => meth.has(v) ? {v:'X', s:7} : '')).concat([[...new Set(tests.map(x => x.tLevel).filter(Boolean))].join(', '), tests.map(x => nm(x) + (x.procNo ? ' (' + x.procNo + ')' : '')).join('\n'), [...new Set(tests.flatMap(x => x.profiles || []))].map(E).filter(Boolean).map(p => p.name + ' — ' + pfShort(p)).join('\n'), tests.map(x => testResult(x)).join('\n'), tests.map(x => x.reportNo).filter(Boolean).join('\n'), {v:vs, s:vs === 'Doğrulandı' ? 3 : vs === 'Kaldı' || vs === 'Faaliyet yok' ? 4 : 5}]));
   });
   const T0 = [TEST_FIELDS.map(([, l]) => ({v:l, s:1})).concat([{v:'Doğruladığı Gereksinimler', s:9}, {v:'Açıklama', s:1}])];
   allTests().forEach(tc => T0.push(TEST_FIELDS.map(([f]) => f === 'result' ? {v:testResult(tc), s:tc.result === 'Geçti' ? 3 : tc.result === 'Kaldı' ? 4 : tc.result === 'Koşullu' ? 5 : 2} : (f === 'pStart' || f === 'pEnd' || f === 'rDate') ? fmtD(tc[f]) : (f === 'name' ? {v:nm(tc), s:6} : tc[f] || '')).concat([testReqs(tc, idx).map(r => r.reqId || nm(r)).join('\n'), tc.doc || ''])));
-  return [{name:'VCRM', rows:V, widths:[14, 11, 16, 60, 5, 5, 5, 5, 16, 30, 12, 14, 16], header:true, freeze:[1, 1], filter:1}, {name:'Test Durumları', rows:T0, widths:[28, 14, 10, 14, 18, 18, 14, 12, 12, 11, 12, 14, 22, 30], header:true, freeze:[1, 1], filter:1}];
+  return [{name:'VCRM', rows:V, widths:[14, 11, 16, 60, 5, 5, 5, 5, 16, 30, 30, 12, 14, 16], header:true, freeze:[1, 1], filter:1}, {name:'Test Durumları', rows:T0, widths:[28, 14, 10, 14, 18, 18, 14, 12, 12, 11, 12, 14, 22, 30], header:true, freeze:[1, 1], filter:1}];
 }
 function exportVcrmXlsx(){
   if(!allReqs().length && !allTests().length) return toast('Dışa aktarılacak veri yok');
@@ -5046,7 +5198,7 @@ async function importTests(){
   });
   V.addEventListener('input', ev => { const t = ev.target; if(t.dataset.xf === 'cp.q'){ CP.q = t.value; const b = V.querySelector('.vbody'); b.innerHTML = campaignHTML(); } });
   V.addEventListener('keydown', ev => { const t = ev.target; if(t.dataset && (t.dataset.tc || t.dataset.xf)){ if(ev.key === 'Enter') t.blur(); ev.stopPropagation(); } });
-  $('#props').addEventListener('click', ev => { const b = ev.target.closest('[data-tcreq]'); if(b) pickReqsForTest(b.dataset.tcreq); });
+  $('#props').addEventListener('click', ev => { const b = ev.target.closest('[data-tcreq]'); if(b) pickReqsForTest(b.dataset.tcreq); const bp = ev.target.closest('[data-tcpf]'); if(bp) pickProfilesForTest(bp.dataset.tcpf); const op = ev.target.closest('[data-openpf]'); if(op){ PF.sel = op.dataset.openpf; PF.cmp = ''; openD('@profiles'); } });
 })();
 
 /* ================= PHASE 4: VALIDATION, REPORTS, MERGE, REQIF ================= */
@@ -5149,6 +5301,7 @@ function validateModel(){
   els.filter(e => e.kind === 'Block').forEach(b => { if(!inDiag.has(b.id) && !typeUse.has(b.id) && !relUse.has(b.id)) add('bilgi', 'Kullanılmayan blok', b, 'Hiçbir diyagramda yok, tip olarak kullanılmıyor ve ilişkisi yok'); });
   els.filter(e => e.kind === 'Diagram' && !e.shapes.length).forEach(d => add('bilgi', 'Boş diyagram', d, 'Diyagramda hiç şekil yok'));
   els.filter(e => e.kind === 'Package' && !kidsOf(e.id).length).forEach(p => add('bilgi', 'Boş paket', p, 'Paketin içi boş'));
+  VALIDATORS.forEach(f => { try { f(add, els, idx); } catch(err){ add('bilgi', 'Denetim hatası', null, String(err.message || err)); } });
   const ord = {hata:0, 'uyarı':1, bilgi:2};
   return out.sort((a, b) => ord[a.sev] - ord[b.sev] || a.rule.localeCompare(b.rule, 'tr'));
 }
@@ -5251,9 +5404,8 @@ function buildReport(o){
   }
   if(o.reqs && allReqs().length){
     H(1, `${++sec}. Gereksinimler`);
-    const grp = [['Sistem gereksinimleri', allReqs().filter(r => reqLevel(r) === 'Sistem')]].concat(subsystems().map(s => ['Alt sistem: ' + s, allReqs().filter(r => reqLevel(r) !== 'Sistem' && String(r.subsys || '').trim() === s)]));
-    const noName = allReqs().filter(r => reqLevel(r) !== 'Sistem' && !String(r.subsys || '').trim()); if(noName.length) grp.push(['Alt sistem gereksinimleri', noName]);
-    grp.filter(g => g[1].length).forEach(([t, rs]) => { H(2, t); TB(['ID', 'Başlık', 'Gereksinim', 'Doğrulama', 'Durum', 'Müşteri ister'], rs.map(r => [r.reqId || '', r.name || '', r.text || '', r.verif || '—', reqStatus(r), r.srcNo || '']), [11, 15, 44, 12, 9, 9]); });
+    reqSpecBlocks().grp.forEach(g => { H(2, g.t); TB(g.head, g.rows, g.w); });
+    Pp('Sütunlar Gereksinimler ▾ → Word\'e aktar penceresindeki seçime göredir.', 'muted');
   }
   if(o.trace && allReqs().length){
     H(1, `${++sec}. İzlenebilirlik ve kapsama analizi`);
@@ -5269,6 +5421,17 @@ function buildReport(o){
     H(2, 'Doğrulama çapraz referans matrisi (VCRM)');
     TB(['ID', 'T', 'A', 'M', 'G', 'Test / prosedür', 'Sonuç', 'Durum'], allReqs().filter(activeReq).map(r => { const t = trace(r, idx), ts = t.verifyBy.filter(x => x.kind === 'TestCase'), m = new Set(String(r.verif || '').split(/[,;\/]+/).map(x => x.trim())), vs = verStatus(r, t); return [r.reqId || ''].concat(VERIF.map(([v]) => m.has(v) ? 'X' : '')).concat([ts.map(x => nm(x) + (x.procNo ? ' (' + x.procNo + ')' : '')).join(', ') || '—', ts.map(testResult).join(', ') || '—', {x:vs, c:vs === 'Doğrulandı' ? 'D9F2DF' : vs === 'Kaldı' || vs === 'Faaliyet yok' ? 'F8D7DA' : 'FFF3CD'}]); }), [12, 5, 5, 5, 5, 36, 16, 16]);
     if(allTests().length){ H(2, 'Test durumları'); TB(['Test', 'Prosedür', 'Seviye', 'Plan', 'Sonuç', 'Rapor', 'Gereksinimler'], allTests().map(t => [nm(t), t.procNo || '', t.tLevel || '', [fmtD(t.pStart), fmtD(t.pEnd)].filter(Boolean).join(' – '), testResult(t), t.reportNo || '', testReqs(t, idx).map(r => r.reqId || nm(r)).join(', ')]), [22, 12, 11, 17, 10, 10, 18]); }
+    const PFS = allProfiles();
+    if(PFS.length){
+      H(2, 'Test profilleri');
+      TB(['Profil', 'Tür', 'Seviye', 'Ana değer', 'Toplam süre', 'Kullanan testler'], PFS.map(p => { const m = pfMetrics(p); return [p.name, PT[p.ptype || 'psd'].tr, p.plevel || '', m.main || '', m.total != null ? fmtMin(m.total) : '—', pfTests(p).map(nm).join(', ') || '—']; }), [24, 17, 12, 17, 10, 20]);
+      PFS.forEach(p => {
+        const m = pfMetrics(p), t = p.ptype || 'psd', D = PT[t];
+        Pp(p.name + (p.std ? ' — ' + p.std : '') + ': ' + m.rows.map(r => r[0] + ' ' + r[1]).join(' · '));
+        if(m.ok){ const svg = pfChart([{p, tol:(t === 'psd' || t === 'srs') ? (numOf(p.tol) || (t === 'srs' ? 6 : 3)) : 0}], {w:760, h:380}); B.push({t:'img', r:{str:svg, w:760, h:380}, cap:`Şekil ${++fig} – ${p.name} (${D.tr})`}); }
+        TB([D.x, D.y, t === 'thermal' ? 'Değişim (°C/dk)' : 'Eğim (dB/oktav)'], pfPts(p).map((q, i) => [fmtNum(q[0]), String(q[1]), m.slopes[i] && m.slopes[i][2] != null ? fmtG(m.slopes[i][2]) : '']), [30, 35, 35]);
+      });
+    }
   }
   if(o.quality && allReqs().length){
     const SQ = simIndex(), rows = []; allReqs().filter(activeReq).forEach(r => reqQuality(r, SQ).forEach(([sv, m]) => rows.push([r.reqId || '', sv, m])));
@@ -5288,7 +5451,7 @@ function docxP(x, style, o){ o = o || {}; return `<w:p><w:pPr>${style ? `<w:pSty
 async function buildDocx(B, o){
   const land = !!o.land, TW = land ? 14570 : 9638, maxW = (land ? 25.7 : 17) / 2.54 * 914400, maxH = (land ? 14.5 : 21) / 2.54 * 914400;
   const media = []; let body = '', pic = 0;
-  body += docxP(o.title || E(M.rootId).name, 'Title') + docxP(E(M.rootId).name + ' — SysML Model Raporu', 'Subtitle');
+  body += docxP(o.title || E(M.rootId).name, 'Title') + docxP(E(M.rootId).name + ' — ' + (o.subtitle || 'SysML Model Raporu'), 'Subtitle');
   const meta = [['Doküman no', o.docNo], ['Revizyon', o.rev], ['Hazırlayan', o.author], ['Tarih', new Date().toLocaleDateString('tr-TR')]].filter(x => x[1]);
   if(meta.length) body += docxTable(['Alan', 'Değer'], meta, [30, 70], TW, true);
   body += `<w:p><w:pPr><w:pStyle w:val="TOCHeading"/><w:pageBreakBefore/></w:pPr>${docxRun('İçindekiler')}</w:p><w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-2" \\h \\z \\u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>${docxRun('İçindekiler tablosunu güncellemek için tıklayıp F9 tuşuna basın.', {i:1, col:'777777'})}<w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>`;
@@ -5466,7 +5629,8 @@ function mergeModel(O, sel, target, mode){
 
 /* ---- ReqIF ---- */
 function exportReqIF(){
-  const rs = allReqs(); if(!rs.length) return toast('Dışa aktarılacak gereksinim yok');
+  const rs = expReqs(); if(!rs.length) return toast('Dışa aktarılacak gereksinim yok');
+  const SEL = new Set(expCols().map(c => c.key)), has = k => SEL.has(k), XC = expCols().filter(c => c.trace || EXTRA_COLS.includes(c)), ridx = relIdx(), rsim = simIndex();
   const now = new Date().toISOString(), LC = `LAST-CHANGE="${now}"`, c = reqCfg();
   const enumDT = (id, name, vals) => `<DATATYPE-DEFINITION-ENUMERATION IDENTIFIER="${id}" LONG-NAME="${xe(name)}" ${LC}><SPECIFIED-VALUES>${vals.map((v, i) => `<ENUM-VALUE IDENTIFIER="${id}-${i}" LONG-NAME="${xe(v)}" ${LC}><PROPERTIES><EMBEDDED-VALUE KEY="${i}" OTHER-CONTENT="${xe(v)}"/></PROPERTIES></ENUM-VALUE>`).join('')}</SPECIFIED-VALUES></DATATYPE-DEFINITION-ENUMERATION>`;
   const LV = ['Sistem', 'Alt Sistem'], VM = VERIF.map(x => x[0]);
@@ -5477,7 +5641,7 @@ function exportReqIF(){
   const eV = (ad, refs) => refs.length ? `<ATTRIBUTE-VALUE-ENUMERATION><DEFINITION><ATTRIBUTE-DEFINITION-ENUMERATION-REF>${ad}</ATTRIBUTE-DEFINITION-ENUMERATION-REF></DEFINITION><VALUES>${refs.map(r => `<ENUM-VALUE-REF>${r}</ENUM-VALUE-REF>`).join('')}</VALUES></ATTRIBUTE-VALUE-ENUMERATION>` : '';
   const xV = (ad, t) => `<ATTRIBUTE-VALUE-XHTML><DEFINITION><ATTRIBUTE-DEFINITION-XHTML-REF>${ad}</ATTRIBUTE-DEFINITION-XHTML-REF></DEFINITION><THE-VALUE><xhtml:div>${String(t || '').split('\n').map(l => xe(l)).join('<xhtml:br/>')}</xhtml:div></THE-VALUE></ATTRIBUTE-VALUE-XHTML>`;
   const objs = rs.map(r => { const vm = String(r.verif || '').split(/[,;\/]+/).map(x => x.trim()).map(x => VM.indexOf(x)).filter(i => i >= 0);
-    return `<SPEC-OBJECT IDENTIFIER="${r.id}" ${LC}><TYPE><SPEC-OBJECT-TYPE-REF>ST-REQ</SPEC-OBJECT-TYPE-REF></TYPE><VALUES>${sV('AD-ID', r.reqId)}${sV('AD-NAME', r.name)}${xV('AD-TEXT', r.text)}${eV('AD-LEVEL', ['DT-LEVEL-' + LV.indexOf(reqLevel(r))])}${sV('AD-SUB', reqLevel(r) === 'Sistem' ? '' : r.subsys)}${eV('AD-STATUS', ['DT-STATUS-' + REQ_STATUS.indexOf(reqStatus(r))])}${eV('AD-VERIF', vm.map(i => 'DT-VERIF-' + i))}${sV('AD-SRCNO', r.srcNo)}${sV('AD-SRCTEXT', r.srcText)}${c.attrs.map(a => sV(attrId(a.key), (r.attrs || {})[a.key])).join('')}</VALUES></SPEC-OBJECT>`; });
+    return `<SPEC-OBJECT IDENTIFIER="${r.id}" ${LC}><TYPE><SPEC-OBJECT-TYPE-REF>ST-REQ</SPEC-OBJECT-TYPE-REF></TYPE><VALUES>${sV('AD-ID', r.reqId)}${has('name') ? sV('AD-NAME', r.name) : ''}${xV('AD-TEXT', r.text)}${has('level') ? eV('AD-LEVEL', ['DT-LEVEL-' + LV.indexOf(reqLevel(r))]) : ''}${has('subsys') ? sV('AD-SUB', reqLevel(r) === 'Sistem' ? '' : r.subsys) : ''}${has('status') ? eV('AD-STATUS', ['DT-STATUS-' + REQ_STATUS.indexOf(reqStatus(r))]) : ''}${has('verif') ? eV('AD-VERIF', vm.map(i => 'DT-VERIF-' + i)) : ''}${has('srcNo') ? sV('AD-SRCNO', r.srcNo) : ''}${has('srcText') ? sV('AD-SRCTEXT', r.srcText) : ''}${c.attrs.filter(a => has('attr:' + a.key)).map(a => sV(attrId(a.key), (r.attrs || {})[a.key])).join('')}${XC.length ? (() => { const t = trace(r, ridx), cs = covStatus(r, t); return XC.map(col => sV(attrId(col.key), String(expVal(r, col, t, cs, rsim) || ''))).join(''); })() : ''}</VALUES></SPEC-OBJECT>`; });
   const grp = [['H-SYS', 'Sistem Gereksinimleri', rs.filter(r => reqLevel(r) === 'Sistem')]].concat(subsystems().map((s, i) => ['H-SUB-' + i, 'Alt Sistem Gereksinimleri — ' + s, rs.filter(r => reqLevel(r) !== 'Sistem' && String(r.subsys || '').trim() === s)]));
   const nn = rs.filter(r => reqLevel(r) !== 'Sistem' && !String(r.subsys || '').trim()); if(nn.length) grp.push(['H-SUB-X', 'Alt Sistem Gereksinimleri', nn]);
   const heads = grp.filter(g => g[2].length).map(([id, t]) => `<SPEC-OBJECT IDENTIFIER="${id}" ${LC}><TYPE><SPEC-OBJECT-TYPE-REF>ST-HEAD</SPEC-OBJECT-TYPE-REF></TYPE><VALUES>${sV('AD-CHAPTER', t)}</VALUES></SPEC-OBJECT>`);
@@ -5489,7 +5653,7 @@ function exportReqIF(){
 <THE-HEADER><REQ-IF-HEADER IDENTIFIER="HDR-${M.uid || 'm'}"><CREATION-TIME>${now}</CREATION-TIME><REQ-IF-TOOL-ID>SysML Modelleyici</REQ-IF-TOOL-ID><REQ-IF-VERSION>1.0</REQ-IF-VERSION><SOURCE-TOOL-ID>SysML Modelleyici</SOURCE-TOOL-ID><TITLE>${xe(E(M.rootId).name)}</TITLE></REQ-IF-HEADER></THE-HEADER>
 <CORE-CONTENT><REQ-IF-CONTENT>
 <DATATYPES><DATATYPE-DEFINITION-STRING IDENTIFIER="DT-STR" LONG-NAME="Metin" MAX-LENGTH="65535" ${LC}/><DATATYPE-DEFINITION-XHTML IDENTIFIER="DT-XHTML" LONG-NAME="Biçimli metin" ${LC}/>${enumDT('DT-LEVEL', 'Seviye', LV)}${enumDT('DT-STATUS', 'Durum', REQ_STATUS)}${enumDT('DT-VERIF', 'Doğrulama Yöntemi', VM)}</DATATYPES>
-<SPEC-TYPES><SPEC-OBJECT-TYPE IDENTIFIER="ST-REQ" LONG-NAME="Gereksinim" ${LC}><SPEC-ATTRIBUTES>${sAD('AD-ID', 'ReqIF.ForeignID')}${sAD('AD-NAME', 'ReqIF.Name')}<ATTRIBUTE-DEFINITION-XHTML IDENTIFIER="AD-TEXT" LONG-NAME="ReqIF.Text" ${LC}><TYPE><DATATYPE-DEFINITION-XHTML-REF>DT-XHTML</DATATYPE-DEFINITION-XHTML-REF></TYPE></ATTRIBUTE-DEFINITION-XHTML>${eAD('AD-LEVEL', 'Seviye', 'DT-LEVEL')}${sAD('AD-SUB', 'Alt Sistem')}${eAD('AD-STATUS', 'Durum', 'DT-STATUS')}${eAD('AD-VERIF', 'Doğrulama Yöntemi', 'DT-VERIF', 1)}${sAD('AD-SRCNO', 'Müşteri İster No')}${sAD('AD-SRCTEXT', 'Müşteri İsteri')}${c.attrs.map(a => sAD(attrId(a.key), a.label)).join('')}</SPEC-ATTRIBUTES></SPEC-OBJECT-TYPE>
+<SPEC-TYPES><SPEC-OBJECT-TYPE IDENTIFIER="ST-REQ" LONG-NAME="Gereksinim" ${LC}><SPEC-ATTRIBUTES>${sAD('AD-ID', 'ReqIF.ForeignID')}${has('name') ? sAD('AD-NAME', 'ReqIF.Name') : ''}<ATTRIBUTE-DEFINITION-XHTML IDENTIFIER="AD-TEXT" LONG-NAME="ReqIF.Text" ${LC}><TYPE><DATATYPE-DEFINITION-XHTML-REF>DT-XHTML</DATATYPE-DEFINITION-XHTML-REF></TYPE></ATTRIBUTE-DEFINITION-XHTML>${has('level') ? eAD('AD-LEVEL', 'Seviye', 'DT-LEVEL') : ''}${has('subsys') ? sAD('AD-SUB', 'Alt Sistem') : ''}${has('status') ? eAD('AD-STATUS', 'Durum', 'DT-STATUS') : ''}${has('verif') ? eAD('AD-VERIF', 'Doğrulama Yöntemi', 'DT-VERIF', 1) : ''}${has('srcNo') ? sAD('AD-SRCNO', 'Müşteri İster No') : ''}${has('srcText') ? sAD('AD-SRCTEXT', 'Müşteri İsteri') : ''}${c.attrs.filter(a => has('attr:' + a.key)).map(a => sAD(attrId(a.key), a.label)).join('')}${XC.map(col => sAD(attrId(col.key), col.label)).join('')}</SPEC-ATTRIBUTES></SPEC-OBJECT-TYPE>
 <SPEC-OBJECT-TYPE IDENTIFIER="ST-HEAD" LONG-NAME="Başlık" ${LC}><SPEC-ATTRIBUTES>${sAD('AD-CHAPTER', 'ReqIF.ChapterName')}</SPEC-ATTRIBUTES></SPEC-OBJECT-TYPE>
 ${relT.map(([, t, n]) => `<SPEC-RELATION-TYPE IDENTIFIER="${t}" LONG-NAME="${n}" ${LC}/>`).join('')}<SPECIFICATION-TYPE IDENTIFIER="SPT" LONG-NAME="Gereksinim Spesifikasyonu" ${LC}/></SPEC-TYPES>
 <SPEC-OBJECTS>${heads.join('')}${objs.join('\n')}</SPEC-OBJECTS>
@@ -5535,7 +5699,7 @@ function toolsMenuItems(){
     {t:'Model doğrulama', f:() => openD('@validation')},
     '-',
     {t:'Başka modeli birleştir…', f:mergeModelDialog},
-    {t:'ReqIF olarak dışa aktar (DOORS, Polarion…)', f:exportReqIF},
+    {t:'ReqIF olarak dışa aktar (DOORS, Polarion…)', f:() => reqExportDialog('reqif')},
     {t:'ReqIF / Excel\'den gereksinim aktar…', f:importReqs},
     {h:'Cameo / MagicDraw (XMI)'},
     {t:'XMI olarak dışa aktar (UML 2.5 / SysML 1.6)', f:xmiExport},
@@ -5878,6 +6042,7 @@ function showHelp(){
   <tr><td>Tahsis matrisi</td><td>Aktivite/aksiyon × blok/part; hücreye tıklayınca «allocate» kurulur. Kulvardan gelen dolaylı tahsis ○ ile gösterilir.</td></tr>
   <tr><td>Genel tablo</td><td>Seçilen türdeki elemanların düzenlenebilir tablosu (stereotip etiketleri sütun olarak); Excel'e aktarılır.</td></tr>
   <tr><td>İlişki haritası</td><td>Seçili elemanın ilişkilerini katmanlı harita olarak gösterir; çift tık merkeze alır.</td></tr>
+  <tr><td>Test profilleri</td><td>Rastgele titreşim (PSD), sinüs süpürme, şok tepki spektrumu (SRS) ve termal döngü. Kırılma noktalarından Grms, eğim (dB/oktav), yer değiştirme, süre ve tolerans bandı hesaplanır; Excel'den yapıştırılabilir. İki profil karşılaştırılır (marj, kapsama), birden çoğunun zarfı alınır, ± dB ölçeklenir. Test durumlarına bağlanır; VCRM ve raporda görünür. Gereksinim diyagramında kutu içinde grafikle gösterilir.</td></tr>
   </table>
   <h3>XMI ve şablonlar (Araçlar ▾)</h3>
   <table>
@@ -5888,12 +6053,13 @@ function showHelp(){
   <h3>Gereksinim yönetimi (Gereksinimler ▾)</h3>
   <table>
   <tr><td>Gereksinim tablosu</td><td>Sistem ve alt sistem gereksinimlerini ekleyin (alt sistem eklerken alt sistem adı sorulur; filtrede alt sistemler adlarıyla listelenir), hücreye tıklayıp düzenleyin. Doğrulama yöntemi T/A/M/G (Test, Analiz, Muayene, Gösterim) düğmeleriyle. İzlenebilirlik sütunlarındaki <b>+</b> ile üst gereksinim, alt gereksinim, karşılayan model elemanı, fonksiyon ve test bağlanır.</td></tr>
-  <tr><td>Sütunlar / özellikler</td><td>Sütunları gizleyin/gösterin, özel özellik (attribute) ekleyin/silin/yeniden adlandırın, ID öneklerini ayarlayın. Görünen sütunlar Excel'e aktarılır.</td></tr>
+  <tr><td>Sütunlar / özellikler</td><td>Sütunları gizleyin/gösterin, özel özellik (attribute) ekleyin/silin/yeniden adlandırın, ID öneklerini ayarlayın.</td></tr>
+  <tr><td>Dışa aktarma</td><td>Excel, Word (gereksinim spesifikasyonu) ve ReqIF çıktısından önce hangi attribute'ların hangi sırayla aktarılacağını, kapsamı (sistem / alt sistem) ve Excel'deki ek sayfaları seçersiniz. Seçim modelle kaydedilir.</td></tr>
   <tr><td>İzlenebilirlik matrisi</td><td>Satır/sütun kümeleri: sistem, alt sistem, fonksiyonlar, bloklar, model elemanları, testler, use case'ler. Hücreye tıklayınca ilişki kurulur/kaldırılır. Kırmızı başlıklar ilişkisiz satır/sütunlardır.</td></tr>
   <tr><td>Kapsama analizi</td><td>Karşılanmayan sistem gereksinimleri, yetim alt sistem gereksinimleri, doğrulama yöntemi olmayanlar, gereksinime izlenmeyen bloklar/fonksiyonlar; yüzde göstergeleri.</td></tr>
   <tr><td>Excel / ReqIF</td><td>İçe aktarmada sütunlar otomatik eşleşir, isterseniz değiştirin; bilinmeyen sütunlar yeni özellik olur. Üst gereksinim ID'leri Derive ilişkisine dönüşür. ReqIF (.reqif) dosyaları da aynı pencereyle aktarılır. Dışa aktarma: gereksinimler + matrisler + kapsama + kalite + VCRM + test sayfaları; ayrıca ReqIF 1.2 (DOORS, Polarion vb.).</td></tr>
   <tr><td>Durum ve geçmiş</td><td>Taslak → İncelemede → Onaylı → Değişiklikte → İptal. Onaylı gereksinimin metni/yöntemi/seviyesi değişirse otomatik "Değişiklikte" olur. Her değişiklik kim/ne zaman/eski→yeni ve gerekçeyle kaydedilir (Özellikler → Değişiklik geçmişi). Kullanıcı adı: Gereksinimler ▾ → Kullanıcı adım.</td></tr>
-  <tr><td>Kalite raporu</td><td>INCOSE kurallarıyla metin denetimi: zorunluluk ifadesi, belirsiz kelimeler, birden fazla ister, birimsiz sayı, TBD, aşırı uzunluk, yinelenen ID, çok benzer gereksinimler.</td></tr>
+  <tr><td>Kalite raporu</td><td>INCOSE kurallarıyla metin denetimi: cümle "-ecek / -acak / -ecektir / -acaktır" ile bitmeli (Yazım kuralı seçiminden "-malıdır / -melidir" de seçilebilir), belirsiz kelimeler, birden fazla ister, birimsiz sayı, TBD, aşırı uzunluk, yinelenen ID, çok benzer gereksinimler.</td></tr>
   <tr><td>Taban çizgileri</td><td>Gereksinim setini adlandırarak dondurun (ör. SRR, PDR); iki taban çizgisini veya taban çizgisini güncel modelle karşılaştırın, farkı Excel'e alın.</td></tr>
   <tr><td>Etki analizi</td><td>Sağ tık veya Özellikler → "Etki analizi": bir eleman değişirse etkilenen gereksinimler, elemanlar, testler ve diyagramlar.</td></tr>
   </table>
@@ -6021,22 +6187,22 @@ function demo(){
   // --- gereksinimler ---
   reqCfg().attrs.push({key:'oncelik', label:'Öncelik'});
   const RQ = (lvl, id, name, text, verif, srcNo, srcText, pr) => mk('Requirement', reqPkgFor(lvl), {level:lvl, reqId:id, name, text, verif, srcNo:srcNo || '', srcText:srcText || '', attrs:{oncelik:pr || 'Orta'}});
-  const S1 = RQ('Sistem', 'SYS-001', 'Çalışma gerilimi', 'Sistem 28 V DC ± %10 besleme ile çalışmalıdır.', 'Test', 'Mİ-012', 'Araç 28 V bara ile beslenecektir.', 'Yüksek');
-  const S2 = RQ('Sistem', 'SYS-002', 'Hazır olma süresi', 'Sistem enerji verildikten sonra en geç 30 s içinde hazır durumuna geçmelidir.', 'Test', 'Mİ-018', 'Sistem kısa sürede göreve hazır olmalıdır.', 'Yüksek');
-  const S3 = RQ('Sistem', 'SYS-003', 'Durum bildirimi', 'Sistem operatöre çalışma durumunu sürekli bildirmelidir.', 'Gösterim', 'Mİ-021', 'Operatör sistemin durumunu görebilmelidir.');
-  const S4 = RQ('Sistem', 'SYS-004', 'Kütle', 'Sistemin toplam kütlesi 45 kg\'ı aşmamalıdır.', 'Muayene', 'Mİ-030', 'Platform yük sınırı.', 'Orta');
-  const S5 = RQ('Sistem', 'SYS-005', 'Çevresel dayanım', 'Sistem MIL-STD-810H yöntem 514.8 titreşim koşullarında çalışmasını sürdürmelidir.', '', 'Mİ-041', 'Sistem arazi koşullarına dayanıklı olmalıdır.', 'Yüksek');
-  const A1 = RQ('Alt Sistem', 'SUB-001', 'Güç dönüşümü', 'Güç birimi 28 V girişten 5 V ve 12 V regüle çıkış üretmelidir.', 'Test, Analiz', 'Mİ-012', '', 'Yüksek');
-  const A2 = RQ('Alt Sistem', 'SUB-002', 'Kendi kendine test', 'Kontrol birimi açılışta kendi kendine testi 20 s içinde tamamlamalıdır.', 'Test', 'Mİ-018', '');
-  const A3 = RQ('Alt Sistem', 'SUB-003', 'Sensör veri hızı', 'Sensör birimi veriyi en az 50 Hz ile kontrol birimine iletmelidir.', 'Test', '', '');
-  const A4 = RQ('Alt Sistem', 'SUB-004', 'Durum mesajı', 'Kontrol birimi durum mesajını 1 Hz ile yayınlamalıdır.', '', '', '', 'Düşük');
-  const A5 = RQ('Alt Sistem', 'SUB-005', 'Bakım arayüzü', 'Kontrol birimi bakım için seri arayüz sağlamalıdır.', 'Muayene', '', '', 'Düşük');
+  const S1 = RQ('Sistem', 'SYS-001', 'Çalışma gerilimi', 'Sistem 28 V DC ± %10 besleme ile çalışacaktır.', 'Test', 'Mİ-012', 'Araç 28 V bara ile beslenecektir.', 'Yüksek');
+  const S2 = RQ('Sistem', 'SYS-002', 'Hazır olma süresi', 'Sistem enerji verildikten sonra en geç 30 s içinde hazır durumuna geçecektir.', 'Test', 'Mİ-018', 'Sistem kısa sürede göreve hazır olacaktır.', 'Yüksek');
+  const S3 = RQ('Sistem', 'SYS-003', 'Durum bildirimi', 'Sistem operatöre çalışma durumunu sürekli bildirecektir.', 'Gösterim', 'Mİ-021', 'Operatör sistemin durumunu görebilecektir.');
+  const S4 = RQ('Sistem', 'SYS-004', 'Kütle', 'Sistemin toplam kütlesi 45 kg\'ı aşmayacaktır.', 'Muayene', 'Mİ-030', 'Platform yük sınırı.', 'Orta');
+  const S5 = RQ('Sistem', 'SYS-005', 'Çevresel dayanım', 'Sistem MIL-STD-810H yöntem 514.8 titreşim koşullarında çalışmasını sürdürecektir.', '', 'Mİ-041', 'Sistem arazi koşullarına dayanıklı olacaktır.', 'Yüksek');
+  const A1 = RQ('Alt Sistem', 'SUB-001', 'Güç dönüşümü', 'Güç birimi 28 V girişten 5 V ve 12 V regüle çıkış üretecektir.', 'Test, Analiz', 'Mİ-012', '', 'Yüksek');
+  const A2 = RQ('Alt Sistem', 'SUB-002', 'Kendi kendine test', 'Kontrol birimi açılışta kendi kendine testi 20 s içinde tamamlayacaktır.', 'Test', 'Mİ-018', '');
+  const A3 = RQ('Alt Sistem', 'SUB-003', 'Sensör veri hızı', 'Sensör birimi veriyi en az 50 Hz ile kontrol birimine iletecektir.', 'Test', '', '');
+  const A4 = RQ('Alt Sistem', 'SUB-004', 'Durum mesajı', 'Kontrol birimi durum mesajını 1 Hz ile yayınlayacaktır.', '', '', '', 'Düşük');
+  const A5 = RQ('Alt Sistem', 'SUB-005', 'Bakım arayüzü', 'Kontrol birimi bakım için seri arayüz sağlayacaktır.', 'Muayene', '', '', 'Düşük');
   [[A1, 'Güç Birimi'], [A2, 'Kontrol Birimi'], [A3, 'Sensör Birimi'], [A4, 'Kontrol Birimi'], [A5, 'Kontrol Birimi']].forEach(([r, n]) => { r.subsys = n; r.owner = reqPkgFor('Alt Sistem', n); bump(); });
   [[A1, S1], [A2, S2], [A3, S2], [A4, S3]].forEach(([x, y]) => addRel('DeriveReqt', x.id, y.id));
   [S1, S2, A1, A2].forEach(r => r.status = 'Onaylı'); [S3, A3].forEach(r => r.status = 'İncelemede');
   M.baselines = [{id:uid(), name:'Rev-A (SRR)', t:new Date(Date.now() - 86400000 * 14).toISOString(), u:'Örnek', reqs:baselineSnapshot()}];
-  A3.text = 'Sensör birimi veriyi en az 100 Hz ile kontrol birimine iletmelidir.'; A3.status = 'Değişiklikte';
-  S3.text = 'Sistem operatöre çalışma durumunu uygun şekilde ve hızlı bildirmelidir.';
+  A3.text = 'Sensör birimi veriyi en az 100 Hz ile kontrol birimine iletecektir.'; A3.status = 'Değişiklikte';
+  S3.text = 'Sistem operatöre çalışma durumunu uygun şekilde ve hızlı bildirecektir.';
   addRel('Satisfy', gb.id, A1.id); addRel('Satisfy', kb.id, A2.id); addRel('Satisfy', sb.id, A3.id); addRel('Satisfy', sys.id, S4.id);
   addRel('Satisfy', act.id, S2.id); addRel('Satisfy', E(n2.el).id, A2.id); addRel('Satisfy', E(n4.el).id, A4.id);
   const DD = n => { const d = new Date(Date.now() + n * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
@@ -6120,7 +6286,8 @@ function demo(){
   // sequence fragment
   const fr = mk('Fragment', sq.owner, {op:'loop', guards:'1..3'});
   const fsh = addShape(sq, fr.id, 210, 140, 620, 95); d0Front(sq, fsh);
-  M.ui = {open:[bdd.id, ibd.id, ifd.id, uc.id, ad.id, td.id, rd.id, sm.id, sq.id, pd.id, pgd.id, '@reqtable', '@matrix', '@coverage'], cur:bdd.id, exp:[root.id, pk.id, pu.id, pa.id, act.id, sys.id, rqPkg, pi.id]};
+  const DX = {S5, tPkg, rqPkg, open:[]}; DEMO_EXT.forEach(f => f(DX));
+  M.ui = {open:[bdd.id, ibd.id, ifd.id, uc.id, ad.id, td.id, rd.id, sm.id, sq.id, pd.id, pgd.id].concat(DX.open, ['@reqtable', '@matrix', '@coverage']), cur:bdd.id, exp:[root.id, pk.id, pu.id, pa.id, act.id, sys.id, rqPkg, pi.id]};
   return M;
 }
 
@@ -6531,7 +6698,7 @@ function applyTemplate(k, target, o){
   list.forEach(row => {
     const [m, t, cond] = is810 ? row : [null, row[0], row[1]];
     i++;
-    const r = mk('Requirement', pk.id, {level:'Sistem', name:(is810 ? 'Yöntem ' + m + ' – ' : '') + t, text:'Sistem, ' + (is810 ? 'MIL-STD-810H Yöntem ' + m + ' ' : 'SMC-S-016 ') + t.toLocaleLowerCase('tr') + ' testinde, ' + cond + ' belirtilen performans gereksinimlerini karşılamalıdır.', verif:'Test', attrs:{}});
+    const r = mk('Requirement', pk.id, {level:'Sistem', name:(is810 ? 'Yöntem ' + m + ' – ' : '') + t, text:'Sistem, ' + (is810 ? 'MIL-STD-810H Yöntem ' + m + ' ' : 'SMC-S-016 ') + t.toLocaleLowerCase('tr') + ' testinde, ' + cond + ' belirtilen performans gereksinimlerini karşılayacaktır.', verif:'Test', attrs:{}});
     if(tpk){ const tc = mk('TestCase', tpk.id, {name:t + ' testi', procNo:(is810 ? 'QT-810-' + m.replace('.', '') : 'QT-SMC-' + String(i).padStart(2, '0')), tMethod:'Test', tLevel:'Kalifikasyon', testItem:o.item || '', std:is810 ? 'MIL-STD-810H Yöntem ' + m : 'SMC-S-016', result:'Planlandı'}); addRel('Verify', tc.id, r.id); }
   });
   ST.exp.add(target); ST.exp.add(pk.id); afterChange(); revealInTree(pk.id);
@@ -7209,6 +7376,7 @@ function analysisMenuItems(){
   return [{h:'Analiz'},
     {t:'Parametrik hesapla (kısıt denklemlerini çöz)', f:parDialog},
     {t:'Bütçe analizi (kütle, güç, maliyet…)', f:() => openD('@budget')},
+    {t:'Test profilleri (PSD, sinüs, SRS, termal)', f:() => openD('@profiles')},
     '-',
     {t:SIM ? 'Simülasyonu kapat' : 'Simülasyon başlat (açık diyagram)', dis:!SIM && !(d && (d.dtype === 'act' || d.dtype === 'stm')), f:() => SIM ? simStop() : simStart()},
     '-',
@@ -7216,6 +7384,335 @@ function analysisMenuItems(){
     {t:'Genel tablo', f:() => openD('@table')},
     {t:'İlişki haritası', f:() => { if(ST.tsel && E(ST.tsel) && E(ST.tsel).kind !== 'Diagram') RM.root = ST.tsel; openD('@relmap'); }}];
 }
+
+/* ================= v1.12: ÇEVRESEL TEST PROFİLLERİ (PSD, SİNÜS, SRS, TERMAL) ================= */
+const DEMO_EXT = []; /* örnek modele eklenti: f({S5, tPkg, rqPkg, open}) */
+const VALIDATORS = []; /* model doğrulama eklentileri: f(add, els, idx) */
+VALIDATORS.push((add, els) => {
+  els.filter(e => e.kind === 'TestProfile').forEach(p => {
+    const pts = pfPts(p), t = p.ptype || 'psd';
+    if(pts.length < 2) add('hata', 'Eksik test profili', p, 'En az iki kırılma noktası gerekli');
+    if(t !== 'thermal' && pts.some(q => q[0] <= 0 || q[1] <= 0)) add('uyarı', 'Test profili değeri', p, 'Frekans ve genlik sıfırdan büyük olmalı (log ölçek)');
+    if(new Set(pts.map(q => q[0])).size < pts.length && t !== 'thermal') add('uyarı', 'Test profili değeri', p, 'Aynı frekansta birden fazla nokta var');
+    if(!allTests().some(x => (x.profiles || []).includes(p.id))) add('bilgi', 'Kullanılmayan test profili', p, 'Hiçbir test durumuna bağlı değil');
+  });
+  els.filter(e => e.kind === 'TestCase' && /titre|vibra|şok|shock|sıcak|termal|thermal|akustik/i.test(e.name + ' ' + (e.std || '')) && !(e.profiles || []).length).forEach(tc => add('bilgi', 'Profilsiz çevresel test', tc, 'Çevresel test durumuna test profili bağlanmamış'));
+});
+const G0 = 9.80665;
+const PT = {
+  psd:{tr:'Rastgele titreşim (PSD)', sh:'PSD', x:'Frekans (Hz)', y:'ASD (g²/Hz)', xu:'Hz', yu:'g²/Hz', log:true, db:10, col:'#1f6fd1'},
+  sine:{tr:'Sinüs süpürme', sh:'Sinüs', x:'Frekans (Hz)', y:'Genlik (g tepe)', xu:'Hz', yu:'g', log:true, db:20, col:'#7a4fbf'},
+  srs:{tr:'Şok tepki spektrumu (SRS)', sh:'SRS', x:'Doğal frekans (Hz)', y:'Tepe ivme (g)', xu:'Hz', yu:'g', log:true, db:20, col:'#c0392b'},
+  thermal:{tr:'Termal döngü', sh:'Termal', x:'Zaman (dk)', y:'Sıcaklık (°C)', xu:'dk', yu:'°C', log:false, col:'#d35400'}
+};
+const PF_DEF = {
+  psd:{pts:[[20, 0.01], [80, 0.04], [350, 0.04], [2000, 0.007]], tol:3, dur:'60', axes:'X, Y, Z'},
+  sine:{pts:[[5, 0.5], [50, 2], [500, 2]], rate:1, sweeps:2, axes:'X, Y, Z'},
+  srs:{pts:[[100, 50], [2000, 2000], [10000, 2000]], q:10, tol:6, shocks:3, axes:'±X, ±Y, ±Z'},
+  thermal:{pts:[[0, 25], [30, -40], [90, -40], [150, 71], [210, 71], [240, 25]], cycles:10}
+};
+Object.assign(KIND, {TestProfile:{tr:'Test Profili', en:'TestProfile', ic:'∿', col:'#0f8a8a', w:230, h:180}});
+FILL.TestProfile = '#f2fbfb';
+BASE.TestProfile = 'Profil';
+['Model', 'Package'].forEach(k => { if(!OWN[k].includes('TestProfile')) OWN[k].push('TestProfile'); });
+RANK.splice(RANK.indexOf('TestCase') + 1, 0, 'TestProfile');
+DT.req.shapes.splice(DT.req.shapes.indexOf('TestCase') + 1, 0, 'TestProfile');
+const allProfiles = () => Object.values(M.els).filter(e => e.kind === 'TestProfile').sort(sortEls);
+const pfPts = p => (p.pts || []).map(q => [+q[0], +q[1]]).filter(q => isFinite(q[0]) && isFinite(q[1])).sort((a, b) => a[0] - b[0]);
+const pfAxes = p => String(p.axes || '').split(/[,;\/]+/).map(x => x.trim()).filter(Boolean);
+const fmtG = v => v == null || !isFinite(v) ? '—' : Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : Math.abs(v) >= 1 ? v.toFixed(2) : v.toPrecision(3);
+const fmtMin = m => { if(m == null || !isFinite(m)) return '—'; if(m < 1) return (m * 60).toFixed(0) + ' sn'; if(m < 120) return fmtNum(+m.toFixed(1)) + ' dk'; return fmtNum(+(m / 60).toFixed(2)) + ' sa'; };
+/* log-log enterpolasyon (aralık dışı: null) */
+function pfAt(pts, f, lin){
+  if(!pts.length || f < pts[0][0] - 1e-9 || f > pts[pts.length - 1][0] + 1e-9) return null;
+  for(let i = 0; i < pts.length - 1; i++){
+    const [f1, a1] = pts[i], [f2, a2] = pts[i + 1];
+    if(f >= f1 - 1e-9 && f <= f2 + 1e-9){
+      if(f2 === f1) return Math.max(a1, a2);
+      if(lin || a1 <= 0 || a2 <= 0 || f1 <= 0) return a1 + (a2 - a1) * (f - f1) / (f2 - f1);
+      return a1 * Math.pow(f / f1, Math.log(a2 / a1) / Math.log(f2 / f1));
+    }
+  }
+  return pts[pts.length - 1][1];
+}
+function psdArea(f1, a1, f2, a2){
+  if(f2 <= f1 || a1 <= 0 || a2 <= 0) return 0;
+  const n = Math.log(a2 / a1) / Math.log(f2 / f1);
+  return Math.abs(n + 1) < 1e-9 ? a1 * f1 * Math.log(f2 / f1) : a1 * f1 / (n + 1) * (Math.pow(f2 / f1, n + 1) - 1);
+}
+const slopeDb = (q1, q2, db) => (q1[1] > 0 && q2[1] > 0 && q2[0] > q1[0]) ? db * Math.log10(q2[1] / q1[1]) / Math.log2(q2[0] / q1[0]) : null;
+function logGrid(f0, f1, n){ const a = []; for(let i = 0; i <= n; i++) a.push(f0 * Math.pow(f1 / f0, i / n)); return a; }
+function pfMetrics(p){
+  const pts = pfPts(p), t = p.ptype || 'psd', M0 = {pts, ok:pts.length >= 2, rows:[], slopes:[]};
+  if(!M0.ok){ M0.rows.push(['Uyarı', 'En az iki kırılma noktası girin']); return M0; }
+  const ax = pfAxes(p), nax = Math.max(1, ax.length);
+  if(t === 'psd'){
+    let A = 0; for(let i = 0; i < pts.length - 1; i++) A += psdArea(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]);
+    const grms = Math.sqrt(A);
+    let dv = 0, vv = 0; const gr = logGrid(pts[0][0], pts[pts.length - 1][0], 600);
+    for(let i = 0; i < gr.length - 1; i++){ const fm = Math.sqrt(gr[i] * gr[i + 1]), a = pfAt(pts, fm) || 0, df = gr[i + 1] - gr[i], w = 2 * Math.PI * fm; dv += a * G0 * G0 / Math.pow(w, 4) * df; vv += a * G0 * G0 / (w * w) * df; }
+    const dur = numOf(p.dur);
+    Object.assign(M0, {grms, main:fmtG(grms) + ' Grms', dpp:6 * Math.sqrt(dv) * 1000, vrms:Math.sqrt(vv), total:dur != null ? dur * nax : null});
+    M0.rows.push(['Toplam seviye', fmtG(grms) + ' Grms'], ['Frekans aralığı', fmtNum(pts[0][0]) + ' – ' + fmtNum(pts[pts.length - 1][0]) + ' Hz'], ['En yüksek ASD', fmtG(Math.max(...pts.map(q => q[1]))) + ' g²/Hz'],
+      ['Yer değiştirme (3σ, tepe-tepe)', fmtG(M0.dpp) + ' mm'], ['Hız (rms)', fmtG(M0.vrms * 1000) + ' mm/s'], ['Tolerans', '±' + fmtNum(numOf(p.tol) || 3) + ' dB'],
+      ['Süre', (dur != null ? fmtMin(dur) + ' / eksen' : '—') + (ax.length ? ' · ' + ax.join(', ') : '')], ['Toplam test süresi', fmtMin(M0.total)]);
+    for(let i = 0; i < pts.length - 1; i++) M0.slopes.push([pts[i][0], pts[i + 1][0], slopeDb(pts[i], pts[i + 1], 10), psdArea(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1])]);
+  } else if(t === 'sine'){
+    const rate = numOf(p.rate) || 1, sw = numOf(p.sweeps) || 1, oct = Math.log2(pts[pts.length - 1][0] / pts[0][0]);
+    const per = oct / rate, disp = pts.map(([f, a]) => 2 * a * G0 / Math.pow(2 * Math.PI * f, 2) * 1000), vel = pts.map(([f, a]) => a * G0 / (2 * Math.PI * f) * 1000);
+    Object.assign(M0, {main:fmtG(Math.max(...pts.map(q => q[1]))) + ' g tepe', total:per * sw * nax, dmax:Math.max(...disp)});
+    M0.rows.push(['En yüksek genlik', fmtG(Math.max(...pts.map(q => q[1]))) + ' g'], ['Frekans aralığı', fmtNum(pts[0][0]) + ' – ' + fmtNum(pts[pts.length - 1][0]) + ' Hz (' + fmtNum(+oct.toFixed(2)) + ' oktav)'],
+      ['En büyük yer değiştirme (tepe-tepe)', fmtG(M0.dmax) + ' mm'], ['En büyük hız (tepe)', fmtG(Math.max(...vel)) + ' mm/s'], ['Süpürme hızı', fmtNum(rate) + ' oktav/dk'],
+      ['Bir süpürme süresi', fmtMin(per)], ['Süpürme sayısı', fmtNum(sw) + (ax.length ? ' · ' + ax.join(', ') : '')], ['Toplam test süresi', fmtMin(M0.total)]);
+    for(let i = 0; i < pts.length - 1; i++) M0.slopes.push([pts[i][0], pts[i + 1][0], slopeDb(pts[i], pts[i + 1], 20), null]);
+    M0.extra = pts.map((q, i) => [q[0], q[1], disp[i], vel[i]]);
+  } else if(t === 'srs'){
+    const mx = Math.max(...pts.map(q => q[1])), knee = (pts.find(q => q[1] >= mx * 0.999) || pts[0])[0];
+    Object.assign(M0, {main:fmtG(mx) + ' g · ' + fmtNum(knee) + ' Hz köşe'});
+    M0.rows.push(['En yüksek tepe ivme', fmtG(mx) + ' g'], ['Köşe (knee) frekansı', fmtNum(knee) + ' Hz'], ['Frekans aralığı', fmtNum(pts[0][0]) + ' – ' + fmtNum(pts[pts.length - 1][0]) + ' Hz'],
+      ['Q (sönüm)', fmtNum(numOf(p.q) || 10) + ' (ζ = %' + fmtNum(+(50 / (numOf(p.q) || 10)).toFixed(2)) + ')'], ['Tolerans', '±' + fmtNum(numOf(p.tol) || 6) + ' dB'],
+      ['Şok sayısı', fmtNum(numOf(p.shocks) || 3) + ' / yön' + (ax.length ? ' · ' + ax.join(', ') : '')], ['Toplam şok', fmtNum((numOf(p.shocks) || 3) * nax)]);
+    for(let i = 0; i < pts.length - 1; i++) M0.slopes.push([pts[i][0], pts[i + 1][0], slopeDb(pts[i], pts[i + 1], 20), null]);
+  } else {
+    const T0 = pts.map(q => q[1]), dur = pts[pts.length - 1][0] - pts[0][0], cyc = numOf(p.cycles) || 1;
+    let rmax = 0, dwH = 0, dwC = 0; const tmin = Math.min(...T0), tmax = Math.max(...T0);
+    for(let i = 0; i < pts.length - 1; i++){
+      const dt = pts[i + 1][0] - pts[i][0], dT = pts[i + 1][1] - pts[i][1];
+      if(dt > 0 && Math.abs(dT) > 1e-9) rmax = Math.max(rmax, Math.abs(dT / dt));
+      if(dt > 0 && Math.abs(dT) < 1e-9){ if(Math.abs(pts[i][1] - tmax) < 1e-9) dwH += dt; else if(Math.abs(pts[i][1] - tmin) < 1e-9) dwC += dt; }
+      M0.slopes.push([pts[i][0], pts[i + 1][0], dt > 0 ? dT / dt : null, null]);
+    }
+    Object.assign(M0, {main:fmtNum(tmin) + ' / ' + fmtNum(tmax) + ' °C · ' + fmtNum(cyc) + ' döngü', total:dur * cyc, rmax, tmin, tmax});
+    M0.rows.push(['Sıcaklık aralığı', fmtNum(tmin) + ' °C … ' + fmtNum(tmax) + ' °C (ΔT ' + fmtNum(tmax - tmin) + ' °C)'], ['En yüksek değişim hızı', fmtG(rmax) + ' °C/dk'],
+      ['Sıcak bekleme', fmtMin(dwH)], ['Soğuk bekleme', fmtMin(dwC)], ['Bir döngü süresi', fmtMin(dur)], ['Döngü sayısı', fmtNum(cyc)], ['Toplam test süresi', fmtMin(dur * cyc)]);
+  }
+  return M0;
+}
+/* ---- grafik (SVG) ---- */
+function niceLin(a, b, n){ const span = b - a || 1, st0 = Math.pow(10, Math.floor(Math.log10(span / n))), st = [1, 2, 2.5, 5, 10].map(k => k * st0).find(k => span / k <= n) || st0 * 10; const out = []; for(let v = Math.ceil(a / st) * st; v <= b + 1e-9; v += st) out.push(+v.toPrecision(10)); return {ticks:out, lo:Math.floor(a / st) * st, hi:Math.ceil(b / st) * st}; }
+function pfChart(list, o){
+  o = o || {}; const W = o.w || 640, H = o.h || 360, mini = !!o.mini;
+  const valid = list.filter(x => pfPts(x.p).length >= 2); if(!valid.length) return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="#fff"/><text x="${W / 2}" y="${H / 2}" text-anchor="middle" font-family="${FF}" font-size="12" fill="#889">Kırılma noktası yok</text></svg>`;
+  const t = valid[0].p.ptype || 'psd', D = PT[t], lg = D.log;
+  const L = mini ? 8 : 64, R = mini ? 6 : 16, Tp = mini ? 6 : 14, B = mini ? 8 : 44;
+  let xs = [], ys = [];
+  valid.forEach(x => { const pts = pfPts(x.p); pts.forEach(q => { xs.push(q[0]); ys.push(q[1]); }); if(x.tol){ const k = Math.pow(10, x.tol / D.db); pts.forEach(q => { ys.push(q[1] * k, q[1] / k); }); } });
+  if(lg){ xs = xs.filter(v => v > 0); ys = ys.filter(v => v > 0); }
+  let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  let xt, yt;
+  if(lg){ x0 = Math.pow(10, Math.floor(Math.log10(x0) + 1e-9)); x1 = Math.pow(10, Math.ceil(Math.log10(x1) - 1e-9)); y0 = Math.pow(10, Math.floor(Math.log10(y0) + 1e-9)); y1 = Math.pow(10, Math.ceil(Math.log10(y1) - 1e-9)); if(y1 / y0 < 10) y1 = y0 * 10; if(x1 / x0 < 10) x1 = x0 * 10; }
+  else { const nx = niceLin(x0, x1, mini ? 3 : 8), ny = niceLin(Math.min(y0, 0), y1, mini ? 3 : 6); x0 = nx.lo; x1 = nx.hi; y0 = ny.lo; y1 = ny.hi; if(y1 - y0 < 1e-9) y1 = y0 + 1; xt = nx.ticks; yt = ny.ticks; }
+  const PX = v => L + (lg ? Math.log10(v / x0) / Math.log10(x1 / x0) : (v - x0) / (x1 - x0)) * (W - L - R);
+  const PY = v => H - B - (lg ? Math.log10(v / y0) / Math.log10(y1 / y0) : (v - y0) / (y1 - y0)) * (H - Tp - B);
+  let g = `<rect width="${W}" height="${H}" fill="#fff"/>`;
+  const fs = mini ? 8 : 11, txt = (x, y, s, a, extra) => `<text x="${x}" y="${y}" font-family="${FF}" font-size="${fs}" fill="#556" text-anchor="${a || 'middle'}"${extra || ''}>${esc(s)}</text>`;
+  const lbl = v => v >= 1000 && v % 1000 === 0 ? (v / 1000) + 'k' : String(+v.toPrecision(6));
+  if(lg){
+    for(let d = x0; d < x1 * 1.0001; d *= 10){ for(let k = 1; k < 10; k++){ const v = d * k; if(v > x1 * 1.0001) break; const X = PX(v); g += `<line x1="${X}" y1="${Tp}" x2="${X}" y2="${H - B}" stroke="${k === 1 ? '#c9d2dc' : '#eef1f5'}" stroke-width="1"/>`; if(!mini && (k === 1 || (x1 / x0 <= 1000 && (k === 2 || k === 5)))) g += txt(X, H - B + 15, lbl(v)); } }
+    for(let d = y0; d < y1 * 1.0001; d *= 10){ for(let k = 1; k < 10; k++){ const v = d * k; if(v > y1 * 1.0001) break; const Y = PY(v); g += `<line x1="${L}" y1="${Y}" x2="${W - R}" y2="${Y}" stroke="${k === 1 ? '#c9d2dc' : '#eef1f5'}" stroke-width="1"/>`; if(!mini && k === 1) g += txt(L - 6, Y + 4, String(+v.toPrecision(4)), 'end'); } }
+  } else {
+    xt.forEach(v => { const X = PX(v); g += `<line x1="${X}" y1="${Tp}" x2="${X}" y2="${H - B}" stroke="#eef1f5"/>`; if(!mini) g += txt(X, H - B + 15, lbl(v)); });
+    yt.forEach(v => { const Y = PY(v); g += `<line x1="${L}" y1="${Y}" x2="${W - R}" y2="${Y}" stroke="${v === 0 ? '#9aa6b4' : '#eef1f5'}"/>`; if(!mini) g += txt(L - 6, Y + 4, lbl(v), 'end'); });
+  }
+  g += `<rect x="${L}" y="${Tp}" width="${W - L - R}" height="${H - Tp - B}" fill="none" stroke="#9aa6b4"/>`;
+  if(!mini){ g += txt((L + W - R) / 2, H - 8, D.x); g += `<text transform="translate(14 ${(Tp + H - B) / 2}) rotate(-90)" font-family="${FF}" font-size="11" fill="#556" text-anchor="middle">${esc(D.y)}</text>`; }
+  const path = pts => pts.map((q, i) => (i ? 'L' : 'M') + PX(q[0]).toFixed(1) + ' ' + PY(q[1]).toFixed(1)).join('');
+  valid.forEach((x, i) => {
+    const pts = pfPts(x.p).filter(q => !lg || (q[0] > 0 && q[1] > 0)), col = x.col || D.col;
+    if(x.tol){ const k = Math.pow(10, x.tol / D.db); [k, 1 / k].forEach(m => { g += `<path d="${path(pts.map(q => [q[0], q[1] * m]))}" fill="none" stroke="${col}" stroke-width="1" stroke-dasharray="5 4" opacity=".7"/>`; }); }
+    g += `<path d="${path(pts)}" fill="none" stroke="${col}" stroke-width="${mini ? 1.6 : 2.2}"${x.dash ? ' stroke-dasharray="7 4"' : ''}/>`;
+    if(!mini) pts.forEach(q => { g += `<circle cx="${PX(q[0]).toFixed(1)}" cy="${PY(q[1]).toFixed(1)}" r="3" fill="#fff" stroke="${col}" stroke-width="1.5"/>`; });
+  });
+  if(!mini && (valid.length > 1 || valid[0].tol)){
+    let ly = Tp + 8; const items = valid.map(x => [x.col || D.col, x.p.name + (x.label ? ' — ' + x.label : ''), x.dash]); if(valid[0].tol) items.push([valid[0].col || D.col, 'Tolerans ±' + fmtNum(valid[0].tol) + ' dB', 2]);
+    const lw = Math.min(300, Math.max(...items.map(it => tw(it[1], false, 11))) + 40), lx = W - R - lw - 6;
+    g += `<rect x="${lx}" y="${ly - 4}" width="${lw}" height="${items.length * 16 + 6}" fill="#fff" stroke="#d5dde8" rx="3" opacity=".95"/>`;
+    items.forEach(([c, n, d]) => { g += `<line x1="${lx + 6}" y1="${ly + 7}" x2="${lx + 26}" y2="${ly + 7}" stroke="${c}" stroke-width="2"${d ? ' stroke-dasharray="' + (d === 2 ? '5 4' : '7 4') + '"' : ''}/>` + txt(lx + 32, ly + 11, n.length > 44 ? n.slice(0, 43) + '…' : n, 'start'); ly += 16; });
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${g}</svg>`;
+}
+/* ---- karşılaştırma ve zarf ---- */
+function pfCompare(A, B){
+  const a = pfPts(A), b = pfPts(B), t = A.ptype || 'psd', D = PT[t];
+  if(t !== (B.ptype || 'psd')) return {err:'Profiller aynı türde olmalı'};
+  if(a.length < 2 || b.length < 2) return {err:'İki profilde de en az iki nokta olmalı'};
+  const lo = Math.max(a[0][0], b[0][0]), hi = Math.min(a[a.length - 1][0], b[b.length - 1][0]);
+  if(hi <= lo) return {err:'Profillerin frekans/zaman aralıkları örtüşmüyor'};
+  if(t === 'thermal'){
+    const ma = pfMetrics(A), mb = pfMetrics(B);
+    const rows = [['En düşük sıcaklık', ma.tmin, mb.tmin, ma.tmin <= mb.tmin], ['En yüksek sıcaklık', ma.tmax, mb.tmax, ma.tmax >= mb.tmax], ['Değişim hızı (°C/dk)', ma.rmax, mb.rmax, ma.rmax >= mb.rmax], ['Döngü sayısı', numOf(A.cycles) || 1, numOf(B.cycles) || 1, (numOf(A.cycles) || 1) >= (numOf(B.cycles) || 1)]];
+    return {thermal:true, rows, covers:rows.every(r => r[3])};
+  }
+  const xs = [...new Set(a.map(q => q[0]).concat(b.map(q => q[0])).filter(f => f >= lo && f <= hi).concat(logGrid(lo, hi, 120)))].sort((u, v) => u - v);
+  const pts = xs.map(f => { const va = pfAt(a, f), vb = pfAt(b, f); return [f, va, vb, va > 0 && vb > 0 ? D.db * Math.log10(va / vb) : null]; }).filter(q => q[3] != null);
+  const mn = pts.reduce((m, q) => q[3] < m[3] ? q : m, pts[0]), mx = pts.reduce((m, q) => q[3] > m[3] ? q : m, pts[0]);
+  const r = {pts, min:mn, max:mx, lo, hi, covers:mn[3] >= -1e-6, partial:lo > a[0][0] + 1e-9 || hi < a[a.length - 1][0] - 1e-9 || lo > b[0][0] + 1e-9 || hi < b[b.length - 1][0] - 1e-9};
+  if(t === 'psd'){ r.ga = pfMetrics(A).grms; r.gb = pfMetrics(B).grms; }
+  r.table = [...new Set(a.map(q => q[0]).concat(b.map(q => q[0])))].sort((u, v) => u - v).filter(f => f >= lo && f <= hi).map(f => { const va = pfAt(a, f), vb = pfAt(b, f); return [f, va, vb, va > 0 && vb > 0 ? D.db * Math.log10(va / vb) : null]; });
+  return r;
+}
+function pfEnvelope(list){
+  const t = list[0].ptype || 'psd', lin = t === 'thermal';
+  const P = list.map(pfPts).filter(x => x.length >= 2); if(!P.length) return null;
+  const lo = Math.min(...P.map(x => x[0][0])), hi = Math.max(...P.map(x => x[x.length - 1][0]));
+  const xs = [...new Set(P.flatMap(x => x.map(q => q[0])).concat(lin ? [] : logGrid(lo, hi, 240)))].sort((u, v) => u - v);
+  let pts = xs.map(f => [f, Math.max(...P.map(x => pfAt(x, f, lin)).filter(v => v != null))]).filter(q => isFinite(q[1]));
+  /* log-log doğrusal ara noktaları sadeleştir (0,1 dB tolerans) */
+  const db = PT[t].db || 10;
+  for(let i = pts.length - 2; i > 0; i--){ const p0 = pts[i - 1], p2 = pts[i + 1], p1 = pts[i]; const est = pfAt([p0, p2], p1[0], lin); if(est > 0 && p1[1] > 0 && Math.abs(db * Math.log10(p1[1] / est)) < 0.1) pts.splice(i, 1); }
+  return pts.map(q => [+q[0].toPrecision(5), +q[1].toPrecision(4)]);
+}
+/* ---- görünüm ---- */
+let PF = {sel:null, cmp:'', env:new Set(), type:'all'};
+function pfSel(){ let p = E(PF.sel); if(!p || p.kind !== 'TestProfile'){ p = allProfiles()[0] || null; PF.sel = p ? p.id : null; } return p; }
+function pfTests(p){ return allTests().filter(t => (t.profiles || []).includes(p.id)); }
+function pfReqs(p){ return Object.values(M.els).filter(r => (r.kind === 'Refine' || r.kind === 'Trace') && r.src === p.id && E(r.tgt) && E(r.tgt).kind === 'Requirement').map(r => E(r.tgt)); }
+function newProfile(type, owner, props){
+  const d0 = JSON.parse(JSON.stringify(PF_DEF[type] || PF_DEF.psd));
+  const own = owner || (allProfiles()[0] ? allProfiles()[0].owner : findOrMkPkg(M.rootId, 'Test Profilleri'));
+  return mk('TestProfile', own, Object.assign({name:uniqName(PT[type].sh + ' profili', own), ptype:type}, d0, props || {}));
+}
+function pfHTML(){
+  const ps = allProfiles();
+  if(!ps.length) return `<div class="vempty">Henüz test profili yok.<br><br>${Object.entries(PT).map(([k, v]) => `<button class="vb pri" data-pfa="new:${k}">+ ${esc(v.tr)}</button>`).join(' ')}<br><br><span class="muted">Profiller kırılma noktalarıyla tanımlanır; Grms, yer değiştirme, süre, eğimler otomatik hesaplanır.<br>Test durumlarına bağlanır, raporda ve VCRM'de görünür.</span></div>`;
+  const p = pfSel(), t = p.ptype || 'psd', D = PT[t], Mx = pfMetrics(p);
+  let h = '<div class="pfwrap"><div class="pflist">';
+  Object.entries(PT).forEach(([k, v]) => {
+    const list = ps.filter(x => (x.ptype || 'psd') === k); if(!list.length) return;
+    h += `<div class="pfgh">${esc(v.tr)}</div>` + list.map(x => `<div class="pfli${x.id === p.id ? ' on' : ''}" data-pfs="${x.id}"><input type="checkbox" data-pfe="${x.id}" title="Zarf için seç"${PF.env.has(x.id) ? ' checked' : ''}><span class="pfn">${esc(x.name)}</span><span class="muted">${esc(pfMetrics(x).main || '')}</span></div>`).join('');
+  });
+  h += '</div><div class="pfmain">';
+  const cmpC = ps.filter(x => x.id !== p.id && (x.ptype || 'psd') === t);
+  const C = PF.cmp && E(PF.cmp) && cmpC.includes(E(PF.cmp)) ? E(PF.cmp) : null;
+  h += `<div class="pfhead"><input class="pfname" data-pf="name" value="${esc(p.name)}"> <select data-pf="ptype">${Object.entries(PT).map(([k, v]) => `<option value="${k}"${k === t ? ' selected' : ''}>${esc(v.tr)}</option>`).join('')}</select>
+    <label class="vchk">Karşılaştır: <select data-pfc="1"><option value="">(yok)</option>${cmpC.map(x => `<option value="${x.id}"${C && C.id === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label></div>`;
+  h += `<div class="pfgrid"><div class="pfchart">${pfChart([{p, tol:(t === 'psd' || t === 'srs') ? (numOf(p.tol) || (t === 'srs' ? 6 : 3)) : 0}].concat(C ? [{p:C, col:'#888', dash:1}] : []), {w:660, h:360})}</div>`;
+  h += `<div class="pfside"><div class="cards" style="grid-template-columns:1fr 1fr;margin-bottom:8px"><div class="card" style="grid-column:1/3"><div class="cv" style="font-size:22px;color:${D.col}">${esc(Mx.main || '—')}</div><div class="ct">${esc(D.tr)}</div></div></div>`;
+  h += `<table class="rt pfkv">${Mx.rows.map(([k, v]) => `<tr><td>${esc(k)}</td><td><b>${esc(v)}</b></td></tr>`).join('')}</table></div></div>`;
+  /* parametreler */
+  const prm = {psd:[['tol', 'Tolerans ±dB'], ['dur', 'Süre / eksen (dk)'], ['axes', 'Eksenler']], sine:[['rate', 'Süpürme hızı (oktav/dk)'], ['sweeps', 'Süpürme sayısı'], ['axes', 'Eksenler']], srs:[['q', 'Q'], ['tol', 'Tolerans ±dB'], ['shocks', 'Şok sayısı / yön'], ['axes', 'Yönler']], thermal:[['cycles', 'Döngü sayısı']]}[t];
+  h += `<h3>Parametreler</h3><div class="pfprm">${prm.map(([k, l]) => `<label>${esc(l)} <input data-pf="${k}" value="${esc(p[k] == null ? '' : p[k])}"></label>`).join('')}<label>Seviye / amaç <input data-pf="plevel" list="pflv" value="${esc(p.plevel || '')}" placeholder="Kalifikasyon, Kabul, ESS…"><datalist id="pflv"><option>Kalifikasyon</option><option>Kabul</option><option>ESS</option><option>Görev profili</option><option>Fonksiyonel</option><option>Dayanıklılık</option></datalist></label><label>Standart / kaynak <input data-pf="std" value="${esc(p.std || '')}" placeholder="ör. MIL-STD-810H 514.8 Kat. 24"></label></div>`;
+  /* kırılma noktaları */
+  h += `<h3>Kırılma noktaları <button class="vb" data-pfa="addpt">+ Nokta</button> <button class="vb" data-pfa="paste">Excel'den yapıştır…</button></h3><table class="rt pfpt"><thead><tr><th>#</th><th>${esc(D.x)}</th><th>${esc(D.y)}</th>${t === 'thermal' ? '<th>Değişim (°C/dk)</th>' : '<th>Eğim (dB/oktav)</th>'}${t === 'psd' ? '<th>Bölüm g²</th>' : ''}${t === 'sine' ? '<th>Yer değ. (mm, t-t)</th><th>Hız (mm/s)</th>' : ''}<th></th></tr></thead><tbody>`;
+  (p.pts || []).forEach((q, i) => {
+    const sl = Mx.slopes[i], ex = Mx.extra && Mx.extra[i];
+    h += `<tr><td class="rn">${i + 1}</td><td><input data-pp="${i}:0" value="${esc(q[0])}"></td><td><input data-pp="${i}:1" value="${esc(q[1])}"></td><td class="muted">${sl && sl[2] != null ? (sl[2] > 0 ? '+' : '') + fmtG(sl[2]) + (t === 'thermal' ? '' : ' →') : ''}</td>${t === 'psd' ? `<td class="muted">${sl && sl[3] != null ? fmtG(sl[3]) : ''}</td>` : ''}${t === 'sine' ? `<td class="muted">${ex ? fmtG(ex[2]) : ''}</td><td class="muted">${ex ? fmtG(ex[3]) : ''}</td>` : ''}<td><button class="tdel" data-pfa="delpt:${i}" title="Noktayı sil">✕</button></td></tr>`;
+  });
+  h += '</tbody></table>';
+  /* karşılaştırma */
+  if(C){
+    const R = pfCompare(p, C);
+    h += `<h3>Karşılaştırma: ${esc(p.name)} ↔ ${esc(C.name)}</h3>`;
+    if(R.err) h += `<div class="gaps">${esc(R.err)}</div>`;
+    else if(R.thermal) h += `<div class="pfverd ${R.covers ? 'ok' : 'bad'}">${R.covers ? '✓' : '✗'} ${esc(p.name)} ${R.covers ? '' : 'tüm ölçütlerde '}${esc(C.name)} profilini ${R.covers ? 'kapsıyor' : 'kapsamıyor'}</div><table class="rt"><thead><tr><th>Ölçüt</th><th>${esc(p.name)}</th><th>${esc(C.name)}</th><th></th></tr></thead><tbody>${R.rows.map(r => `<tr><td>${esc(r[0])}</td><td>${fmtG(r[1])}</td><td>${fmtG(r[2])}</td><td>${r[3] ? '✓' : '<span class="bad">✗</span>'}</td></tr>`).join('')}</tbody></table>`;
+    else {
+      h += `<div class="pfverd ${R.covers ? 'ok' : 'bad'}">${R.covers ? '✓' : '✗'} ${esc(p.name)}, ${esc(C.name)} profilini ${fmtNum(R.lo)}–${fmtNum(R.hi)} Hz aralığında ${R.covers ? 'kapsıyor' : 'kapsamıyor'} · en düşük marj <b>${(R.min[3] >= 0 ? '+' : '') + fmtG(R.min[3])} dB</b> @ ${fmtNum(+R.min[0].toPrecision(4))} Hz · en yüksek marj ${(R.max[3] >= 0 ? '+' : '') + fmtG(R.max[3])} dB @ ${fmtNum(+R.max[0].toPrecision(4))} Hz${R.ga ? ` · Grms oranı ${fmtG(R.ga)} / ${fmtG(R.gb)} = ${fmtG(20 * Math.log10(R.ga / R.gb))} dB` : ''}${R.partial ? ' · <span class="muted">frekans aralıkları tam örtüşmüyor; yalnız ortak aralık değerlendirildi</span>' : ''}</div>`;
+      h += `<table class="rt"><thead><tr><th>${esc(D.x)}</th><th>${esc(p.name)}</th><th>${esc(C.name)}</th><th>Marj (dB)</th></tr></thead><tbody>${R.table.map(r => `<tr><td>${fmtNum(+r[0].toPrecision(5))}</td><td>${fmtG(r[1])}</td><td>${fmtG(r[2])}</td><td class="${r[3] < 0 ? 'bad' : ''}">${r[3] == null ? '—' : (r[3] >= 0 ? '+' : '') + fmtG(r[3])}</td></tr>`).join('')}</tbody></table>`;
+    }
+  }
+  /* bağlantılar */
+  const ts = pfTests(p), rs = pfReqs(p);
+  h += `<h3>Kullanan test durumları <button class="vb" data-pfa="tests">+ / −</button></h3>` + (ts.length ? ts.map(x => `<span class="chip2"><a class="lnk" data-ago="${x.id}">${esc(nm(x))}${x.procNo ? ' · ' + esc(x.procNo) : ''}</a> ${resChip(testResult(x))}</span>`).join(' ') : '<span class="muted">Bağlı test yok</span>');
+  h += `<h3>İlgili gereksinimler («refine») <button class="vb" data-pfa="reqs">+ / −</button></h3>` + (rs.length ? rs.map(r => `<span class="chip2"><a class="lnk" data-ago="${r.id}"><b>${esc(r.reqId || '')}</b> ${esc(r.name || '')}</a></span>`).join(' ') : '<span class="muted">Bağlı gereksinim yok</span>');
+  h += `<h3>Açıklama</h3><textarea data-pf="doc" rows="3" style="width:100%;font:inherit">${esc(p.doc || '')}</textarea>`;
+  return h + '</div></div>';
+}
+function pfBar(){
+  return `<span class="vchk">Yeni:</span>${Object.entries(PT).map(([k, v]) => `<button class="vb" data-pfa="new:${k}">+ ${esc(v.sh)}</button>`).join('')}
+    <span class="vsep"></span><button class="vb" data-pfa="env" title="Listede işaretli aynı türdeki profillerin zarfını (en yüksek değerlerini) yeni profil olarak oluşturur">⊓ Zarf oluştur (${PF.env.size})</button>
+    <button class="vb" data-pfa="dup">⧉ Çoğalt</button><button class="vb" data-pfa="scale" title="Seviyeyi dB olarak ölçekle (ör. kabul = kalifikasyon − 3 dB)">± dB ölçekle</button><button class="vb" data-pfa="del">✕ Sil</button>
+    <span class="vsep"></span><button class="vb" data-pfa="png">⤓ Grafik PNG</button><button class="vb" data-pfa="xl">⤒ Excel'e aktar</button>`;
+}
+function pfPaste(p){
+  const box = $('#modalBox'); box.style.width = 'min(520px, 94vw)'; box.style.maxWidth = 'none';
+  const D = PT[p.ptype || 'psd'];
+  box.innerHTML = `<h2>Kırılma noktalarını yapıştır</h2><p class="muted" style="margin:0 0 6px">Excel'den iki sütunu (${esc(D.x)} · ${esc(D.y)}) kopyalayıp yapıştırın. Sekme, noktalı virgül veya boşlukla ayrılmış satırlar okunur; ondalık ayırıcı virgül de olabilir. Başlık satırı atlanır.</p>
+    <textarea id="pfta" rows="12" style="width:100%;font:12px monospace"></textarea><label class="vchk"><input type="checkbox" id="pfrep" checked> Mevcut noktaların yerine koy</label>
+    <p style="text-align:right;margin:10px 0 0"><span class="muted" id="pfst"></span> <button class="pbtn" id="pfc">Vazgeç</button> <button class="pbtn pri" id="pfo">Aktar</button></p>`;
+  $('#modal').style.display = 'flex'; $('#pfta').focus();
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null; };
+  $('#pfta').onkeydown = ev => ev.stopPropagation();
+  box.onclick = ev => {
+    if(ev.target.id === 'pfc') close();
+    if(ev.target.id === 'pfo'){
+      const rows = $('#pfta').value.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => { const c = l.includes('\t') || l.includes(';') ? l.split(/[\t;]+/) : l.split(/\s+/); return c.map(x => parseFloat(String(x).replace(/\s/g, '').replace(',', '.'))); }).filter(c => c.length >= 2 && isFinite(c[0]) && isFinite(c[1])).map(c => [c[0], c[1]]);
+      if(rows.length < 2) return $('#pfst').textContent = 'En az iki sayısal satır gerekli';
+      snap(); p.pts = $('#pfrep').checked ? rows : (p.pts || []).concat(rows); p.pts.sort((a, b) => a[0] - b[0]); close(); afterChange(); toast(rows.length + ' nokta aktarıldı');
+    }
+  };
+}
+function pfXlsx(){
+  const ps = allProfiles(); if(!ps.length) return toast('Profil yok');
+  const sum = [[{v:'Profil', s:1}, {v:'Tür', s:1}, {v:'Seviye', s:1}, {v:'Standart', s:1}, {v:'Ana değer', s:1}, {v:'Toplam süre', s:1}, {v:'Kullanan testler', s:1}, {v:'Gereksinimler', s:1}]];
+  ps.forEach(p => { const m = pfMetrics(p); sum.push([{v:p.name, s:6}, PT[p.ptype || 'psd'].tr, p.plevel || '', p.std || '', m.main || '', m.total != null ? fmtMin(m.total) : '', pfTests(p).map(nm).join('\n'), pfReqs(p).map(r => r.reqId || nm(r)).join(', ')]); });
+  const det = [];
+  ps.forEach(p => { const m = pfMetrics(p), D = PT[p.ptype || 'psd']; det.push([{v:p.name + ' — ' + D.tr, s:10}]); m.rows.forEach(r => det.push([r[0], {v:r[1], s:6}])); det.push([{v:D.x, s:1}, {v:D.y, s:1}, {v:p.ptype === 'thermal' ? 'Değişim (°C/dk)' : 'Eğim (dB/oktav)', s:1}]); pfPts(p).forEach((q, i) => det.push([q[0], q[1], m.slopes[i] && m.slopes[i][2] != null ? +m.slopes[i][2].toFixed(2) : ''])); det.push([]); });
+  download(buildXlsx([{name:'Profiller', rows:sum, widths:[30, 24, 14, 26, 24, 14, 30, 20], header:true, freeze:[0, 1]}, {name:'Kırılma noktaları', rows:det, widths:[30, 22, 18]}]), fileSafe(E(M.rootId).name) + ' - Test Profilleri.xlsx');
+}
+function pfClone(p, name){ const c = JSON.parse(JSON.stringify(p)); delete c.id; delete c.owner; c.name = name; return c; }
+function pfPick(title, cands, cur0, apply){ pickList(title, cands, cur0, apply); }
+Object.assign(VIEWS, {'@profiles':{tr:'Test Profilleri', ic:'∿', note:'Rastgele titreşim (PSD), sinüs süpürme, şok tepki spektrumu (SRS) ve termal döngü profilleri.<br><br>Kırılma noktalarını tabloya girin veya Excel\'den yapıştırın; Grms, yer değiştirme, eğim (dB/oktav), süre ve tolerans bandı otomatik hesaplanır.<br><br>"Karşılaştır" ile iki profil arasındaki marjı, solda işaretleyip "Zarf oluştur" ile birden çok profilin zarfını alın.', render:pfHTML, bar:pfBar, status:() => allProfiles().length + ' test profili'}});
+(function(){
+  const V = $('#view');
+  V.addEventListener('change', ev => {
+    if(ST.cur !== '@profiles') return;
+    const t = ev.target, p = pfSel(); if(!p) return;
+    if(t.dataset.pfe){ t.checked ? PF.env.add(t.dataset.pfe) : PF.env.delete(t.dataset.pfe); renderViewBar(); return; }
+    if(t.dataset.pfc != null){ PF.cmp = t.value; renderView(); return; }
+    if(t.dataset.pf){ const k = t.dataset.pf; let v = t.value; if(k === 'name' && !v.trim()) return renderView(); snap(); if(k === 'ptype' && v !== p.ptype){ if(!confirm('Profil türü değişince kırılma noktaları türün varsayılanlarıyla değiştirilsin mi? (Hayır: noktalar korunur)')) p.ptype = v; else Object.assign(p, JSON.parse(JSON.stringify(PF_DEF[v])), {ptype:v}); } else p[k] = v; afterChange(); return; }
+    if(t.dataset.pp){ const [i, j] = t.dataset.pp.split(':').map(Number), v = parseFloat(String(t.value).replace(',', '.')); if(!isFinite(v)) return toast('Sayı girin'); snap(); p.pts[i][j] = v; if(j === 0) p.pts.sort((a, b) => a[0] - b[0]); afterChange(); }
+  });
+  V.addEventListener('keydown', ev => { if(ST.cur === '@profiles' && ev.target.tagName === 'INPUT' && ev.key === 'Enter'){ ev.target.blur(); } if(ST.cur === '@profiles' && /INPUT|TEXTAREA|SELECT/.test(ev.target.tagName)) ev.stopPropagation(); });
+  V.addEventListener('click', ev => {
+    const op = ev.target.closest('[data-openpf]'); if(op){ PF.sel = op.dataset.openpf; PF.cmp = ''; openD('@profiles'); return; }
+    if(ST.cur !== '@profiles') return;
+    const t = ev.target, s = t.closest('[data-pfs]');
+    if(s && !t.closest('[data-pfe]')){ PF.sel = s.dataset.pfs; PF.cmp = ''; ST.tsel = PF.sel; renderView(); renderProps(); return; }
+    const a = t.closest('[data-pfa]'); if(!a) return;
+    const act = a.dataset.pfa, p = pfSel();
+    if(act.startsWith('new:')){ snap(); const np = newProfile(act.slice(4)); PF.sel = np.id; ST.tsel = np.id; ST.exp.add(np.owner); afterChange(); return; }
+    if(!p) return;
+    if(act === 'addpt'){ snap(); const q = p.pts || (p.pts = []), l = q[q.length - 1]; q.push(l ? [p.ptype === 'thermal' ? l[0] + 30 : +(l[0] * 2).toPrecision(4), l[1]] : [p.ptype === 'thermal' ? 0 : 20, p.ptype === 'thermal' ? 25 : 0.01]); afterChange(); }
+    if(act.startsWith('delpt:')){ snap(); p.pts.splice(+act.slice(6), 1); afterChange(); }
+    if(act === 'paste') pfPaste(p);
+    if(act === 'dup'){ snap(); const c = mk('TestProfile', p.owner, pfClone(p, uniqName(p.name + ' kopya', p.owner))); PF.sel = c.id; afterChange(); }
+    if(act === 'scale'){ const db = parseFloat(String(prompt('Seviye kaç dB değişsin? (ör. -3 kabul seviyesi, +6 marj)', '-3') || '').replace(',', '.')); if(!isFinite(db)) return; if(p.ptype === 'thermal') return toast('Termal profilde dB ölçekleme yok'); snap(); const k = Math.pow(10, db / PT[p.ptype || 'psd'].db); const c = mk('TestProfile', p.owner, pfClone(p, uniqName(p.name + ' (' + (db > 0 ? '+' : '') + db + ' dB)', p.owner))); c.pts = pfPts(p).map(q => [q[0], +(q[1] * k).toPrecision(4)]); PF.sel = c.id; PF.cmp = p.id; afterChange(); }
+    if(act === 'del'){ if(!confirm(`"${p.name}" profili silinsin mi?`)) return; snap(); allTests().forEach(x => { if(x.profiles) x.profiles = x.profiles.filter(id => id !== p.id); }); delModel([p.id]); PF.sel = null; PF.env.delete(p.id); afterChange(); }
+    if(act === 'env'){
+      const L0 = [...PF.env].map(E).filter(Boolean); if(L0.length < 2) return toast('Soldaki listede en az iki profili işaretleyin');
+      if(new Set(L0.map(x => x.ptype || 'psd')).size > 1) return toast('Zarf için aynı türde profiller seçin');
+      const pts = pfEnvelope(L0); if(!pts) return; snap(); const np = newProfile(L0[0].ptype || 'psd', L0[0].owner, {name:uniqName('Zarf — ' + L0.map(x => x.name).join(' + ').slice(0, 60), L0[0].owner), pts, doc:'Zarf: ' + L0.map(x => x.name).join(', ')});
+      ['tol', 'dur', 'axes', 'q', 'rate', 'sweeps', 'shocks', 'cycles'].forEach(k => { if(L0[0][k] != null) np[k] = L0[0][k]; }); PF.sel = np.id; PF.env.clear(); afterChange(); toast('Zarf profili oluşturuldu (' + pts.length + ' nokta)');
+    }
+    if(act === 'png'){ const svg = pfChart([{p, tol:(p.ptype === 'psd' || p.ptype === 'srs') ? (numOf(p.tol) || (p.ptype === 'srs' ? 6 : 3)) : 0}].concat(PF.cmp && E(PF.cmp) ? [{p:E(PF.cmp), col:'#888', dash:1}] : []), {w:900, h:500}); svgToPng({str:svg, w:900, h:500}, 2).then(b => download(new Blob([b], {type:'image/png'}), fileSafe(p.name) + '.png')); }
+    if(act === 'xl') pfXlsx();
+    if(act === 'tests') pfPick('Profili kullanan test durumları — ' + p.name, allTests(), pfTests(p).map(x => x.id), ids => { snap(); allTests().forEach(x => { const has = (x.profiles || []).includes(p.id), want = ids.includes(x.id); if(has && !want) x.profiles = x.profiles.filter(i => i !== p.id); if(!has && want) x.profiles = (x.profiles || []).concat([p.id]); }); afterChange(); });
+    if(act === 'reqs') pfPick('Profilin detaylandırdığı gereksinimler — ' + p.name, allReqs(), pfReqs(p).map(x => x.id), ids => { snap(); const cur0 = pfReqs(p).map(x => x.id); cur0.filter(i => !ids.includes(i)).forEach(i => delRel('Refine', p.id, i)); ids.filter(i => !cur0.includes(i)).forEach(i => addRel('Refine', p.id, i)); afterChange(); });
+  });
+})();
+/* test durumunun profillerini seçme */
+function pickProfilesForTest(tid){
+  const tc = E(tid); if(!tc) return;
+  pickList('Test profilleri — ' + nm(tc), allProfiles(), tc.profiles || [], ids => { snap(); tc.profiles = ids; afterChange(); }, {label:'+ Yeni PSD profili', fn:() => { const np = newProfile('psd'); return np.id; }});
+}
+const pfShort = p => PT[p.ptype || 'psd'].sh + ' ' + (pfMetrics(p).main || '');
+/* örnek modele profiller */
+DEMO_EXT.push(X => {
+  const pk = findOrMkPkg(M.rootId, 'Test Profilleri');
+  const q = mk('TestProfile', pk, {name:'Kalifikasyon rastgele titreşim', ptype:'psd', pts:[[20, 0.01], [80, 0.04], [350, 0.04], [2000, 0.007]], tol:3, dur:'60', axes:'X, Y, Z', plevel:'Kalifikasyon', std:'MIL-STD-810H 514.8 (NAVMAT P-9492 tabanlı)'});
+  const e = mk('TestProfile', pk, {name:'ESS rastgele titreşim', ptype:'psd', pts:[[20, 0.005], [80, 0.02], [350, 0.02], [2000, 0.0035]], tol:3, dur:'10', axes:'Z', plevel:'ESS', std:'NAVMAT P-9492'});
+  const s = mk('TestProfile', pk, {name:'Rezonans arama sinüs', ptype:'sine', pts:[[5, 0.25], [20, 0.5], [2000, 0.5]], rate:1, sweeps:2, axes:'X, Y, Z', plevel:'Fonksiyonel'});
+  const k = mk('TestProfile', pk, {name:'Piroteknik şok SRS', ptype:'srs', pts:[[100, 50], [1600, 2000], [10000, 2000]], q:10, tol:6, shocks:3, axes:'±X, ±Y, ±Z', plevel:'Kalifikasyon', std:'MIL-STD-810H 517.3'});
+  const th = mk('TestProfile', pk, {name:'Termal döngü (ESS)', ptype:'thermal', pts:[[0, 25], [13, -40], [73, -40], [92, 71], [152, 71], [167, 25]], cycles:10, plevel:'ESS'});
+  const tc = mk('TestCase', X.tPkg, {name:'Rastgele titreşim kalifikasyon testi', tMethod:'Test', procNo:'TP-QT-514', tLevel:'Kalifikasyon', testItem:'Araç Sistemi', std:'MIL-STD-810H 514.8', resp:'Kalifikasyon', result:'Planlandı', profiles:[q.id, s.id]});
+  addRel('Verify', tc.id, X.S5.id); addRel('Refine', q.id, X.S5.id);
+  const tc2 = mk('TestCase', X.tPkg, {name:'Çevresel gerilim taraması (ESS)', tMethod:'Test', procNo:'TP-ESS-01', tLevel:'Kabul', testItem:'Kontrol Birimi', result:'Planlandı', profiles:[e.id, th.id]});
+  addRel('Verify', tc2.id, X.S5.id);
+  const d = newDiagramCore(pk, 'req', 'Titreşim Doğrulama');
+  const rS = addShape(d, X.S5.id, 0, 0, 260, 110), rT = addShape(d, tc.id, 330, 20, 200, 70), rQ = addShape(d, q.id, 0, 190, 240, 190), rE = addShape(d, e.id, 300, 190, 240, 190);
+  d.shapes.slice().forEach(sh => autoEdges(d, sh));
+  X.open.push(d.id);
+});
 
 /* ================= BOOT ================= */
 (async function boot(){

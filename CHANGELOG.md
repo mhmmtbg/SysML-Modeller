@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v1.12.0 — 2026-10-05
+
+Çevresel test profilleri ve gereksinim çıktıları:
+
+- **Test profilleri** (yeni *Test Profili* elemanı, **Analiz ▾ → Test profilleri**): rastgele titreşim PSD (Grms, dB/oktav eğimler, 3σ yer değiştirme, rms hız, ±dB tolerans bandı, süre), sinüs süpürme (yer değiştirme/hız, süpürme süresi), SRS (köşe frekansı, Q, tolerans, şok sayısı), termal döngü (değişim hızı, bekleme, döngü ve toplam süre); log-log grafikler
+- Profil karşılaştırma (nokta bazında marj, kapsama sonucu, Grms oranı), çoklu profil **zarfı**, ± dB ölçekleme, Excel'den yapıştırma, PNG ve Excel çıktısı
+- Profiller test durumlarına ve («refine» ile) gereksinimlere bağlanır; **VCRM**'de *Test Profili* sütunu, Word/HTML raporunda grafik ve tablolar; gereksinim diyagramında grafikli kutu; model doğrulamada profil kuralları
+- **Türkçe gereksinim yazım kuralı:** cümle sonu "-ecek / -acak / -ecektir / -acaktır" (varsayılan); "-malıdır" için düzeltme önerisi; çoklu cümle ve "ve"li fiillerle birden fazla ister tespiti; parantez içi açıklamalar ve kısaltmalar yok sayılır; kalite raporundan "-malıdır" kuralı veya ikisi birden seçilebilir
+- **Dışa aktarmada sütun (attribute) seçimi:** Excel, Word ve ReqIF öncesi sütun seçimi ve sıralama, kapsam (sistem/alt sistem), iptal edilenleri hariç tutma, Excel ek sayfa seçimi; yeni **Word gereksinim spesifikasyonu** çıktısı; rapordaki gereksinim tablosu aynı seçimi kullanır; ek sütunlar: Açıklama, Paket, Son Değişiklik
+- Örnek model gereksinim metinleri "-ecektir / -acaktır" biçimine çevrildi; örnek modele test profilleri ve titreşim doğrulama diyagramı eklendi
+
 ## v1.11.0 — 2026-10-05
 
 Sağlamlık ve performans:

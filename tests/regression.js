@@ -130,6 +130,39 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   const tp = await run(() => { const n0 = Object.keys(M.els).length; applyTemplate('810', M.rootId, { tests: true, item: 'Birim' }); const n1 = Object.keys(M.els).length; openD('@vcrm'); return { added: n1 - n0 }; });
   ok('MIL-STD-810H şablonu eklenebiliyor', tp.added > 20, tp);
 
+  console.log('8a) Türkçe gereksinim yazım kuralı (-ecek / -acak)');
+  const qr = await run(() => {
+    const q = t => reqQuality({ id: 'q', reqId: 'Q', text: t }, null).map(x => x[1]).join(' | ');
+    return { ok1: q('Sistem 28 V ile çalışacaktır.'), ok2: q('Sistem kütlesi 45 kg\'ı aşmayacak.'), mali: q('Sistem 28 V ile çalışmalıdır.'), yok: q('Sistem 28 V ile çalışır.'), cift: q('Sistem veriyi kaydedecek ve iletecektir.'), par: q('Sistem koşullarda çalışacaktır (bkz. Tablo 3).') };
+  });
+  ok('"-ecektir/-acaktır" kabul, "-malıdır" ve eksik ek uyarı, çoklu ister tespiti', !qr.ok1 && !qr.ok2 && /ecektir/.test(qr.mali) && /bitmiyor/.test(qr.yok) && /Birden fazla/.test(qr.cift) && !qr.par, qr);
+
+  console.log('8b) Gereksinim dışa aktarma sütun seçimi');
+  const exs = await run(async () => {
+    const x = expCfg(); x.cols = ['reqId', 'text', 'status']; x.scope = 'Sistem'; x.sheets = { mx: false, cov: false, q: false, vc: false };
+    window.__dl = []; exportReqsXlsx(); const f = window.__dl.pop();
+    const sh = await readXlsx(new Uint8Array(await f.blob.arrayBuffer())); const s0 = Array.isArray(sh) ? sh[0] : sh;
+    exportReqIF(); const rq = await window.__dl.pop().blob.text();
+    await exportReqsDocx(); const dx = window.__dl.pop();
+    return { sheets: Array.isArray(sh) ? sh.length : 1, head: (s0.rows || [])[0], rows: (s0.rows || []).length, reqifHasName: /ReqIF\.Name/.test(rq), reqifStatus: /AD-STATUS/.test(rq), docx: dx && dx.size > 3000 };
+  }).catch(e => ({ error: e.message }));
+  ok('Excel yalnız seçilen sütun/sayfalarla, ReqIF seçime uygun, Word spesifikasyonu üretiliyor', !exs.error && exs.sheets === 1 && JSON.stringify(exs.head) === JSON.stringify(['Gereksinim ID', 'Gereksinim Metni', 'Durum']) && !exs.reqifHasName && exs.reqifStatus && exs.docx, exs);
+
+  console.log('8c) Test profilleri');
+  const pf = await run(() => {
+    const p = newProfile('psd', M.rootId, { pts: [[20, 0.01], [80, 0.04], [350, 0.04], [2000, 0.007]] });
+    const flat = newProfile('psd', M.rootId, { pts: [[20, 0.04], [2000, 0.04]] });
+    const sine = newProfile('sine', M.rootId, { pts: [[5, 0.25], [2000, 0.25]], rate: 1, sweeps: 1, axes: 'X' });
+    const th = newProfile('thermal', M.rootId, { pts: [[0, 25], [10, -40], [70, -40], [90, 70], [150, 70], [160, 25]], cycles: 2 });
+    const c = pfCompare(flat, p), env = pfEnvelope([p, flat]);
+    const ms = pfMetrics(sine), mt = pfMetrics(th);
+    openD('@profiles');
+    const d = Object.values(M.els).find(e => e.kind === 'Diagram' && e.dtype === 'req'); const sh = addShape(d, p.id, 900, 900); openD(d.id); renderDiagram();
+    return { navmat: +pfMetrics(p).grms.toFixed(2), flat: +pfMetrics(flat).grms.toFixed(3), covers: c.covers, minMargin: +c.min[3].toFixed(2), envMax: Math.max(...env.map(q => q[1])), envPts: env.length,
+      sineDpp: +ms.dmax.toFixed(2), sineMin: +ms.total.toFixed(2), thRate: mt.rmax, thTotal: mt.total, svg: pfChart([{ p }]).length > 1000, onDiagram: !!document.querySelector(`[data-sid="${sh.id}"]`) };
+  });
+  ok('Grms, karşılaştırma, zarf, sinüs, termal hesapları ve diyagram şekli doğru', pf.navmat === 6.06 && pf.flat === 8.899 && pf.covers === true && pf.minMargin === 0 && pf.envMax === 0.04 && pf.sineDpp === 4.97 && pf.sineMin === 8.64 && pf.thRate === 6.5 && pf.thTotal === 320 && pf.svg && pf.onDiagram, pf);
+
   console.log('9) Büyük model performansı');
   const perf = await run(() => {
     const T = {}; const tm = (k, f) => { const t0 = performance.now(); f(); T[k] = Math.round(performance.now() - t0); };
