@@ -12,6 +12,7 @@
 5c. [Doğrulama ve test yönetimi](#5c-doğrulama-ve-test-yönetimi)
 5d. [Araçlar: rapor, model doğrulama, birleştirme, ReqIF](#5d-araçlar-rapor-model-doğrulama-birleştirme-reqif)
 5e. [Analiz: parametrik hesap, bütçe, simülasyon, tahsis, tablo, ilişki haritası](#5e-analiz-parametrik-hesap-bütçe-simülasyon-tahsis-tablo-ilişki-haritası)
+5f. [XMI (Cameo / MagicDraw) ve şablonlar](#5f-xmi-cameo--magicdraw-ve-şablonlar)
 6. [Otomatik düzen ve hizalama](#6-otomatik-düzen-ve-hizalama)
 7. [İkonlar](#7-ikonlar)
 8. [Özellikler paneli](#8-özellikler-paneli)
@@ -510,6 +511,41 @@ Seçili elemandan başlayarak ilişkileri (Derive, Satisfy, Verify, Allocate, ti
 - Bir düğüme tıklamak elemanı ağaçta gösterir; çift tıklamak haritanın merkezine alır.
 - Derinlik 1–4 arasında seçilir.
 
+## 5f. XMI (Cameo / MagicDraw) ve şablonlar
+
+### XMI dışa aktarma
+
+**Araçlar ▾ → XMI olarak dışa aktar** modeli UML 2.5 / SysML 1.6 XMI dosyası (`.xmi`) olarak kaydeder. Cameo Systems Modeler / MagicDraw'da *File → Import From → UML 2.x XMI* ile içe alınır. Papyrus ve Enterprise Architect de bu biçimi okur.
+
+| Aktarılanlar | Aktarılmayanlar |
+|---|---|
+| Paketler, bloklar, arayüz blokları, kısıt blokları (ifadesiyle), değer tipleri (birim açıklamada), numaralandırmalar, sinyaller | Diyagram yerleşimleri (XMI'da standart değildir) |
+| Part (çokluk, composite/shared), port (tip, eşlenik, proxy/full), value (varsayılan değer), akış özellikleri (yön), kısıt özellikleri, parametreler | Sıralama diyagramları (etkileşimler) |
+| Connector, binding connector, generalization, association | Kullanıcı tanımlı stereotipler ve etiket değerleri |
+| Gereksinimler (id, metin, iç içe), test durumları; Satisfy, DeriveReqt, Verify, Refine, Trace, Allocate, Dependency | Gereksinim durumu, değişiklik geçmişi, taban çizgileri |
+| Aktör, use case (include, extend), aktiviteler (düğümler, pinler, akışlar, koşullar, kulvarlar, çağrılar), durum makineleri (bileşik durumlar, bölgeler, sözde durumlar, entry/do/exit, tetik [koşul] / etki) | İkonlar, renkler |
+
+### XMI içe aktarma
+
+**Araçlar ▾ → XMI içe aktar…** ile bir `.xmi` / `.xml` / `.uml` dosyası seçin.
+
+- Model, kökte **"XMI: <ad>"** adlı yeni bir paketin içine aktarılır; mevcut modeliniz değişmez ve `Ctrl+Z` ile geri alınabilir.
+- Cameo'nun SysML stereotip uygulamaları okunur (Block, InterfaceBlock, ConstraintBlock, Requirement `Id`/`Text`, FlowProperty `direction`, ProxyPort/FullPort, ValueType, BindingConnector, Satisfy, DeriveReqt, Verify, Refine, Trace, Allocate, TestCase).
+- **Diyagramları otomatik oluştur** seçiliyse her paket için BDD ve use case diyagramı, part'ları olan her blok için IBD, her aktivite ve durum makinesi için diyagram oluşturulur ve otomatik düzen uygulanır.
+- Desteklenmeyen öğeler atlanır; atlanan sayısı bildirimde gösterilir.
+
+### Şablonlar
+
+**Araçlar ▾ → Şablon ekle…** seçilen hedef pakete hazır içerik ekler:
+
+- **MIL-STD-810H çevresel kalifikasyon:** 500.6 alçak basınç, 501.7 yüksek sıcaklık, 502.7 düşük sıcaklık, 503.7 sıcaklık şoku, 505.7 güneş radyasyonu, 507.6 nem, 509.7 tuz sisi, 510.7 kum ve toz, 512.6 daldırma, 513.8 ivme, 514.8 titreşim, 515.8 akustik gürültü, 516.8 şok, 517.3 piroteknik şok.
+  - Her yöntem için bir sistem gereksinimi ve isteğe bağlı olarak kalifikasyon seviyesinde bir test durumu (prosedür no, standart, test edilen birim, *Planlandı*) ve Verify ilişkisi oluşur.
+  - Seviyeler `[TBD]` olarak gelir. **Gereksinimler ▾ → Kalite raporu** doldurulmamış olanları listeler.
+- **SMC-S-016 uzay aracı kalifikasyon testleri:** akustik, rastgele ve sinüs titreşim, şok, termal vakum, termal döngü, basınç/sızdırmazlık, statik yük, EMC, kütle özellikleri.
+- **Proje iskeleti:** `01 Gereksinimler` … `07 Doğrulama` paketleri, SI birim kütüphanesi ve «LRU» stereotipi.
+
+> Standart yöntem ve sürüm numaralarını kendi sözleşmenizdeki revizyona göre kontrol edin; şablon metinleri başlangıç taslağıdır.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.
@@ -631,4 +667,7 @@ Exe dijital imzalı değildir. Kurum politikası imzasız programları engelliyo
 Otomatik kayıt tarayıcının yerel deposundadır; tarayıcı verisi temizlenirse silinir. Önemli modelleri **Kaydet** ile dosya olarak saklayın.
 
 **Cameo'ya aktarabilir miyim?**
-Model için henüz XMI desteği yok. Gereksinimleri **ReqIF** olarak aktarabilirsiniz (Cameo, DOORS, Polarion ReqIF okur). Diyagramları PNG/SVG olarak, tüm modeli Word raporu olarak alabilirsiniz.
+Evet, alt küme olarak: **Araçlar ▾ → XMI olarak dışa aktar** model içeriğini (yapı, gereksinimler, ilişkiler, aktivite ve durum makineleri) UML 2.5 / SysML 1.6 XMI olarak verir; Cameo'da *File → Import From → UML 2.x XMI* ile açılır. Diyagram yerleşimleri, sıralama diyagramları ve kullanıcı stereotipleri aktarılmaz. Yalnız gereksinimler için **ReqIF** de kullanılabilir.
+
+**Cameo'daki modeli buraya alabilir miyim?**
+Cameo'da *File → Export To → UML 2.x XMI* ile dışa aktarın, burada **Araçlar ▾ → XMI içe aktar**'ı kullanın. Model yeni bir pakete aktarılır ve istenirse diyagramlar otomatik oluşturulur. Ayrıntılar: [5f. XMI ve şablonlar](#5f-xmi-cameo--magicdraw-ve-şablonlar).

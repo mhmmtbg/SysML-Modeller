@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.10.0 — 2026-10-05
+
+Birlikte çalışabilirlik ve şablonlar:
+
+- **XMI dışa aktarma** (UML 2.5 / SysML 1.6, Cameo/MagicDraw uyumlu stereotip uygulamaları): paketler, bloklar, arayüz/kısıt blokları, değer tipleri, numaralandırmalar, sinyaller, part/port/value/akış özellikleri, connector ve binding, gereksinimler (id, metin, iç içe), test durumları, tüm SysML gereksinim ilişkileri, allocate, generalization, association, aktör/use case, aktiviteler (pin, koşul, kulvar, çağrı), durum makineleri (bileşik, bölge, sözde durumlar)
+- **XMI içe aktarma:** Cameo/MagicDraw, Papyrus ve EA XMI dosyaları ayrı bir pakete; diyagramların otomatik oluşturulması ve düzenlenmesi
+- **Şablonlar:** MIL-STD-810H çevresel kalifikasyon (14 yöntem), SMC-S-016 uzay aracı kalifikasyon testleri — gereksinim + test durumu + Verify; proje paket iskeleti
+
 ## v1.9.0 — 2026-10-05
 
 Editör ergonomisi:
