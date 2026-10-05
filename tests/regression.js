@@ -193,6 +193,21 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message }));
   ok('N² hücreleri, yön, birim uyumsuzluğu, yön çelişkisi, ICD Excel/Word', !ic.error && ic.i1.some(q => /birim uyumsuz/.test(q)) && ic.i2.includes('hata') && ic.dir1 === 1 && ic.nodes === 2 && ic.ab === 2 && ic.ba === 1 && ic.ids >= 2 && ic.sheets === 2 && ic.docx && ic.val >= 1, ic);
 
+  console.log('8f) Şartnameden gereksinim çıkarma, model karşılaştırma, inceleme notları');
+  const p9 = await run(async () => {
+    const txt = '3 Gereksinimler\n3.1 Güç\n3.1.1 Sistem 28 V DC ile çalışacaktır. Sistem ters kutup korumasına sahip olacaktır.\n[TŞ-014] Sistem 30 s içinde hazır olacaktır.\nTŞ-020\tSistem -40 °C ile +71 °C arasında çalışacaktır.\tTest\nBu bölüm bilgi amaçlıdır.';
+    const c1 = extractReqs(textBlocks(txt), 't.txt');
+    const bl = await buildDocx([{ t: 'h', lv: 1, x: 'Gereksinimler' }, { t: 'p', x: 'Sistem 28 V ile çalışacaktır.' }, { t: 'table', head: ['No', 'Gereksinim'], rows: [['TŞ-1', 'Sistem 45 kg\'ı aşmayacaktır.']], w: [30, 70] }], { title: 'Ş' });
+    const c2 = extractReqs(await docxBlocks(new Uint8Array(await bl.arrayBuffer())), 'x.docx');
+    const O = JSON.parse(JSON.stringify(M)); const r1 = Object.values(O.els).find(e => e.kind === 'Requirement'); r1.text = 'Değişmiş metin olacaktır.'; O.els._nb = { id: '_nb', kind: 'Block', owner: O.rootId, name: 'YeniBlok', doc: '' };
+    cmpLoad(O, 'o.sysml'); const st = CMP.rows.map(r => r.st).sort().join(','); CMP.rows.forEach(r => CMP.sel.add(r)); cmpApply();
+    const applied = E(r1.id).text === 'Değişmiş metin olacaktır.' && Object.values(M.els).some(e => e.name === 'YeniBlok');
+    const tgt = Object.values(M.els).find(e => e.kind === 'Block'); ST.tsel = tgt.id; renderProps(); document.getElementById('noteTx').value = 'Kontrol edilsin'; noteAct('add|' + tgt.id);
+    const open1 = noteOpen(tgt); noteAct('tog|' + tgt.id + '|' + (tgt.notes.length - 1)); const open2 = noteOpen(tgt); openD('@reviews');
+    return { c1: c1.map(c => c.srcNo), c2: c2.map(c => c.srcNo + '|' + c.text), st, applied, open1, open2 };
+  }).catch(e => ({ error: e.message }));
+  ok('Metin/Word çıkarımı (bölüm no, ister no, tablo), fark + uygulama, not aç/kapat', !p9.error && JSON.stringify(p9.c1) === JSON.stringify(['Md. 3.1.1/1', 'Md. 3.1.1/2', 'TŞ-014', 'TŞ-020']) && p9.c2.length === 2 && p9.c2[1].startsWith('TŞ-1|') && /Değişen/.test(p9.st) && /Eklenen/.test(p9.st) && p9.applied && p9.open1 >= 1 && p9.open2 === p9.open1 - 1, p9);
+
   console.log('9) Büyük model performansı');
   const perf = await run(() => {
     const T = {}; const tm = (k, f) => { const t0 = performance.now(); f(); T[k] = Math.round(performance.now() - t0); };

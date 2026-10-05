@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.15.0 — 2026-10-05
+
+Şartname, karşılaştırma ve inceleme:
+
+- **Şartnameden gereksinim çıkarma** (**Gereksinimler ▾**): bağımlılıksız .docx okuyucu (başlık stilleri, tablolar), .txt/.md ve yapıştırılan metin; zorunluluk cümlesi tespiti (-ecek/-acak, -malıdır, gerekmektedir, shall/must), bölüm numarası ve madde başı ister numarası, tablo satırları, kısaltma/ondalık duyarlı cümle bölme; önizlemede kalite rozeti, mevcut gereksinimlere benzerlik, düzenlenebilir metin; seviye/alt sistem/paket seçimi
+- **Model karşılaştırma** (**Araçlar ▾**): kimlik, tür+yol, gereksinim/arayüz/risk ID ile eşleştirme; eklenen/silinen/değişen elemanlar, alan bazında ve kelime düzeyinde fark, diyagram şekil/yerleşim farkı; seçerek uygulama (tek adımda geri alınır), Excel
+- **İnceleme notları:** elemanlara yazan/tarih/durumlu notlar, yanıtlar, kapatma; diyagramda ve ağaçta açık not rozeti; tüm notlar görünümü ve Excel; model doğrulamada açık notlar
+
 ## v1.14.0 — 2026-10-05
 
 Arayüz yönetimi:

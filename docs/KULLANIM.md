@@ -16,6 +16,7 @@
 5g. [Çevresel test profilleri](#5g-çevresel-test-profilleri)
 5h. [FMEA / FMECA ve risk yönetimi](#5h-fmea--fmeca-ve-risk-yönetimi)
 5i. [Arayüz yönetimi: N² matrisi ve ICD](#5i-arayüz-yönetimi-n²-matrisi-ve-icd)
+5j. [Şartnameden gereksinim çıkarma, model karşılaştırma, inceleme notları](#5j-şartnameden-gereksinim-çıkarma-model-karşılaştırma-inceleme-notları)
 6. [Otomatik düzen ve hizalama](#6-otomatik-düzen-ve-hizalama)
 7. [İkonlar](#7-ikonlar)
 8. [Özellikler paneli](#8-özellikler-paneli)
@@ -639,6 +640,35 @@ Arayüzler IBD'deki **bağlantılardan (connector)** üretilir; ayrıca bir şey
 Bağlantı seçiliyken Özellikler panelinde de arayüz ID, tür, taşınan öğeler, protokol ve uyum bulguları görünür.
 
 **Çıktılar:** Excel (ICD ve N² sayfaları), **Word ICD** (bağlama göre arayüz tabloları, uyum bulguları ve N² matrisi), Word/HTML raporda *Arayüz kontrol dokümanı (ICD)* bölümü.
+
+## 5j. Şartnameden gereksinim çıkarma, model karşılaştırma, inceleme notları
+
+### Şartnameden gereksinim çıkarma (**Gereksinimler ▾ → Şartnameden gereksinim çıkar…**)
+
+1. **Dosya seç…** ile Word (`.docx`), metin (`.txt`) veya Markdown (`.md`) dosyası açın ya da metni kutuya yapıştırın (PDF için metni kopyalayıp yapıştırın; eski `.doc` için Word'de `.docx` olarak kaydedin).
+2. **Gereksinimleri bul →** zorunluluk ifadesiyle biten cümleleri aday olarak listeler: *-ecek / -acak / -ecektir / -acaktır*, *-malıdır / -melidir*, *gerekmektedir*, *shall / must*.
+   - **Bölüm numarası:** Word başlık stilleri (Başlık 1–9 / Heading) ve `3.2.1 …` biçimindeki satırlar bölüm olarak izlenir; numaralı paragraftaki gereksinim *Md. 3.2.1* (birden çok cümlede */1, /2*) kaynak numarasını alır.
+   - **İster numarası:** madde başındaki `[TŞ-014]`, `GER-12:` gibi kimlikler *Müşteri ister no* olur.
+   - **Tablolar:** gereksinim cümlesi içeren satırlar alınır; satırdaki kimlik sütunu ister no, diğer kısa hücreler not olur.
+   - Paragraftaki birden çok gereksinim cümlesi ayrı adaylara bölünür; kısaltmalar (*bkz., vb., No.*) ve ondalık sayılar cümle sonu sayılmaz.
+3. Önizlemede her adayın **kalite rozeti** ve modelde **%80'den fazla benzeyen mevcut gereksinim** (varsayılan olarak seçili gelmez) görünür. Metinleri tabloda düzeltebilirsiniz.
+4. Seviye (sistem / alt sistem ve alt sistem adı), hedef paket, *özgün cümleyi Müşteri İsteri alanına yaz* ve *başlık = bölüm adı* seçeneklerini belirleyip **Seçilenleri ekle** deyin. Gereksinimler *Taslak* durumunda, otomatik ID ile eklenir; *Açıklama* alanına kaynak dosya ve bölüm yazılır.
+
+### Model karşılaştırma (**Araçlar ▾ → Model karşılaştır…**)
+
+- Açık modeli başka bir `.sysml` / gömülü `.html` dosyasıyla (ekip arkadaşının sürümü, önceki revizyon) karşılaştırır.
+- Elemanlar önce kimlikle, bulunamazsa **tür + konum (yol)**, gereksinim ID, arayüz ID veya risk ID ile eşleştirilir; bu sayede bağımsız oluşturulmuş benzer modeller de karşılaştırılabilir.
+- **Eklenen** (karşılaştırılanda var, bunda yok), **Silinen** (bunda var, karşılaştırılanda yok) ve **Değişen** elemanlar alan alan listelenir; uzun metinlerde kelime düzeyinde fark renklendirilir. Diyagramlarda eklenen/çıkan şekil sayısı ve yerleşim değişikliği gösterilir.
+- Süzgeçler: durum, eleman türü, arama. Farkları işaretleyip **Seçilenleri uygula** ile bu modele alın: eklenenler kopyalanır (sahibi yoksa *Karşılaştırmadan gelenler* paketine), değişenlerde alanlar alınır, silinenler silinir. Tümü tek adımda **Ctrl+Z** ile geri alınır.
+- Onaylı bir gereksinimin metni bu yolla değişirse durumu otomatik *Değişiklikte* olur ve değişiklik geçmişine yazılır.
+- **Excel'e aktar** fark listesini kaydeder.
+
+### İnceleme notları
+
+- Ağaçta veya diyagramda bir eleman seçin; Özellikler panelinin altındaki **İnceleme notları** bölümüne yorum yazıp **+ Not ekle** deyin (Ctrl+Enter). Not; yazan (kullanıcı adınız), tarih ve durumla saklanır.
+- Notlar **yanıtlanabilir**, **kapatılabilir** ve yeniden açılabilir. Açık notu olan elemanlar diyagramda **sarı rozet**, model ağacında sayı ile işaretlenir.
+- **Araçlar ▾ → İnceleme notları** tüm notları durum, yazan ve metne göre süzerek listeler; Excel'e aktarılır. Açık notlar model doğrulamada *bilgi* olarak da görünür.
+- Notlar model dosyasıyla birlikte kaydedilir; dosyayı paylaştığınız kişi notları görür, yanıtlar ve **Model karşılaştır** ile notları içeren sürümü kendi modelinize alabilirsiniz.
 
 ## 6. Otomatik düzen ve hizalama
 
