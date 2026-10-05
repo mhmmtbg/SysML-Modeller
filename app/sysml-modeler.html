@@ -287,7 +287,7 @@ tr.d-add td{background:#f0faf3}tr.d-del td{background:#fdf1f2}tr.d-chg td{backgr
 'use strict';
 const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const LSK = 'sysml-modeler-v1';
-const APP_VER = '1.10.0';
+const APP_VER = '1.11.0';
 const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -739,25 +739,33 @@ function iconInline(ic, px, col, sw){ return `<svg width="${px}" height="${px}" 
 
 /* ================= STATE ================= */
 let M = null;
+/* model revizyonu: alt eleman dizini ve sıralı gereksinim listesi bu sayaçla önbelleğe alınır */
+let REV = 0, KIDX = null, KIDX_REV = -1, KIDX_M = null;
+const bump = () => { REV++; };
+const COLL = new Intl.Collator('tr', {numeric:true}), COLLS = new Intl.Collator('tr');
 const ST = {back:[], fwd:[], open:[], cur:null, sel:new Set(), tool:null, exp:new Set(), tsel:null, focus:'canvas', grid:true, space:false, dragEl:null};
 const undoStack = [], redoStack = [];
 const clean = (k, v) => (k === '_pts' || k === '_rm' || k === '_num' || k === '_seqMsgs' || k === '_po' || k === '_hy') ? undefined : v;
 const E = id => (id && M.els[id]) || null;
 const cur = () => E(ST.cur);
-function snap(){ if(ST.batch) return; markDirty(); undoStack.push(JSON.stringify(M)); if(undoStack.length > 150) undoStack.shift(); redoStack.length = 0; }
+function snap(){ bump(); if(ST.batch) return; markDirty(); undoStack.push(JSON.stringify(M)); if(undoStack.length > 150) undoStack.shift(); redoStack.length = 0; }
 function undo(){ if(!undoStack.length) return toast('Geri alınacak işlem yok'); markDirty(); redoStack.push(JSON.stringify(M)); M = JSON.parse(undoStack.pop()); afterLoad(); }
 function redo(){ if(!redoStack.length) return; markDirty(); undoStack.push(JSON.stringify(M)); M = JSON.parse(redoStack.pop()); afterLoad(); }
 function afterLoad(){
+  bump();
   ST.open = ST.open.filter(id => isView(id) || (E(id) && E(id).kind === 'Diagram'));
   if(!isView(ST.cur) && !E(ST.cur)) ST.cur = ST.open[0] || null;
   ST.sel.clear(); if(ST.tsel && !E(ST.tsel)) ST.tsel = null;
   rebuildReqCache();
   renderAll(); persist();
 }
-function afterChange(){ trackReqChanges(); renderAll(); persist(); }
+function afterChange(){ bump(); trackReqChanges(); renderAll(); persist(); }
 
 /* ================= MODEL HELPERS ================= */
-function kidsOf(id){ const r = []; for(const k in M.els){ const e = M.els[k]; if(e.owner === id) r.push(e); } return r; }
+function kidsOf(id){
+  if(KIDX_REV !== REV || KIDX_M !== M){ KIDX = new Map(); for(const k in M.els){ const e = M.els[k]; let a = KIDX.get(e.owner); if(!a) KIDX.set(e.owner, a = []); a.push(e); } KIDX_REV = REV; KIDX_M = M; }
+  const a = KIDX.get(id); return a ? a.slice() : [];
+}
 function nearestPkg(id){ let e = E(id); while(e && e.kind !== 'Package' && e.kind !== 'Model') e = E(e.owner); return e ? e.id : M.rootId; }
 function isAnc(a, b){ let e = E(b); while(e){ if(e.owner === a) return true; e = E(e.owner); } return false; }
 function lcFirst(s){ s = String(s || '').replace(/\s+/g, ''); return s ? s.charAt(0).toLocaleLowerCase('tr') + s.slice(1) : s; }
@@ -766,7 +774,11 @@ function defName(kind, owner){ const b = BASE[kind]; if(!b) return ''; const n =
 function mk(kind, owner, props){
   const e = Object.assign({id:uid(), kind, owner, name:defName(kind, owner), doc:''}, props || {});
   if(kind === 'Requirement'){ if(!e.level) e.level = 'Sistem'; if(!e.status) e.status = 'Taslak'; if(!e.reqId) e.reqId = nextReqId(e.level); if(e.text == null) e.text = ''; if(!e.attrs) e.attrs = {}; }
-  M.els[e.id] = e; return e;
+  const kv = KIDX_REV === REV && KIDX_M === M, nv = NRI_REV === REV && NRI_M === M;
+  M.els[e.id] = e; bump();
+  if(kv){ let a = KIDX.get(e.owner); if(!a) KIDX.set(e.owner, a = []); a.push(e); KIDX_REV = REV; }
+  if(nv){ if(e.kind === 'Requirement' && e.reqId) NRI.forEach((mx, pre) => { if(String(e.reqId).startsWith(pre)){ const n = parseInt(String(e.reqId).slice(pre.length), 10); if(n > mx) NRI.set(pre, n); } }); NRI_REV = REV; }
+  return e;
 }
 function elLabel(e){
   if(!e) return '';
@@ -1015,7 +1027,7 @@ function delModel(ids){
     if(e.part) add(e.part);
   };
   ids.forEach(add);
-  del.forEach(id => delete M.els[id]);
+  del.forEach(id => delete M.els[id]); bump();
   all().forEach(x => {
     if(del.has(x.type)) x.type = null;
     if(del.has(x.behavior)) x.behavior = null;
@@ -1946,9 +1958,11 @@ function simplifyPath(p){
   for(let i = q.length - 2; i > 0; i--){ const a = q[i - 1], b = q[i], c = q[i + 1]; if((Math.abs(a.x - b.x) < 0.01 && Math.abs(b.x - c.x) < 0.01) || (Math.abs(a.y - b.y) < 0.01 && Math.abs(b.y - c.y) < 0.01)) q.splice(i, 1); }
   return q;
 }
-function pathCost(p, ctx, S, T2){
-  let c = 0;
+function pathCost(p, ctx, S, T2, lim){
+  let c = (p.length - 2) * 30;
+  if(lim == null) lim = Infinity;
   for(let i = 0; i < p.length - 1; i++){
+    if(c >= lim) return c;
     const a = p[i], b = p[i + 1];
     c += Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
     for(const r of ctx.obs){
@@ -1973,11 +1987,29 @@ function pathCost(p, ctx, S, T2){
       }
     }
   }
-  return c + (p.length - 2) * 30;
+  return c;
 }
-function routeOrtho(S, T2, ctx){
+const ROUTE_CACHE = new Map();
+function routeOrtho(S, T2, ctx0){
+  /* yalnız bölgedeki engeller ve hatlar değerlendirilir; aynı yerel durum için önceki rota yeniden kullanılır */
+  const pad = 240, rx0 = Math.min(S.x, T2.x) - pad, ry0 = Math.min(S.y, T2.y) - pad, rx1 = Math.max(S.x + S.w, T2.x + T2.w) + pad, ry1 = Math.max(S.y + S.h, T2.y + T2.h) + pad;
+  const obs = ctx0.obs.filter(r => r.x < rx1 && r.x + r.w > rx0 && r.y < ry1 && r.y + r.h > ry0);
+  const routed = ctx0.routed.filter(g => Math.max(g.a.x, g.b.x) >= rx0 && Math.min(g.a.x, g.b.x) <= rx1 && Math.max(g.a.y, g.b.y) >= ry0 && Math.min(g.a.y, g.b.y) <= ry1);
+  const xs = [], ys = []; obs.forEach(o => { xs.push(o.x - 20, o.x + o.w + 20); ys.push(o.y - 20, o.y + o.h + 20); });
+  const ctx = {d:ctx0.d, SM:ctx0.SM, obs, xs, ys, routed};
+  const pr = s0 => s0.parent && ctx0.SM.get(s0.parent);
+  const key = [S, T2, pr(S), pr(T2)].map(o => o ? o.x + ',' + o.y + ',' + o.w + ',' + o.h : '-').join('|') + '#' + obs.map(o => o.x + ',' + o.y + ',' + o.w + ',' + o.h).join(';') ;
+  const ck = ctx0.d.id + '|' + S.id + '|' + T2.id, hit = ROUTE_CACHE.get(ck);
+  if(hit && hit.k === key) return hit.p.map(q => ({x:q.x, y:q.y}));
+  const res = routeOrtho0(S, T2, ctx);
+  if(ROUTE_CACHE.size > 4000) ROUTE_CACHE.clear();
+  if(res) ROUTE_CACHE.set(ck, {k:key, p:res.map(q => ({x:q.x, y:q.y}))});
+  return res;
+}
+function routeOrtho0(S, T2, ctx){
   const A0 = endInfo(S, T2, ctx), B0 = endInfo(T2, S, ctx);
-  const best3 = arr => arr.slice().sort((a, b) => a.pen - b.pen).slice(0, 9);
+  const heavy = ctx.obs.length + ctx.routed.length / 4 > 30, NC = heavy ? 6 : 9, NJ = heavy ? 4 : 6;
+  const best3 = arr => arr.slice().sort((a, b) => a.pen - b.pen).slice(0, NC);
   const As = best3(A0), Bs = best3(B0);
   const ST = 16;
   let best = null, bestC = Infinity;
@@ -1991,8 +2023,8 @@ function routeOrtho(S, T2, ctx){
   direct.forEach(p => { const c = pathCost(p, ctx, S, T2) - 15; if(c < bestC){ bestC = c; best = p; } });
   for(const a of As) for(const b of Bs){
     const s0 = {x:a.x + a.nx * ST, y:a.y + a.ny * ST}, s1 = {x:b.x + b.nx * ST, y:b.y + b.ny * ST};
-    const mxs = [(s0.x + s1.x) / 2].concat(ctx.xs.filter(v => v > Math.min(s0.x, s1.x) - 140 && v < Math.max(s0.x, s1.x) + 140)).sort((u, v) => Math.abs(u - (s0.x + s1.x) / 2) - Math.abs(v - (s0.x + s1.x) / 2)).slice(0, 6);
-    const mys = [(s0.y + s1.y) / 2].concat(ctx.ys.filter(v => v > Math.min(s0.y, s1.y) - 140 && v < Math.max(s0.y, s1.y) + 140)).sort((u, v) => Math.abs(u - (s0.y + s1.y) / 2) - Math.abs(v - (s0.y + s1.y) / 2)).slice(0, 6);
+    const mxs = [(s0.x + s1.x) / 2].concat(ctx.xs.filter(v => v > Math.min(s0.x, s1.x) - 140 && v < Math.max(s0.x, s1.x) + 140)).sort((u, v) => Math.abs(u - (s0.x + s1.x) / 2) - Math.abs(v - (s0.x + s1.x) / 2)).slice(0, NJ);
+    const mys = [(s0.y + s1.y) / 2].concat(ctx.ys.filter(v => v > Math.min(s0.y, s1.y) - 140 && v < Math.max(s0.y, s1.y) + 140)).sort((u, v) => Math.abs(u - (s0.y + s1.y) / 2) - Math.abs(v - (s0.y + s1.y) / 2)).slice(0, NJ);
     const joins = [[{x:s1.x, y:s0.y}], [{x:s0.x, y:s1.y}]];
     mxs.forEach(m => joins.push([{x:m, y:s0.y}, {x:m, y:s1.y}]));
     mys.forEach(m => joins.push([{x:s0.x, y:m}, {x:s1.x, y:m}]));
@@ -2004,7 +2036,7 @@ function routeOrtho(S, T2, ctx){
       if(dx1 * b.nx + dy1 * b.ny > 0.01) continue;
       const p = simplifyPath(raw);
       if(p.length < 2) continue;
-      const c = pathCost(p, ctx, S, T2) + a.pen + b.pen;
+      const c = pathCost(p, ctx, S, T2, bestC - a.pen - b.pen) + a.pen + b.pen;
       if(c < bestC){ bestC = c; best = p; }
     }
   }
@@ -2050,6 +2082,7 @@ function edgeGeom(S, T2, ed, ctx){
     return [{x, y:y - 10}, {x:x + 34, y:y - 10}, {x:x + 34, y:y + 12}, {x:x + 1, y:y + 12}];
   }
   const A = bx(S), B = bx(T2);
+  if(ctx && ctx.fast && ed._pts && ed._pts.length > 1 && !ctx.fast.has(S.id) && !ctx.fast.has(T2.id) && !(S.parent && ctx.fast.has(S.parent)) && !(T2.parent && ctx.fast.has(T2.parent))){ const r = ed._pts; for(let i = 0; i < r.length - 1; i++) ctx.routed.push({a:r[i], b:r[i + 1]}); return r.map(q => ({x:q.x, y:q.y})); }
   if(ctx && ed.mx == null && ed.my == null){
     let r = null;
     if(ed.route === 'straight'){
@@ -2199,6 +2232,8 @@ function diagramSVG0(d, exp){
   });
   let edges = '';
   const rctx = routeCtx(d, SM);
+  if(!exp && drag && (drag.type === 'move' || drag.type === 'resize') && d.edges.length > 30) rctx.fast = new Set(drag.type === 'move' ? [...drag.set] : [drag.sh.id]);
+  else if(!exp && deferRoute && deferRoute.d === d.id) rctx.fast = deferRoute.set;
   const ord = d.edges.slice().sort((a, b) => (edgeKind(a) === 'Anchor') - (edgeKind(b) === 'Anchor'));
   const pairN = new Map(); ord.forEach(ed => { if(ed.s === ed.t || isMsg(edgeKind(ed))) return; const k = ed.s < ed.t ? ed.s + '|' + ed.t : ed.t + '|' + ed.s; const a = pairN.get(k) || []; a.push(ed); pairN.set(k, a); });
   rctx.pair = new Map(); pairN.forEach(a => { if(a.length > 1) a.forEach((ed, i) => rctx.pair.set(ed, (i - (a.length - 1) / 2) * 26)); });
@@ -2312,7 +2347,7 @@ function selSVG(d){
 
 /* ================= TREE ================= */
 function childIndex(){ const idx = {}; for(const k in M.els){ const e = M.els[k]; (idx[e.owner] = idx[e.owner] || []).push(e); } return idx; }
-function sortEls(a, b){ const ra = RANK.indexOf(a.kind), rb = RANK.indexOf(b.kind); if(ra !== rb) return (ra < 0 ? 99 : ra) - (rb < 0 ? 99 : rb); return (a.name || '').localeCompare(b.name || '', 'tr'); }
+function sortEls(a, b){ const ra = RANK.indexOf(a.kind), rb = RANK.indexOf(b.kind); if(ra !== rb) return (ra < 0 ? 99 : ra) - (rb < 0 ? 99 : rb); return COLLS.compare(a.name || '', b.name || ''); }
 function icon(e){
   const io = (e.kind === 'Block' || e.kind === 'Part' || e.kind === 'Actor') && iconOf(e);
   if(io) return `<span class="ic" style="background:${io.col}">${iconInline(io.ic, 12, '#fff', 2.3)}</span>`;
@@ -2478,7 +2513,7 @@ tree.addEventListener('drop', ev => {
   ev.preventDefault();
   const r = ev.target.closest('.tr[data-id]'); if(!r || !ST.dragEl) return;
   const c = E(ST.dragEl), o = E(r.dataset.id);
-  if(c && o && !isAnc(c.id, o.id) && canOwn(o.kind, c.kind, c)){ snap(); c.owner = o.id; ST.exp.add(o.id); afterChange(); toast(`"${nm(c)}" → "${o.name}" altına taşındı`); }
+  if(c && o && !isAnc(c.id, o.id) && canOwn(o.kind, c.kind, c)){ snap(); c.owner = o.id; bump(); ST.exp.add(o.id); afterChange(); toast(`"${nm(c)}" → "${o.name}" altına taşındı`); }
 });
 treeBox.addEventListener('mousedown', () => { ST.focus = 'tree'; });
 function treeMenu(id, x, y){
@@ -2775,7 +2810,7 @@ function syncNesting(d, ids){
       if(sh.x >= c.x && sh.y >= c.y && sh.x + sh.w <= c.x + c.w && sh.y + sh.h <= c.y + c.h && (!best || c.w * c.h < best.w * best.h)) best = c;
     });
     const no = best ? best.el : d.owner;
-    if(no !== e.owner && E(no) && canOwn(E(no).kind, e.kind, e)){ e.owner = no; n++; }
+    if(no !== e.owner && E(no) && canOwn(E(no).kind, e.kind, e)){ e.owner = no; bump(); n++; }
   });
   return n;
 }
@@ -2797,7 +2832,7 @@ function showRelated(d, sh){
   toast(n ? n + ' ilişkili eleman eklendi' : 'Eklenecek ilişkili eleman yok');
 }
 
-let drag = null;
+let drag = null, deferRoute = null, deferT = 0;
 svgEl.addEventListener('mousedown', ev => {
   hideMenu(); ST.focus = 'canvas';
   const d = cur(); if(!d) return;
@@ -2948,7 +2983,15 @@ window.addEventListener('mouseup', ev => {
   if(dr.type === 'move' && dr.moved) syncNesting(d, [...dr.set]);
   if(dr.type === 'resize' && dr.snapped && d.dtype === 'stm'){ const R = dr.sh; syncNesting(d, d.shapes.filter(o => o === R || (o.x >= R.x && o.y >= R.y && o.x + o.w <= R.x + R.w && o.y + o.h <= R.y + R.h) || (R.x >= o.x && R.y >= o.y)).map(o => o.id)); }
   if(dr.type === 'wp'){ if(dr.ed.wp){ dr.ed.wp = dr.ed.wp.filter((q, i, a) => !a.some((o, j) => j < i && Math.abs(o.x - q.x) < 2 && Math.abs(o.y - q.y) < 2)); } renderAll(); persist(); return; }
-  if(dr.type === 'move' || dr.type === 'resize' || dr.type === 'mid' || dr.type === 'sep' || dr.type === 'lab'){ if(dr.moved || dr.snapped){ renderAll(); persist(); } return; }
+  if(dr.type === 'move' || dr.type === 'resize' || dr.type === 'mid' || dr.type === 'sep' || dr.type === 'lab'){
+    if(dr.moved || dr.snapped){
+      /* büyük diyagramda bırakınca önce yalnız taşınan şeklin bağlantıları, ardından tüm rotalar arka planda yenilenir */
+      if((dr.type === 'move' || dr.type === 'resize') && d.edges.length > 30){ deferRoute = {d:d.id, set:new Set(dr.type === 'move' ? [...dr.set] : [dr.sh.id])}; renderAll(); deferRoute = null; clearTimeout(deferT); deferT = setTimeout(() => { if(!drag && cur() === d) renderDiagram(); }, 40); }
+      else renderAll();
+      persist();
+    }
+    return;
+  }
   if(dr.type === 'rubber'){
     if(dr.r && dr.r.w > 2){
       const r = dr.r;
@@ -3173,7 +3216,7 @@ function cloneSubtree(id, owner, map){
   c.id = uid(); c.owner = owner;
   if(c.kind === 'Requirement'){ c.reqId = nextReqId(reqLevel(c)); }
   else if(c.name && !map.size) c.name = uniqName(c.name + ' kopya', owner);
-  M.els[c.id] = c; map.set(id, c.id);
+  M.els[c.id] = c; bump(); map.set(id, c.id);
   kidsOf(id).filter(k => k.kind !== 'Diagram' && !KIND[k.kind].rel && k.id !== c.id).forEach(k => cloneSubtree(k.id, c.id, map));
   return c;
 }
@@ -3217,7 +3260,7 @@ function pasteClip(forceCopy){
       const nr = Object.assign(JSON.parse(JSON.stringify(r)), {id:uid(), src, tgt});
       if(nr.sp) nr.sp = emap.get(nr.sp) || nr.sp; if(nr.tp) nr.tp = emap.get(nr.tp) || nr.tp;
       if(nr.part){ delete nr.part; }
-      M.els[nr.id] = nr; el = nr.id;
+      M.els[nr.id] = nr; bump(); el = nr.id;
     }
     if(el && d.edges.some(x => x.el === el)) return;
     const ne = {id:uid(), el:el || null, kind:ed.kind, s:S, t:T0, route:ed.route, stroke:ed.stroke}; if(ed.wp) ne.wp = ed.wp.map(q => ({x:q.x + ox, y:q.y + oy})); if(ed.lo) ne.lo = Object.assign({}, ed.lo);
@@ -3617,13 +3660,21 @@ function reqCfg(){ if(!M.reqCfg) M.reqCfg = {attrs:[], hidden:[], prefix:{'Siste
 function allCols(){ return STD_COLS.concat(reqCfg().attrs.map(a => ({key:'attr:' + a.key, label:a.label, custom:1, w:18}))).concat(TRACE_COLS); }
 function visCols(){ const h = new Set(reqCfg().hidden); return allCols().filter(c => !h.has(c.key)); }
 function reqLevel(e){ return e && e.level === 'Alt Sistem' ? 'Alt Sistem' : 'Sistem'; }
-function reqSort(a, b){ return (reqLevel(a) === 'Sistem' ? 0 : 1) - (reqLevel(b) === 'Sistem' ? 0 : 1) || String(a.reqId || '').localeCompare(String(b.reqId || ''), 'tr', {numeric:true}); }
-function allReqs(){ return Object.values(M.els).filter(e => e.kind === 'Requirement').sort(reqSort); }
+function reqSort(a, b){ return (reqLevel(a) === 'Sistem' ? 0 : 1) - (reqLevel(b) === 'Sistem' ? 0 : 1) || COLL.compare(String(a.reqId || ''), String(b.reqId || '')); }
+let RQC = null, RQC_REV = -1, RQC_M = null;
+function allReqs(){ if(RQC_REV !== REV || RQC_M !== M){ RQC = Object.values(M.els).filter(e => e.kind === 'Requirement').sort(reqSort); RQC_REV = REV; RQC_M = M; } return RQC.slice(); }
+let RIC = null, RIC_REV = -1;
+function reqIdCount(){ if(RIC_REV !== REV){ RIC = new Map(); Object.values(M.els).forEach(e => { if(e.kind === 'Requirement' && e.reqId) RIC.set(e.reqId, (RIC.get(e.reqId) || 0) + 1); }); RIC_REV = REV; } return RIC; }
+let NRI = new Map(), NRI_REV = -1, NRI_M = null;
 function nextReqId(level){
   const c = reqCfg(), pre = c.prefix[level === 'Alt Sistem' ? 'Alt Sistem' : 'Sistem'] || 'REQ-';
-  let max = 0;
-  Object.values(M.els).forEach(e => { if(e.kind === 'Requirement' && e.reqId && String(e.reqId).startsWith(pre)){ const n = parseInt(String(e.reqId).slice(pre.length), 10); if(n > max) max = n; } });
-  return pre + String(max + 1).padStart(c.digits || 3, '0');
+  if(NRI_REV !== REV || NRI_M !== M){ NRI = new Map(); NRI_REV = REV; NRI_M = M; }
+  if(!NRI.has(pre)){
+    let max = 0;
+    Object.values(M.els).forEach(e => { if(e.kind === 'Requirement' && e.reqId && String(e.reqId).startsWith(pre)){ const n = parseInt(String(e.reqId).slice(pre.length), 10); if(n > max) max = n; } });
+    NRI.set(pre, max);
+  }
+  return pre + String(NRI.get(pre) + 1).padStart(c.digits || 3, '0');
 }
 function findOrMkPkg(owner, name){ let p = kidsOf(owner).find(e => e.kind === 'Package' && e.name === name); if(!p) p = mk('Package', owner, {name}); return p.id; }
 function reqHome(pkgId){ return pkgId === M.rootId ? findOrMkPkg(M.rootId, 'Gereksinimler') : pkgId; }
@@ -3638,7 +3689,7 @@ function relocateReq(r){
   const o = E(r.owner), top = kidsOf(M.rootId).find(e => e.kind === 'Package' && e.name === 'Gereksinimler');
   if(!o || !top) return;
   const auto = o.id === top.id || o.owner === top.id || (E(o.owner) && E(o.owner).owner === top.id && E(o.owner).name === 'Alt Sistem Gereksinimleri');
-  if(auto) r.owner = reqPkgFor(reqLevel(r), r.subsys);
+  if(auto){ r.owner = reqPkgFor(reqLevel(r), r.subsys); bump(); }
 }
 function askSubsys(title, def, cb, oncancel){
   const box = $('#modalBox');
@@ -3856,6 +3907,9 @@ function reqTableHTML(){
   if(RV.gaps) rs = rs.filter(r => T0.get(r.id).c.st !== 'Tam');
   if(RV.sortKey){ const k = RV.sortKey; rs.sort((a, b) => RV.sortDir * (k === '_status' ? T0.get(a.id).c.st.localeCompare(T0.get(b.id).c.st, 'tr') : cellVal(a, k).localeCompare(cellVal(b, k), 'tr', {numeric:true}))); }
   if(!allReqs().length) return `<div class="vempty">Henüz gereksinim yok.<br><br><button class="vb pri" data-va="addSys">+ Sistem gereksinimi ekle</button> &nbsp; <button class="vb" data-va="import">⤓ Excel'den aktar</button></div>`;
+  const total = rs.length; RV.limit = RV.limit || 250;
+  if(ST.tsel){ const si = rs.findIndex(r => r.id === ST.tsel); if(si >= RV.limit) RV.limit = Math.ceil((si + 1) / 250) * 250; }
+  rs = rs.slice(0, RV.limit);
   const chips = (arr, rid, role) => `<div class="tcell">${arr.map(x => `<span class="chip2" title="${esc(elDesc(x))}"><a class="lnk" data-goto="${x.id}">${esc(x.kind === 'Requirement' ? (x.reqId || nm(x)) : nm(x))}</a></span>`).join('')}<button class="tadd" data-trpick="${role}" data-rid="${rid}" title="Ekle / çıkar">+</button></div>`;
   let h = `<table class="rt"><thead><tr><th class="rn">#</th>${cols.map(c => `<th data-sort="${c.key}" class="${c.trace ? 'th-tr' : ''}${c.custom ? ' th-cu' : ''}" style="min-width:${Math.min(320, c.w * 7)}px">${esc(c.label)}${RV.sortKey === c.key ? (RV.sortDir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}<th></th></tr></thead><tbody>`;
   rs.forEach((r, i) => {
@@ -3879,7 +3933,7 @@ function reqTableHTML(){
     });
     h += `<td class="ra"><button class="tdel" data-rdel="${r.id}" title="Gereksinimi sil">✕</button></td></tr>`;
   });
-  return h + `</tbody></table><div class="vfoot">${rs.length} / ${allReqs().length} gereksinim gösteriliyor</div>`;
+  return h + `</tbody></table><div class="vfoot">${rs.length} / ${allReqs().length} gereksinim gösteriliyor${total > rs.length ? ` · filtreye uyan ${total} · <button class="vb" data-va="more">+250 daha göster</button> <button class="vb" data-va="showall">Tümünü göster</button>` : ''}</div>`;
 }
 const MSETS = [
   ['sys', 'Sistem gereksinimleri', 1, () => allReqs().filter(r => reqLevel(r) === 'Sistem')],
@@ -3937,7 +3991,8 @@ function coverageData(){
   const sys = rows.filter(x => reqLevel(x.r) === 'Sistem'), sub = rows.filter(x => reqLevel(x.r) !== 'Sistem');
   const pct = (arr, f) => arr.length ? Math.round(arr.filter(f).length / arr.length * 100) : 0;
   const traced = new Set(); (idx['Satisfy'] || []).concat(idx['Refine'] || [], idx['Trace'] || [], idx['Allocate'] || []).forEach(x => { traced.add(x.src); traced.add(x.tgt); });
-  const untracedBlocks = Object.values(M.els).filter(e => e.kind === 'Block' && !traced.has(e.id) && !Object.values(M.els).some(p => p.kind === 'Part' && p.type === e.id && traced.has(p.id))).sort(sortEls);
+  const tracedTypes = new Set(Object.values(M.els).filter(p => p.kind === 'Part' && p.type && traced.has(p.id)).map(p => p.type));
+  const untracedBlocks = Object.values(M.els).filter(e => e.kind === 'Block' && !traced.has(e.id) && !tracedTypes.has(e.id)).sort(sortEls);
   const untracedFuncs = Object.values(M.els).filter(e => e.kind === 'Activity' && !traced.has(e.id) && !kidsOf(e.id).some(a => traced.has(a.id))).sort(sortEls);
   return {sys, sub, untracedBlocks, untracedFuncs, cards:[
     ['Sistem gereksinimi', sys.length, null, 0],
@@ -3961,10 +4016,11 @@ function coverageHTML(){
     const col = v >= 90 ? '#2e9e6a' : v >= 60 ? '#d18a00' : '#c0392b';
     return `<div class="card"><div class="cv" style="color:${col}">%${v}</div><div class="ct">${esc(t)}</div><div class="cbar"><i style="width:${v}%;background:${col}"></i></div>${sub ? `<div class="cs">${esc(sub)}</div>` : ''}</div>`;
   }).join('') + '</div>';
-  const nl = arr => arr.length ? arr.map(x => `<a class="lnk" data-goto="${x.id}">${esc(x.kind === 'Requirement' ? x.reqId || nm(x) : nm(x))}</a>`).join(', ') : '<span class="miss">—</span>';
+  const nl0 = arr => arr.length ? arr.map(x => `<a class="lnk" data-goto="${x.id}">${esc(x.kind === 'Requirement' ? x.reqId || nm(x) : nm(x))}</a>`).join(', ') : '<span class="miss">—</span>';
+  const nl = arr => arr.length > 300 ? nl0(arr.slice(0, 300)) + ` <span class="muted">… ve ${arr.length - 300} eleman daha</span>` : nl0(arr);
   const tbl = (title, rows, sys) => {
-    const list = CV.gaps ? rows.filter(x => x.c.st !== 'Tam') : rows;
-    let s = `<h3>${title} <span class="muted">(${list.length}${CV.gaps ? ' eksik' : ''})</span></h3>`;
+    const all = CV.gaps ? rows.filter(x => x.c.st !== 'Tam') : rows, lim = CV.limit || 250, list = all.slice(0, lim);
+    let s = `<h3>${title} <span class="muted">(${all.length}${CV.gaps ? ' eksik' : ''})</span></h3>`;
     if(!list.length) return s + `<div class="muted" style="margin:0 0 14px">${CV.gaps ? 'Eksik yok 🎉' : 'Kayıt yok'}</div>`;
     s += `<table class="rt cvt"><thead><tr><th>ID</th><th>Gereksinim</th>${sys ? '<th>Alt Sistem Gereksinimleri</th>' : '<th>Üst Gereksinim</th>'}<th>Model Elemanları</th><th>Fonksiyonlar</th><th>Doğrulama</th><th>Test</th><th>Doğrulama Durumu</th><th>Durum</th><th>Eksikler</th></tr></thead><tbody>`;
     list.forEach(({r, t, c}) => {
@@ -3972,7 +4028,7 @@ function coverageHTML(){
         <td>${nl(sys ? t.children : t.parents)}</td><td>${nl(t.elems)}</td><td>${nl(t.funcs)}</td><td>${r.verif ? esc(r.verif) : '<span class="miss">—</span>'}</td><td>${nl(t.verifyBy)}</td><td>${verChip(verStatus(r, t))}</td>
         <td><span class="cov cov-${c.st}">${c.st}</span><div style="margin-top:3px">${statusChip(r)}</div></td><td class="gapt">${c.gaps.map(esc).join('<br>')}</td></tr>`;
     });
-    return s + '</tbody></table>';
+    return s + '</tbody></table>' + (all.length > list.length ? `<div class="vfoot">${list.length} / ${all.length} gösteriliyor · <button class="vb" data-va="cvmore">+250 daha göster</button> <button class="vb" data-va="cvall">Tümünü göster</button></div>` : '');
   };
   h += tbl('Sistem gereksinimleri', D.sys, true) + tbl('Alt sistem gereksinimleri', D.sub, false);
   h += `<h3>Hiçbir gereksinime izlenmeyen model elemanları <span class="muted">(bilgi)</span></h3><div class="untr"><b>Bloklar:</b> ${nl(D.untracedBlocks)}<br><b>Fonksiyonlar (aktiviteler):</b> ${nl(D.untracedFuncs)}</div>`;
@@ -3987,6 +4043,8 @@ function coverageHTML(){
     const va = t.closest('[data-va]');
     if(va){
       const a = va.dataset.va;
+      if(a === 'cvmore' || a === 'cvall'){ CV.limit = a === 'cvmore' ? (CV.limit || 250) + 250 : 1e9; renderView(); return; }
+      if(a === 'more' || a === 'showall'){ RV.limit = a === 'more' ? (RV.limit || 250) + 250 : 1e9; renderView(); return; }
       if(a === 'addSys' || a === 'addSub'){
         const add = (lvl, ss) => {
           snap(); const r = mk('Requirement', reqPkgFor(lvl, ss), {level:lvl, name:'', subsys:ss || ''}); ST.tsel = r.id; RV.q = '';
@@ -4502,7 +4560,7 @@ function reqQuality(r, sim){
   const words = t.split(/\s+/).length;
   if(words > 55) out.push(['bilgi', 'Çok uzun (' + words + ' kelime) — sadeleştirmeyi düşünün']);
   if(/\b(o|bu|şu|it|they|this)\b\s/i.test(t.split(/[.;]/)[0]) && false) out.push(['bilgi', 'Belirsiz zamir']);
-  const dup = allReqs().filter(x => x !== r && x.reqId && x.reqId === r.reqId);
+  const dup = reqIdCount().get(r.reqId) > 1 ? [1] : [];
   if(dup.length) out.push(['hata', 'Aynı ID başka bir gereksinimde de var: ' + r.reqId]);
   (sim && sim.get(r.id) || []).slice(0, 3).forEach(([o, j]) => out.push(['uyarı', `${o.reqId || nm(o)} ile çok benzer (%${Math.round(j * 100)})`]));
   return out;
@@ -5395,10 +5453,10 @@ function mergeModel(O, sel, target, mode){
     if(e.kind === 'Diagram'){ e.shapes = (e.shapes || []).filter(s => exists(s.el)).map(s => Object.assign(s, {el:R(s.el)})); const sids = new Set(e.shapes.map(s => s.id)); e.edges = (e.edges || []).filter(x => sids.has(x.s) && sids.has(x.t) && (!x.el || exists(x.el))).map(x => Object.assign(x, {el:x.el ? R(x.el) : null})); }
     if(e.kind === 'Requirement' && e.reqId && reqIds.has(e.reqId) && reqIds.get(e.reqId) !== nid) dupReq.push(e.reqId);
     if(had){ updated++; if(M.els[nid].owner && M.els[nid].owner !== e.owner && !selSet.has(oid)) e.owner = M.els[nid].owner; } else added++;
-    M.els[nid] = e;
+    M.els[nid] = e; bump();
   });
   // ilişkilerin sonradan atlanan uçlarını temizle
-  Object.values(M.els).forEach(e => { if(e.src && KIND[e.kind] && KIND[e.kind].rel && (!M.els[e.src] || !M.els[e.tgt])){ delete M.els[e.id]; dropped++; } });
+  Object.values(M.els).forEach(e => { if(e.src && KIND[e.kind] && KIND[e.kind].rel && (!M.els[e.src] || !M.els[e.tgt])){ delete M.els[e.id]; dropped++; } }); bump();
   if(O.reqCfg){ const c = reqCfg(); (O.reqCfg.attrs || []).forEach(a => { if(!c.attrs.some(x => x.key === a.key)) c.attrs.push(a); }); }
   ST.exp.add(target); sel.forEach(id => { const n = map.get(id); if(n) ST.exp.add(n); });
   afterChange();
@@ -5528,7 +5586,7 @@ function renderStatus(){
   $('#stHint').textContent = ST.tool ? (ST.tool.type === 'rel' ? `${KIND[ST.tool.kind].tr}: kaynaktan hedefe sürükleyin · Esc iptal` : `${KIND[ST.tool.kind].tr}: tuvale tıklayın · Esc iptal`) :
     'Ctrl+Tekerlek yakınlaş · Boşluk/Orta tuş+sürükle kaydır · Del modelden sil · Shift+Del diyagramdan kaldır';
 }
-function renderAll(){ renderSimBar(); renderTree(); renderTabs(); renderPalette(); renderDiagram(); renderProps(); renderStatus(); }
+function renderAll(){ bump(); renderSimBar(); renderTree(); renderTabs(); renderPalette(); renderDiagram(); renderProps(); renderStatus(); }
 
 /* ================= EXPORT ================= */
 function exportSVGString(){
@@ -5574,7 +5632,7 @@ function copyImage(){
 }
 
 /* ================= PERSIST / FILES ================= */
-function pack(){ M.ui = {open:ST.open, cur:ST.cur, exp:[...ST.exp].slice(0, 2000)}; M.savedAt = Date.now(); return M; }
+function pack(){ M.ui = {open:ST.open, cur:ST.cur, exp:[...ST.exp].slice(0, 2000)}; M.savedAt = Date.now(); M.v = FMT_VER; M.app = APP_VER; return M; }
 function serialize(){ const s = JSON.stringify(pack()); return s; }
 /* ---- native (exe) bridge: present only when running inside SysMLModelleyici.exe ---- */
 const NATIVE = typeof window.nativeInfo === 'function';
@@ -5616,7 +5674,41 @@ function saveHTML(){
   toast('Model gömülü HTML kaydedildi — bu dosyayı açan kişi modeli hazır görür');
 }
 function validModel(m){ return m && m.els && m.rootId && m.els[m.rootId]; }
+/* ---- dosya biçimi sürümü ve onarım: eski/bozuk dosyalar yüklenirken düzeltilir ---- */
+const FMT_VER = 2;
+function migrateModel(m){
+  const notes = [], els = m.els, has = id => !!(id && els[id]);
+  let n;
+  const from = +m.v || 1;
+  if(from > FMT_VER) notes.push(`Dosya daha yeni bir sürümle (${m.app || 'v' + from}) kaydedilmiş; bu sürümün tanımadığı alanlar korunur ama kullanılamayabilir`);
+  /* bilinmeyen tür, kimlik uyuşmazlığı */
+  n = 0; let u = 0; for(const k in els){ const e = els[k]; if(!e || typeof e !== 'object'){ delete els[k]; n++; continue; } if(e.id !== k) e.id = k; if(!KIND[e.kind]){ e._unk = e._unk || e.kind; e.kind = 'Comment'; e.name = e.name || ''; e.doc = `[Tanınmayan eleman türü: ${e._unk}] ` + (e.doc || ''); u++; } }
+  if(n) notes.push(n + ' geçersiz kayıt atıldı');
+  if(u) notes.push(u + ' tanınmayan türdeki eleman not olarak korundu');
+  /* sahipsiz elemanlar kök modele */
+  n = 0; for(const k in els){ const e = els[k]; if(k === m.rootId) continue; if(!has(e.owner) || e.owner === k){ e.owner = m.rootId; n++; } }
+  /* sahiplik döngüsü */
+  for(const k in els){ const seen = new Set([k]); let o = els[k].owner; while(o && els[o]){ if(seen.has(o)){ els[k].owner = m.rootId; n++; break; } seen.add(o); o = els[o].owner; } }
+  if(n) notes.push(n + ' sahipsiz eleman köke taşındı');
+  /* ucu kopuk ilişkiler */
+  n = 0; for(const k in els){ const e = els[k]; if(KIND[e.kind] && KIND[e.kind].rel && (!has(e.src) || !has(e.tgt))){ delete els[k]; n++; } }
+  if(n) notes.push(n + ' ucu olmayan ilişki silindi');
+  /* diyagram tutarlılığı */
+  let ns = 0, ne = 0;
+  for(const k in els){ const d = els[k]; if(d.kind !== 'Diagram') continue;
+    d.shapes = Array.isArray(d.shapes) ? d.shapes : []; d.edges = Array.isArray(d.edges) ? d.edges : [];
+    const b0 = d.shapes.length; d.shapes = d.shapes.filter(sh => sh && sh.id && has(sh.el) && isFinite(sh.x) && isFinite(sh.y)); ns += b0 - d.shapes.length;
+    const ids = new Set(d.shapes.map(sh => sh.id)); d.shapes.forEach(sh => { if(sh.parent && !ids.has(sh.parent)) delete sh.parent; if(!(sh.w > 0)) sh.w = 120; if(!(sh.h > 0)) sh.h = 60; });
+    const e0 = d.edges.length; d.edges = d.edges.filter(ed => ed && ids.has(ed.s) && ids.has(ed.t) && (!ed.el || has(ed.el))); ne += e0 - d.edges.length;
+  }
+  if(ns || ne) notes.push(`diyagramlardan ${ns} geçersiz şekil, ${ne} geçersiz bağlantı kaldırıldı`);
+  /* gereksinim alanları (v1 dosyaları) */
+  for(const k in els){ const e = els[k]; if(e.kind === 'Requirement'){ if(!e.level) e.level = 'Sistem'; if(!e.status) e.status = 'Taslak'; if(e.text == null) e.text = ''; if(!e.attrs || typeof e.attrs !== 'object') e.attrs = {}; } }
+  if(from < FMT_VER) m.v = FMT_VER;
+  return notes;
+}
 function loadModel(m){
+  const notes = migrateModel(m); if(notes.length){ setTimeout(() => toast('Model onarıldı: ' + notes.join('; ')), 50); try { console.info('Model onarımı:', notes); } catch(e){} }
   if(typeof SIM !== 'undefined' && SIM){ if(SIM.timer) clearInterval(SIM.timer); SIM = null; }
   M = m;
   Object.values(M.els).forEach(e => { if(e.kind === 'Diagram'){ e.shapes = e.shapes || []; e.edges = e.edges || []; if(!e.z) e.z = 1; if(e.vx == null){ e.vx = 60; e.vy = 70; } } });
@@ -5850,6 +5942,8 @@ function showHelp(){
   <tr><td>Kaydet</td><td>.sysml.json dosyası indirir; "Aç" ile geri yüklenir.</td></tr>
   <tr><td>HTML olarak kaydet</td><td>Modeli içine gömülü uygulama dosyası üretir; paylaştığınız kişi açınca modeli hazır görür.</td></tr>
   <tr><td>Dışa aktar ▾</td><td>PNG, SVG, panoya kopyalama; tek diyagram, açık sekmeler veya tüm diyagramlar için çok sayfalı <b>PDF</b> (A4/A3, yön otomatik); yazdırma. Diyagram özelliklerinden SysML çerçevesi gizlenebilir.</td></tr>
+  <tr><td>Eski / bozuk dosya</td><td>Önceki sürümlerin dosyaları açılırken otomatik yükseltilir; sahipsiz eleman, ucu kopuk ilişki, geçersiz diyagram şekli gibi tutarsızlıklar onarılır ve bildirilir.</td></tr>
+  <tr><td>Büyük modeller</td><td>Gereksinim tablosu ve kapsama analizi 250'şer satır gösterir; alttaki düğmelerle devamı açılır.</td></tr>
   </table>
   <p style="text-align:right;margin:12px 0 0"><button class="pbtn" onclick="document.getElementById('modal').style.display='none'">Kapat</button></p>`;
   $('#modal').style.display = 'flex';
@@ -5937,7 +6031,7 @@ function demo(){
   const A3 = RQ('Alt Sistem', 'SUB-003', 'Sensör veri hızı', 'Sensör birimi veriyi en az 50 Hz ile kontrol birimine iletmelidir.', 'Test', '', '');
   const A4 = RQ('Alt Sistem', 'SUB-004', 'Durum mesajı', 'Kontrol birimi durum mesajını 1 Hz ile yayınlamalıdır.', '', '', '', 'Düşük');
   const A5 = RQ('Alt Sistem', 'SUB-005', 'Bakım arayüzü', 'Kontrol birimi bakım için seri arayüz sağlamalıdır.', 'Muayene', '', '', 'Düşük');
-  [[A1, 'Güç Birimi'], [A2, 'Kontrol Birimi'], [A3, 'Sensör Birimi'], [A4, 'Kontrol Birimi'], [A5, 'Kontrol Birimi']].forEach(([r, n]) => { r.subsys = n; r.owner = reqPkgFor('Alt Sistem', n); });
+  [[A1, 'Güç Birimi'], [A2, 'Kontrol Birimi'], [A3, 'Sensör Birimi'], [A4, 'Kontrol Birimi'], [A5, 'Kontrol Birimi']].forEach(([r, n]) => { r.subsys = n; r.owner = reqPkgFor('Alt Sistem', n); bump(); });
   [[A1, S1], [A2, S2], [A3, S2], [A4, S3]].forEach(([x, y]) => addRel('DeriveReqt', x.id, y.id));
   [S1, S2, A1, A2].forEach(r => r.status = 'Onaylı'); [S3, A3].forEach(r => r.status = 'İncelemede');
   M.baselines = [{id:uid(), name:'Rev-A (SRR)', t:new Date(Date.now() - 86400000 * 14).toISOString(), u:'Örnek', reqs:baselineSnapshot()}];

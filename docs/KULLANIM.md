@@ -624,6 +624,8 @@ Seçili elemana göre alanlar değişir:
 - Bir `.sysml` dosyasını **exe'nin üzerine sürükleyip bırakırsanız** uygulama o dosyayla açılır.
 - **Paylaşma:** *HTML olarak kaydet* ile üretilen dosyayı gönderdiğiniz kişi, hiçbir şey kurmadan açıp modeli hazır görür.
 - İki sürüm aynı dosya biçimini kullanır; biriyle kaydedilen model diğeriyle açılır.
+- **Eski ve bozuk dosyalar:** Önceki sürümlerle kaydedilmiş dosyalar açılırken otomatik olarak yeni biçime yükseltilir. Dosyada tutarsızlık varsa (sahibi silinmiş eleman, ucu olmayan ilişki, diyagramda karşılığı kalmamış şekil vb.) uygulama bunları düzeltir ve alt kısımda *"Model onarıldı: …"* bildirimiyle ne yaptığını söyler. Onarılan modeli kaydettiğinizde düzeltmeler kalıcı olur.
+- **Büyük modeller:** Gereksinim tablosu ve kapsama analizi ilk 250 satırı gösterir; alttaki **+250 daha göster** veya **Tümünü göster** ile devamı açılır. Arama ve filtreler tüm gereksinimlerde çalışır.
 
 ## 10. Görüntü olarak dışa aktarma
 

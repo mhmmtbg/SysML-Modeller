@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v1.11.0 — 2026-10-05
+
+Sağlamlık ve performans:
+
+- **Büyük modeller:** alt eleman dizini, gereksinim listesi ve numaralandırma önbelleğe alındı; bağlantı rotaları yerel engellere göre önbellekte tutulur. ~6000 elemanlı modelde (150 bloklu BDD, 2000 gereksinim) gereksinim tablosu 22,7 sn → 0,6 sn, diyagram çizimi 5 sn → 0,05 sn, sürükleme karesi 5 sn → 0,06 sn, kapsama analizi 2,9 sn → 0,3 sn
+- Büyük diyagramda bırakınca önce yalnız taşınan şeklin bağlantıları yenilenir, tam rota arka planda hesaplanır
+- Gereksinim tablosu ve kapsama analizinde 250'şer satırlık sayfalama
+- **Dosya biçimi sürümü (v2) ve otomatik onarım:** eski dosyalar yükseltilir; sahipsiz eleman, sahiplik döngüsü, ucu kopuk ilişki, diyagramdaki geçersiz şekil/bağlantı düzeltilir; daha yeni sürümün eleman türleri not olarak korunur; yapılan onarım bildirilir
+- **Otomatik regresyon testi** (`tests/regression.js`): diyagramlar, gidiş-dönüş, onarım, tüm dışa aktarımlar, XMI, analiz, simülasyon, şablonlar, performans
+
 ## v1.10.0 — 2026-10-05
 
 Birlikte çalışabilirlik ve şablonlar:

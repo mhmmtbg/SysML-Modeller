@@ -116,6 +116,7 @@ desktop/                 Windows masaüstü sarmalayıcısı (Go + WebView2)
   main.go                Pencere, dosya diyalogları, otomatik kayıt
   build.bat / build.sh   exe derleme betikleri
 docs/                    Kullanım kılavuzu ve ekran görüntüleri
+tests/regression.js      Otomatik regresyon testi (başsız Chromium, Playwright)
 assets/icon.png          Uygulama ikonu
 ```
 
@@ -123,7 +124,6 @@ Exe'yi kendiniz derlemek için: **[docs/GELISTIRME.md](docs/GELISTIRME.md)**
 
 ## Bilinen sınırlamalar
 
-- Sequence diyagramında kombine fragmanlar (alt/loop/opt) ve durum makinesinde iç içe (composite) durumlar henüz yok.
 - Eski `.xls` biçimi okunmaz; Excel'de `.xlsx` olarak kaydedip aktarın.
-- Model için XMI içe/dışa aktarma yok; Cameo ile gereksinim alışverişi ReqIF üzerinden yapılabilir.
+- XMI alışverişi bir alt kümedir: model elemanları ve ilişkiler taşınır, Cameo diyagram yerleşimleri taşınmaz (içe aktarmada diyagramlar otomatik oluşturulur).
 - Word raporundaki içindekiler tablosu Word açılışta alanları güncellediğinde dolar (Word sorarsa "Evet" deyin).

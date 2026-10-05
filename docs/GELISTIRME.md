@@ -36,6 +36,23 @@ Dosya içindeki ana bölümler (`/* ===== ... ===== */` başlıklarıyla ayrılm
 
 - Tüm model elemanları ve diyagramlar düz bir `els` sözlüğündedir; hiyerarşi `owner` alanıyla kurulur.
 - Diyagramlar yalnızca görünüm bilgisini (şekil konumları, bağlantı rotaları) tutar; anlam model elemanlarındadır.
+- `v` alanı **dosya biçimi sürümüdür** (şu an `2`), `app` alanı kaydeden uygulama sürümüdür. Dosya açılırken `migrateModel()` eski sürümleri yükseltir ve bozuklukları onarır: sahipsiz elemanlar köke taşınır, sahiplik döngüleri kırılır, ucu olmayan ilişkiler ve diyagramdaki geçersiz şekil/bağlantılar atılır, tanınmayan eleman türleri (daha yeni sürümden) not olarak korunur. Yapılan onarımlar kullanıcıya bildirilir.
+- Biçimi değiştiren bir geliştirmede `FMT_VER` artırılır ve `migrateModel()` içine yükseltme adımı eklenir; eski dosyalar her zaman açılabilmelidir.
+
+## Performans notları
+
+- `kidsOf()`, gereksinim listesi ve sonraki gereksinim numarası, model revizyon sayacına (`REV`, `bump()`) bağlı önbellektedir. Modeli değiştiren kod `snap()` / `afterChange()` / `mk()` üzerinden geçtiği sürece önbellek kendiliğinden geçersizleşir; `M.els` veya `owner` alanını doğrudan değiştiren yeni kodda `bump()` çağrılmalıdır.
+- Dik açılı bağlantı rotaları, yalnız yerel engellere göre anahtarlanan `ROUTE_CACHE` ile yeniden kullanılır. Büyük diyagramlarda sürükleme sırasında yalnız taşınan şeklin bağlantıları hesaplanır, bırakınca tam rota arka planda yenilenir.
+- Gereksinim tablosu ve kapsama analizi 250'şer satır gösterir (**+250 daha göster / Tümünü göster**).
+
+## Otomatik test
+
+```sh
+npm i -D playwright      # bir kez
+node tests/regression.js
+```
+
+Test, uygulamayı başsız Chromium'da açar ve şunları denetler: tüm diyagram türleri ve görünümler, paletten eleman oluşturma, kaydet → aç gidiş-dönüşü, gömülü HTML, bozuk/eski dosya onarımı, SVG/PNG/Excel/ReqIF/XMI çıktıları, XMI gidiş-dönüşü, parametrik çözücü, bütçe, tahsis, simülasyon, şablonlar ve ~6000 elemanlı modelde performans (her işlem < 2 sn). Her sürümden önce çalıştırılmalıdır; hata olursa çıkış kodu 1'dir.
 
 ## Masaüstü (exe) sürümü
 
