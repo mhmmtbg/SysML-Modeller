@@ -19,6 +19,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
   - **Excel:** `.xlsx`/`.csv` içe aktarma (sütunlar otomatik eşleşir, bilinmeyenler yeni özellik olur, üst gereksinim ID'leri ilişkiye dönüşür); gereksinim + matris + kapsama sayfalarıyla `.xlsx` dışa aktarma
 - **Gereksinim kalitesi ve konfigürasyon yönetimi:** INCOSE kurallarıyla kalite denetimi, durum iş akışı (Taslak → Onaylı → Değişiklikte), gerekçeli değişiklik geçmişi, taban çizgileri ve karşılaştırma, etki analizi
 - **Doğrulama yönetimi:** test durumu alanları (prosedür, seviye, tarih, sonuç, rapor no), **VCRM**, gereksinim bazında doğrulama durumu, **test kampanyası zaman çizelgesi (Gantt)**, test sonuçlarını Excel'den geri alma
+- **Analiz ve simülasyon:** parametrik denklem çözücü, kütle/güç/maliyet **bütçe toplama** ve marj, aktivite ve durum makinesi **simülasyonu**, tahsis matrisi, genel düzenlenebilir tablolar, ilişki haritası
 - **Araçlar:** **Word (.docx) ve yazdırılabilir HTML rapor**, model doğrulama kuralları, başka modelle birleştirme, **ReqIF** içe/dışa aktarma (DOORS, Polarion…)
 - **Model ağacı:** Diyagramda yapılan her değişiklik ağaca anında yansır. Bir eleman birden çok diyagramda gösterilebilir.
 - **Diyagrama özel palet:** Açık diyagramın türüne göre elemanlar ve ilişkiler; sürükle-bırak veya tıkla-yerleştir

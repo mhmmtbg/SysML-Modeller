@@ -1,5 +1,17 @@
 # Değişiklik Günlüğü
 
+## v1.8.0 — 2026-10-05
+
+Analiz ve simülasyon (yeni **Analiz ▾** menüsü):
+
+- **Parametrik hesap:** kısıt bloklarının denklemleri binding connector'lar üzerinden çözülür (güvenli ifade ayrıştırıcı, zincirleme çözüm, tek bilinmeyende sayısal kök bulma, çelişki denetimi); sonuçlar diyagramlarda `= değer ⚙`
+- **Bütçe analizi:** kütle/güç/maliyet toplama (composition ve çokluk), sınır, tasarım payı, kalan marj, tahmin–hesap farkı uyarısı, modele yazma, Excel
+- **Simülasyon:** aktivite token akışı (fork/join, karar seçimi, pin, sinyal) ve durum makinesi (olay düğmeleri, tamamlanma geçişleri, bileşik durum, geçmiş, entry/do/exit günlüğü); adım adım veya otomatik
+- **Tahsis matrisi:** fonksiyon × blok/part, tıklayarak «allocate», kulvardan dolaylı tahsis, Excel
+- **Genel tablo:** her eleman türü için düzenlenebilir tablo, stereotip etiketi sütunları, Excel
+- **İlişki haritası:** seçili elemanın ilişkilerini katmanlı gösteren gezinilebilir harita
+- Örnek modele bütçe, parametrik girdi ve tahsis örnekleri eklendi
+
 ## v1.7.0 — 2026-10-05
 
 SysML dil tamlığı:

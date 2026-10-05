@@ -11,6 +11,7 @@
 5b. [Gereksinim kalitesi, durum, geçmiş ve taban çizgileri](#5b-gereksinim-kalitesi-durum-geçmiş-ve-taban-çizgileri)
 5c. [Doğrulama ve test yönetimi](#5c-doğrulama-ve-test-yönetimi)
 5d. [Araçlar: rapor, model doğrulama, birleştirme, ReqIF](#5d-araçlar-rapor-model-doğrulama-birleştirme-reqif)
+5e. [Analiz: parametrik hesap, bütçe, simülasyon, tahsis, tablo, ilişki haritası](#5e-analiz-parametrik-hesap-bütçe-simülasyon-tahsis-tablo-ilişki-haritası)
 6. [Otomatik düzen ve hizalama](#6-otomatik-düzen-ve-hizalama)
 7. [İkonlar](#7-ikonlar)
 8. [Özellikler paneli](#8-özellikler-paneli)
@@ -445,6 +446,64 @@ Aynı gereksinim ID'si farklı gereksinimlerde kullanılıyorsa uyarı verilir.
 
 - **ReqIF olarak dışa aktar:** gereksinimler ReqIF 1.2 biçiminde (ForeignID, Name, Text, seviye, alt sistem, durum, doğrulama yöntemi, müşteri isteri ve özel özellikler; Derive/Refine/Trace ilişkileri; sistem ve alt sistem başlıklarıyla hiyerarşi). IBM DOORS, Polarion, Jama gibi araçlara aktarılabilir.
 - **ReqIF içe aktar:** `.reqif` dosyası Excel içe aktarma penceresiyle açılır; öznitelikler sütun olarak eşleşir, ilişkiler üst gereksinim olarak gelir.
+
+## 5e. Analiz: parametrik hesap, bütçe, simülasyon, tahsis, tablo, ilişki haritası
+
+Araç çubuğundaki **Analiz ▾** menüsünden açılır.
+
+### Parametrik hesap
+
+1. BDD'de bir **Kısıt Bloğu** oluşturun; *Kısıt ifadesi* alanına denklemleri yazın. Birden fazla denklem `;` ile ayrılır: `P = V * I; E = P * t`.
+2. Kısıt bloğunun parametrelerini (`P`, `V`, `I`…) ekleyin. Denklemdeki adlar parametre adlarıyla aynı olmalıdır.
+3. Parametrik diyagramda kısıt özelliğinin parametrelerini bloğun value property'lerine **binding connector** ile bağlayın.
+4. Girdi değerlerin **Varsayılan** alanını doldurun, hesaplanacakları boş bırakın.
+5. **Analiz ▾ → Parametrik hesapla.** Sonuç penceresi her değerin girdi / hesaplandı / bilinmiyor durumunu ve her denklemin *çözüldü / sağlanıyor / çelişki / çözülemedi* durumunu gösterir.
+
+Hesaplanan değerler diyagramlarda `güç : Real = 98 ⚙` olarak görünür. Denklemler zincir halinde çözülür; bir denklemin sonucu diğerinin girdisi olabilir. Tek bilinmeyenli doğrusal olmayan denklemler (ör. `y = x^3 + 2*x`) sayısal yöntemle çözülür.
+
+Kullanılabilen fonksiyonlar: `sqrt, abs, sin, cos, tan, asin, acos, atan, exp, ln, log, min, max, pow, round, floor, ceil, sum`. Sabitler: `pi, e, g0` (9,80665).
+
+### Bütçe analizi
+
+Kütle, güç tüketimi, maliyet gibi toplanabilir bir değeri yapı ağacı boyunca toplar.
+
+- Yaprak bloklara (ör. *Güç Birimi*) ortak adlı bir value property girin, ör. `kütle = 4.2`.
+- **Kök blok** ve **Özellik** seçin. Toplam, composition part'ları ve **çoklukları** (`2`, `1..4` → 4) üzerinden hesaplanır. Shared (referans) part'lar sayılmaz.
+- **Sınır** ve **Pay %** girildiğinde kalan marj ve doluluk yüzdesi gösterilir: %90'a kadar yeşil, %90–100 turuncu, aşımda kırmızı.
+- Bir üst blokta da değer girilmişse ve alt toplamdan farklıysa "tahmin mi?" notu çıkar.
+- **Sonuçları modele yaz** her bloğun değerine hesaplanan toplamı ⚙ olarak işler. **Excel'e aktar** tabloyu kaydeder.
+
+### Simülasyon
+
+Bir aktivite veya durum makinesi diyagramı açıkken **Analiz ▾ → Simülasyon başlat**. Sağ üstte simülasyon paneli açılır.
+
+- **Aktivite:** Başlangıç düğümünden token'lar çıkar. Etkin düğümler kesikli yeşil çerçeveyle, token taşıyan akışlar yeşil noktayla, son ateşlenen akış turuncu gösterilir.
+  - Fork tüm dallara token verir, join hepsini bekler.
+  - Karar düğümünde hangi dalın seçileceği sorulur; otomatik modda dal rastgele seçilir.
+  - Pin'lerden geçen object flow'lar aksiyona ait sayılır.
+- **Durum makinesi:** Aktif durumlar yeşil çerçevelidir.
+  - Adı olmayan geçişler (tamamlanma) kendiliğinden ilerler. Adı olan geçişler panelde **olay düğmesi** olarak listelenir.
+  - Seçim ve kavşak düğümlerinde dal sorulur.
+  - entry / do / exit davranışları günlüğe yazılır.
+  - Bileşik durumlara girişte iç başlangıç izlenir; geçmiş (H) son aktif iç durumu hatırlar.
+- **Adım** bir olay işler, **Otomatik** sürekli ilerletir, **Baştan** sıfırlar.
+
+### Tahsis matrisi
+
+Satırlarda aktiviteler ve aksiyonlar, sütunlarda bloklar (veya part'lar) yer alır. Hücreye tıklamak «allocate» ilişkisini kurar veya kaldırır; ilişki ilgili BDD/aktivite diyagramlarına da çizilir.
+
+Kulvarı (*Temsil eder*) bir bloğa bağlı olan aksiyonlar o bloğa **dolaylı tahsisli** sayılır ve ○ ile gösterilir. Tahsis edilmemiş aksiyonların sayısı alt satırda verilir.
+
+### Genel tablo
+
+**Eleman türü** (blok, part, port, value, gereksinim, test…) ve **kapsam** (paket) seçin. Ad, tip, birim, varsayılan, açıklama ve **stereotip etiketleri** hücrede doğrudan düzenlenir. **Excel'e aktar** ile tablo dışa alınır.
+
+### İlişki haritası
+
+Seçili elemandan başlayarak ilişkileri (Derive, Satisfy, Verify, Allocate, tip, çağrı; isteğe bağlı sahiplik) katmanlar halinde çizer.
+
+- Bir düğüme tıklamak elemanı ağaçta gösterir; çift tıklamak haritanın merkezine alır.
+- Derinlik 1–4 arasında seçilir.
 
 ## 6. Otomatik düzen ve hizalama
 
