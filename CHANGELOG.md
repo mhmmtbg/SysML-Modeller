@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.42.0 — 2026-10-16
+
+- **Varyant / konfigürasyon yönetimi:** özellikler (feature), konfigürasyon matrisi, etkin konfigürasyon; elemanlarda varyant koşulu (kalıtımlı)
+- Etkin konfigürasyona göre diyagramda soluk/gizli gösterim, bütçe ve trade study; konfigürasyon karşılaştırma tablosu, Excel
+- Doğrulama: geçersiz varyant koşulu
+- **SysML v2 metin dışa aktarma (alt küme):** paket, part/port/attribute/enum/item def, kısıt, gereksinim, doğrulama, satisfy/allocate/derive, connect, aktivite ve durum makinesi
+- Birim testi 97, regresyon testi 44 adım
+
 ## v1.41.0 — 2026-10-16
 
 - **Ölçüm verisi:** CSV/Excel'den çok eksenli ölçüm aktarma; test durumu altında Ölçüm elemanı

@@ -725,6 +725,23 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Ölçüm görünümü (grafik + tolerans), sonucu teste yazma ve VCRM, izin yüzdesi, kapanış raporu ve Excel', !ms.error && Object.values(ms).every(v => v === true), ms);
 
+  console.log('9g) Varyant/konfigürasyon ve SysML v2 metin dışa aktarma');
+  const vr = await run(async () => {
+    const o = {}; const dl0 = download; window.__dl = []; download = (blob, name) => window.__dl.push({ blob, name });
+    openD('@variants'); o.view = /Temel/.test(document.querySelector('#view').textContent) && /sensörBirimi/.test(document.querySelector('#view').textContent) && document.querySelectorAll('#view table').length >= 3;
+    const V = varM(), c = V.configs.find(x => x.name === 'Temel'); document.querySelector(`#view [data-vcact="${c.id}"]`).click(); o.active = V.active === c.id && /Temel/.test(document.querySelector('#status').textContent);
+    const ibd = Object.values(M.els).find(e => e.kind === 'Diagram' && e.dtype === 'ibd' && E(e.owner) && E(e.owner).name === 'Araç Sistemi'); openD(ibd.id); o.ghost = !!document.querySelector('#svg [data-varoff]');
+    V.hide = true; renderDiagram(); o.hide = !document.querySelector('#svg [data-varoff]') && !document.querySelector('#svg').innerHTML.includes('sensörBirimi'); V.hide = false;
+    openD('@variants'); document.querySelector('#view [data-vfadd]').click(); o.feat = V.features.length === 3; undo(); o.undo = varM().features.length === 2;
+    variantsXlsx(); o.xlsx = /Varyantlar\.xlsx$/.test(window.__dl.pop().name);
+    const sp = Object.values(M.els).find(e => e.name === 'sensörBirimi'); openD(ibd.id); const ss = ibd.shapes.find(x => x.el === sp.id); ST.sel = new Set([ss.id]); renderDiagram(); renderProps(); o.prop = !!document.querySelector('#props [data-f="vcond"]');
+    varM().active = ''; afterChange();
+    o.menu = toolsMenuItems().some(x => x && x.t && /SysML v2/.test(x.t)) && analysisMenuItems().some(x => x && x.t && /Varyantlar/.test(x.t));
+    sysmlV2Dialog(); o.dlg = /part def/.test(document.querySelector('#modalBox textarea').value); document.querySelector('#v2Dl').click(); o.dl = /SysML v2\.txt$/.test(window.__dl.pop().name); document.querySelector('#v2C').click(); o.closed = document.querySelector('#modal').style.display === 'none';
+    download = dl0; return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Varyant görünümü, etkin konfigürasyon (soluk/gizli), geri alma, Excel, özellik alanı; SysML v2 diyaloğu ve indirme', !vr.error && Object.values(vr).every(v => v === true), vr);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

@@ -111,5 +111,14 @@ T('ölçüm: örtüşmeyen aralık hata', () => R(() => { const ref = allProfile
 T('ölçüm CSV: başlık, ondalık virgül, çoklu sütun', () => R(() => { const P = measParseRows([['Ölçüm dosyası'], ['Frekans (Hz)', 'X', 'Y'], ['20', '0,01', '0,011'], ['80', '0,04', '0,039'], ['2000', '0,007', '']]); return P.series.length === 2 && P.series[0].name === 'X' && P.series[0].pts[0][1] === 0.01 && P.series[1].pts.length === 2 && P.xName === 'Frekans (Hz)'; }));
 T('ölçüm: test kararı ve sonuca yazma VCRM durumunu değiştirir', () => R(() => { const m0 = allMeas()[0], tc = E(m0.owner); const V = testMeasVerdict(tc.id); measApply(tc.id); return V.v === 'Kaldı' && testResult(tc) === 'Kaldı' && /Ölçüm değerlendirmesi/.test(tc.resultSrc); }));
 
+/* ---------- v1.42 varyant ve SysML v2 ---------- */
+fresh();
+T('varyant: konfigürasyona göre bütçe toplamı', () => R(() => { const root = Object.values(M.els).find(e => e.name === 'Araç Sistemi'), V = varM(); const t = [''].concat(V.configs.map(c => c.id)).map(id => withConfig(id, () => rollup(root.id, 'kütle').total)); return Math.abs(t[0] - 10.2) < 1e-9 && Math.abs(t[1] - 7) < 1e-9 && Math.abs(t[2] - 10.2) < 1e-9 && !V.active || t; }));
+T('varyant: koşul ifadesi ve üst eleman kalıtımı', () => R(() => { const V = varM(), c = V.configs[0], pk = mk('Package', M.rootId, {}), B = mk('Block', pk.id, {vcond:'UzunMenzil'}), v = mk('Value', B.id, {name:'x'}); const r = [varOn(v, c) === false, varOn(v, V.configs[1]) === true, varOn(v, null) === true]; delModel([pk.id]); return r.every(Boolean) || r; }));
+T('varyant: tanımsız özellik ve sözdizimi hatası bulunur', () => R(() => /Tanımsız özellik: Yok/.test(varCondCheck('UzunMenzil && Yok')) && /İfade hatası/.test(varCondCheck('UzunMenzil &&')) && varCondCheck('!Hafif || UzunMenzil') === ''));
+T('varyant: geçersiz koşul doğrulamada hata verir', () => R(() => { const p = Object.values(M.els).find(e => e.name === 'kontrolBirimi'); p.vcond = 'Bilinmeyen'; const f = validateModel().some(x => x.rule === 'Geçersiz varyant koşulu' && x.id === p.id); delete p.vcond; return f; }));
+T('SysML v2: ASCII dışı adlar tırnaklanır, kaçış yapılır', () => R(() => v2Name('abc_1') === 'abc_1' && v2Name('güç') === "'güç'" && v2Name("a'b") === "'a\\'b'" && v2Name('1x') === "'1x'"));
+T('SysML v2: demo çıktısı temel yapıları içerir ve parantezler dengeli', () => R(() => { const t = sysmlV2Text(), o = (t.match(/\{/g) || []).length, c2 = (t.match(/\}/g) || []).length; const need = ["part def 'Araç Sistemi'", "port 'güçGiriş' : ~", 'requirement def <', 'verify ', 'satisfy ', 'allocate ', 'connect ', 'state def ', 'action def ', 'constraint def ', 'enum def ', 'accept after 30 [s]']; const miss = need.filter(x => !t.includes(x)); return o === c2 && !miss.length || {o, c2, miss}; }));
+
 console.log(`Birim testleri: ${pass} geçti, ${fail} kaldı`);
 if(fails.length){ fails.forEach(f => console.log('  ✗ ' + f)); process.exit(1); }

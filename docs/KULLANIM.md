@@ -1049,6 +1049,21 @@ SysML'in **View / Viewpoint** mekanizmasıyla paydaşa özel dokümanlar üretil
 
 Örnek modelde "Rastgele titreşim kalifikasyon testi"ne üç eksen ölçümü eklidir; Z ekseninde 400–520 Hz arasında tolerans aşımı vardır.
 
+## 5ah. Varyant / konfigürasyon yönetimi ve SysML v2 metin dışa aktarma
+
+**Analiz ▾ → Varyantlar ve konfigürasyonlar** ürün ailesini tek modelde yönetir ("150% model"):
+
+- **Özellikler (feature):** ürün ailesinde seçilebilen yetenekler (ör. `UzunMenzil`, `Hafif`). Ad değiştirildiğinde tüm varyant koşulları otomatik güncellenir.
+- **Konfigürasyonlar:** her konfigürasyon için hangi özelliklerin seçili olduğu onay kutularıyla işaretlenir; **Etkinleştir** ile biri etkin yapılır (durum çubuğunda ◆ ile gösterilir).
+- **Varyant koşulu:** part, port, değer, gereksinim, test, blok, aksiyon, durum veya kullanım durumunun Özellikler panelinde **Varyant koşulu** alanına özellik adlarıyla mantıksal ifade yazılır: `UzunMenzil`, `!Hafif`, `UzunMenzil || !Hafif`, `A ve B`. Koşul üst elemandan kalıtılır (koşullu bloğun değerleri de dışarıda kalır).
+- **Etkin konfigürasyonun etkisi:** varyant dışı elemanlar diyagramlarda soluk gösterilir (çubuktaki onay kutusuyla tamamen gizlenebilir); bütçe toplamı ve trade study (Monte Carlo dahil) yalnız etkin part'ları hesaba katar.
+- **Karşılaştırma tablosu:** seçilen kök blok için her konfigürasyonun etkin part sayısı ve kütle / maliyet / güç (eklenebilir) toplamları, tüm modelle (150%) yan yana.
+- **Doğrulama:** tanımsız özellik adı veya sözdizimi hatalı koşul "Geçersiz varyant koşulu" hatası verir. **Excel** konfigürasyon matrisini ve koşullu eleman listesini dışa aktarır.
+
+**Araçlar ▾ → SysML v2 metin olarak dışa aktar…** modeli SysML v2 metin sözdizimine (alt küme) çevirir: paketler, `part def` / `part` (çokluk), `attribute` (tip, varsayılan değer, birim yorumu), `port def` / `port` (eşlenik `~`), akış özellikleri `in/out item`, `attribute def` / `enum def` / `item def`, `constraint def` (denklem ve eşitsizlikler `and` ile), `requirement def <ID>`, `verification def` + `verify`, `satisfy`, `connect` / `interface`, `action def` (fork/join/decide, `succession`, `flow`), `state def` (entry/do/exit, `transition … accept … if … then`, `accept after 30 [s]`), `view def` / `viewpoint def`, `#derivation` / `#refinement` / `#trace`, `allocate`, `dependency`. ASCII dışı adlar tek tırnakla yazılır. Diyalogdan panoya kopyalanır veya "<model> - SysML v2.txt" olarak kaydedilir. Davranış gövdeleri yorum olarak aktarılır; başka bir araca almadan önce gözden geçirin.
+
+Örnek modelde **Temel** (Hafif) ve **Uzun Menzil** konfigürasyonları vardır; `sensörBirimi` part'ı `UzunMenzil || !Hafif` koşuluna bağlıdır, bu yüzden Araç Sistemi kütlesi Temel'de 7 kg, Uzun Menzil'de 10,2 kg çıkar.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.
