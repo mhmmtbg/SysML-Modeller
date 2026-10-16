@@ -790,6 +790,24 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Türetme sihirbazı: öneriler, marj ayarı, düzenleyerek kabul, Satisfy/Derive, geri al/yinele, yinelenmeme, Excel, kural seçimi', !dr.error && Object.values(dr).every(v => v === true), dr);
 
+  console.log('9j) Çevresel profil gereksinimleri ve doğrulama iskeleti');
+  const ev = await run(async () => {
+    const o = {}; deriveOpen(); const q = s => document.querySelector('#view ' + s), ch = (el, v) => { if(typeof v === 'boolean') el.checked = v; else el.value = v; el.dispatchEvent(new Event('change', { bubbles: true })); };
+    o.rule = !!q('[data-dvr="cevre"]') && deriveList().filter(s => s.rule === 'cevre').length >= 1;
+    ch(q('[data-dvrf]'), 'cevre'); ch(q('[data-dvs]'), 'hepsi'); o.rows = document.querySelectorAll('#view .dvt tbody tr').length >= 4 && [...document.querySelectorAll('#view .dvt tbody tr')].every(tr => /Çevresel profil/.test(tr.textContent)) && /Grms|°C|tepe ivme/.test(q('.dvt').textContent);
+    ch(q('[data-dvo="cevre|skipFn"]'), false); o.fn = deriveList().some(s => s.rule === 'cevre' && /Rezonans/.test(s.text)); ch(q('[data-dvo="cevre|skipFn"]'), true); ch(q('[data-dvs]'), 'acik');
+    deriveList().filter(s => s.rule === 'cevre' && s.state === 'yeni').forEach(s => DV.sel.add(s.sig)); renderViewBar(); renderView();
+    ch(q('.vbar [data-dvmt]'), true); const nT = allTests().length; q('.vbar [data-dvgo]').click();
+    o.applied = deriveList().filter(s => s.rule === 'cevre').every(s => s.state === 'mevcut') && allTests().length >= nT;
+    q('[data-dvtab="isk"]').click(); const U = unverifiedReqs().length; o.tab = !!q('[data-dkall]') === (U > 0) && /Doğrulama bağlantısı/.test(document.querySelector('#view').textContent);
+    if(U){ q('.vbar [data-dka="all"]').click(); q('[data-dkgo]').click(); }
+    o.skeleton = unverifiedReqs().length === 0 && /Tüm gereksinimler/.test(document.querySelector('#view').textContent);
+    undo(); o.undo = unverifiedReqs().length === U; redo();
+    q('[data-dvtab="oner"]').click(); o.back = !!q('[data-dvr]');
+    return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Çevre kuralı (profil değerleri, seviye ifadesi, fonksiyonel atlama), kabulde doğrulama faaliyeti, doğrulama iskeleti sekmesi, geri al', !ev.error && Object.values(ev).every(v => v === true), ev);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

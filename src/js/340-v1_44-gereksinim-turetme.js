@@ -6,7 +6,7 @@
 const DERIVE_RULES = [];
 const deriveCfg = () => (M.deriveCfg = M.deriveCfg || {rules:{}, budget:{}});
 /* ---------- metin yardımcıları ---------- */
-function trNum(v){ if(v == null || !isFinite(v)) return '—'; const a = Math.abs(v); return v.toLocaleString('tr-TR', {maximumFractionDigits:a >= 100 ? 0 : a >= 10 ? 1 : a >= 1 ? 2 : 3}); }
+function trNum(v){ if(v == null || !isFinite(v)) return '—'; const a = Math.abs(v); return v.toLocaleString('tr-TR', {maximumFractionDigits:a >= 100 ? 0 : a >= 10 ? 1 : a >= 1 ? 2 : 3, useGrouping:a >= 10000}); }
 function floorSig(v, n){ if(!v || !isFinite(v)) return v; const p = Math.pow(10, Math.floor(Math.log10(Math.abs(v))) - (n - 1)); return Number((Math.floor(v / p + 1e-9) * p).toPrecision(n)); }
 const sentCap = s => { s = String(s || '').trim().replace(/\s+/g, ' '); return s ? s.charAt(0).toLocaleUpperCase('tr') + s.slice(1) : s; };
 const sentEnd = s => /[.!?]$/.test(s) ? s : s + '.';
@@ -173,7 +173,7 @@ function deriveHTML(){
     const tx = DV.edits[s.sig] != null ? DV.edits[s.sig] : s.text, iss = (() => { try { return s.state === 'kaynak yok' ? [] : reqQuality({text:tx, reqId:'\u0000'}); } catch(e){ return []; } })(), [lt, lc] = DSTATE[s.state];
     h += `<tr class="${DV.sel.has(s.sig) ? 'sel' : ''}"><td>${s.state === 'mevcut' ? '' : `<input type="checkbox" data-dvsel="${esc(s.sig)}"${DV.sel.has(s.sig) ? ' checked' : ''}>`}</td><td><span class="stc" style="background:${lc}">${lt}</span>${s.edited ? '<div class="muted" style="font-size:10.5px">elle düzenlenmiş</div>' : ''}${s.req ? `<div><a class="lnk noi18n" data-goto="${s.req.id}">${esc(s.req.reqId)}</a></div>` : ''}</td><td>${esc(s.ruleTr)}</td>
       <td>${esc(s.level || '')}${s.subsys ? `<div class="muted noi18n">${esc(s.subsys)}</div>` : ''}</td><td class="noi18n">${esc(s.name || '')}</td>
-      <td>${s.state === 'kaynak yok' ? `<span class="noi18n">${esc(tx)}</span>` : `<textarea class="dvtx noi18n" data-dvtx="${esc(s.sig)}" rows="${Math.max(2, Math.min(6, Math.ceil(tx.length / 64)))}">${esc(tx)}</textarea>`}${s.state === 'güncelle' && s.req ? `<div class="muted noi18n" style="font-size:11px">Şu an: ${esc(s.req.text)}</div>` : ''}</td>
+      <td>${s.state === 'kaynak yok' ? `<span class="noi18n">${esc(tx)}</span>` : `<textarea class="dvtx noi18n" data-dvtx="${esc(s.sig)}" rows="${Math.max(2, Math.min(9, Math.ceil(tx.length / 46)))}">${esc(tx)}</textarea>`}${s.state === 'güncelle' && s.req ? `<div class="muted noi18n" style="font-size:11px">Şu an: ${esc(s.req.text)}</div>` : ''}</td>
       <td>${esc(s.verif || '')}</td><td class="muted noi18n" style="font-size:11px">${esc(s.note || '')}</td><td>${s.state === 'kaynak yok' ? '' : qualityBadge(iss)}</td></tr>`;
   });
   h += `</tbody></table><div class="li" style="margin-top:8px"><button class="vb pri" data-dvgo="1"${DV.sel.size ? '' : ' disabled'}>Seçilenleri uygula (${DV.sel.size})</button> <span class="muted">Yeni → "Taslak" gereksinim + Satisfy/Derive ilişkileri · Güncelle → metin yenilenir, bağlı ilişkiler şüpheli olur · Kaynak yok → "İptal" durumuna alınır</span></div></div>`;
@@ -195,7 +195,7 @@ function deriveXlsx(){
     if(d.dva === 'selnew'){ deriveList().filter(s => s.state === 'yeni').forEach(s => DV.sel.add(s.sig)); rer(); }
     if(d.dva === 'none'){ DV.sel.clear(); rer(); }
     if(d.dva === 'xl') deriveXlsx();
-    if(d.dvgo){ const L = deriveList().filter(s => DV.sel.has(s.sig)).map(s => Object.assign({}, s, {gen:s.text, text:sentEnd(sentCap(DV.edits[s.sig] != null ? DV.edits[s.sig] : s.text))})); const r = deriveApply(L, DV.parent); deriveRefresh(); rer(); toast(`${r.n} gereksinim oluşturuldu, ${r.u} güncellendi, ${r.x} iptal edildi`); }
+    if(d.dvgo){ const L = deriveList().filter(s => DV.sel.has(s.sig)).map(s => Object.assign({}, s, {gen:s.text, text:sentEnd(sentCap(DV.edits[s.sig] != null ? DV.edits[s.sig] : s.text))})); const r = deriveApply(L, DV.parent, {mkTests:!!DV.mkTests}); deriveRefresh(); rer(); toast(`${r.n} gereksinim oluşturuldu, ${r.u} güncellendi, ${r.x} iptal edildi` + (r.t ? `, ${r.t} doğrulama faaliyeti eklendi` : '')); }
   });
   V.addEventListener('change', ev => {
     if(ST.cur !== '@derive') return; const t = ev.target, d = t.dataset, cfg = deriveCfg(), bset = (id, k, v) => { cfg.budget[id] = Object.assign({}, cfg.budget[id] || {}, {[k]:v}); };

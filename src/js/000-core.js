@@ -1,7 +1,7 @@
 'use strict';
 const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const LSK = 'sysml-modeler-v1';
-const APP_VER = '1.44.0';
+const APP_VER = '1.45.0';
 const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -4397,7 +4397,7 @@ VIEWS['@baseline'] = {tr:'Taban Çizgileri', ic:'BL', note:'Gereksinim setinin a
 
 /* ---- kalite denetimi ---- */
 const VAGUE = ['uygun', 'yeterli', 'yeterince', 'mümkün', 'mümkünse', 'mümkün olduğunca', 'mümkün mertebe', 'gerektiğinde', 'gerekirse', 'gerekli görüldüğünde', 'kolay', 'kolayca', 'kolaylıkla', 'hızlı', 'hızlıca', 'çabuk', 'kullanıcı dostu', 'esnek', 'sağlam', 'optimum', 'optimal', 'maksimize', 'minimize', 'en iyi', 'en az düzeyde', 'vb.', 'vs.', 've/veya', 'yaklaşık', 'makul', 'etkin', 'verimli', 'kabul edilebilir', 'normal', 'genellikle', 'bazen', 'çoğunlukla', 'yüksek performans', 'gibi', 'benzeri', 'adequate', 'appropriate', 'etc.', 'and/or', 'user-friendly', 'as possible', 'easy', 'fast', 'approximately', 'sufficient', 'flexible', 'robust'];
-const UNITS = 'v|mv|kv|a|ma|w|kw|mw|hz|khz|mhz|ghz|s|sn|ms|µs|us|dk|min|saat|sa|h|gün|m|mm|cm|km|µm|nm|kg|g|mg|ton|n|kn|nm|pa|kpa|mpa|bar|mbar|psi|°c|°|c|k|db|dbm|db\\(a\\)|%|rpm|dev/dk|lux|lm|cd|l|ml|m2|m²|m3|m³|bit|byte|kb|mb|gb|tb|bps|kbps|mbps|gbps|grms|g²/hz|g2/hz|ohm|Ω|kΩ|f|µf|nf|pf|j|kj|wh|kwh|mah|ah|kn·m|n·m|nm|m/s|km/h|kt|knot|ft|in|lb|°f|mil|adet|kez|cycle|döngü|yıl|ay|hafta|saniye|dakika|metre|kilogram|volt|amper|watt|derece';
+const UNITS = 'v|mv|kv|a|ma|w|kw|mw|hz|khz|mhz|ghz|s|sn|ms|µs|us|dk|min|saat|sa|h|gün|m|mm|cm|km|µm|nm|kg|g|mg|ton|n|kn|nm|pa|kpa|mpa|bar|mbar|psi|°c|°|c|k|db|dbm|db\\(a\\)|%|rpm|dev/dk|lux|lm|cd|l|ml|m2|m²|m3|m³|bit|byte|kb|mb|gb|tb|bps|kbps|mbps|gbps|grms|g²/hz|g2/hz|ohm|Ω|kΩ|f|µf|nf|pf|j|kj|wh|kwh|mah|ah|kn·m|n·m|nm|m/s|km/h|kt|knot|ft|in|lb|°f|mil|adet|kez|cycle|döngü|oktav/dk|oktav|yıl|ay|hafta|saniye|dakika|metre|kilogram|volt|amper|watt|derece';
 const UNIT_RE = (() => { const u = UNITS.split('|'), lg = u.filter(x => x.replace(/\\/g, '').length >= 4), sh = u.filter(x => x.replace(/\\/g, '').length < 4); return new RegExp('^\\s*((' + lg.join('|') + ')|(' + sh.join('|') + ')(?![a-zçğıöşü]))', 'i'); })();
 function qTokens(t){ return new Set(asciiTr(t).replace(/[^a-z0-9 ]/g, ' ').split(' ').filter(w => w.length > 2)); }
 let qCache = {sig:'', sim:new Map()};

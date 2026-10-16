@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.45.0 — 2026-10-16
+
+- **Çevresel profil kuralı:** PSD / sinüs / SRS / termal profillerden sayısal değerli çevresel gereksinim; seviyeye göre ifade (kalifikasyon / kabul / ESS / fonksiyonel), standart ve yöntem numarası
+- Profil → Refine, profili kullanan test → Verify, üst gereksinimden Derive; test yoksa profilli test iskeleti; alt sistem seviyesi seçeneği
+- **Doğrulama iskeleti:** Verify'sız gereksinimler için yöntem önerisi ve doğrulama faaliyeti; kabulde otomatik faaliyet seçeneği
+- Kalite denetimi: "oktav" birimi tanınır; sayılarda binlik ayırıcı yalnız 10 000 ve üstünde
+- Birim testi 117, regresyon testi 47 adım
+
 ## v1.44.0 — 2026-10-16
 
 - **Gereksinim türetme sihirbazı:** modelden öneri → inceleme → kabul; yeni / güncelle / mevcut / kaynak yok durumları, tekrar çalıştırmada yinelenmez, elle düzenlenen metin korunur

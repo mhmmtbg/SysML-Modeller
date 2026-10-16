@@ -1097,6 +1097,20 @@ Her öneri satırında metin düzenlenebilir ve INCOSE kalite denetimi anında g
 
 Örnek modelde 9 öneri çıkar: iki arayüz için 6 arayüz gereksinimi ve SYS-004 (45 kg, %10 marj → 40,5 kg) için 3 kütle payı.
 
+## 5ak. Çevresel profilden gereksinim ve doğrulama iskeleti
+
+**Çevresel profil kuralı** (türetme sihirbazında) her test profilinden profilin sayısal değerleriyle çevresel dayanım gereksinimi önerir:
+- **Rastgele titreşim (PSD):** eksenler, frekans aralığı, Grms ve eksen başına süre — "Sistem, MIL-STD-810H Yöntem 514.8 kapsamında X, Y ve Z eksenlerinde 20 Hz ile 2000 Hz arasında 6,06 Grms seviyesindeki "Kalifikasyon rastgele titreşim" profiline eksen başına 60 dk maruz kaldığında yapısal ve işlevsel bütünlüğünü koruyacaktır."
+- **Sinüs:** frekans aralığı, tepe genlik, süpürme hızı ve sayısı. **SRS şok:** yönler, yön başına şok sayısı, tepe ivme, köşe frekansı. **Termal döngü:** sıcaklık aralığı, en yüksek değişim hızı, döngü sayısı.
+- Cümlenin sonu profilin **seviyesine** göre seçilir: Kalifikasyon → "yapısal ve işlevsel bütünlüğünü koruyacaktır", ESS → "tarama sonrasında işlevsel performansını koruyacaktır", Kabul → "işlevsel performansını koruyacaktır", Fonksiyonel/çalışma → "çalışmasını sürdürecektir".
+- Profilde standart yazılıysa cümleye eklenir ("… kapsamında"); MIL-STD-810 yöntem numarası "Yöntem 514.8" olarak yazılır.
+- Gereksinim profile **Refine** ile bağlanır; profili kullanan testler varsa **Verify** ile bağlanır, yoksa (seçenek) profil eklenmiş bir test durumu iskeleti oluşturulur (seviye: kalifikasyon / kabul). Profili inceleyen bir üst gereksinim (ör. SYS-005) varsa yeni gereksinim ondan türetilir.
+- Seçenekler: **alt sistem seviyesinde** (kök bloğun her part tipi için ayrı gereksinim, test iskeleti profil başına tek), **fonksiyonel / karakterizasyon profillerini atla** (ör. rezonans arama — varsayılan açık).
+
+**Kabul edilenlere doğrulama faaliyeti ekle** (sihirbaz çubuğu): kabul edilen yeni gereksinimlerden doğrulama bağlantısı olmayanlar için yöntemine uygun test durumu (Test / Analiz / Muayene / Gösterim) oluşturulur ve Verify ile bağlanır.
+
+**Doğrulama iskeleti sekmesi:** Verify bağlantısı olmayan tüm gereksinimleri listeler. Yöntem boşsa metinden yöntem önerilir (kütle/boyut/etiket → Muayene, analiz/MTBF/ömür → Analiz, gösterge/operatör → Gösterim, diğer → Test). Seçilenler için doğrulama faaliyeti oluşturulur; VCRM, test kampanyası ve kapanış raporunda görünür.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.
