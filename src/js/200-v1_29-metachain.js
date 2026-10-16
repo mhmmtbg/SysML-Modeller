@@ -122,16 +122,17 @@ function mcValue(e, c){
     const colCnt = cols.map(c => rows0.reduce((n, r) => n + (cnt(r, c) ? 1 : 0), 0));
     const lab = e => e.kind === 'Requirement' ? (e.reqId || '') + ' ' + (e.name || '') : elDesc(e);
     let nInd = 0;
-    let h = `<div class="mcnote">⛓ <b>Metachain:</b> <span class="noi18n">${esc(ch.name || '')}</span> — <span class="muted">${esc(mcDesc(ch))}</span> · <span class="mcleg on">↗</span> doğrudan ilişki, <span class="mcleg ind">◆</span> zincirle dolaylı</div><table class="mx"><thead><tr><th class="mxc"></th>`;
-    cols.forEach((c, j) => { h += `<th class="mxh${colCnt[j] ? '' : ' zero'}" title="${esc(lab(c))}"><div><span>${esc(lab(c).slice(0, 42))}</span></div></th>`; });
+    const P = mxPage(rows, cols);
+    let h = P.pager + `<div class="mcnote">⛓ <b>Metachain:</b> <span class="noi18n">${esc(ch.name || '')}</span> — <span class="muted">${esc(mcDesc(ch))}</span> · <span class="mcleg on">↗</span> doğrudan ilişki, <span class="mcleg ind">◆</span> zincirle dolaylı</div><table class="mx"><thead><tr><th class="mxc"></th>`;
+    P.cols.forEach((c, j) => { h += `<th class="mxh${colCnt[P.c0 + j] ? '' : ' zero'}" title="${esc(lab(c))}"><div><span>${esc(lab(c).slice(0, 42))}</span></div></th>`; });
     h += `<th class="mxh tot"><div><span>Toplam</span></div></th></tr></thead><tbody>`;
-    rows.forEach(r => {
+    P.rows.forEach(r => {
       const n = rowCnt.get(r.id);
       h += `<tr><th class="mxr${n ? '' : ' zero'}"><a class="lnk" data-goto="${r.id}">${esc(lab(r).slice(0, 60))}</a></th>`;
-      cols.forEach(c => { const m = mxRel(r, c), d = has(r, c), p = ind(r, c); if(p && !d) nInd++; const t = (m ? KIND[m[0]].tr : '') + (p ? (m ? '\n' : '') + mcPath(p) : ''); h += `<td class="mxd${d ? ' on' : ''}${p && !d ? ' ind' : ''}${!m && !p ? ' na' : ''}"${m ? ` data-mx="${r.id}|${c.id}"` : ''} title="${esc(t)}">${d ? '↗' : p ? '◆' : ''}</td>`; });
+      P.cols.forEach(c => { const m = mxRel(r, c), d = has(r, c), p = ind(r, c); if(p && !d) nInd++; const t = (m ? KIND[m[0]].tr : '') + (p ? (m ? '\n' : '') + mcPath(p) : ''); h += `<td class="mxd${d ? ' on' : ''}${p && !d ? ' ind' : ''}${!m && !p ? ' na' : ''}"${m ? ` data-mx="${r.id}|${c.id}"` : ''} title="${esc(t)}">${d ? '↗' : p ? '◆' : ''}</td>`; });
       h += `<td class="mxt">${n}</td></tr>`;
     });
-    h += `<tr><th class="mxr tot">Toplam</th>${colCnt.map(n => `<td class="mxt${n ? '' : ' zero'}">${n}</td>`).join('')}<td></td></tr></tbody></table>`;
+    h += `<tr><th class="mxr tot">Toplam</th>${colCnt.slice(P.c0, P.c0 + P.cols.length).map(n => `<td class="mxt${n ? '' : ' zero'}">${n}</td>`).join('')}<td></td></tr></tbody></table>`;
     const zr = rows0.filter(r => !rowCnt.get(r.id)).length;
     return h + `<div class="vfoot">${rows0.length} × ${cols.length} · Dolaylı hücre: <b>${nInd}</b> · Kapsanmayan satır: <b class="${zr ? 'bad' : ''}">${zr}</b> · ◆ hücrenin üzerine gelince yol görünür; ↗ hücreleri tıklayarak ilişki kurulur/kaldırılır.</div>`;
   };

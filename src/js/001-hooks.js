@@ -4,6 +4,8 @@
    HOOKS.menu.X — menü öğeleri listesi üretildikten sonra: f(items)  (X: tools, analysis, layout, req)
    Her kanca ayrı try/catch içinde çalışır; hata bir modülü bozsa da diğerleri çalışır. */
 const HOOKS = {props:[], menu:{tools:[], analysis:[], layout:[], req:[]}};
+/* açılış tamamlandığında: f({native, argText, argPath, autosave, lastPath, dirty}) */
+const BOOT_HOOKS = [];
 function appErr(where, e){ try { (window.APP_ERRS = window.APP_ERRS || []).push({t:new Date().toISOString(), where, msg:String(e && e.message || e), stack:String(e && e.stack || '').split('\n').slice(0, 3).join(' | ')}); if(window.APP_ERRS.length > 200) window.APP_ERRS.shift(); console.warn('[' + where + ']', e); } catch(_){} }
 function runHooks(list, where, args){ list.forEach((h, i) => { try { h.apply(null, args); } catch(e){ appErr(where + '#' + i, e); } }); }
 {

@@ -848,6 +848,67 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Kapsama haritası (şablon, uygulanamaz, Excel), ister bölme (pencere, ilişki kopyası, geri al), ARES içe/dışa aktarma ve kabul, karşılaştırma raporu', !ar.error && Object.values(ar).every(v => v === true), ar);
 
+  console.log('9m) Yedekler (tarayıcı): kayıtta yedek, geri yükleme, fark özeti, geri al');
+  const bk = await run(async () => {
+    const o = {}; const dl0 = download; window.__dl = []; download = (blob, name) => window.__dl.push({ blob, name });
+    localStorage.removeItem('sysml-yedek'); const all0 = await idbAll(M.uid); for(const x of all0){ const db = await idbOpen(); await new Promise(r => { const tx = db.transaction('snap', 'readwrite'); tx.objectStore('snap').delete(x.id); tx.oncomplete = r; }); }
+    BK_LAST = {h:'', t:0}; await saveJSON(false); await new Promise(r => setTimeout(r, 150));
+    let L = await idbAll(M.uid); o.first = L.length === 1 && L[0].n === Object.keys(M.els).length;
+    await saveJSON(false); await new Promise(r => setTimeout(r, 150)); o.dedup = (await idbAll(M.uid)).length === 1;
+    const n0 = Object.keys(M.els).length; const pk = mk('Package', M.rootId, { name: 'Yedek testi' }); mk('Block', pk.id, { name: 'YB' }); afterChange();
+    await saveJSON(false); await new Promise(r => setTimeout(r, 150)); L = await idbAll(M.uid); o.second = L.length >= 2 && L[0].reason === 'kayıt';
+    await restoreDialog(); await new Promise(r => setTimeout(r, 200));
+    const rows = document.querySelectorAll('#modalBox tbody tr'); o.dlg = rows.length >= 2 && /aynı/.test(rows[0].textContent) && /\+2/.test(rows[1].textContent);
+    document.querySelectorAll('#modalBox [data-rbr]')[1].click(); await new Promise(r => setTimeout(r, 300));
+    o.restored = Object.keys(M.els).length === n0 && !Object.values(M.els).some(e => e.name === 'Yedek testi') && (await idbAll(M.uid)).length === rows.length + 1;
+    undo(); o.undo = Object.values(M.els).some(e => e.name === 'Yedek testi'); redo();
+    const c = bkCfg(); bkSetCfg(Object.assign(c, { keep: 2 })); BK_LAST.h = ''; await backupNow('elle'); o.keep = (await idbAll(M.uid)).length === 2; bkSetCfg({});
+    o.menu = toolsMenuItems().some(x => x && x.t && /Yedekten geri yükle/.test(x.t));
+    $('#modal').style.display = 'none'; download = dl0; return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Tarayıcı yedekleri: ilk yedek, aynı içerik yinelenmez, fark özeti, geri yükleme (önce yedek), geri al, tutulacak sayı', !bk.error && Object.values(bk).every(v => v === true), bk);
+
+  console.log('9n) Masaüstü (taklit): kayıtta .yedek, kurtarma bildirimi, başka dosya açılırken kaydedilmemiş değişikliklerin yedeklenmesi');
+  const nat = await (async () => {
+    const o = {};
+    const mkPage = async (info) => { const p = await browser.newPage({ viewport: { width: 1400, height: 850 } }); p.on('dialog', d => d.accept()); const perr = []; p.on('pageerror', e => perr.push(e.message));
+      await p.addInitScript(inf => { const FS = window.__FS = {}; const BK = window.__BK = []; window.nativeInfo = async () => inf; window.nativeAutosave = async () => null; window.nativeWrite = async (pth, d) => { FS[pth] = d; return null; }; window.nativeRead = async pth => FS[pth] != null ? { text: FS[pth] } : { error: 'yok' };
+        window.nativeBackup = async (pth, d, keep) => { const full = (pth.includes('\\') ? pth.replace(/[^\\]+$/, '') + '.yedek\\' : 'APPDATA\\yedek\\') + Date.now() + '_' + BK.length + '.sysml'; BK.push({ path: full, src: pth, size: d.length, mtime: new Date().toISOString(), name: full.split('\\').pop() }); FS[full] = d; while(BK.filter(x => x.src === pth).length > keep){ const i = BK.findIndex(x => x.src === pth); BK.splice(i, 1); } return { path: full }; };
+        window.nativeBackupList = async pth => BK.filter(x => x.src === pth).slice().reverse(); window.nativeWho = async () => ({ user: 'u', host: 'h' }); window.nativeLockGet = async () => null; window.nativeLockSet = async () => null; window.nativeLockClear = async () => null; window.nativeSetTitle = () => {};
+        window.nativeDialog = async () => null; }, info);
+      await p.goto('file://' + FILE); await p.waitForTimeout(700); return { p, perr }; };
+    const base = await page.evaluate(() => JSON.stringify(pack()));
+    /* 1) kaydedilmemiş oturum kurtarıldı */
+    let { p, perr } = await mkPage({ autosave: base, lastPath: 'C:\\proje\\araç.sysml', dirty: true });
+    o.note = await p.evaluate(() => !!document.querySelector('#recNote') && /kurtarıldı/.test(document.querySelector('#recNote').textContent) && !!document.querySelector('#recNote [data-rn="disk"]') && curPath === 'C:\\proje\\araç.sysml' && dirty === true);
+    o.saveBk = await p.evaluate(async () => { await saveJSON(false); await new Promise(r => setTimeout(r, 100)); return !!window.__FS['C:\\proje\\araç.sysml'] && window.__BK.length === 1 && /\.yedek/.test(window.__BK[0].path); });
+    o.diskOpen = await p.evaluate(async () => { const m = JSON.parse(window.__FS['C:\\proje\\araç.sysml']); m.els[m.rootId].name = 'Diskteki'; window.__FS['C:\\proje\\araç.sysml'] = JSON.stringify(m); dirty = true; recoverNote('test', 'C:\\proje\\araç.sysml'); document.querySelector('#recNote [data-rn="disk"]').click(); await new Promise(r => setTimeout(r, 200)); return E(M.rootId).name === 'Diskteki' && dirty === false && window.__BK.length === 2 && !document.querySelector('#recNote'); });
+    o.list = await p.evaluate(async () => { await restoreDialog(); await new Promise(r => setTimeout(r, 200)); const n = document.querySelectorAll('#modalBox tbody tr').length; $('#modal').style.display = 'none'; return n === 2; });
+    o.err1 = !perr.length; await p.close();
+    /* 2) başka dosya açılırken önceki oturumun kaydedilmemiş değişiklikleri yedeklenir */
+    ({ p, perr } = await mkPage({ argText: base, argPath: 'C:\\proje\\diğer.sysml', autosave: base.replace('"name":"', '"name":"X'), lastPath: 'C:\\proje\\araç.sysml', dirty: true }));
+    await p.waitForTimeout(200);
+    o.argBk = await p.evaluate(() => window.__BK.length === 1 && window.__BK[0].src === 'C:\\proje\\araç.sysml' && /yedeklendi/.test((document.querySelector('#recNote') || {}).textContent || '') && curPath === 'C:\\proje\\diğer.sysml');
+    o.err2 = !perr.length; await p.close();
+    /* 3) temiz açılışta bildirim yok */
+    ({ p, perr } = await mkPage({ autosave: base, lastPath: 'C:\\proje\\araç.sysml', dirty: false }));
+    o.clean = await p.evaluate(() => !document.querySelector('#recNote')); await p.close();
+    return o;
+  })().catch(e => ({ error: e.message }));
+  ok('Masaüstü taklidi: kurtarma bildirimi, kayıtta .yedek, diskteki sürüme dönüş (önce yedek), yedek listesi, başka dosya açılışında yedek, temiz açılış', !nat.error && Object.values(nat).every(v => v === true), nat);
+
+  console.log('9o) Tarayıcıda geciktirilmiş kalıcı kayıt: değişiklikten hemen sonra yeniden yükleme modeli korur');
+  const ps = await (async () => {
+    const p = await browser.newPage(); p.on('dialog', d => d.accept()); await p.goto('file://' + FILE); await p.waitForTimeout(600);
+    const o = {};
+    o.burst = await p.evaluate(() => { let n = 0; const _s = localStorage.setItem.bind(localStorage); localStorage.setItem = (k, v) => { if(k === LSK) n++; _s(k, v); }; Object.values(M.els).filter(e => e.kind === 'Diagram').forEach(d => openD(d.id)); const now = n; localStorage.setItem = _s; return now === 0; });
+    await p.evaluate(() => { mk('Package', M.rootId, { name: 'Kalıcılık testi' }); afterChange(); });
+    await p.reload(); await p.waitForTimeout(700);
+    o.kept = await p.evaluate(() => Object.values(M.els).some(e => e.name === 'Kalıcılık testi'));
+    await p.close(); return o;
+  })().catch(e => ({ error: e.message }));
+  ok('Diyagram gezinirken depoya art arda yazma yok; değişiklikten hemen sonra yenilemede model korunur', !ps.error && Object.values(ps).every(v => v === true), ps);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

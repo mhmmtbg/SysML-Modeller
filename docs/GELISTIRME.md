@@ -29,6 +29,7 @@ VALIDATORS.push((add, els, idx) => { /* add(önem, kural, eleman, mesaj) */ });
 FIXERS['Kural adı'] = {t:'Düğme metni', f:e => true};   // otomatik onarım
 GO_EXT.YeniTür = e => openD('@görünüm');                // ağaçta çift tık
 DEMO_EXT.push(X => { /* örnek modele ekleme */ });
+BOOT_HOOKS.push(info => { /* açılış tamamlandı: {native, argText, autosave, lastPath, dirty} */ });
 DERIVE_RULES.push({id:'kural', tr:'Ad', doc:'Açıklama', opts:[['anahtar', 'Seçenek', true]],
   gen(cfg){ return [{sig:'kararlı-imza', level:'Sistem', name:'Başlık', text:'… olacaktır', verif:'Test',
                      src:[kaynakId], satisfyBy:blokId, parent:üstGereksinimId, refineBy:davranışId}]; }});
@@ -42,5 +43,10 @@ Her kanca kendi `try/catch`'i içinde çalışır; hata `appErr()` ile günlüğ
 
 - `node tests/regression.js` — tarayıcıda uçtan uca regresyon (Playwright).
 - `node tests/unit.js` — motorların birim testleri (tarayıcısız).
+- `node tests/stres.js` — gerçekçi ölçekte stres testi (~12 900 eleman, 3000 gereksinim, 60 diyagram): yükleme, kayıt, her diyagram ve görünüm, doğrulama, türetme, kapsama haritası ve tam Word raporu süre sınırlarıyla ölçülür. Performansı etkileyebilecek değişikliklerden sonra çalıştırın.
 - `node tools/ozellik-test.js --check` — özellik ↔ test izlenebilirlik tablosunu (`docs/OZELLIK-TEST.md`) `tests/ozellikler.json`'dan üretir; testi olmayan özellik varsa hata verir. Yeni özellik eklerken listeye bir satır ve en az bir test ekleyin.
 - `node tools/en-tarama.js` — İngilizce arayüzde tüm görünüm, menü ve pencereleri açıp çevrilmemiş Türkçe metinleri listeler (model içeriği hariç). Yeni metinler `src/i18n/dict.json`'a eklenir.
+
+## Önbellekler ve varsayımlar
+
+`kidsOf`, `relIdx`, `relBy`, `vtypeOf`, `allNCRs`, `topBlock` model revizyonu (`REV`) ve model nesnesiyle (`M`) önbelleklenir. Varsayım: eleman ekleme / silme (`mk`, `delModel`, doğrudan `M.els` değişikliğinden sonra `afterChange`) ve ilişki uçlarının değişmesi `bump()` ile REV'i artırır. `relIdx()` dizileri ve `relBy` haritaları paylaşılır, **yerinde değiştirilmemelidir** (sıralamadan önce `slice()`).

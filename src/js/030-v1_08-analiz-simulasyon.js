@@ -195,7 +195,7 @@ function budgetRows(R, depth, path, rows){
 }
 function budgetHTML(){
   const blocks = Object.values(M.els).filter(e => e.kind === 'Block').sort(sortEls), props = budgetProps();
-  if(!BV.root || !E(BV.root)){ const top = blocks.find(b => !Object.values(M.els).some(p => p.kind === 'Part' && p.type === b.id) && kidsOf(b.id).some(c => c.kind === 'Part')); BV.root = top ? top.id : (blocks[0] && blocks[0].id); }
+  if(!BV.root || !E(BV.root)){ const used = new Set(); for(const k in M.els){ const p = M.els[k]; if(p.kind === 'Part' && p.type) used.add(p.type); } const top = blocks.find(b => !used.has(b.id) && kidsOf(b.id).some(c => c.kind === 'Part')); BV.root = top ? top.id : (blocks[0] && blocks[0].id); }
   if(!BV.prop || !props.includes(BV.prop)) BV.prop = props.find(p => /kütle|kutle|mass|ağırlık/i.test(p)) || props[0] || '';
   if(!BV.root) return '<div class="vempty">Modelde blok yok.</div>';
   if(!BV.prop) return '<div class="vempty">Bloklarda value property yok.<br>Bütçe için bloklara ör. <b>kütle</b> veya <b>güç</b> adlı value property ekleyin ve yaprak bloklara değer girin.</div>';

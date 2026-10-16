@@ -150,6 +150,7 @@ ACT.lang = () => setLang(LANG === 'en' ? 'tr' : 'en');
     else if(info.autosave){ m = parseModelText(info.autosave); if(m){ curPath = info.lastPath || ''; dirty = !!info.dirty || !curPath; } }
     if(!m){ m = demo(); dirty = true; }
     loadModel(m); renderAll(); updTitle(); persist();
+    runHooks(BOOT_HOOKS, 'boot', [Object.assign({native:true}, info)]);
     return;
   }
   let emb = null, ls = null;
@@ -162,4 +163,5 @@ ACT.lang = () => setLang(LANG === 'en' ? 'tr' : 'en');
   else m = demo();
   loadModel(m);
   renderAll(); persist();
+  runHooks(BOOT_HOOKS, 'boot', [{native:false, fromLocal:m === ls}]);
 })();

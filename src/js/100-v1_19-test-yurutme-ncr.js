@@ -18,7 +18,8 @@ const NCR_DISP = ['—', 'Tamir', 'Yeniden işle', 'Olduğu gibi kullan', 'Hurda
 const NCR_SEV_COL = {'Kritik':'#c0392b', 'Majör':'#e67e22', 'Minör':'#c9a227'};
 const STEP_RES = ['', 'Geçti', 'Kaldı'];
 const allArticles = () => Object.values(M.els).filter(e => e.kind === 'TestArticle').sort((a, b) => COLL.compare(a.name || '', b.name || '') || COLL.compare(String(a.sn || ''), String(b.sn || '')));
-const allNCRs = () => Object.values(M.els).filter(e => e.kind === 'NCR').sort((a, b) => COLL.compare(String(a.ncrId || ''), String(b.ncrId || '')));
+let NCR_C = null, NCR_REV = -1, NCR_M = null;
+const allNCRs = () => { if(NCR_REV !== REV || NCR_M !== M || !NCR_C){ NCR_C = Object.values(M.els).filter(e => e.kind === 'NCR').sort((a, b) => COLL.compare(String(a.ncrId || ''), String(b.ncrId || ''))); NCR_REV = REV; NCR_M = M; } return NCR_C.slice(); };
 const ncrOpen = n => (n.nst || 'Açık') !== 'Kapandı';
 const taLabel = a => a ? (a.name || 'Numune') + (a.sn ? ' · SN ' + a.sn : '') : '';
 const nmx = e => e && KIND[e.kind] ? nm(e) : '';

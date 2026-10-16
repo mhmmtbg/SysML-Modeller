@@ -169,14 +169,15 @@ function deriveHTML(){
     <span class="vsep"></span> Yeni gereksinimlerin üst gereksinimi (isteğe bağlı) <select data-dvp="1" class="noi18n" style="max-width:300px"><option value="">—</option>${reqs.map(r => `<option value="${r.id}"${DV.parent === r.id ? ' selected' : ''}>${esc((r.reqId || '') + ' ' + (r.name || ''))}</option>`).join('')}</select></div>`;
   if(!vis.length) return h + `<div class="vempty">${L.length ? 'Bu süzgeçte öneri yok.' : 'Seçili kurallar bu modelde öneri üretmedi.'}</div></div>`;
   h += `<table class="rt fmt dvt"><thead><tr><th><input type="checkbox" data-dvall="1"${vis.every(s => s.state === 'mevcut' || DV.sel.has(s.sig)) ? ' checked' : ''}></th><th>Durum</th><th>Kural</th><th>Seviye / alt sistem</th><th>Başlık</th><th style="min-width:340px">Gereksinim metni</th><th>Doğrulama</th><th>Kaynak</th><th>Kalite</th></tr></thead><tbody>`;
-  vis.forEach(s => {
+  const lim = DV.lim || 200;
+  vis.slice(0, lim).forEach(s => {
     const tx = DV.edits[s.sig] != null ? DV.edits[s.sig] : s.text, iss = (() => { try { return s.state === 'kaynak yok' ? [] : reqQuality({text:tx, reqId:'\u0000'}); } catch(e){ return []; } })(), [lt, lc] = DSTATE[s.state];
     h += `<tr class="${DV.sel.has(s.sig) ? 'sel' : ''}"><td>${s.state === 'mevcut' ? '' : `<input type="checkbox" data-dvsel="${esc(s.sig)}"${DV.sel.has(s.sig) ? ' checked' : ''}>`}</td><td><span class="stc" style="background:${lc}">${lt}</span>${s.edited ? '<div class="muted" style="font-size:10.5px">elle düzenlenmiş</div>' : ''}${s.req ? `<div><a class="lnk noi18n" data-goto="${s.req.id}">${esc(s.req.reqId)}</a></div>` : ''}</td><td>${esc(s.ruleTr)}</td>
       <td>${esc(s.level || '')}${s.subsys ? `<div class="muted noi18n">${esc(s.subsys)}</div>` : ''}</td><td class="noi18n">${esc(s.name || '')}</td>
       <td>${s.state === 'kaynak yok' ? `<span class="noi18n">${esc(tx)}</span>` : `<textarea class="dvtx noi18n" data-dvtx="${esc(s.sig)}" rows="${Math.max(2, Math.min(9, Math.ceil(tx.length / 46)))}">${esc(tx)}</textarea>`}${s.state === 'güncelle' && s.req ? `<div class="muted noi18n" style="font-size:11px">Şu an: ${esc(s.req.text)}</div>` : ''}</td>
       <td>${esc(s.verif || '')}</td><td class="muted noi18n" style="font-size:11px">${esc(s.note || '')}</td><td>${s.state === 'kaynak yok' ? '' : qualityBadge(iss)}</td></tr>`;
   });
-  h += `</tbody></table><div class="li" style="margin-top:8px"><button class="vb pri" data-dvgo="1"${DV.sel.size ? '' : ' disabled'}>Seçilenleri uygula (${DV.sel.size})</button> <span class="muted">Yeni → "Taslak" gereksinim + Satisfy/Derive ilişkileri · Güncelle → metin yenilenir, bağlı ilişkiler şüpheli olur · Kaynak yok → "İptal" durumuna alınır</span></div></div>`;
+  h += `</tbody></table>${vis.length > lim ? `<div class="li" style="margin-top:6px"><button class="vb" data-dvmore="1">Daha fazla göster (${vis.length - lim} öneri daha)</button> <span class="muted">Tümünü seç / Tüm yenileri seç gizli satırları da kapsar.</span></div>` : ''}<div class="li" style="margin-top:8px"><button class="vb pri" data-dvgo="1"${DV.sel.size ? '' : ' disabled'}>Seçilenleri uygula (${DV.sel.size})</button> <span class="muted">Yeni → "Taslak" gereksinim + Satisfy/Derive ilişkileri · Güncelle → metin yenilenir, bağlı ilişkiler şüpheli olur · Kaynak yok → "İptal" durumuna alınır</span></div></div>`;
   return h;
 }
 function deriveBar(){ return `<button class="vb pri" data-dvgo="1"${DV.sel.size ? '' : ' disabled'}>✓ Seçilenleri uygula (${DV.sel.size})</button><span class="vsep"></span><button class="vb" data-dva="refresh">↻ Yeniden hesapla</button><button class="vb" data-dva="selnew">Tüm yenileri seç</button><button class="vb" data-dva="none">Seçimi temizle</button><span class="vsep"></span><button class="vb" data-dva="xl">⤒ Excel</button>`; }
@@ -190,7 +191,8 @@ function deriveXlsx(){
   const V = $('#view'), rer = () => { renderViewBar(); renderView(); };
   V.addEventListener('click', ev => {
     if(ST.cur !== '@derive') return; const t = ev.target.closest('button,[data-dvshow]') || ev.target, d = t.dataset || {};
-    if(d.dvshow){ DV.show = DV.show === d.dvshow ? 'acik' : d.dvshow; rer(); }
+    if(d.dvshow){ DV.show = DV.show === d.dvshow ? 'acik' : d.dvshow; DV.lim = 200; rer(); }
+    if(d.dvmore){ DV.lim = (DV.lim || 200) + 400; rer(); }
     if(d.dva === 'refresh'){ deriveRefresh(); rer(); toast('Öneriler yeniden hesaplandı'); }
     if(d.dva === 'selnew'){ deriveList().filter(s => s.state === 'yeni').forEach(s => DV.sel.add(s.sig)); rer(); }
     if(d.dva === 'none'){ DV.sel.clear(); rer(); }

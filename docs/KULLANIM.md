@@ -1152,6 +1152,19 @@ Pencerede parçalar düzenlenebilir, eklenip silinebilir ve her parçanın kalit
 - **Türetme karşılaştırma raporu (Excel):** kaynak başına görülen öneri, kabul oranı, kalite bulgusu / gereksinim, bulgusuz oranı, kabulden sonra düzenlenme oranı ve kapsanan kategori; kurallı toplam ile ARES yan yana.
 - Şema ayrıntısı: `docs/ARES-KOPRU.md`; örnek modelle denenebilecek örnek çıktı: `docs/ornek-ares-cikti.json`.
 
+## 5an. Yedekler, kurtarma ve büyük modeller
+
+**Otomatik yedek:**
+- **Masaüstü (exe):** her kayıtta model dosyasının yanındaki `.yedek` klasörüne zaman damgalı kopya yazılır (`Model_20261016-203000.sysml`). Klasöre yazılamıyorsa (salt okunur ağ paylaşımı) yerel uygulama klasörüne (`%LOCALAPPDATA%\SysMLModelleyici\yedek`) yazılır. Son 10 kopya tutulur; içerik değişmediyse yeni yedek alınmaz.
+- **Tarayıcı (HTML):** yedekler tarayıcının yerel veritabanında model başına tutulur; her kayıtta ve düzenlerken en çok 10 dakikada bir alınır.
+- **Araçlar ▾ → Yedekten geri yükle…:** yedekler tarih, eleman ve gereksinim sayısı, boyut ve şu anki modele göre fark özetiyle (+ sonradan eklenen, − yedekte olup şimdi olmayan, ~ değişen) listelenir. **Geri yükle** önce şu anki durumu ayrı bir yedek olarak saklar; Geri Al ile de dönülebilir. **İndir** yedeği dosya olarak verir. Aynı pencerede otomatik yedek açılıp kapatılabilir, tutulacak sayı ve aralık değiştirilebilir, **Şimdi yedekle** ile elle yedek alınabilir.
+
+**Kurtarma (masaüstü):** uygulama kaydedilmemiş değişikliklerle kapanmışsa bir sonraki açılışta durum çubuğunda "Kaydedilmemiş değişiklikler kurtarıldı" bildirimi çıkar: **Diskteki kayıtlı sürümü aç** (kurtarılan durum önce yedeklenir), **Yedekler** veya **Tamam**. Exe'ye başka bir dosya sürüklenerek açıldığında önceki oturumun kaydedilmemiş değişiklikleri kaybolmaz, yedeklenir.
+
+**Eşzamanlı açma:** ağ klasöründeki dosya başka biri tarafından açıksa 🔒 rozeti ve kayıtta onay sorusu (v1.23'ten beri).
+
+**Büyük modeller:** gereksinim tablosu 150 satırlık sayfalarla, büyük izlenebilirlik matrisleri 150 satır × 120 sütunluk sayfalarla (◀ ▶) çizilir; satır/sütun toplamları ve ilişkisiz sayıları her zaman tüm küme üzerindendir. Türetme sihirbazı ilk 200 öneriyi gösterir ("Daha fazla göster"); toplu seçim gizli satırları da kapsar. Tarayıcı sürümünde yerel kayıt 0,5 sn gecikmeyle birleştirilerek yazılır, sayfa kapanırken bekleyen kayıt hemen yapılır.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

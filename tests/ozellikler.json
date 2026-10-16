@@ -43,6 +43,8 @@
   {"id": "F44", "ad": "Çevresel profilden gereksinim ve doğrulama iskeleti", "surum": "1.45", "unit": ["^çevre", "^doğrulama iskeleti", "doğrulama faaliyeti ekle"], "reg": ["Çevre kuralı"]},
   {"id": "F45", "ad": "Davranış / kısıt / FMEA türetme kuralları ve Türkçe çekim", "surum": "1.46", "unit": ["^çekim", "^fonksiyon", "^mod/geçiş", "^performans", "^FMEA", "^varyant: kaynağın", "^kalite: tırnak"], "reg": ["Fonksiyon / mod-geçiş"]},
   {"id": "F46", "ad": "Kapsama haritası, ister bölme, ARES köprüsü ve karşılaştırma raporu", "surum": "1.47", "unit": ["^bölme", "^kapsama", "^ARES", "^karşılaştırma"], "reg": ["Kapsama haritası"]},
+  {"id": "F47", "ad": "Otomatik yedek, geri yükleme ve kurtarma", "surum": "1.48", "reg": ["Tarayıcı yedekleri", "Masaüstü taklidi", "Diyagram gezinirken depoya"]},
+  {"id": "F48", "ad": "Büyük model performansı (sayfalı matris, önbellekli indeksler)", "surum": "1.48", "unit": ["^benzerlik indeksi"], "reg": ["6000 elemanlı"]},
   {"id": "F41", "ad": "Performans (~6000 eleman)", "surum": "1.17", "reg": ["6000 elemanlı"]},
   {"id": "F42", "ad": "Kararlılık: tüm senaryolarda JavaScript hatası yok", "surum": "tümü", "reg": ["JavaScript hatası yok"]}
 ]

@@ -2,8 +2,8 @@
 
 _Bu dosya `node tools/ozellik-test.js` ile üretilir; elle düzenlemeyin._
 
-- Özellik: **46**, testle kapsanan: **46**
-- Birim testi adı: 110 (döngüyle üretilenler dahil olmayabilir), uçtan uca test: 49
+- Özellik: **48**, testle kapsanan: **48**
+- Birim testi adı: 110 (döngüyle üretilenler dahil olmayabilir), uçtan uca test: 52
 
 | No | Özellik | Sürüm | Birim testleri | Uçtan uca testler | Durum |
 |---|---|---|---|---|---|
@@ -51,5 +51,7 @@ _Bu dosya `node tools/ozellik-test.js` ile üretilir; elle düzenlemeyin._
 | F44 | Çevresel profilden gereksinim ve doğrulama iskeleti | 1.45 | 6: çevre: her titreşim/şok/termal profili için gereksinim; metinler temiz, fonksiyonel profil atlanır; çevre: profil seviyesine göre ifade; çevre: uygula → üst gereksinimden Derive, profile Refine, mevcut teste Verify, test yoksa iskelet; çevre: alt sistem seviyesinde her blok için ayrı, test iskeleti profil başına tek; doğrulama iskeleti: yöntem önerisi ve faaliyet oluşturma; türetme: "kabul edilenlere doğrulama faaliyeti ekle" seçeneği | Çevre kuralı (profil değerleri, seviye ifadesi, fonksiyonel atlama), kabulde doğrulama faaliyeti, doğrulama iskeleti sekmesi, geri al | ✓ |
 | F45 | Davranış / kısıt / FMEA türetme kuralları ve Türkçe çekim | 1.46 | 10: çekim: "; çekim: fiil olmayan adlar tırnaklı işlev kalıbına düşer; fonksiyon: tahsisli aksiyon → blok, zaten karşılayanlar atlanır, kullanım durumları; fonksiyon: üst aktivitenin karşıladığı gereksinimden türetilir, Refine kurulur; mod/geçiş: olay, seçim düğümü (koşul + aksi), after(), başlangıç ve alt durum; performans: P <= 120 bağlı değerle W birimli üst sınır; ters yazım ve karmaşık ifade; performans: tolerans aralıklı değer; FMEA: RPN eşiği / şiddet, önlem metni, satıra bağlantı; risk seçeneği; varyant: kaynağın varyant koşulu öneriye ve gereksinime aktarılır; kalite: tırnak ve köşeli parantez içi sayı/belirsiz sözcük işaretlenmez | Fonksiyon / mod-geçiş / performans / FMEA kuralları: öneriler, risk seçeneği, toplu kabul, FMEA bağlantısı, kalite ve doğrulama temiz | ✓ |
 | F46 | Kapsama haritası, ister bölme, ARES köprüsü ve karşılaştırma raporu | 1.47 | 7: bölme: "ve" ile bağlı iki ister, virgüllü liste, iki cümle; tek isterli cümle bölünmez; bölme: uygula → ilk parça özgünde, yeniler ilişkileri kopyalar, onaylı → Değişiklikte; kapsama: kategori sınıflandırma (kural, alan, anahtar sözcük) ve blok eşleme; kapsama: türetilen gereksinimler boşlukları doldurur; ARES: bağlam paketi şeması ve içerik; ARES: içe aktarma → öneriler, üst gereksinim ve blok adla eşlenir, kabul ve yinelenmeme; karşılaştırma: kural ve ARES istatistikleri | Kapsama haritası (şablon, uygulanamaz, Excel), ister bölme (pencere, ilişki kopyası, geri al), ARES içe/dışa aktarma ve kabul, karşılaştırma raporu | ✓ |
+| F47 | Otomatik yedek, geri yükleme ve kurtarma | 1.48 | — | Tarayıcı yedekleri: ilk yedek, aynı içerik yinelenmez, fark özeti, geri yükleme (önce yedek), geri al, tutulacak sayı; Masaüstü taklidi: kurtarma bildirimi, kayıtta .yedek, diskteki sürüme dönüş (önce yedek), yedek listesi, başka dosya açılışında yedek, temiz açılış; Diyagram gezinirken depoya art arda yazma yok; değişiklikten hemen sonra yenilemede model korunur | ✓ |
+| F48 | Büyük model performansı (sayfalı matris, önbellekli indeksler) | 1.48 | 1: benzerlik indeksi: ters indeks sonucu kaba kuvvet çift döngüyle aynı | ~6000 elemanlı modelde işlemler 2 sn altında | ✓ |
 | F41 | Performans (~6000 eleman) | 1.17 | — | ~6000 elemanlı modelde işlemler 2 sn altında | ✓ |
 | F42 | Kararlılık: tüm senaryolarda JavaScript hatası yok | tümü | — | çalışma sırasında JavaScript hatası yok | ✓ |

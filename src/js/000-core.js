@@ -1,7 +1,7 @@
 'use strict';
 const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const LSK = 'sysml-modeler-v1';
-const APP_VER = '1.47.0';
+const APP_VER = '1.48.0';
 const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -519,7 +519,8 @@ function pinLabel(p){ const t = tName(p); return p.name + (t ? ' : ' + t : ''); 
 function typeOpts(sel, kinds){ return '<option value="">(yok)</option>' + Object.values(M.els).filter(e => kinds.includes(e.kind)).sort(sortEls).map(b => `<option value="${b.id}"${b.id === sel ? ' selected' : ''}>${esc(b.name)}${kinds.length > 1 ? ' ‹' + KIND[b.kind].tr + '›' : ''}</option>`).join(''); }
 const VT_KINDS = ['ValueType','Enumeration'];
 function vtypeList(){ return ['Real','Integer','Boolean','String'].concat(Object.values(M.els).filter(e => VT_KINDS.includes(e.kind)).map(e => e.name)).filter((v, i, a) => v && a.indexOf(v) === i); }
-function vtypeOf(name){ return Object.values(M.els).find(e => VT_KINDS.includes(e.kind) && e.name === name) || null; }
+let VTC = null, VTC_REV = -1, VTC_M = null;
+function vtypeOf(name){ if(VTC_REV !== REV || VTC_M !== M || !VTC){ VTC = new Map(); for(const k in M.els){ const e = M.els[k]; if(VT_KINDS.includes(e.kind) && !VTC.has(e.name)) VTC.set(e.name, e); } VTC_REV = REV; VTC_M = M; } const v = VTC.get(name); if(!v) return null; return M.els[v.id] === v && v.name === name ? v : (VTC_REV = -1, Object.values(M.els).find(e => VT_KINDS.includes(e.kind) && e.name === name) || null); }
 function unitOf(v){ if(v.unit) return v.unit; const t = vtypeOf(v.vtype); return t && t.unit || ''; }
 /* port yönü: açıkça verilmemişse arayüz bloğunun akış özelliklerinden türetilir (eşlenik ~ ise ters) */
 function portDir(p){
@@ -3495,16 +3496,28 @@ function askSubsys(title, def, cb, oncancel){
   inp.onkeydown = ev => { ev.stopPropagation(); if(ev.key === 'Enter'){ ev.preventDefault(); setTimeout(ok, 0); } if(ev.key === 'Escape') cancel(); };
   box.onclick = ev => { const c = ev.target.closest('[data-ss]'); if(c){ inp.value = c.dataset.ss; ok(); return; } if(ev.target.id === 'sscancel') cancel(); if(ev.target.id === 'ssok') ok(); };
 }
-function relIdx(){ const idx = {}; for(const k in M.els){ const e = M.els[k]; if(e.src && e.tgt && KIND[e.kind] && KIND[e.kind].rel) (idx[e.kind] = idx[e.kind] || []).push(e); } return idx; }
+/* ilişki indeksi: tür → ilişki listesi. Liste üyeliği yalnız eleman ekleme/silmeyle değişir (her ikisi REV'i artırır; kidsOf ile aynı varsayım);
+   src/tgt değerleri canlı nesnelerden okunur. Dönen diziler yerinde değiştirilmemelidir. */
+let RIX = null, RIX_REV = -1, RIX_M = null;
+function relIdx(){ if(RIX_REV === REV && RIX_M === M && RIX) return RIX; const idx = {}; for(const k in M.els){ const e = M.els[k]; if(e.src && e.tgt && KIND[e.kind] && KIND[e.kind].rel) (idx[e.kind] = idx[e.kind] || []).push(e); } RIX = idx; RIX_REV = REV; RIX_M = M; return idx; }
+/* ilişki indeksinin yanında, tür başına kaynak/hedef/her iki uç haritaları (indeks nesnesi başına bir kez kurulur; sıra liste sırasıdır) */
+const RBY = new WeakMap();
+function relBy(idx, k, side){
+  let c = RBY.get(idx); if(!c){ c = {}; RBY.set(idx, c); }
+  const key = k + '|' + side; if(c[key]) return c[key];
+  const m = new Map(), add = (id, x) => { let l = m.get(id); if(!l) m.set(id, l = []); l.push(x); };
+  (idx[k] || []).forEach(x => { if(side === 'src') add(x.src, x); else if(side === 'tgt') add(x.tgt, x); else { add(x.src, x); if(x.tgt !== x.src) add(x.tgt, x); } });
+  return c[key] = m;
+}
 function trace(r, idx){
   idx = idx || relIdx();
-  const g = k => idx[k] || [];
-  const parents = g('DeriveReqt').filter(x => x.src === r.id).map(x => E(x.tgt)).filter(Boolean);
-  const children = g('DeriveReqt').filter(x => x.tgt === r.id).map(x => E(x.src)).filter(Boolean);
-  const sat = g('Satisfy').filter(x => x.tgt === r.id).map(x => E(x.src)).filter(Boolean);
+  const S = k => relBy(idx, k, 'src').get(r.id) || [], T = k => relBy(idx, k, 'tgt').get(r.id) || [], A = k => relBy(idx, k, 'any').get(r.id) || [];
+  const parents = S('DeriveReqt').map(x => E(x.tgt)).filter(Boolean);
+  const children = T('DeriveReqt').map(x => E(x.src)).filter(Boolean);
+  const sat = T('Satisfy').map(x => E(x.src)).filter(Boolean);
   const funcs = sat.filter(e => FUNC_KINDS.has(e.kind)), elems = sat.filter(e => !FUNC_KINDS.has(e.kind));
-  const verifyBy = g('Verify').filter(x => x.tgt === r.id).map(x => E(x.src)).filter(Boolean);
-  const refined = g('Refine').concat(g('Trace')).filter(x => x.tgt === r.id || x.src === r.id).map(x => E(x.tgt === r.id ? x.src : x.tgt)).filter(Boolean);
+  const verifyBy = T('Verify').map(x => E(x.src)).filter(Boolean);
+  const refined = A('Refine').concat(A('Trace')).map(x => E(x.tgt === r.id ? x.src : x.tgt)).filter(Boolean);
   return {parents, children, funcs, elems, verifyBy, refined};
 }
 function covStatus(r, t){
@@ -3683,6 +3696,8 @@ function lvlMatch(r, lvl){
 }
 function refreshLvlSelect(){ const vc = ST.cur === '@vcrm', ls = document.querySelector(vc ? '#view [data-xf="vc.lvl"]' : '#view [data-vf="lvl"]'), S0 = vc ? VC : RV; if(ls){ const h = lvlOptions(); if(ls.dataset.h !== h){ ls.innerHTML = h; ls.dataset.h = h; ls.value = S0.lvl; if(ls.value !== S0.lvl){ S0.lvl = 'all'; ls.value = 'all'; } } } }
 function cellVal(r, key){ if(key.startsWith('attr:')) return (r.attrs || {})[key.slice(5)] || ''; return r[key] == null ? '' : String(r[key]); }
+/* ilk sayfa 150 satır: her satırda açılır liste ve çipler olduğundan sayfa düzeni maliyeti satır sayısıyla artar */
+const RQ_PAGE = 150;
 function reqTableHTML(){
   const cols = visCols(), idx = relIdx();
   let rs = allReqs();
@@ -3695,8 +3710,8 @@ function reqTableHTML(){
   if(RV.gaps) rs = rs.filter(r => T0.get(r.id).c.st !== 'Tam');
   if(RV.sortKey){ const k = RV.sortKey; rs.sort((a, b) => RV.sortDir * (k === '_status' ? T0.get(a.id).c.st.localeCompare(T0.get(b.id).c.st, 'tr') : cellVal(a, k).localeCompare(cellVal(b, k), 'tr', {numeric:true}))); }
   if(!allReqs().length) return `<div class="vempty">Henüz gereksinim yok.<br><br><button class="vb pri" data-va="addSys">+ Sistem gereksinimi ekle</button> &nbsp; <button class="vb" data-va="import">⤓ Excel'den aktar</button></div>`;
-  const total = rs.length; RV.limit = RV.limit || 250;
-  if(ST.tsel){ const si = rs.findIndex(r => r.id === ST.tsel); if(si >= RV.limit) RV.limit = Math.ceil((si + 1) / 250) * 250; }
+  const total = rs.length; RV.limit = RV.limit || RQ_PAGE;
+  if(ST.tsel){ const si = rs.findIndex(r => r.id === ST.tsel); if(si >= RV.limit) RV.limit = Math.ceil((si + 1) / RQ_PAGE) * RQ_PAGE; }
   rs = rs.slice(0, RV.limit);
   const chips = (arr, rid, role) => `<div class="tcell">${arr.map(x => `<span class="chip2" title="${esc(elDesc(x))}"><a class="lnk" data-goto="${x.id}">${esc(x.kind === 'Requirement' ? (x.reqId || nm(x)) : nm(x))}</a></span>`).join('')}<button class="tadd" data-trpick="${role}" data-rid="${rid}" title="Ekle / çıkar">+</button></div>`;
   let h = `<table class="rt"><thead><tr><th class="rn">#</th>${cols.map(c => `<th data-sort="${c.key}" class="${c.trace ? 'th-tr' : ''}${c.custom ? ' th-cu' : ''}" style="min-width:${Math.min(320, c.w * 7)}px">${esc(c.label)}${RV.sortKey === c.key ? (RV.sortDir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}<th></th></tr></thead><tbody>`;
@@ -3721,7 +3736,7 @@ function reqTableHTML(){
     });
     h += `<td class="ra"><button class="tdel" data-rdel="${r.id}" title="Gereksinimi sil">✕</button></td></tr>`;
   });
-  return h + `</tbody></table><div class="vfoot">${rs.length} / ${allReqs().length} gereksinim gösteriliyor${total > rs.length ? ` · filtreye uyan ${total} · <button class="vb" data-va="more">+250 daha göster</button> <button class="vb" data-va="showall">Tümünü göster</button>` : ''}</div>`;
+  return h + `</tbody></table><div class="vfoot">${rs.length} / ${allReqs().length} gereksinim gösteriliyor${total > rs.length ? ` · filtreye uyan ${total} · <button class="vb" data-va="more">+${RQ_PAGE} daha göster</button> <button class="vb" data-va="showall">Tümünü göster</button>` : ''}</div>`;
 }
 const MSETS = [
   ['sys', 'Sistem gereksinimleri', 1, () => allReqs().filter(r => reqLevel(r) === 'Sistem')],
@@ -3749,30 +3764,45 @@ function mxRel(row, col){
   if(rq && cq) return [kind, col.id, row.id];
   return null;
 }
+/* büyük matrisler sayfalı çizilir: en çok MX_PR satır × MX_PC sütun; toplamlar tüm küme üzerinden */
+const MX_PR = 150, MX_PC = 120;
+function mxPage(rows, cols){
+  const key = [MX.rows, MX.cols, MX.rel, MX.empty, MX.ch || '', rows.length, cols.length].join('|'); if(MX.pk !== key){ MX.pk = key; MX.rp = 0; MX.cp = 0; }
+  const nr = Math.max(1, Math.ceil(rows.length / MX_PR)), nc = Math.max(1, Math.ceil(cols.length / MX_PC));
+  MX.rp = Math.max(0, Math.min(nr - 1, MX.rp || 0)); MX.cp = Math.max(0, Math.min(nc - 1, MX.cp || 0));
+  const r0 = MX.rp * MX_PR, c0 = MX.cp * MX_PC, R = rows.slice(r0, r0 + MX_PR), C = cols.slice(c0, c0 + MX_PC);
+  const nav = (k, p, n, a, b, tot, lbl) => n > 1 ? `${lbl} <b>${a + 1}–${Math.min(b, tot)}</b> / ${tot} <button class="vb" data-ic="0" data-mxp="${k}|-1"${p ? '' : ' disabled'}>◀</button><button class="vb" data-ic="0" data-mxp="${k}|1"${p < n - 1 ? '' : ' disabled'}>▶</button>` : '';
+  const pager = nr > 1 || nc > 1 ? `<div class="mxpg">Büyük matris sayfalı gösteriliyor: ${[nav('r', MX.rp, nr, r0, r0 + MX_PR, rows.length, 'Satırlar'), nav('c', MX.cp, nc, c0, c0 + MX_PC, cols.length, 'Sütunlar')].filter(Boolean).join(' · ')}</div>` : '';
+  return {rows:R, cols:C, c0, pager};
+}
 function matrixHTML(){
   const rows0 = mset(MX.rows), cols = mset(MX.cols).filter(c => !rows0.includes(c) || MX.rows !== MX.cols);
   if(!rows0.length || !cols.length) return `<div class="vempty">Seçilen kümelerden biri boş.<br>${!rows0.length ? 'Satır kümesinde eleman yok.' : 'Sütun kümesinde eleman yok.'}</div>`;
-  const rel = new Set(Object.values(M.els).filter(e => e.src && e.tgt && KIND[e.kind].rel).map(e => e.kind + '|' + e.src + '|' + e.tgt));
+  const rel = new Set(), inc = new Map(), link = (a, b) => { let l = inc.get(a); if(!l) inc.set(a, l = new Set()); l.add(b); };
+  Object.values(relIdx()).forEach(L => L.forEach(e => { rel.add(e.kind + '|' + e.src + '|' + e.tgt); link(e.src, e.tgt); link(e.tgt, e.src); }));
   const has = (r, c) => { const m = mxRel(r, c); return m && rel.has(m.join('|')); };
-  const rowCnt = new Map(rows0.map(r => [r.id, cols.reduce((n, c) => n + (has(r, c) ? 1 : 0), 0)]));
+  const colSet = new Map(cols.map((c, j) => [c.id, j])), rowSet = new Map(rows0.map(r => [r.id, r]));
+  const rowCnt = new Map(rows0.map(r => { let n = 0; (inc.get(r.id) || []).forEach(id => { const j = colSet.get(id); if(j != null && has(r, cols[j])) n++; }); return [r.id, n]; }));
   const rows = MX.empty ? rows0.filter(r => !rowCnt.get(r.id)) : rows0;
-  const colCnt = cols.map(c => rows0.reduce((n, r) => n + (has(r, c) ? 1 : 0), 0));
+  const colCnt = cols.map(c => { let n = 0; (inc.get(c.id) || []).forEach(id => { const r = rowSet.get(id); if(r && has(r, c)) n++; }); return n; });
   const lab = e => e.kind === 'Requirement' ? (e.reqId || '') + ' ' + (e.name || '') + (reqLevel(e) !== 'Sistem' && e.subsys ? ' [' + e.subsys + ']' : '') : elDesc(e);
   const ml = k => (msetList().find(x => x[0] === k) || MSETS[0])[1];
-  let h = `<table class="mx"><thead><tr><th class="mxc">${esc(ml(MX.rows))} ↓ / ${esc(ml(MX.cols))} →</th>`;
-  cols.forEach((c, j) => { h += `<th class="mxh${colCnt[j] ? '' : ' zero'}" title="${esc(lab(c) + (c.text ? '\n' + c.text : ''))}"><div><span>${esc(lab(c).slice(0, 42))}</span></div></th>`; });
+  const P = mxPage(rows, cols);
+  let h = P.pager + `<table class="mx"><thead><tr><th class="mxc">${esc(ml(MX.rows))} ↓ / ${esc(ml(MX.cols))} →</th>`;
+  P.cols.forEach((c, j) => { h += `<th class="mxh${colCnt[P.c0 + j] ? '' : ' zero'}" title="${esc(lab(c) + (c.text ? '\n' + c.text : ''))}"><div><span>${esc(lab(c).slice(0, 42))}</span></div></th>`; });
   h += `<th class="mxh tot"><div><span>Toplam</span></div></th></tr></thead><tbody>`;
-  rows.forEach(r => {
+  P.rows.forEach(r => {
     const n = rowCnt.get(r.id);
     h += `<tr><th class="mxr${n ? '' : ' zero'}" title="${esc(r.text || '')}"><a class="lnk" data-goto="${r.id}">${esc(lab(r).slice(0, 60))}</a></th>`;
-    cols.forEach(c => { const m = mxRel(r, c); h += m ? `<td class="mxd${has(r, c) ? ' on' : ''}" data-mx="${r.id}|${c.id}" title="${esc(KIND[m[0]].tr)}">${has(r, c) ? '↗' : ''}</td>` : `<td class="mxd na"></td>`; });
+    P.cols.forEach(c => { const m = mxRel(r, c); h += m ? `<td class="mxd${has(r, c) ? ' on' : ''}" data-mx="${r.id}|${c.id}" title="${esc(KIND[m[0]].tr)}">${has(r, c) ? '↗' : ''}</td>` : `<td class="mxd na"></td>`; });
     h += `<td class="mxt">${n}</td></tr>`;
   });
-  h += `<tr><th class="mxr tot">Toplam</th>${colCnt.map(n => `<td class="mxt${n ? '' : ' zero'}">${n}</td>`).join('')}<td></td></tr></tbody></table>`;
+  h += `<tr><th class="mxr tot">Toplam</th>${colCnt.slice(P.c0, P.c0 + P.cols.length).map(n => `<td class="mxt${n ? '' : ' zero'}">${n}</td>`).join('')}<td></td></tr></tbody></table>`;
   const zr = rows0.filter(r => !rowCnt.get(r.id)).length, zc = colCnt.filter(n => !n).length;
   h += `<div class="vfoot">${rows0.length} × ${cols.length} · İlişkisiz satır: <b class="${zr ? 'bad' : ''}">${zr}</b> · İlişkisiz sütun: <b class="${zc ? 'bad' : ''}">${zc}</b> · Hücreye tıklayarak ilişki kurun/kaldırın.</div>`;
   return h;
 }
+$('#view').addEventListener('click', ev => { if(ST.cur !== '@matrix') return; const b = ev.target.closest('[data-mxp]'); if(!b) return; const [k, d] = b.dataset.mxp.split('|'); if(k === 'r') MX.rp = (MX.rp || 0) + +d; else MX.cp = (MX.cp || 0) + +d; renderView(); });
 function coverageData(){
   const idx = relIdx(), rs = allReqs().filter(activeReq);
   const rows = rs.map(r => { const t = trace(r, idx); return {r, t, c:covStatus(r, t)}; });
@@ -3832,7 +3862,7 @@ function coverageHTML(){
     if(va){
       const a = va.dataset.va;
       if(a === 'cvmore' || a === 'cvall'){ CV.limit = a === 'cvmore' ? (CV.limit || 250) + 250 : 1e9; renderView(); return; }
-      if(a === 'more' || a === 'showall'){ RV.limit = a === 'more' ? (RV.limit || 250) + 250 : 1e9; renderView(); return; }
+      if(a === 'more' || a === 'showall'){ RV.limit = a === 'more' ? (RV.limit || RQ_PAGE) + RQ_PAGE : 1e9; renderView(); return; }
       if(a === 'addSys' || a === 'addSub'){
         const add = (lvl, ss) => {
           snap(); const r = mk('Requirement', reqPkgFor(lvl, ss), {level:lvl, name:'', subsys:ss || ''}); ST.tsel = r.id; RV.q = '';
@@ -4415,7 +4445,9 @@ function simIndex(){
     for(const j of hit){
       const inter = cnt[j], B = tok[j][1]; cnt[j] = 0;
       const jac = inter / (A.size + B.size - inter);
-      if(jac >= 0.72){ [[i, j], [j, i]].forEach(([a, b]) => { const k = tok[a][0].id; if(!sim.has(k)) sim.set(k, []); sim.get(k).push([tok[b][0], jac, b]); }); }
+      if(jac >= 0.72){ [[i, j], [j, i]].forEach(([a, b]) => { const k = tok[a][0].id; let l = sim.get(k); if(!l) sim.set(k, l = []);
+        /* yalnız ilk 3 (en küçük sıralı) eşleşme gösterilir: liste 3 ile sınırlı tutulur, sonuç sınırsız sürümle aynıdır */
+        if(l.length < 3) l.push([tok[b][0], jac, b]); else { let mi = 0; for(let q = 1; q < 3; q++) if(l[q][2] > l[mi][2]) mi = q; if(b < l[mi][2]) l[mi] = [tok[b][0], jac, b]; } }); }
     }
   }
   sim.forEach(l => l.sort((x, y) => x[2] - y[2]));
@@ -5082,7 +5114,7 @@ function diagramSVGStr(d){
 function svgToPng(r, scale){
   return new Promise((res, rej) => {
     const img = new Image();
-    img.onload = () => { const c = document.createElement('canvas'); c.width = Math.round(r.w * scale); c.height = Math.round(r.h * scale); const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height); c.toBlob(async b => res(new Uint8Array(await b.arrayBuffer())), 'image/png'); };
+    img.onload = () => { const c = document.createElement('canvas'); c.width = Math.round(r.w * scale); c.height = Math.round(r.h * scale); const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height); c.toBlob(async b => { c.width = c.height = 0; res(new Uint8Array(await b.arrayBuffer())); }, 'image/png'); };
     img.onerror = () => rej(new Error('görüntü'));
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
   });
@@ -5198,7 +5230,7 @@ async function buildDocx(B, o){
     else if(b.t === 'p') body += docxP(b.x, null, b.st === 'muted' ? {i:1, col:'777777'} : {});
     else if(b.t === 'table') body += docxTable(b.head, b.rows, b.w, TW);
     else if(b.t === 'img'){
-      const scale = Math.min(2, 4000 / Math.max(b.r.w, b.r.h)) || 1;
+      const scale = Math.min(2, 2400 / Math.max(b.r.w, b.r.h)) || 1; /* A4'te 16 cm için ~380 dpi; daha büyük tuval bellek çalkantısı yaratır */
       let png; try { png = await svgToPng(b.r, scale); } catch(e){ body += docxP('(Görüntü oluşturulamadı)', null, {i:1}); continue; }
       pic++; media.push({name:`word/media/image${pic}.png`, data:png});
       let cx = b.r.w * 9525, cy = b.r.h * 9525; const k = Math.min(1, maxW / cx, maxH / cy); cx = Math.round(cx * k); cy = Math.round(cy * k);
@@ -5565,8 +5597,12 @@ function markDirty(){ if(!dirty){ dirty = true; updTitle(); } }
 let aT = null;
 function persist(){
   if(NATIVE){ clearTimeout(aT); aT = setTimeout(() => { try { window.nativeAutosave(JSON.stringify(pack(), clean), curPath, dirty); } catch(e){ appErr('000:5558', e); } }, 500); return; }
-  try { localStorage.setItem(LSK, JSON.stringify(pack(), clean)); } catch(e){}
+  /* tarayıcı: art arda değişiklikler tek yazmada birleşir (3 MB'lık modelde her yazma ~200 ms); sayfa kapanırken bekleyen yazma hemen yapılır */
+  clearTimeout(aT); aT = setTimeout(persistNow, 500);
 }
+function persistNow(){ clearTimeout(aT); aT = null; if(NATIVE || !M) return; try { localStorage.setItem(LSK, JSON.stringify(pack(), clean)); } catch(e){} }
+addEventListener('pagehide', () => { if(aT) persistNow(); });
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden' && aT) persistNow(); });
 let pT = null;
 function persistSoon(){ clearTimeout(pT); pT = setTimeout(persist, 400); }
 async function saveJSON(saveAs){
@@ -5879,7 +5915,7 @@ function showHelp(){
   <tr><td>HTML olarak kaydet</td><td>Modeli içine gömülü uygulama dosyası üretir; paylaştığınız kişi açınca modeli hazır görür.</td></tr>
   <tr><td>Dışa aktar ▾</td><td>PNG, SVG, panoya kopyalama; tek diyagram, açık sekmeler veya tüm diyagramlar için çok sayfalı <b>PDF</b> (A4/A3, yön otomatik); yazdırma. Diyagram özelliklerinden SysML çerçevesi gizlenebilir.</td></tr>
   <tr><td>Eski / bozuk dosya</td><td>Önceki sürümlerin dosyaları açılırken otomatik yükseltilir; sahipsiz eleman, ucu kopuk ilişki, geçersiz diyagram şekli gibi tutarsızlıklar onarılır ve bildirilir.</td></tr>
-  <tr><td>Büyük modeller</td><td>Gereksinim tablosu ve kapsama analizi 250'şer satır gösterir; alttaki düğmelerle devamı açılır.</td></tr>
+  <tr><td>Büyük modeller</td><td>Gereksinim tablosu 150, kapsama analizi 250 satır gösterir; alttaki düğmelerle devamı açılır. Büyük izlenebilirlik matrisleri sayfalı çizilir.</td></tr>
   </table>
   <p style="text-align:right;margin:12px 0 0"><button class="pbtn" onclick="document.getElementById('modal').style.display='none'">Kapat</button></p>`;
   $('#modal').style.display = 'flex';

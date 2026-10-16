@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 	"unicode/utf16"
@@ -299,6 +300,81 @@ func main() {
 			return nil
 		}
 		return err
+	})
+	// Dönen yedekler: <dosya klasörü>/.yedek/<ad>_YYYYMMDD-HHMMSS<uzantı>; en yenileri tutulur.
+	// Klasöre yazılamazsa (salt okunur ağ paylaşımı) yerel uygulama klasörüne yazılır.
+	backupDir := func(path string) string {
+		if !filepath.IsAbs(path) {
+			d := filepath.Join(appDir(), "yedek")
+			os.MkdirAll(d, 0o755)
+			return d
+		}
+		d := filepath.Join(filepath.Dir(path), ".yedek")
+		if err := os.MkdirAll(d, 0o755); err == nil {
+			if f, err := os.CreateTemp(d, "w*"); err == nil {
+				n := f.Name()
+				f.Close()
+				os.Remove(n)
+				return d
+			}
+		}
+		d = filepath.Join(appDir(), "yedek")
+		os.MkdirAll(d, 0o755)
+		return d
+	}
+	backupList := func(path string) []map[string]interface{} {
+		base := filepath.Base(path)
+		ext := filepath.Ext(base)
+		stem := strings.TrimSuffix(base, ext) + "_"
+		out := []map[string]interface{}{}
+		seen := map[string]bool{}
+		for _, d := range []string{filepath.Join(filepath.Dir(path), ".yedek"), filepath.Join(appDir(), "yedek")} {
+			ents, err := os.ReadDir(d)
+			if err != nil {
+				continue
+			}
+			for _, e := range ents {
+				n := e.Name()
+				if e.IsDir() || !strings.HasPrefix(n, stem) || !strings.HasSuffix(n, ext) || seen[n] {
+					continue
+				}
+				info, err := e.Info()
+				if err != nil {
+					continue
+				}
+				seen[n] = true
+				out = append(out, map[string]interface{}{"name": n, "path": filepath.Join(d, n), "size": info.Size(), "mtime": info.ModTime().UTC().Format(time.RFC3339)})
+			}
+		}
+		sort.Slice(out, func(i, j int) bool { return out[i]["name"].(string) > out[j]["name"].(string) })
+		return out
+	}
+	w.Bind("nativeBackup", func(path, data string, keep int) map[string]interface{} {
+		res := map[string]interface{}{}
+		if path == "" {
+			res["error"] = "dosya yolu yok"
+			return res
+		}
+		if keep < 1 {
+			keep = 10
+		}
+		base := filepath.Base(path)
+		ext := filepath.Ext(base)
+		name := strings.TrimSuffix(base, ext) + "_" + time.Now().Format("20060102-150405") + ext
+		full := filepath.Join(backupDir(path), name)
+		if err := writeAtomic(full, []byte(data)); err != nil {
+			res["error"] = err.Error()
+			return res
+		}
+		res["path"] = full
+		list := backupList(path)
+		for i := keep; i < len(list); i++ {
+			os.Remove(list[i]["path"].(string))
+		}
+		return res
+	})
+	w.Bind("nativeBackupList", func(path string) []map[string]interface{} {
+		return backupList(path)
 	})
 	defer func() {
 		for p := range myLocks {

@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v1.48.0 — 2026-10-16
+
+- **Otomatik dönen yedekler:** masaüstünde dosyanın yanındaki `.yedek` klasörü (yazılamazsa yerel uygulama klasörü), tarayıcıda yerel veritabanı; son 10, içerik değişmediyse yinelenmez
+- **Yedekten geri yükle:** fark özeti, geri yükleme öncesi otomatik yedek, geri al, indir, ayarlar
+- **Kurtarma bildirimi:** kaydedilmemiş oturum kurtarıldığında açık bildirim ve diskteki sürüme dönüş; başka dosya açılırken kaydedilmemiş değişiklikler yedeklenir
+- **Gerçek ölçek (12 900 eleman / 3000 gereksinim / 60 diyagram) performansı:** VCRM 29 → 1,5 sn, izlenebilirlik matrisi 14,8 → 0,8 sn (sayfalı), N² 12,7 → 0,8 sn, ICD 7,5 → 0,7 sn, tam Word raporu 28 → ~10 sn, diyagram açılışı ortalama 550 → 430 ms
+- İlişki indeksi, değer tipi, NCR listesi önbellekleri; indeksli izlenebilirlik; benzerlik listesi gereksinim başına 3 ile sınırlı; rapor görüntüleri en çok 2400 px; tarayıcıda yerel kayıt birleştirilerek yazılır
+- Gereksinim tablosu ilk sayfası 150 satır; türetme sihirbazı ilk 200 öneri
+- `tests/stres.js` stres testi; birim testi 146, regresyon testi 52 adım
+
 ## v1.47.0 — 2026-10-16
 
 - **Gereksinim kapsama haritası:** blok × 9 kategori; boş hücreden şablon gereksinim veya "uygulanamaz"; Excel
