@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.36.0 — 2026-10-16
+
+- **Kaynak düzeni:** tek dosya `src/` altında 29 modüle bölündü; `tools/build.py` ile birebir aynı tek HTML üretilir (kullanıcı tarafı değişmedi)
+- **Genişletme noktaları (HOOKS):** özellik paneli ve menü eklentileri zincirleme sarmalama yerine kayıtla çalışır; her eklenti hata yalıtımlı
+- **Özellik paneli genel dağıtım:** eklenti türlerinin (akıllı paket dahil) özellik bölümü artık her zaman görünür
+- **Hata günlüğü altyapısı** (`appErr`)
+- Geliştirici notları: `docs/GELISTIRME.md`
+- Regresyon testi 38 adım
+
 ## v1.35.0 — 2026-10-16
 
 - **View & Viewpoint:** pkg/bdd paletinde Görünüm ve Bakış Açısı; paydaş, kaygı, amaç, dil, yöntem alanları

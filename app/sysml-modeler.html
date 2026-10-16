@@ -328,7 +328,7 @@ tr.d-add td{background:#f0faf3}tr.d-del td{background:#fdf1f2}tr.d-chg td{backgr
 'use strict';
 const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const LSK = 'sysml-modeler-v1';
-const APP_VER = '1.35.0';
+const APP_VER = '1.36.0';
 const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -3601,8 +3601,6 @@ function renderProps(){
       h += `<div style="margin:6px 0">${pfChart([{p:el}], {w:270, h:150})}</div>` + pf('', `<button class="pbtn" data-openpf="${el.id}">Profil düzenleyicide aç</button>`);
       break;
     }
-    case 'TestArticle': case 'NCR': case 'TestResource': case 'Instance': case 'TradeStudy': case 'View': case 'Viewpoint':
-      h += PROPS_EXT[el.kind](el, pf); break;
     case 'Partition':
       h += pf('Temsil eder', `<select data-f="represents">${blockOpts(el.represents)}</select>`); break;
     case 'Action': {
@@ -3614,6 +3612,9 @@ function renderProps(){
     case 'Diagram':
       h += pf('Şekil / bağlantı', `${el.shapes.length} / ${el.edges.length}`);
       h += pf('', `<button class="pbtn" data-opend="${el.id}">Diyagramı aç</button>`); break;
+    default:
+      /* v1.36: eklenti türleri genel dağıtımla — yeni tür eklemek için yalnız PROPS_EXT[tür] tanımlamak yeterli */
+      if(typeof PROPS_EXT !== 'undefined' && PROPS_EXT[el.kind]){ try { h += PROPS_EXT[el.kind](el, pf); } catch(e){ appErr('PROPS_EXT.' + el.kind, e); } }
   }
   if(k.rel){
     h += pf('Kaynak', `<a class="lnk" data-goto="${el.src}">${esc(E(el.src) ? nm(E(el.src)) : '?')}</a>`);
@@ -6378,6 +6379,23 @@ function demo(){
   return M;
 }
 
+/* ================= v1.36: KANCA KAYITLARI (genişletme noktaları) =================
+   Modüller çekirdek fonksiyonları zincirleme sarmak yerine buraya kayıt olur:
+   HOOKS.props  — Özellikler paneli çizildikten sonra: f(target, panel)
+   HOOKS.menu.X — menü öğeleri listesi üretildikten sonra: f(items)  (X: tools, analysis, layout)
+   Her kanca ayrı try/catch içinde çalışır; hata bir modülü bozsa da diğerleri çalışır. */
+const HOOKS = {props:[], menu:{tools:[], analysis:[], layout:[]}};
+function appErr(where, e){ try { (window.APP_ERRS = window.APP_ERRS || []).push({t:new Date().toISOString(), where, msg:String(e && e.message || e), stack:String(e && e.stack || '').split('\n').slice(0, 3).join(' | ')}); if(window.APP_ERRS.length > 200) window.APP_ERRS.shift(); console.warn('[' + where + ']', e); } catch(_){} }
+function runHooks(list, where, args){ list.forEach((h, i) => { try { h.apply(null, args); } catch(e){ appErr(where + '#' + i, e); } }); }
+{
+  const _rp0 = renderProps;
+  renderProps = function(){ _rp0.apply(this, arguments); const t = typeof propTarget === 'function' ? propTarget() : {}; runHooks(HOOKS.props, 'props', [t || {}, $('#props')]); };
+  [['tools', 'toolsMenuItems'], ['analysis', 'analysisMenuItems'], ['layout', 'layoutMenuItems']].forEach(([k, fn]) => {
+    const orig = window[fn] || eval(fn);
+    const w = function(){ const r = orig.apply(this, arguments); runHooks(HOOKS.menu[k], 'menu.' + k, [r]); return r; };
+    if(fn === 'toolsMenuItems') toolsMenuItems = w; else if(fn === 'analysisMenuItems') analysisMenuItems = w; else layoutMenuItems = w;
+  });
+}
 /* ================= v1.10: XMI (Cameo / MagicDraw alt kümesi) VE ŞABLONLAR ================= */
 const XNS = {xmi:'http://www.omg.org/spec/XMI/20131001', uml:'http://www.omg.org/spec/UML/20161101', sysml:'http://www.omg.org/spec/SysML/20181001/SysML'};
 const PRIM_HREF = {Real:'http://www.omg.org/spec/SysML/20181001/SysML.xmi#SysML_dataType.Real', Integer:'http://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Integer', Boolean:'http://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#Boolean', String:'http://www.omg.org/spec/UML/20161101/PrimitiveTypes.xmi#String'};
@@ -10066,16 +10084,12 @@ VIEWS['@modules'] = {tr:'Modüller (ekip çalışması)', ic:'MD', note:'Paketle
   });
 })();
 /* özellik paneli: salt okunur bildirimi */
-if(typeof renderProps === 'function'){
-  const _rp = renderProps;
-  renderProps = function(){
-    _rp.apply(this, arguments);
+HOOKS.props.push(function(){
     const {el} = propTarget(); const mid = el && el.id && modOf(el.id); if(!mid) return;
     const x = mods()[mid], P = $('#props');
     P.insertAdjacentHTML('afterbegin', `<div class="robar">🔒 Salt okunur modül: <b class="noi18n">${esc(x.name)}</b> (rev ${esc(String(x.rev))}${x.from ? ', <span class="noi18n">' + esc(x.from) + '</span>' : ''}). Yapılan değişiklikler geri alınır.</div>`);
     P.querySelectorAll('input, select, textarea').forEach(i => { if(!i.closest('.robar') && !i.closest('.note') && i.id !== 'noteTx' && !i.closest('details.wu')) i.disabled = true; });
-  };
-}
+  });
 
 /* ================= v1.24: SİMGELER, SÜRÜKLEYEREK İLİŞKİ, AKILLI MANİPÜLATÖRLER, HİZALAMA KILAVUZLARI ================= */
 /* ---------- arayüz simge kütüphanesi (24×24, çizgi) ---------- */
@@ -10542,16 +10556,11 @@ const specApply = fn => { const e = E(SPEC.id); if(!e) return; const body = docu
   });
 })();
 /* özellik panelinin üstüne "Spesifikasyon" düğmesi */
-if(typeof renderProps === 'function'){
-  const _rp2 = renderProps;
-  renderProps = function(){
-    _rp2.apply(this, arguments);
+HOOKS.props.push(function(){
     const P = $('#props'); if(P.querySelector('[data-openspec]')) return;
     const t = typeof propTarget === 'function' ? propTarget() : {}; const el = t.el; if(!el || !el.id || !E(el.id) || (typeof bulkTargets === 'function' && bulkTargets())) return;
     const pt = P.querySelector('.pt'); if(pt) pt.insertAdjacentHTML('beforeend', `<button class="pbtn spbtn" data-ic="0" data-openspec="${el.id}" title="Spesifikasyon penceresi (Enter)">${uiIc('settings', 13)}</button>`);
-  };
-  $('#props').addEventListener('click', ev => { const b = ev.target.closest('[data-openspec]'); if(b) openSpec(b.dataset.openspec); });
-}
+  });
 /* akıllı paketler: ağaçta sanal içerik ve özellik paneli */
 PROPS_EXT.SmartPackage = (el, pf) => { const m = smartMembers(el); return pf('Eleman', String(m.length)) + pf('', `<button class="pbtn" data-spedit="${el.id}">Kuralları düzenle…</button>`) + `<div class="sub"><span>İçerik (${m.length})</span></div>` + m.slice(0, 40).map(x => `<div class="li noi18n">${icon(x)} <a class="lnk" data-goto="${x.id}">${esc(rowLabel(x))}</a></div>`).join(''); };
 $('#props').addEventListener('click', ev => { const b = ev.target.closest('[data-spedit]'); if(b) smartDialog(b.dataset.spedit); });
@@ -10671,15 +10680,11 @@ PROPS_EXT.Instance = (el, pf) => {
   const sl = instSlots(el); h += `<div class="sub"><span>Slotlar (${sl.length})</span></div>` + (sl.length ? sl.map(v => pf(esc(v.name) + (v.unit ? ' [' + esc(v.unit) + ']' : ''), `<input data-slot="${el.id}|${v.id}" value="${esc(slotVal(el, v))}" placeholder="${esc(v.def || '')}">`)).join('') : '<div class="muted" style="font-size:12px">Sınıflandırıcının value property\'si yok</div>');
   return h + pf('', `<button class="pbtn" data-openview="@instances">Örneklem tablosunda aç</button>`);
 };
-if(typeof renderProps === 'function'){
-  const _rp3 = renderProps;
-  renderProps = function(){
-    _rp3.apply(this, arguments);
+HOOKS.props.push(function(){
     const t = typeof propTarget === 'function' ? propTarget() : {}, el = t.el; if(!el || !el.id || !E(el.id) || (typeof bulkTargets === 'function' && bulkTargets())) return;
     const extra = (KIND[el.kind] && KIND[el.kind].rel ? relPropsHTML(el) : nodePropsHTML(el)); if(!extra) return;
     const P = $('#props'), wu = P.querySelector('details.wu'); if(wu) wu.insertAdjacentHTML('beforebegin', extra); else P.insertAdjacentHTML('beforeend', extra);
-  };
-}
+  });
 /* ---------- örnek (instance) ağacı ---------- */
 function multCount(m){ m = String(m || '').trim(); if(!m) return 1; const r = m.match(/^(\d+)\s*\.\.\s*(\d+|\*)$/); if(r) return r[2] === '*' ? Math.max(1, +r[1]) : +r[2]; if(/^\d+$/.test(m)) return +m; return 1; }
 function instantiate(blockId, ownerId){
@@ -11316,7 +11321,7 @@ function tradeBar(){
 VIEWS['@tradestudy'] = {tr:'Trade Study ve Duyarlılık', ic:'TS', note:'Tasarım alternatiflerini (bloklar veya örnek konfigürasyonları) <b>ağırlıklı MOE/MOP kriterleriyle</b> karşılaştırın: değerler bütçe motoru, parametrik çözücü ve örnek slotlarından gelir; Radar ve Pareto grafikleri, eleme sınırları ve ağırlık duyarlılığı.<br><br><b>Duyarlılık süpürmesi:</b> bir girdiyi aralıkta tarayıp çıktı eğrisini çizer; <b>Tornado</b> tüm girdileri ±% değiştirir.<br><br><b>Monte Carlo:</b> min/maks toleranslı girdilerden örnekleyerek dağılım, yüzdelikler ve sınır ihlal olasılığını hesaplar.', render:tradeHTML, bar:tradeBar, status:() => allTS().length + ' trade study'};
 GO_EXT.TradeStudy = e => { TSV.ts = e.id; TSV.tab = 'ts'; ST.tsel = e.id; openD('@tradestudy'); };
 PROPS_EXT.TradeStudy = (el, pf) => { const R = tsEval(el), w = R.alts.length && R.crit.length && !R.elim[R.order[0]].length ? R.alts[R.order[0]] : null; return pf('Alternatif', String(R.alts.length)) + pf('Kriter', String(R.crit.length)) + pf('Önde', w ? `<span class="noi18n">${esc(tsAltName(w))}</span> (${R.score[R.order[0]].toFixed(1)})` : '—') + pf('', `<button class="pbtn" data-goto="${el.id}">Trade study'yi aç</button>`); };
-{ const _am = analysisMenuItems; analysisMenuItems = function(){ const r = _am(); let i = r.findIndex(x => x && x.t && /^Bütçe/.test(x.t)); if(i < 0) i = r.length - 1; r.splice(i + 1, 0, {t:'Trade study (alternatif karşılaştırma)', f:() => { TSV.tab = 'ts'; openD('@tradestudy'); }}, {t:'Duyarlılık süpürmesi ve tornado', f:() => { TSV.tab = 'sw'; openD('@tradestudy'); }}, {t:'Monte Carlo tolerans analizi', f:() => { TSV.tab = 'mc'; openD('@tradestudy'); }}); return r; }; }
+HOOKS.menu.analysis.push(r => { let i = r.findIndex(x => x && x.t && /^Bütçe/.test(x.t)); if(i < 0) i = r.length - 1; r.splice(i + 1, 0, {t:'Trade study (alternatif karşılaştırma)', f:() => { TSV.tab = 'ts'; openD('@tradestudy'); }}, {t:'Duyarlılık süpürmesi ve tornado', f:() => { TSV.tab = 'sw'; openD('@tradestudy'); }}, {t:'Monte Carlo tolerans analizi', f:() => { TSV.tab = 'mc'; openD('@tradestudy'); }}); });
 /* ---------- dışa aktarım ---------- */
 function tsXlsx(){
   const ts = tsCur(); if(!ts) return toast('Trade study yok');
@@ -11798,22 +11803,15 @@ function layersDialog(){
   };
 }
 /* ---------- menüler ve özellikler paneli ---------- */
-{
-  const _lm = layoutMenuItems;
-  layoutMenuItems = function(){
-    const it = _lm(), d = cur(); if(!d || isView(ST.cur)) return it;
+HOOKS.menu.layout.push(it => {
+    const d = cur(); if(!d || isView(ST.cur)) return;
     it.push({h:'Çizim'});
     it.push({t:(jumpsOn(d) ? '✓ ' : '') + 'Çizgi atlamaları (kesişimde köprü)', dis:d.dtype === 'sd', f:() => { snap(); d.jumps = !jumpsOn(d); afterChange(); }});
     it.push({t:(d.tree ? '✓ ' : '') + 'Ağaç stili: genelleme / kompozisyon birleşik', dis:!['bdd', 'pkg', 'req'].includes(d.dtype) && !d.edges.some(e => ['Generalization', 'Composition', 'Aggregation'].includes(edgeKind(e))), f:() => { snap(); d.tree = !d.tree; afterChange(); }});
     const nh = dLayers(d).filter(l => l.vis === false).length;
     it.push({t:'Katmanlar…' + (dLayers(d).length ? ` (${dLayers(d).length}${nh ? ', ' + nh + ' gizli' : ''})` : ''), f:layersDialog});
-    return it;
-  };
-}
-if(typeof renderProps === 'function'){
-  const _rp4 = renderProps;
-  renderProps = function(){
-    _rp4.apply(this, arguments);
+});
+HOOKS.props.push(function(){
     const t = typeof propTarget === 'function' ? propTarget() : {}, sh = t.sh, el = t.el, d = cur(); if(!sh || !el || !d) return;
     const P = $('#props'); let h = '';
     if(['Block', 'InterfaceBlock'].includes(el.kind)){ const n = (sh.hideEls || []).length; h += `<div class="pf"><label>Bölme elemanları</label><div><button class="pbtn" data-compels="1">Elemanları seç…</button>${n ? ` <span class="muted">${n} gizli</span>` : ''}</div></div>`; }
@@ -11822,8 +11820,7 @@ if(typeof renderProps === 'function'){
     const ks = [...P.querySelectorAll('.sub')].find(x => /Görünüm|Appearance/.test(x.textContent));
     if(ks){ let n = ks.nextElementSibling; while(n && !n.classList.contains('sub') && n.nextElementSibling && !n.nextElementSibling.classList.contains('sub')) n = n.nextElementSibling; (n || ks).insertAdjacentHTML('afterend', h); }
     else P.insertAdjacentHTML('beforeend', `<div class="sub"><span>Görünüm</span></div>` + h);
-  };
-}
+  });
 (() => {
   const P = $('#props');
   P.addEventListener('click', ev => { const b = ev.target.closest('[data-compels]'); if(!b) return; const t = propTarget(); if(t && t.sh) compElsDialog(t.sh); });
@@ -11979,14 +11976,10 @@ async function reviewImportDialog(){
   try { const r = reviewImportNotes(JSON.parse(f.text)); toast(`${r.n} not eklendi${r.dup ? ', ' + r.dup + ' zaten vardı' : ''}${r.miss ? ', ' + r.miss + ' eleman bulunamadı' : ''}`); openD('@reviews'); }
   catch(e){ toast('Hata: ' + e.message); }
 }
-{
-  const _tm = toolsMenuItems;
-  toolsMenuItems = function(){
-    const it = _tm(); let i = it.findIndex(x => x && x.t === 'İnceleme notları'); if(i < 0) i = it.length - 1;
+HOOKS.menu.tools.push(it => {
+    let i = it.findIndex(x => x && x.t === 'İnceleme notları'); if(i < 0) i = it.length - 1;
     it.splice(i + 1, 0, {t:'Etkileşimli inceleme paketi (HTML) dışa aktar', f:reviewExport}, {t:'İnceleme notlarını içe aktar (JSON)…', f:reviewImportDialog});
-    return it;
-  };
-}
+});
 /* ---------- genel tablo: Excel/CSV gidiş-dönüş ---------- */
 {
   const _gx = gtXlsx;
@@ -12144,8 +12137,8 @@ function mgXlsx(){
 VIEWS['@magicgrid'] = {tr:'MagicGrid Mimari Panosu', ic:'MG', note:'MagicGrid yöntemine göre modelin olgunluğu: <b>Kara Kutu</b> (paydaş ihtiyaçları, kullanım senaryoları, bağlam, MoE), <b>Beyaz Kutu</b> (fonksiyonel analiz, mantıksal alt sistemler), <b>Çözüm Mimarisi</b> ve <b>Doğrulama</b> sütunlarında Gereksinim / Davranış / Yapı / Parametre hücrelerinin tamamlanma yüzdesi.<br><br><b>MagicGrid paket iskeleti kur</b> standart paket yapısını oluşturur.', render:magicgridHTML, bar:magicgridBar, status:() => 'MagicGrid'};
 (() => { $('#view').addEventListener('click', ev => { if(ST.cur !== '@magicgrid') return; const a = ev.target.closest('[data-mga]'); if(a){ if(a.dataset.mga === 'skel') mgSkeleton(); if(a.dataset.mga === 'xl') mgXlsx(); return; } const g = ev.target.closest('[data-mggo]'); if(g && VIEWS[g.dataset.mggo]) openD(g.dataset.mggo); }); })();
 {
-  const _am2 = analysisMenuItems; analysisMenuItems = function(){ const r = _am2(); r.splice(1, 0, {t:'MagicGrid mimari panosu', f:() => openD('@magicgrid')}); return r; };
-  const _tm2 = toolsMenuItems; toolsMenuItems = function(){ const r = _tm2(); const i = r.findIndex(x => x && x.h === 'Modelleme yardımcıları'); r.splice(i < 0 ? r.length : i + 1, 0, {t:'MagicGrid mimari panosu', f:() => openD('@magicgrid')}, {t:'MagicGrid paket iskeleti kur', f:mgSkeleton}); return r; };
+  HOOKS.menu.analysis.push(r => { r.splice(1, 0, {t:'MagicGrid mimari panosu', f:() => openD('@magicgrid')}); });
+  HOOKS.menu.tools.push(r => { const i = r.findIndex(x => x && x.h === 'Modelleme yardımcıları'); r.splice(i < 0 ? r.length : i + 1, 0, {t:'MagicGrid mimari panosu', f:() => openD('@magicgrid')}, {t:'MagicGrid paket iskeleti kur', f:mgSkeleton}); });
 }
 const mgCss = document.createElement('style');
 mgCss.textContent = `.mgw{padding:12px 14px}table.mg{border-collapse:collapse;width:100%;table-layout:fixed}table.mg th,table.mg td{border:1px solid var(--line,#d9dde3);padding:8px;vertical-align:top}table.mg thead th{background:var(--panel2,#f3f5f8);text-align:left}table.mg th.mgr{width:120px;background:var(--panel2,#f3f5f8);text-align:left}.mgc{cursor:pointer}.mgc:hover{background:rgba(45,127,249,.06)}.mgp{font-size:22px;font-weight:600}.mgb{height:5px;background:#e3e6ea;margin:3px 0 5px}.mgb i{display:block;height:100%}.mgi{font-size:12px}.mgh{font-size:11px;margin-top:3px}.mgsum{margin-top:10px;font-size:13px}`;
@@ -12329,18 +12322,14 @@ function ifaceCreate(a, b, o){
 }
 /* ---------- menüler ve özellikler ---------- */
 {
-  const _tm3 = toolsMenuItems; toolsMenuItems = function(){ const r = _tm3(); const i = r.findIndex(x => x && x.h === 'Modelleme yardımcıları'); r.splice(i < 0 ? r.length : i + 1, 0, {t:'Hızlı arayüz bağla (Cameo sihirbazı)…', f:ifaceWizard}); return r; };
+  HOOKS.menu.tools.push(r => { const i = r.findIndex(x => x && x.h === 'Modelleme yardımcıları'); r.splice(i < 0 ? r.length : i + 1, 0, {t:'Hızlı arayüz bağla (Cameo sihirbazı)…', f:ifaceWizard}); });
 }
-if(typeof renderProps === 'function'){
-  const _rp5 = renderProps;
-  renderProps = function(){
-    _rp5.apply(this, arguments);
+HOOKS.props.push(function(){
     const t = typeof propTarget === 'function' ? propTarget() : {}, sh = t.sh, el = t.el, d = cur(); if(!sh || !el || !d || d.dtype !== 'ibd' || el.kind !== 'Part') return;
     const subs = el.type && E(el.type) ? kidsOf(el.type).filter(k => k.kind === 'Part').length : 0;
     const P = $('#props');
     P.insertAdjacentHTML('beforeend', `<div class="sub"><span>İç yapı (IBD)</span></div><div class="pf"><label>Alt part'lar</label><div>${subs ? `<label class="vchk"><input type="checkbox" data-deep="1"${sh.deep ? ' checked' : ''}> Alt part'ları kutu içinde göster</label> <select data-deepn="1">${[1, 2, 3].map(n => `<option value="${n}"${(sh.deep || 1) === n ? ' selected' : ''}>${n} seviye</option>`).join('')}</select>` : '<span class="muted">Tip bloğunda part yok</span>'}</div></div><div class="pf"><label></label><div><button class="pbtn" data-ifw="1">Hızlı arayüz bağla…</button></div></div>`);
-  };
-}
+  });
 (() => {
   const P = $('#props');
   P.addEventListener('change', ev => {
@@ -12484,15 +12473,11 @@ function simConsHTML(){
   };
 }
 /* gereksinim: simülasyon kısıtı alanı */
-if(typeof renderProps === 'function'){
-  const _rp6 = renderProps;
-  renderProps = function(){
-    _rp6.apply(this, arguments);
+HOOKS.props.push(function(){
     const t = typeof propTarget === 'function' ? propTarget() : {}, el = t.el; if(!el || el.kind !== 'Requirement' || (typeof bulkTargets === 'function' && bulkTargets())) return;
     const P = $('#props'), html = `<div class="pf"><label>Simülasyon kısıtı</label><div><input data-f="simExpr" class="noi18n" value="${esc(el.simExpr || '')}" placeholder="ör. t <= 30 || hazır == 1" title="Simülasyonda her adımda denetlenen ifade (bağlam değişkenleri, t)"></div></div>`;
     const wu = P.querySelector('details.wu'); if(wu) wu.insertAdjacentHTML('beforebegin', html); else P.insertAdjacentHTML('beforeend', html);
-  };
-}
+  });
 /* simülasyon saatini de değişken olarak sun: t */
 {
   const _sc2 = simCheck;
@@ -12561,7 +12546,7 @@ VIEWS['@timing'] = {tr:'Zaman Diyagramı', ic:'TD', note:'Son simülasyon koşus
     if(a === 'xl'){ const keys = TIMING.vars, rows = [['t', 'adım', 'durum'].concat(keys).map(v => ({v, s:1}))]; const st = TIMING.trace.filter(o => o.k === 'st' || o.k === 'act'); TIMING.series.forEach(o => { const cs = st.filter(x => (x.step || 0) <= o.s).pop(); rows.push([o.t, o.s, cs ? cs.name : ''].concat(keys.map(k => o[k] == null ? '' : o[k]))); }); const S2 = [{name:'Zaman', rows, widths:[10, 8, 18].concat(keys.map(() => 14)), header:true, freeze:[1, 1]}]; if(TIMING.viol.length) S2.push({name:'İhlaller', rows:[['t', 'Adım', 'Kısıt', 'Değerler'].map(v => ({v, s:1}))].concat(TIMING.viol.map(v => [v.t, v.step, v.label, v.vals])), widths:[10, 8, 40, 40], header:true}); download(buildXlsx(S2), fileSafe(TIMING.name || 'Zaman') + ' - Zaman Diyagramı.xlsx'); }
   });
 })();
-{ const _am3 = analysisMenuItems; analysisMenuItems = function(){ const r = _am3(); const i = r.findIndex(x => x && x.t && /Simülasyonu kapat|Simülasyon başlat/.test(x.t)); r.splice(i < 0 ? r.length : i + 1, 0, {t:'Zaman diyagramı (son simülasyon)', f:() => { if(SIM) timingFromSim(); else openD('@timing'); }}); return r; }; }
+HOOKS.menu.analysis.push(r => { const i = r.findIndex(x => x && x.t && /Simülasyonu kapat|Simülasyon başlat/.test(x.t)); r.splice(i < 0 ? r.length : i + 1, 0, {t:'Zaman diyagramı (son simülasyon)', f:() => { if(SIM) timingFromSim(); else openD('@timing'); }}); });
 const simkCss = document.createElement('style');
 simkCss.textContent = `.simk{border-top:1px solid var(--line,#e3e6ea);padding:4px 0;font-size:12px}.simkl{max-height:84px;overflow:auto}.simk .vb{padding:1px 6px}.simk select{max-width:160px}`;
 document.head.appendChild(simkCss);
@@ -12709,7 +12694,7 @@ VALIDATORS.push((add, els) => {
   els.filter(e => e.kind === 'View').forEach(v => { if(!viewConform(v).length) add('bilgi', 'Bakış açısız görünüm', v, 'Görünüm hiçbir bakış açısına «conform» değil'); if(!viewExposed(v).length && !kidsOf(v.id).some(c => c.kind === 'View')) add('uyarı', 'Boş görünüm', v, 'Görünüm hiçbir paket/diyagram sergilemiyor («expose» yok)'); });
   els.filter(e => e.kind === 'Viewpoint').forEach(v => { if(!String(v.stakeholders || '').trim() || !String(v.concerns || '').trim()) add('bilgi', 'Eksik bakış açısı', v, 'Paydaş ve kaygı (concern) alanları doldurulmalı'); });
 });
-{ const _tm4 = toolsMenuItems; toolsMenuItems = function(){ const r = _tm4(); const vs = Object.values(M.els).filter(e => e.kind === 'View' && !(E(e.owner) && E(e.owner).kind === 'View')).sort(sortEls); if(vs.length){ const i = r.findIndex(x => x && x.t === 'Etkileşimli inceleme paketi (HTML) dışa aktar'); r.splice(i < 0 ? r.length : i + 1, 0, ...vs.slice(0, 6).map(v => ({t:'View dokümanı: ' + v.name, f:() => viewDocExport(v.id)}))); } return r; }; }
+HOOKS.menu.tools.push(r => { const vs = Object.values(M.els).filter(e => e.kind === 'View' && !(E(e.owner) && E(e.owner).kind === 'View')).sort(sortEls); if(vs.length){ const i = r.findIndex(x => x && x.t === 'Etkileşimli inceleme paketi (HTML) dışa aktar'); r.splice(i < 0 ? r.length : i + 1, 0, ...vs.slice(0, 6).map(v => ({t:'View dokümanı: ' + v.name, f:() => viewDocExport(v.id)}))); } });
 /* örnek model: paydaş görünümü */
 DEMO_EXT.push(X => {
   const pk = E(findOrMkPkg(M.rootId, 'Görünümler'));

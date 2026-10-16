@@ -1,0 +1,6054 @@
+'use strict';
+const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+const LSK = 'sysml-modeler-v1';
+const APP_VER = '1.36.0';
+const $ = s => document.querySelector(s);
+const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const G = 10, FF = 'Segoe UI, Arial, sans-serif';
+const STROKE = '#3a3a3a', STROKE0 = STROKE;
+
+/* ================= META ================= */
+const KIND = {
+  Model:{tr:'Model',en:'Model',ic:'M',col:'#5b6b82'},
+  Package:{tr:'Paket',en:'Package',ic:'P',col:'#b08a2e',w:180,h:110},
+  Block:{tr:'Blok',en:'Block',ic:'B',col:'#3d7bd9',w:170,h:80},
+  Part:{tr:'Part',ic:'pt',col:'#2e9e6a',w:170,h:80},
+  Value:{tr:'Value Property',ic:'v',col:'#8a5cc2',w:150,h:36},
+  Port:{tr:'Port',ic:'▫',col:'#d9772e',w:16,h:16},
+  Actor:{tr:'Aktör',ic:'A',col:'#c2416b',w:60,h:90},
+  UseCase:{tr:'Use Case',ic:'U',col:'#2e8fa3',w:150,h:70},
+  Subject:{tr:'Sistem Sınırı',ic:'S',col:'#5f6b7a',w:320,h:380},
+  Activity:{tr:'Aktivite',en:'Activity',ic:'Ac',col:'#7a4fbf'},
+  Action:{tr:'Aksiyon',ic:'a',col:'#7a4fbf',w:140,h:50},
+  Initial:{tr:'Başlangıç Düğümü',ic:'●',col:'#333',w:24,h:24},
+  Final:{tr:'Aktivite Sonu',ic:'◉',col:'#333',w:26,h:26},
+  FlowFinal:{tr:'Akış Sonu',ic:'⊗',col:'#333',w:24,h:24},
+  Decision:{tr:'Karar',ic:'◇',col:'#555',w:36,h:36},
+  Merge:{tr:'Birleştirme',ic:'◇',col:'#555',w:36,h:36},
+  Fork:{tr:'Çatallanma (Fork)',ic:'▬',col:'#222',w:120,h:6},
+  Join:{tr:'Eşzamanlama (Join)',ic:'▬',col:'#222',w:120,h:6},
+  Object:{tr:'Nesne Düğümü',ic:'O',col:'#4f7f9e',w:130,h:44},
+  Partition:{tr:'Kulvar',ic:'║',col:'#6c7a89',w:250,h:480},
+  PartitionH:{tr:'Kulvar (yatay)',ic:'═',col:'#6c7a89',w:640,h:170,pseudo:1},
+  Comment:{tr:'Not',ic:'✎',col:'#a89a3a',w:170,h:60},
+  Requirement:{tr:'Gereksinim',en:'Requirement',ic:'R',col:'#8e44ad',w:230,h:110},
+  TestCase:{tr:'Test Durumu',en:'TestCase',ic:'TC',col:'#27ae60',w:170,h:60},
+  StateMachine:{tr:'Durum Makinesi',en:'StateMachine',ic:'SM',col:'#c0392b'},
+  State:{tr:'Durum',ic:'St',col:'#c0392b',w:150,h:60},
+  Choice:{tr:'Seçim (Choice)',ic:'◇',col:'#555',w:32,h:32},
+  Interaction:{tr:'Etkileşim',en:'Interaction',ic:'I',col:'#16a085'},
+  Lifeline:{tr:'Yaşam Çizgisi',ic:'L',col:'#16a085',w:150,h:380},
+  ConstraintBlock:{tr:'Kısıt Bloğu',en:'ConstraintBlock',ic:'CB',col:'#d35400',w:210,h:100},
+  ConstraintProp:{tr:'Kısıt Özelliği',ic:'cp',col:'#d35400',w:200,h:90},
+  Param:{tr:'Parametre',ic:'▫',col:'#d35400',w:16,h:16},
+  InterfaceBlock:{tr:'Arayüz Bloğu',en:'InterfaceBlock',ic:'IB',col:'#1f8a99',w:190,h:90},
+  FlowProp:{tr:'Akış Özelliği',ic:'fp',col:'#1f8a99'},
+  ValueType:{tr:'Değer Tipi',en:'ValueType',ic:'VT',col:'#6d4fb3',w:190,h:80},
+  Enumeration:{tr:'Numaralandırma',en:'Enumeration',ic:'En',col:'#6d4fb3',w:170,h:90},
+  Signal:{tr:'Sinyal',en:'Signal',ic:'Sg',col:'#b5551d',w:170,h:70},
+  Stereotype:{tr:'Stereotip',en:'Stereotype',ic:'«»',col:'#7b6a2e',w:180,h:70},
+  Pin:{tr:'Pin',ic:'▪',col:'#7a4fbf',w:12,h:12},
+  ActParam:{tr:'Aktivite Parametresi',ic:'AP',col:'#7a4fbf',w:120,h:36},
+  SendSignal:{tr:'Sinyal Gönder',ic:'▷',col:'#7a4fbf',w:150,h:50},
+  AcceptEvent:{tr:'Olay Kabul',ic:'⊳',col:'#7a4fbf',w:150,h:50},
+  AcceptTime:{tr:'Zaman Olayı',ic:'⧗',col:'#7a4fbf',w:30,h:36},
+  IRegion:{tr:'Kesilebilir Bölge',ic:'⌁',col:'#7a4fbf',w:300,h:200},
+  Fragment:{tr:'Birleşik Parça (Fragment)',ic:'Fr',col:'#16a085',w:360,h:140},
+  Region:{tr:'Bölge (Region)',ic:'Rg',col:'#c0392b',w:300,h:160},
+  History:{tr:'Geçmiş (History)',ic:'H',col:'#333',w:28,h:28},
+  Junction:{tr:'Kavşak (Junction)',ic:'•',col:'#333',w:16,h:16},
+  Legend:{tr:'Lejant',ic:'≡',col:'#556',w:220,h:90},
+  Diagram:{tr:'Diyagram',ic:'D',col:'#445'},
+  Association:{tr:'Association',rel:1},
+  Composition:{tr:'Composition',rel:1},
+  Aggregation:{tr:'Aggregation',rel:1},
+  Generalization:{tr:'Generalization',rel:1},
+  Dependency:{tr:'Dependency',rel:1},
+  Include:{tr:'Include',rel:1},
+  Extend:{tr:'Extend',rel:1},
+  ControlFlow:{tr:'Control Flow',rel:1},
+  ObjectFlow:{tr:'Object Flow',rel:1},
+  Connector:{tr:'Connector',rel:1},
+  Anchor:{tr:'Not Bağlantısı',rel:1},
+  DeriveReqt:{tr:'Derive (türetme)',rel:1},
+  Satisfy:{tr:'Satisfy (karşılama)',rel:1},
+  Verify:{tr:'Verify (doğrulama)',rel:1},
+  Refine:{tr:'Refine (detaylandırma)',rel:1},
+  Trace:{tr:'Trace (iz)',rel:1},
+  Allocate:{tr:'Allocate (tahsis)',rel:1},
+  Transition:{tr:'Geçiş (Transition)',rel:1},
+  MsgSync:{tr:'Senkron Mesaj',rel:1},
+  MsgAsync:{tr:'Asenkron Mesaj',rel:1},
+  MsgReply:{tr:'Yanıt Mesajı',rel:1},
+  Binding:{tr:'Binding Connector',rel:1},
+  Import:{tr:'Import',rel:1}
+};
+const isMsg = k => k === 'MsgSync' || k === 'MsgAsync' || k === 'MsgReply';
+const DT = {
+  bdd:{tr:'Blok Tanım Diyagramı (BDD)',col:'#3d7bd9',shapes:['Block','Package','Actor','Comment'],rels:['Composition','Aggregation','Association','Generalization','Dependency','Anchor']},
+  ibd:{tr:'İç Blok Diyagramı (IBD)',col:'#2e9e6a',shapes:['Part','Port','Value','Comment'],rels:['Connector','Dependency','Anchor']},
+  uc:{tr:'Use Case Diyagramı',col:'#2e8fa3',shapes:['Actor','UseCase','Subject','Comment'],rels:['Association','Include','Extend','Generalization','Dependency','Anchor']},
+  act:{tr:'Aktivite Diyagramı',col:'#7a4fbf',shapes:['Action','Initial','Final','FlowFinal','Decision','Merge','Fork','Join','Object','Partition','Comment'],rels:['ControlFlow','ObjectFlow','Dependency','Anchor']},
+  req:{tr:'Gereksinim Diyagramı',col:'#8e44ad',shapes:['Requirement','Block','TestCase','Comment'],rels:['DeriveReqt','Satisfy','Verify','Refine','Trace','Dependency','Anchor']},
+  stm:{tr:'Durum Makinesi Diyagramı',col:'#c0392b',shapes:['State','Initial','Final','Choice','Comment'],rels:['Transition','Anchor']},
+  sd:{tr:'Sıralama (Sequence) Diyagramı',col:'#16a085',shapes:['Lifeline','Comment'],rels:['MsgSync','MsgAsync','MsgReply','Anchor']},
+  par:{tr:'Parametrik Diyagram',col:'#d35400',shapes:['ConstraintProp','Param','Value','Comment'],rels:['Binding','Anchor']},
+  pkg:{tr:'Paket Diyagramı',col:'#b08a2e',shapes:['Package','Block','Requirement','Comment'],rels:['Dependency','Import','Anchor']}
+};
+DT.bdd.shapes = ['Block','ConstraintBlock','Package','Actor','Comment'];
+DT.bdd.rels = DT.bdd.rels.slice(0, -1).concat(['Allocate','Anchor']);
+DT.act.shapes = DT.act.shapes.map(k => k === 'Partition' ? ['Partition', 'PartitionH'] : [k]).flat();
+DT.act.rels = DT.act.rels.slice(0, -1).concat(['Allocate','Anchor']);
+const OWN = {
+  Model:['Package','Block','ConstraintBlock','Actor','UseCase','Subject','Activity','StateMachine','Interaction','Requirement','TestCase','Comment'],
+  Package:['Package','Block','ConstraintBlock','Actor','UseCase','Subject','Activity','StateMachine','Interaction','Requirement','TestCase','Comment'],
+  Block:['Part','Value','Port','ConstraintProp','Activity','StateMachine','Interaction','Comment'],
+  Part:['Port'],
+  Subject:['UseCase'],
+  UseCase:['Activity','Interaction','Comment'],
+  Requirement:['Requirement','Comment'],
+  StateMachine:['State','Initial','Final','Choice','Comment'],
+  Interaction:['Lifeline','Comment'],
+  ConstraintBlock:['Param','Comment'],
+  ConstraintProp:['Param'],
+  Activity:['Action','Object','Partition','Initial','Final','FlowFinal','Decision','Merge','Fork','Join','Comment']
+};
+const BASE = {Requirement:'Gereksinim',TestCase:'Test',StateMachine:'Durum Makinesi',State:'Durum',Interaction:'Etkileşim',Lifeline:'yc',ConstraintBlock:'Kısıt',ConstraintProp:'kısıt',Param:'x',Package:'Paket',Block:'Blok',Part:'part',Value:'değer',Port:'p',Actor:'Aktör',UseCase:'Use Case',Subject:'Sistem',Activity:'Aktivite',Action:'Aksiyon',Object:'nesne',Partition:'Kulvar'};
+const RANK = ['Diagram','Package','Requirement','TestCase','Block','ConstraintBlock','StateMachine','Interaction','State','Choice','Lifeline','ConstraintProp','Param','Subject','Actor','UseCase','Activity','Part','Value','Port','Partition','Action','Object','Initial','Decision','Merge','Fork','Join','Final','FlowFinal','Comment'];
+const ELL = new Set(['UseCase','Initial','Final','FlowFinal']);
+const DIA = new Set(['Decision','Merge','Choice']);
+const CONT = new Set(['Partition','Subject','Package']);
+const UNNAMED = new Set(['Initial','Final','FlowFinal','Fork','Join','Decision','Merge','Choice']);
+const ER = {
+  Association:{}, Composition:{src:'fd'}, Aggregation:{src:'hd'}, Generalization:{tgt:'tri'},
+  Dependency:{dash:1,tgt:'open'}, Include:{dash:1,tgt:'open',st:'«include»'}, Extend:{dash:1,tgt:'open',st:'«extend»'},
+  ControlFlow:{tgt:'open'}, ObjectFlow:{tgt:'open'}, Connector:{}, Anchor:{dash:2},
+  DeriveReqt:{dash:1,tgt:'open',st:'«deriveReqt»'}, Satisfy:{dash:1,tgt:'open',st:'«satisfy»'}, Verify:{dash:1,tgt:'open',st:'«verify»'},
+  Refine:{dash:1,tgt:'open',st:'«refine»'}, Trace:{dash:1,tgt:'open',st:'«trace»'}, Allocate:{dash:1,tgt:'open',st:'«allocate»'},
+  Transition:{tgt:'open'}, MsgSync:{tgt:'fill'}, MsgAsync:{tgt:'open'}, MsgReply:{dash:1,tgt:'open'}, Binding:{}, Import:{dash:1,tgt:'open',st:'«import»'}
+};
+const FILL = {Requirement:'#f6efff',TestCase:'#eafaf0',State:'#fff8d8',Lifeline:'#fff8d8',ConstraintBlock:'#fff1e6',ConstraintProp:'#fff1e6',Param:'#ffffff',Block:'#fff8d8',Part:'#fff8d8',Value:'#f3eeff',Action:'#fff8d8',UseCase:'#fff8d8',Comment:'#fffde9',Subject:'#ffffff',Partition:'#ffffff',Object:'#ffffff',Package:'#f6eed6',Port:'#ffffff',Actor:'none'};
+
+/* ---- v1.7: SysML dil tamlığı (arayüzler, tipler, pin, sinyal, fragment, bölge, stereotip) ---- */
+const TYPEDEF = ['InterfaceBlock','ValueType','Enumeration','Signal'];
+DT.bdd.shapes = ['Block','InterfaceBlock','ConstraintBlock','ValueType','Enumeration','Signal','Package','Actor','Comment'];
+DT.act.shapes = ['Action','SendSignal','AcceptEvent','AcceptTime','Pin','ActParam','Initial','Final','FlowFinal','Decision','Merge','Fork','Join','Object','Partition','PartitionH','IRegion','Comment'];
+DT.stm.shapes = ['State','Region','Initial','Final','Choice','Junction','History','Comment'];
+DT.sd.shapes = ['Lifeline','Fragment','Comment'];
+DT.pkg.shapes = ['Package','Block','InterfaceBlock','ValueType','Stereotype','Requirement','Comment'];
+['Model','Package'].forEach(k => { OWN[k] = OWN[k].concat(TYPEDEF, ['Stereotype']); });
+OWN.Block = OWN.Block.concat(['FlowProp']);
+OWN.InterfaceBlock = ['FlowProp','Value','Port','Comment'];
+OWN.Signal = ['Value','Comment'];
+OWN.Action = ['Pin'];
+OWN.SendSignal = ['Pin'];
+OWN.AcceptEvent = ['Pin'];
+OWN.Activity = OWN.Activity.concat(['SendSignal','AcceptEvent','AcceptTime','ActParam','IRegion']);
+OWN.StateMachine = ['State','Region','Initial','Final','Choice','Junction','History','Comment'];
+OWN.State = ['State','Region','Initial','Final','Choice','Junction','History','Comment'];
+OWN.Region = ['State','Initial','Final','Choice','Junction','History','Comment'];
+OWN.Interaction = ['Lifeline','Fragment','Comment'];
+Object.assign(BASE, {InterfaceBlock:'Arayüz', FlowProp:'akış', ValueType:'DeğerTipi', Enumeration:'Enum', Signal:'Sinyal', Stereotype:'Stereotip', Pin:'pin', ActParam:'param', SendSignal:'Gönder', AcceptEvent:'Kabul', AcceptTime:'', Region:'bölge', Fragment:''});
+RANK.splice(RANK.indexOf('Block') + 1, 0, 'InterfaceBlock', 'ValueType', 'Enumeration', 'Signal', 'Stereotype');
+RANK.splice(RANK.indexOf('State'), 0, 'Region');
+RANK.push('FlowProp', 'Pin', 'ActParam', 'SendSignal', 'AcceptEvent', 'AcceptTime', 'IRegion', 'Fragment', 'History', 'Junction');
+['History','Junction'].forEach(k => UNNAMED.add(k));
+ELL.add('History'); ELL.add('Junction');
+['Region','IRegion','Fragment'].forEach(k => CONT.add(k));
+Object.keys(DT).forEach(k => { const i = DT[k].shapes.indexOf('Comment'); DT[k].shapes.splice(i < 0 ? DT[k].shapes.length : i, 0, 'Legend'); });
+Object.keys(OWN).forEach(k => { if(OWN[k].includes('Comment')) OWN[k].push('Legend'); });
+BASE.Legend = 'Lejant';
+const BORDER = new Set(['Port','Param','Pin']);
+const HOST = {Port:['Part'], Param:['ConstraintProp'], Pin:['Action','SendSignal','AcceptEvent']};
+Object.assign(FILL, {Legend:'#ffffff', Activity:'#fff8d8', StateMachine:'#fff8d8', Interaction:'#fff8d8', InterfaceBlock:'#e8f6f8', ValueType:'#f3eeff', Enumeration:'#f3eeff', Signal:'#fff1e6', Stereotype:'#f8f3df', Pin:'#ffffff', ActParam:'#ffffff', SendSignal:'#fff8d8', AcceptEvent:'#fff8d8', AcceptTime:'#ffffff', IRegion:'none', Fragment:'none', Region:'none', History:'#ffffff', Junction:'#222222'});
+const UNIT_LIB = [
+  ['Kütle', 'kg', 'mass'], ['Uzunluk', 'm', 'length'], ['Zaman', 's', 'time'], ['Frekans', 'Hz', 'frequency'], ['İvme', 'm/s²', 'acceleration'],
+  ['İvme (g)', 'g', 'acceleration'], ['İvme Spektral Yoğunluğu', 'g²/Hz', 'accelerationSpectralDensity'], ['Ses Basınç Seviyesi', 'dB', 'soundPressureLevel'],
+  ['Sıcaklık', '°C', 'thermodynamicTemperature'], ['Gerilim', 'V', 'electricPotential'], ['Akım', 'A', 'electricCurrent'], ['Güç', 'W', 'power'],
+  ['Enerji', 'J', 'energy'], ['Kuvvet', 'N', 'force'], ['Basınç', 'Pa', 'pressure'], ['Hız', 'm/s', 'velocity'], ['Açı', 'deg', 'planeAngle'],
+  ['Açısal Hız', 'deg/s', 'angularVelocity'], ['Veri Hızı', 'bit/s', 'dataRate'], ['Bağıl Nem', '%', 'relativeHumidity'], ['Oran', '%', 'ratio'], ['Para', 'TL', 'currency']
+];
+
+/* ================= ICON LIBRARY ================= */
+const ICON_CATS = [
+  ['auto', 'Otomotiv', '#c0392b'],
+  ['aero', 'Havacılık ve Uzay', '#1f6fd1'],
+  ['comp', 'Bilgisayar ve Elektronik', '#6c3fc4'],
+  ['def', 'Savunma Sistemleri', '#5a6b24'],
+  ['energy', 'Enerji ve Güç', '#d18a00'],
+  ['sense', 'Sensör ve Haberleşme', '#0f8a8a'],
+  ['mech', 'Mekanik ve Üretim', '#5d6d7e'],
+  ['soft', 'Yazılım ve Veri', '#2e7d32'],
+  ['org', 'İnsan ve Organizasyon', '#b04f86'],
+  ['gen', 'Genel', '#37474f']
+];
+const ICON_CAT_COL = Object.fromEntries(ICON_CATS.map(c => [c[0], c[2]]));
+const ICONS = {};
+(function(){
+  const f = n => +n.toFixed(2);
+  const P = d => `<path d="${d}"/>`;
+  const C = (x, y, r, fill) => `<circle cx="${x}" cy="${y}" r="${r}"${fill ? ' fill="currentColor"' : ''}/>`;
+  const R = (x, y, w, h, r) => `<rect x="${x}" y="${y}" width="${w}" height="${h}"${r ? ` rx="${r}"` : ''}/>`;
+  const El = (cx, cy, rx, ry, rot) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"${rot ? ` transform="rotate(${rot} ${cx} ${cy})"` : ''}/>`;
+  const rot = (deg, inner, cx, cy) => `<g transform="rotate(${deg} ${cx == null ? 12 : cx} ${cy == null ? 12 : cy})">${inner}</g>`;
+  const rep = (n, fn) => Array.from({length:n}, (_, i) => fn(i)).join('');
+  const poly = pts => 'M' + pts.map(p => f(p[0]) + ' ' + f(p[1])).join(' L') + ' Z';
+  const gear = (cx, cy, R1, R2, n) => {
+    const pts = [];
+    for(let i = 0; i < n; i++){
+      const a = i / n * Math.PI * 2, s = Math.PI / n;
+      [[a - s * 0.55, R2], [a - s * 0.3, R1], [a + s * 0.3, R1], [a + s * 0.55, R2]].forEach(([b, r]) => pts.push([cx + r * Math.cos(b), cy + r * Math.sin(b)]));
+    }
+    return P(poly(pts));
+  };
+  const star = (cx, cy, R1, R2, n, off) => { const pts = []; for(let i = 0; i < n * 2; i++){ const a = (off || -Math.PI / 2) + i * Math.PI / n, r = i % 2 ? R2 : R1; pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return P(poly(pts)); };
+  const rays = (cx, cy, r1, r2, n) => P(Array.from({length:n}, (_, i) => { const a = i / n * Math.PI * 2; return `M${f(cx + r1 * Math.cos(a))} ${f(cy + r1 * Math.sin(a))}L${f(cx + r2 * Math.cos(a))} ${f(cy + r2 * Math.sin(a))}`; }).join(''));
+  const person = (cx, cy, s) => C(cx, cy - 4 * s, 3 * s) + P(`M${f(cx - 6 * s)} ${f(cy + 7 * s)}a${f(6 * s)} ${f(6 * s)} 0 0 1 ${f(12 * s)} 0`);
+  const D = (cat, id, name, svg) => { ICONS[id] = {id, cat, name, svg}; };
+
+  /* ---- Otomotiv ---- */
+  D('auto', 'car', 'Otomobil', P('M2.5 16v-3.2L5 8.5h8.5l3.6 4H20.5a1 1 0 0 1 1 1V16') + P('M9.2 16h5.6') + C(6.8, 16.5, 2.1) + C(17, 16.5, 2.1) + P('M6.2 12.5h10.5M11 8.5v4'));
+  D('auto', 'truck', 'Kamyon', R(2, 6, 12, 10, 1) + P('M14 9.5h4l3 3.5v3h-7z') + C(6, 17.5, 1.8) + C(17, 17.5, 1.8));
+  D('auto', 'bus', 'Otobüs', R(4, 3, 16, 15, 2.5) + P('M4 11h16M4 7h16') + C(8, 14.5, .9, 1) + C(16, 14.5, .9, 1) + P('M7 18v2.5M17 18v2.5'));
+  D('auto', 'engine', 'Motor', P('M5 9h3V7h6v2h2.5l2 2.5V17H16l-2 2H8v-2.5H5z') + P('M2.5 11v5M2.5 13.5H5M21.5 11v5M19 13.5h2.5M9 4h4M11 4v3'));
+  D('auto', 'wheel', 'Tekerlek', C(12, 12, 9.5) + C(12, 12, 6) + C(12, 12, 1.8) + rays(12, 12, 2.4, 6, 5));
+  D('auto', 'steering', 'Direksiyon', C(12, 12, 9) + C(12, 12, 2.6) + P('M3.4 10.5h6.1M14.5 10.5h6.1M12 14.6v6.3'));
+  D('auto', 'gearbox', 'Şanzıman', C(6, 6, 1.6) + C(12, 6, 1.6) + C(18, 6, 1.6) + C(6, 18, 1.6) + C(12, 18, 1.6) + P('M6 7.6v8.8M12 7.6v8.8M18 7.6V12H6'));
+  D('auto', 'brake', 'Fren Diski', C(12, 12, 9) + C(12, 12, 3) + C(12, 6.2, .7, 1) + C(17.4, 13.8, .7, 1) + C(6.6, 13.8, .7, 1) + P('M16.5 3.8a9.5 9.5 0 0 1 4 4.4l-3.4 1.6a6 6 0 0 0-2.2-2.6z'));
+  D('auto', 'speedo', 'Hız Göstergesi', P('M3.5 17a9 9 0 1 1 17 0') + P('M12 15l4.5-5.5') + C(12, 15, 1.3, 1) + P('M6.2 10.4l1.2.9M12 6.5V8M17.8 10.4l-1.2.9'));
+  D('auto', 'fuel', 'Yakıt Pompası', R(4, 4, 9, 17, 1) + R(6, 6.5, 5, 4, .5) + P('M3 21h11M13 9h2a2 2 0 0 1 2 2v6a1.5 1.5 0 0 0 3 0V8.5l-3-3'));
+  D('auto', 'evcharge', 'Elektrikli Şarj', R(4, 9, 11, 11, 2) + P('M7.5 9V5M11.5 9V5M10.5 11.5l-2.2 3.3h3l-2.1 3.2') + P('M15 14.5h3a2 2 0 0 0 2-2V5'));
+  D('auto', 'headlight', 'Far', P('M10.5 5.5a6.5 6.5 0 0 0 0 13H12v-13z') + P('M15 8h6.5M15 12h6.5M15 16h6.5'));
+  D('auto', 'piston', 'Piston', R(7, 3, 10, 8, 1.5) + P('M7 6h10M7 8.3h10M12 11v5') + C(12, 18, 2.5) + P('M12 20.5V22'));
+  D('auto', 'seat', 'Koltuk', P('M7 3.5h3a1 1 0 0 1 1 1V13h6.5a1.5 1.5 0 0 1 1.5 1.5V17H7.5A1.5 1.5 0 0 1 6 15.5v-11a1 1 0 0 1 1-1z') + P('M8 17v4M17 17v4'));
+  D('auto', 'oil', 'Yağlama', P('M3 10h4l2-2h5l6-2v3l-4 5H3z') + P('M7 10V7.5M5 7.5h4M20 12.5c0 1-.6 2-1.3 2s-1.2-1-1.2-2 1.2-2.5 1.2-2.5 1.3 1.5 1.3 2.5z'));
+  D('auto', 'abs', 'Kontrol Ünitesi (ECU)', R(4, 5, 16, 14, 2) + R(8, 9, 8, 6, 1) + P('M8 3v2M12 3v2M16 3v2M8 19v2M12 19v2M16 19v2'));
+  D('auto', 'tractor', 'İş Makinesi', P('M3 15V10h7l1-4h5v9') + C(7, 17, 3) + C(17.5, 18, 2) + P('M10 17h5.5M16 9h4v6h-1.5'));
+
+  /* ---- Havacılık ve Uzay ---- */
+  D('aero', 'plane', 'Uçak', P('M12 2c1 0 1.5 1 1.5 2.5V9l7.5 4.5V16l-7.5-2.5V18l2.5 2v1.5L12 20.5l-4 1V20l2.5-2v-4.5L3 16v-2.5L10.5 9V4.5C10.5 3 11 2 12 2z'));
+  D('aero', 'airliner', 'Yolcu Uçağı (yan)', P('M2.5 13.5l2-5h1.5l2 3.5h9a3 3 0 0 1 0 6H5.5a3 3 0 0 1-3-3z') + P('M10 12l2.5-6h2l-.5 6M12 17.5l2 3.5h2l-.5-3.5') + P('M17.5 13.5h1.5'));
+  D('aero', 'heli', 'Helikopter', P('M3.5 5h15M11 5v3') + P('M6.5 12.5a4.5 4.5 0 0 1 4.5-4.5h2a4.5 4.5 0 0 1 4.5 4.5v.5a3 3 0 0 1-3 3h-5A3 3 0 0 1 6.5 13z') + P('M17 11h5M21.5 9v4M7 20h10M9.5 16v4M14.5 16v4M11 8v4h5.8'));
+  D('aero', 'rocket', 'Roket', P('M12 2c3 3 4 7 4 11l-1.5 3.5h-5L8 13c0-4 1-8 4-11z') + C(12, 9, 1.6) + P('M8.2 12.5L5 15.5V19l4.2-2M15.8 12.5L19 15.5V19l-4.2-2M10.5 19.5L12 22l1.5-2.5'));
+  D('aero', 'satellite', 'Uydu', rot(-45, R(9.5, 8.5, 5, 7, 1) + R(2, 9.5, 5.5, 5, .5) + R(16.5, 9.5, 5.5, 5, .5) + P('M7.5 12h2M14.5 12h2M4.75 9.5v5M19.25 9.5v5M12 8.5V6') + P('M9.5 5.2a3 3 0 0 0 5 0')));
+  D('aero', 'shuttle', 'Uzay Aracı', P('M12 2c2 2 3.5 5 3.5 9v6l3.5 3v1.5H5V20l3.5-3v-6C8.5 7 10 4 12 2z') + P('M8.5 17h7M10 10h4M12 21v1.5'));
+  D('aero', 'capsule', 'Kapsül', P('M8.5 3.5h7L19 17H5z') + P('M5 17q7 4.5 14 0M10 8.5h4M12 3.5V2'));
+  D('aero', 'drone', 'İHA (Quadkopter)', C(5, 5, 3) + C(19, 5, 3) + C(5, 19, 3) + C(19, 19, 3) + R(9, 9, 6, 6, 1.5) + P('M7.1 7.1L9 9M16.9 7.1L15 9M7.1 16.9L9 15M16.9 16.9L15 15'));
+  D('aero', 'uav', 'İHA (Sabit Kanat)', P('M12 3c.8 0 1.2.8 1.2 2v4.5l8.3 2.5v1.8l-8.3-1.3V17l2.3 1.8v1.5L12 19.5l-3.5.8v-1.5l2.3-1.8v-4.5l-8.3 1.3V12l8.3-2.5V5c0-1.2.4-2 1.2-2z'));
+  D('aero', 'turbine', 'Jet Motoru', P('M8 5.5h8.5L21 9v6l-4.5 3.5H8') + El(8, 12, 3.2, 6.5) + C(8, 12, 1.4) + P('M8 5.5v13M16.5 5.5v13'));
+  D('aero', 'propeller', 'Pervane', C(12, 12, 1.8) + rep(3, i => rot(i * 120, P('M12 10.2C10.5 7 10.8 3 12 3s1.5 4 0 7.2'))));
+  D('aero', 'parachute', 'Paraşüt', P('M3 11a9 7.5 0 0 1 18 0') + P('M3 11q2.25-2 4.5 0t4.5 0 4.5 0 4.5 0') + P('M3 11l7.5 8M21 11l-7.5 8M7.5 11l3 8M16.5 11l-3 8') + R(10, 19, 4, 3, .5));
+  D('aero', 'planet', 'Gezegen', C(12, 12, 6) + El(12, 12, 10.5, 3.2, -20));
+  D('aero', 'orbit', 'Yörünge', C(12, 12, 2.6, 1) + El(12, 12, 10, 5, -25) + C(20.4, 8.3, 1.4, 1));
+  D('aero', 'solarpanel', 'Güneş Paneli', P('M4 4h16l1.5 10h-19z') + P('M2.5 9h19M9.3 4l-.8 10M14.7 4l.8 10M12 14v5M8 21h8'));
+  D('aero', 'telescope', 'Teleskop', P('M3.5 13.8l11.2-5.4 1.6 3.3-11.2 5.4z') + P('M14.7 8.4l3.6-1.8 1.6 3.3-3.6 1.8M11 15l-3 6.5M11 15l3 6.5M5 15.5l-1.2-2.5'));
+  D('aero', 'attitude', 'Uçuş Göstergesi', C(12, 12, 9) + P('M3 12.5h18') + P('M6.5 12h3l2.5 2.5L14.5 12h3') + P('M12 3v2'));
+  D('aero', 'altimeter', 'Altimetre', C(12, 12, 9) + rays(12, 12, 7, 8.5, 12) + P('M12 12l3.5-4.5M12 12l-1.5 5') + C(12, 12, 1, 1));
+  D('aero', 'runway', 'Pist / Kalkış', P('M2 20h20M5 17h3M10.5 17h3M16 17h3') + rot(-25, P('M12 4.5c.8 0 1.2.8 1.2 2v3l6 3.5v1.6l-6-2v3.4l1.8 1.5v1.2L12 17.8l-3 .9v-1.2l1.8-1.5v-3.4l-6 2V13l6-3.5v-3c0-1.2.4-2 1.2-2z'), 12, 10));
+  D('aero', 'groundstation', 'Yer İstasyonu', P('M5 9a8 8 0 0 0 10 10z') + P('M10 14l4.5-4.5') + C(15.5, 8.5, 1.3) + P('M18 3.5a3.5 3.5 0 0 1 2.5 2.5M17.5 1.5a6 6 0 0 1 5 5M8 19l-1.5 3h6L11 19'));
+  D('aero', 'astronaut', 'Astronot', C(12, 8, 5) + R(9, 6, 6, 3.5, 1.5) + P('M6 21v-3.5A4.5 4.5 0 0 1 10.5 13h3a4.5 4.5 0 0 1 4.5 4.5V21') + R(10, 16, 4, 3, .5));
+  D('aero', 'startracker', 'Yıldız Takipçisi', star(12, 12, 9.5, 4, 4, 0) + C(12, 12, 1.5, 1));
+
+  /* ---- Bilgisayar ve Elektronik ---- */
+  D('comp', 'monitor', 'Bilgisayar', R(3, 4, 18, 12, 1.5) + P('M8 20h8M12 16v4'));
+  D('comp', 'laptop', 'Dizüstü', R(5, 5, 14, 10, 1) + P('M2 18.5h20l-2-3.5H4z'));
+  D('comp', 'server', 'Sunucu', R(4, 3, 16, 7.5, 1) + R(4, 13.5, 16, 7.5, 1) + C(7.5, 6.75, .9, 1) + C(7.5, 17.25, .9, 1) + P('M11 6.75h5.5M11 17.25h5.5'));
+  D('comp', 'rack', 'Kabin / Rack', R(5, 2, 14, 20, 1) + P('M5 7h14M5 12h14M5 17h14') + C(8, 4.5, .6, 1) + C(8, 9.5, .6, 1) + C(8, 14.5, .6, 1) + C(8, 19.5, .6, 1));
+  D('comp', 'cpu', 'İşlemci', R(6.5, 6.5, 11, 11, 1.5) + R(9.5, 9.5, 5, 5, .5) + P([9, 12, 15].map(v => `M${v} 2.5v4M${v} 17.5v4M2.5 ${v}h4M17.5 ${v}h4`).join('')));
+  D('comp', 'chip', 'Entegre Devre', R(4, 6, 16, 12, 1) + P('M4 10.5a1.5 1.5 0 0 1 0 3') + P([7, 10, 13, 16].map(v => `M${v + 1} 3v3M${v + 1} 18v3`).join('')));
+  D('comp', 'fpga', 'FPGA', R(4, 4, 16, 16, 1.5) + rep(3, i => rep(3, j => R(7 + i * 3.7, 7 + j * 3.7, 2.4, 2.4, .3))));
+  D('comp', 'ram', 'Bellek (RAM)', R(2, 7, 20, 9, 1) + R(5, 9.5, 3, 4) + R(10.5, 9.5, 3, 4) + R(16, 9.5, 3, 4) + P('M5 16v2.5M8 16v2.5M11 16v2.5M14 16v2.5M17 16v2.5M20 16v2.5'));
+  D('comp', 'storage', 'Disk / Depolama', R(3, 6, 18, 12, 2) + P('M3 13h18') + C(17, 15.5, .9, 1) + C(14, 15.5, .9, 1));
+  D('comp', 'pcb', 'Devre Kartı', R(3, 3, 18, 18, 2) + P('M7 7h4v4h6M7 17v-3h3M17 7v3M14 17h3') + C(7, 7, 1) + C(17, 11, 1) + C(10, 14, 1) + C(17, 17, 1) + C(7, 17, 1) + C(17, 7, 1));
+  D('comp', 'network', 'Ağ', C(12, 5, 2.5) + C(5, 19, 2.5) + C(19, 19, 2.5) + P('M10.8 7.2L6.2 16.8M13.2 7.2l4.6 9.6M7.5 19h9'));
+  D('comp', 'switch', 'Ağ Anahtarı', R(2, 8, 20, 8, 1.5) + rep(5, i => R(4.5 + i * 3.2, 11, 2, 2.5, .3)) + P('M6 5l-2 3M18 5l2 3'));
+  D('comp', 'router', 'Yönlendirici', R(3, 12, 18, 7, 1.5) + C(7, 15.5, .9, 1) + C(10.5, 15.5, .9, 1) + P('M15 15.5h3M8 12V6M16 12V6') + P('M6 4a3 3 0 0 1 4 0M14 4a3 3 0 0 1 4 0'));
+  D('comp', 'cloud', 'Bulut', P('M7 18.5h10a4.5 4.5 0 0 0 .6-8.96A6 6 0 0 0 6.1 9.6 4.5 4.5 0 0 0 7 18.5z'));
+  D('comp', 'database', 'Veri Tabanı', P('M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3'));
+  D('comp', 'usb', 'Konnektör', P('M12 21.5V5M10 5l2-3 2 3zM12 15l-5-3V9M12 17l5-3v-3') + C(7, 7.8, 1.3) + R(16, 9, 2, 2));
+  D('comp', 'plug', 'Fiş / Bağlantı', P('M9 2.5v5M15 2.5v5M6 7.5h12v3.5a6 6 0 0 1-12 0zM12 17v4.5'));
+  D('comp', 'cable', 'Kablo Demeti', P('M2 7c5 0 5 10 10 10s5-10 10-10M2 12h20M2 17c5 0 5-10 10-10s5 10 10 10'));
+  D('comp', 'terminal', 'Terminal', R(2, 4, 20, 16, 2) + P('M6 9.5l3 2.5-3 2.5M12 15h5.5'));
+  D('comp', 'phone', 'Mobil Cihaz', R(7, 2, 10, 20, 2) + P('M11 18.5h2'));
+  D('comp', 'tablet', 'Tablet / Ekran', R(4, 3, 16, 18, 2) + P('M4 17h16') + C(12, 19, .7, 1));
+  D('comp', 'scope', 'Osiloskop', R(2, 4, 20, 16, 2) + P('M5 12.5h2l1.5-4 2 8 2-9 2 7 1.5-2H19'));
+  D('comp', 'ai', 'Yapay Zeka', C(5, 6, 1.7) + C(5, 12, 1.7) + C(5, 18, 1.7) + C(12, 9, 1.7) + C(12, 15, 1.7) + C(19, 12, 1.7) + P('M6.7 6.4l3.6 2.2M6.7 11.6l3.6-2.2M6.7 12.4l3.6 2.2M6.7 17.6l3.6-2.2M6.7 7.2l3.6 6.6M13.7 9.6l3.6 2M13.7 14.4l3.6-2'));
+  D('comp', 'resistor', 'Elektronik Bileşen', P('M2 12h4l1.5-3.5 2.5 7 2.5-7 2.5 7 1.5-3.5H22'));
+  D('comp', 'ic', 'Mikrodenetleyici', R(7, 3, 10, 18, 1) + C(12, 5.5, .8) + P([6.5, 10, 13.5, 17].map(v => `M4 ${v}h3M17 ${v}h3`).join('')));
+  D('comp', 'printer', 'Yazıcı', R(6, 3, 12, 5) + R(3, 8, 18, 9, 1.5) + R(6, 14, 12, 7) + C(17, 11, .8, 1));
+  D('comp', 'keyboard', 'Klavye / Giriş', R(2, 6, 20, 12, 2) + P('M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12'));
+
+  /* ---- Savunma ---- */
+  D('def', 'missile', 'Füze', rot(-45, P('M3.5 10.6h12.5l4.5 1.4-4.5 1.4H3.5z') + P('M5.5 10.6L3.5 7H6l3.3 3.6M5.5 13.4L3.5 17H6l3.3-3.6M3.5 12H1.5M13 10.6V8.8M13 13.4v1.8')));
+  D('def', 'cruise', 'Seyir Füzesi', P('M2 12h15.5a3 3 0 0 1 0 0l4 0-4 1.6H2z') + P('M2 12l-.5-3h2L5 12M9 12l2.5-4h1.5L12 12M9 13.6l1.5 3h1.5l-.5-3'));
+  D('def', 'tank', 'Tank', P('M2.5 15h19l-2 4.5H4.5z') + P('M7 15v-3.5h8l2 3.5') + P('M14.5 12.5H22') + C(7, 17.3, 1) + C(12, 17.3, 1) + C(17, 17.3, 1));
+  D('def', 'apc', 'Zırhlı Araç', P('M2 15V11l3-3h11l3 3h2.5v4z') + C(6, 17, 2) + C(12, 17, 2) + C(18, 17, 2) + P('M9 8V6h4v2M13 6.5h5'));
+  D('def', 'fighter', 'Savaş Uçağı', P('M12 2l1.5 5 7.5 7.2v2l-7.4-2.5L13 18.5l3 2V22l-4-1-4 1v-1.5l3-2-.6-4.8L3 16.2v-2L10.5 7z'));
+  D('def', 'ship', 'Savaş Gemisi', P('M2 15h20l-3 5H5z') + P('M6.5 15v-4h6v4M9.5 11V7h2.5v4M12 13h5v2M10.5 7V3.5M8.5 5h4'));
+  D('def', 'submarine', 'Denizaltı', P('M3 14.5a3 3 0 0 1 3-3h12l3.5 3-3.5 3H6a3 3 0 0 1-3-3z') + P('M9 11.5V8.5h4l1.2 3M11 8.5V5.5h2.2') + P('M21.5 12v5'));
+  D('def', 'shield', 'Kalkan', P('M12 2.5l8 3.3v6c0 5-3.4 8.8-8 10.2-4.6-1.4-8-5.2-8-10.2v-6z') + P('M12 2.5v19.5M4 11.5h16'));
+  D('def', 'target', 'Hedef / Nişangah', C(12, 12, 8) + C(12, 12, 3) + P('M12 1.5V6M12 18v4.5M1.5 12H6M18 12h4.5'));
+  D('def', 'radarscope', 'Radar Ekranı', C(12, 12, 9.5) + C(12, 12, 5.5) + C(12, 12, 1.5) + P('M12 12l6.7-6.7') + C(15.8, 9.5, 1, 1) + C(8, 15, .8, 1));
+  D('def', 'radar', 'Radar Anteni', P('M4 10a8 8 0 0 0 10 10z') + P('M9 15l5.5-5.5') + C(15.5, 8.5, 1.4) + P('M18.5 2.5a5 5 0 0 1 3 3M17.5 5.5a2 2 0 0 1 1 1M7 19.5L5 22h7l-2-2.5'));
+  D('def', 'sonar', 'Sonar', C(12, 12, 1.6, 1) + P('M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.2 5.2a9.6 9.6 0 0 0 0 13.6M18.8 5.2a9.6 9.6 0 0 1 0 13.6'));
+  D('def', 'jammer', 'Elektronik Harp', P('M12 21v-8M8 21h8') + P('M12.5 2.5L9.5 8h4l-3 5.5') + P('M6 5a8 8 0 0 0 0 9M18 5a8 8 0 0 1 0 9M3.5 3a11.5 11.5 0 0 0 0 13M20.5 3a11.5 11.5 0 0 1 0 13'));
+  D('def', 'cannon', 'Top / Obüs', C(8, 17, 3.5) + C(8, 17, .9, 1) + P('M9.5 14l10.5-6.5 1.4 2.4-10.4 6.3M3 21h10'));
+  D('def', 'laser', 'Lazer Sistemi', R(2, 9, 6, 6, 1) + P('M8 12h11M19 12l2.5 0M17.5 8.5l2-2M17.5 15.5l2 2M5 9V6.5'));
+  D('def', 'ammo', 'Mühimmat', [4, 10, 16].map(x => P(`M${x} 21V11.5c0-3 1-5 2-6.5 1 1.5 2 3.5 2 6.5V21zM${x} 14h4`)).join(''));
+  D('def', 'bomb', 'Bomba / Harp Başlığı', C(10, 14, 7) + P('M15 9l2-2') + P('M17.5 4.5l1-1M20 7l1.2-.6M19.5 4.5l.8-1.5'));
+  D('def', 'explosion', 'Patlama / Etki', star(12, 12, 10, 5, 9));
+  D('def', 'binoculars', 'Gözetleme', C(6.5, 16, 4) + C(17.5, 16, 4) + P('M6.5 12V6a2 2 0 0 1 4 0v4.5M17.5 12V6a2 2 0 0 0-4 0v4.5M10.5 11h3'));
+  D('def', 'nightvision', 'Gece Görüş', P('M3 9h18v6H3z') + C(8, 12, 2) + C(16, 12, 2) + P('M10 12h4M7 15l-1 4M17 15l1 4'));
+  D('def', 'helmet', 'Kask / Personel', P('M3.5 16a8.5 8.5 0 0 1 17 0z') + P('M2 16h20v2.5H2zM12 7.5V16'));
+  D('def', 'flag', 'Komuta / Bayrak', P('M5 21.5V3M5 4h12.5L15 8.5l2.5 4.5H5'));
+  D('def', 'chevron', 'Rütbe', P('M5 8.5l7-4 7 4M5 13.5l7-4 7 4M5 18.5l7-4 7 4'));
+  D('def', 'hq', 'Komuta Merkezi', P('M3 21.5h18M5 21.5V10l7-5 7 5v11.5M9.5 21.5v-6h5v6M12 5V1.5M12 1.5l3 1.2-3 1.2'));
+  D('def', 'mine', 'Mayın', C(12, 13, 6) + rays(12, 13, 6, 9, 8) + C(12, 13, 1.5, 1));
+  D('def', 'launcher', 'Fırlatıcı', P('M2 18.5h20') + C(5.5, 18.5, 1.8) + C(18.5, 18.5, 1.8) + P('M3.5 16.5h17') + rot(-25, R(7, 9, 13, 5, .5) + P('M7 11.5h13'), 9, 14));
+  D('def', 'drone-strike', 'Silahlı İHA', P('M12 4v14M3 10.5l9 2 9-2M8.5 18.5h7') + P('M7 12v3.5M17 12v3.5') + C(12, 4, 1.4));
+  D('def', 'crosshair', 'Atış Kontrol', R(3, 3, 18, 18, 3) + C(12, 12, 4.5) + P('M12 5v4M12 15v4M5 12h4M15 12h4'));
+
+  /* ---- Enerji ve Güç ---- */
+  D('energy', 'bolt', 'Elektrik', P('M13 2L4 14h7l-1 8 9-12h-7z'));
+  D('energy', 'battery', 'Batarya', R(2, 7, 18, 10, 2) + P('M22 10.5v3') + R(4.5, 9.5, 4, 5, .5) + R(9.5, 9.5, 4, 5, .5));
+  D('energy', 'carbattery', 'Akü', R(3, 7, 18, 13, 1.5) + P('M6.5 7V4.5h3V7M14.5 7V4.5h3V7M6.5 13.5h3M16 12v3M14.5 13.5h3'));
+  D('energy', 'sun', 'Güneş Enerjisi', C(12, 12, 4) + rays(12, 12, 6.5, 9.5, 8));
+  D('energy', 'wind', 'Rüzgar Türbini', P('M12 11.5v10.5M9 22h6') + C(12, 10, 1.4) + rep(3, i => rot(i * 120, P('M12 8.6C11.5 6 11.5 3 12.3 2c.8 1 1 3.5.2 6.6'), 12, 10)));
+  D('energy', 'atom', 'Nükleer', C(12, 12, 1.6, 1) + El(12, 12, 10, 4) + El(12, 12, 10, 4, 60) + El(12, 12, 10, 4, -60));
+  D('energy', 'flame', 'Yakıt / Yanma', P('M12 22c3.9 0 7-2.9 7-7 0-4.5-3.5-7-5-12.5C12.5 6 11 7.5 10 10 9 9 8.5 8 8.3 6.5 6.3 8.8 5 11.5 5 15c0 4.1 3.1 7 7 7z') + P('M12 22c-1.7 0-3-1.3-3-3 0-2 1.5-3 3-5.5 1.5 2.5 3 3.5 3 5.5 0 1.7-1.3 3-3 3z'));
+  D('energy', 'transformer', 'Transformatör', C(8.5, 12, 5.5) + C(15.5, 12, 5.5));
+  D('energy', 'generator', 'Jeneratör', C(12, 12, 9) + P('M7 12c1.4-3.8 3.6-3.8 5 0s3.6 3.8 5 0'));
+  D('energy', 'psu', 'Güç Kaynağı', R(3, 5, 18, 14, 2) + P('M10.5 8l-2.5 4h3.5l-2.5 4') + P('M14.5 10h3M16 8.5v3M14.5 14.5h3'));
+  D('energy', 'pulse', 'Sinyal / Hat', P('M2 12h4l2-5 4 10 2-5h8'));
+  D('energy', 'drop', 'Hidrolik / Sıvı', P('M12 2.5c3 4 6.5 7.5 6.5 11.5a6.5 6.5 0 0 1-13 0C5.5 10 9 6.5 12 2.5z'));
+  D('energy', 'thermo', 'Sıcaklık', P('M10 13.5V5a2 2 0 0 1 4 0v8.5a4 4 0 1 1-4 0z') + P('M12 9v7.5') + C(12, 17, 1.6, 1));
+  D('energy', 'snow', 'Soğutma', P('M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7') + P('M9.5 3.5L12 6l2.5-2.5M9.5 20.5L12 18l2.5 2.5M3 10.5l3.5-1-1-3.5M21 13.5l-3.5 1 1 3.5M3 13.5l3.5 1-1 3.5M21 10.5l-3.5-1 1-3.5'));
+  D('energy', 'fan', 'Fan', C(12, 12, 1.8) + rep(4, i => rot(i * 90, P('M12 10c-.6-2.8.3-5.6 2.6-6.6 1.2 2.2.3 5-2.6 6.6'))) + C(12, 12, 10));
+  D('energy', 'powerplug', 'Güç Fişi', P('M12 21.5V18M7 8h10v4a5 5 0 0 1-10 0zM9.5 8V3M14.5 8V3'));
+  D('energy', 'gauge', 'Ölçüm Göstergesi', C(12, 13, 8.5) + P('M12 13l4-4') + C(12, 13, 1.2, 1) + P('M6.5 13h1.5M16 13h1.5M12 7.5V9'));
+  D('energy', 'fuelcell', 'Yakıt Hücresi', R(4, 4, 16, 16, 2) + P('M8 4v16M12 4v16M16 4v16') + P('M2 9h2M20 15h2'));
+
+  /* ---- Sensör ve Haberleşme ---- */
+  D('sense', 'camera', 'Kamera', R(2, 7, 20, 13, 2) + C(12, 13.5, 4) + P('M8 7l1.5-3h5L16 7'));
+  D('sense', 'eo', 'Elektro-Optik', P('M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z') + C(12, 12, 3) + C(12, 12, 1, 1));
+  D('sense', 'ir', 'Termal / IR', P('M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z') + P('M12 9.5c1.5 1.4 1.5 3.6 0 5M10 8.5c-2 2-2 5 0 7') + P('M14 8.5c2 2 2 5 0 7'));
+  D('sense', 'gps', 'GPS / Konum', P('M12 22s7-6.5 7-12a7 7 0 0 0-14 0c0 5.5 7 12 7 12z') + C(12, 10, 2.5));
+  D('sense', 'compass', 'Pusula', C(12, 12, 9.5) + P('M15.5 8.5l-2 5-5 2 2-5z'));
+  D('sense', 'imu', 'IMU / Jiroskop', C(12, 12, 9) + El(12, 12, 9, 3.2) + El(12, 12, 3.2, 9) + C(12, 12, 1.5, 1));
+  D('sense', 'accel', 'İvmeölçer', P('M12 13V3M12 13l7.5 5M12 13l-7.5 5') + P('M10 5l2-2 2 2M17.2 18.8l2.3-.8-.5-2.4M7 18.8l-2.5-.8.6-2.4'));
+  D('sense', 'pressure', 'Basınç Sensörü', C(12, 10, 7) + P('M12 10l3-3') + C(12, 10, 1, 1) + P('M10 17v5h4v-5'));
+  D('sense', 'lidar', 'Lidar', R(8, 13, 8, 8, 2) + C(12, 17, 1.5) + P('M5.5 9.5a9 9 0 0 1 13 0M8 12a5.5 5.5 0 0 1 8 0M3 7a12.5 12.5 0 0 1 18 0'));
+  D('sense', 'antenna', 'Anten', P('M12 10v11.5M8 21.5h8') + C(12, 8, 1.6) + P('M8.5 4.5a5 5 0 0 0 0 7M15.5 4.5a5 5 0 0 1 0 7M5.5 2a8.5 8.5 0 0 0 0 12M18.5 2a8.5 8.5 0 0 1 0 12'));
+  D('sense', 'tower', 'Verici Kulesi', P('M12 9.5l-4.5 12.5M12 9.5l4.5 12.5M9 18h6M10.2 14h3.6') + C(12, 7.5, 1.6) + P('M8.5 4a5 5 0 0 0 0 7M15.5 4a5 5 0 0 1 0 7'));
+  D('sense', 'dish', 'Çanak Anten', P('M3.5 9a10 10 0 0 0 11.5 11.5z') + P('M9 15l6.5-6.5') + C(16.5, 7.5, 1.5) + P('M6 21h8'));
+  D('sense', 'radio', 'Telsiz', R(5, 8, 14, 14, 2) + P('M8 8l8-5.5') + C(12, 17, 2.8) + P('M8 11.5h8'));
+  D('sense', 'wifi', 'Kablosuz', P('M2 8.5a15 15 0 0 1 20 0M5 12a10.5 10.5 0 0 1 14 0M8.5 15.5a5.5 5.5 0 0 1 7 0') + C(12, 19, 1.2, 1));
+  D('sense', 'signal', 'Sinyal Gücü', R(3, 16, 3, 5, .5) + R(8, 12, 3, 9, .5) + R(13, 8, 3, 13, .5) + R(18, 3, 3, 18, .5));
+  D('sense', 'mic', 'Mikrofon', R(9, 2, 6, 12, 3) + P('M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8'));
+  D('sense', 'speaker', 'Hoparlör / Siren', P('M4 9h4l5-4v14l-5-4H4z') + P('M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11'));
+  D('sense', 'mail', 'Mesaj', R(3, 5, 18, 14, 2) + P('M3 7l9 6 9-6'));
+  D('sense', 'link', 'Veri Bağlantısı', P('M10 14a4 4 0 0 1 0-5.6l3-3a4 4 0 0 1 5.6 5.6l-1.5 1.5M14 10a4 4 0 0 1 0 5.6l-3 3a4 4 0 0 1-5.6-5.6l1.5-1.5'));
+  D('sense', 'satcom', 'Uydu Haberleşme', rot(-45, R(9.5, 9.5, 5, 5, .5) + R(3.5, 10.5, 4.5, 3) + R(16, 10.5, 4.5, 3) + P('M8 12h1.5M14.5 12H16'), 15, 9) + P('M3 14a7 7 0 0 0 7 7M3 18a3 3 0 0 0 3 3'));
+  D('sense', 'proximity', 'Yakınlık Sensörü', R(2, 9, 6, 6, 1) + P('M11 8a5.5 5.5 0 0 1 0 8M14.5 5.5a9 9 0 0 1 0 13M18 3a12.5 12.5 0 0 1 0 18'));
+  D('sense', 'humidity', 'Nem', P('M8 3c2 3 4 5 4 7.5a4 4 0 0 1-8 0C4 8 6 6 8 3zM16.5 10c1.5 2.3 3 3.8 3 5.8a3 3 0 0 1-6 0c0-2 1.5-3.5 3-5.8z'));
+
+  /* ---- Mekanik ve Üretim ---- */
+  D('mech', 'gear', 'Dişli', gear(12, 12, 10, 7.5, 9) + C(12, 12, 3));
+  D('mech', 'gears', 'Dişli Takımı', gear(8.5, 9, 6.5, 4.8, 8) + C(8.5, 9, 1.8) + gear(17, 17, 5, 3.6, 7) + C(17, 17, 1.3));
+  D('mech', 'wrench', 'Bakım', P('M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z'));
+  D('mech', 'tools', 'Takım Seti', P('M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z') + P('M3.5 3.5l3 1 6 6M17 15l4 4-2 2-4-4'));
+  D('mech', 'bolt', 'Cıvata', P('M8 3h8l2 3-2 3H8L6 6z') + P('M10 9v12h4V9M10 12.5h4M10 15.5h4M10 18.5h4'));
+  D('mech', 'spring', 'Yay / Süspansiyon', P('M8 2.5h8M12 2.5v2M7 6l10 2-10 2 10 2-10 2 10 2-10 0M12 18v3.5M8 21.5h8'));
+  D('mech', 'bearing', 'Rulman', C(12, 12, 9.5) + C(12, 12, 4) + rep(8, i => { const a = i / 8 * Math.PI * 2; return C(f(12 + 6.8 * Math.cos(a)), f(12 + 6.8 * Math.sin(a)), 1.4); }));
+  D('mech', 'cylinder', 'Hidrolik Silindir', R(2, 8, 12, 8, 1) + P('M14 12h7M21 9v6M5 8V6M11 8V6'));
+  D('mech', 'valve', 'Vana', P('M3 8v8l9-4zM21 8v8l-9-4zM12 12V5M8 5h8'));
+  D('mech', 'pump', 'Pompa', C(10, 13, 6.5) + P('M10 13l4.5-4.5M16.5 9.5h5v4.5M4.5 21.5h11l-1.2-3') + C(10, 13, 1.2, 1));
+  D('mech', 'robot', 'Robot Kol', P('M3.5 21.5h9M8 21.5v-4l4-6.5 6 2.5') + C(8, 17.5, 1.6) + C(12, 11, 1.6) + P('M18 13l3-2.5M18 13l3 2'));
+  D('mech', 'factory', 'Üretim Tesisi', P('M2 21.5V10l6 4v-4l6 4V5h3.5l1.5 16.5zM2 21.5h20M6 18h2M11 18h2'));
+  D('mech', 'hammer', 'Çekiç', P('M14 3.5l6.5 6.5-3 3-6.5-6.5zM12.5 8.5l-9.5 9.5 2.5 2.5 9.5-9.5'));
+  D('mech', 'ruler', 'Ölçü', rot(-45, R(1.5, 9, 21, 6, .8) + P('M5 9v2.5M8 9v3.5M11 9v2.5M14 9v3.5M17 9v2.5M20 9v3.5')));
+  D('mech', 'cube', '3B Parça', P('M12 2l9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10'));
+  D('mech', 'box', 'Paket / Kutu', P('M3 7.5l9-5 9 5v9l-9 5-9-5zM3 7.5l9 5 9-5M12 12.5v9M7.5 5l9 5'));
+  D('mech', 'conveyor', 'Konveyör', R(2, 14, 20, 5, 2.5) + C(5, 16.5, .9, 1) + C(12, 16.5, .9, 1) + C(19, 16.5, .9, 1) + R(4.5, 8, 5.5, 6, .5) + R(13, 9, 5, 5, .5));
+  D('mech', 'crane', 'Vinç', P('M6 21.5V3.5h14M6 7.5l4-4M17 3.5v6M14.5 9.5h5v3.5h-5zM3 21.5h6'));
+  D('mech', 'actuator', 'Aktüatör', R(3, 9, 8, 6, 1) + P('M11 12h6') + C(19, 12, 2) + P('M5 9V6h4v3M5 15v3h4v-3'));
+  D('mech', 'motor', 'Elektrik Motoru', R(3, 7, 13, 10, 2) + P('M16 10h2v4h-2M18 12h4M6 7V5.5M13 7V5.5M6 17v1.5M13 17v1.5'));
+  D('mech', 'hydraulic', 'Hidrolik Ünite', R(3, 10, 11, 11, 1) + P('M14 13h3v-5h4M14 18h5v-4') + P('M8.5 3c1.5 2 3 3.5 3 5a3 3 0 0 1-6 0c0-1.5 1.5-3 3-5z'));
+
+  /* ---- Yazılım ve Veri ---- */
+  D('soft', 'code', 'Yazılım', P('M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16'));
+  D('soft', 'doc', 'Doküman', P('M6 2h8l5 5v15H6zM14 2v5h5M9 13h7M9 17h7'));
+  D('soft', 'req', 'Gereksinim', P('M6 2h8l5 5v15H6zM14 2v5h5') + P('M8.5 14l2 2 4-4.5'));
+  D('soft', 'folder', 'Klasör', P('M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z'));
+  D('soft', 'flow', 'Algoritma', R(9, 2, 6, 4, .8) + P('M12 6v2.5M12 8.5l4 3.5-4 3.5-4-3.5zM8 12H5v6M16 12h3v6') + R(2, 18, 6, 4, .8) + R(16, 18, 6, 4, .8));
+  D('soft', 'chart', 'Analiz / Grafik', P('M3 3v18h18M7 15l4-4 3 3 6-6.5'));
+  D('soft', 'bars', 'Rapor', P('M3 21h18') + R(5, 12, 3, 9) + R(10.5, 7, 3, 14) + R(16, 3, 3, 18));
+  D('soft', 'table', 'Veri Tablosu', R(3, 4, 18, 16, 1.5) + P('M3 9h18M3 14h18M9 4v16'));
+  D('soft', 'layers', 'Katmanlar', P('M12 3l9 4.5-9 4.5-9-4.5zM3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5'));
+  D('soft', 'module', 'Modül / Bileşen', P('M4 7.5h4a2 2 0 1 1 4 0h4v4a2 2 0 1 1 0 4v4H4z'));
+  D('soft', 'api', 'Arayüz (API)', C(6, 12, 3) + P('M9 12h6') + P('M15 7v10M18 9v6'));
+  D('soft', 'bug', 'Hata / Test', El(12, 13.5, 5, 6.5) + P('M12 7v13M9.5 7.5L8 5M14.5 7.5L16 5M7 11H3M7 15.5H3.5M17 11h4M17 15.5h3.5M8 19l-2.5 2M16 19l2.5 2'));
+  D('soft', 'clock', 'Zaman / Saat', C(12, 12, 9.5) + P('M12 6.5V12l3.5 2.5'));
+  D('soft', 'window', 'Kullanıcı Arayüzü', R(3, 4, 18, 16, 2) + P('M3 8.5h18') + C(6, 6.25, .7, 1) + C(8.5, 6.25, .7, 1) + R(6, 11, 6, 6, .5) + P('M14.5 12h3.5M14.5 15h3.5'));
+  D('soft', 'search', 'Arama', C(10.5, 10.5, 6.5) + P('M15.5 15.5L21 21'));
+  D('soft', 'sync', 'Senkronizasyon', P('M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3M18 2.5v4.2h-4.2M6 21.5v-4.2h4.2'));
+  D('soft', 'key', 'Kriptografi / Anahtar', C(7.5, 15.5, 4.5) + P('M10.7 12.3L20 3M16.5 6.5l3 3M14 9l2 2'));
+  D('soft', 'lock', 'Güvenlik', R(5, 11, 14, 10, 2) + P('M8 11V7.5a4 4 0 0 1 8 0V11') + C(12, 16, 1.3, 1));
+  D('soft', 'cybershield', 'Siber Güvenlik', P('M12 2.5l8 3.3v6c0 5-3.4 8.8-8 10.2-4.6-1.4-8-5.2-8-10.2v-6z') + P('M8.5 12l2.5 2.5 4.5-5'));
+  D('soft', 'binary', 'Veri', P('M6 4v6M4.5 4H6M4.5 10h3') + R(11, 4, 4, 6, 2) + R(4, 14, 4, 6, 2) + P('M13 14v6M11.5 14H13M11.5 20h3') + P('M19 4v6M17.5 4H19M17.5 10h3') + R(17, 14, 4, 6, 2));
+  D('soft', 'sim', 'Simülasyon', R(2, 4, 20, 13, 2) + P('M10 8v5l4-2.5zM8 21h8M12 17v4'));
+  D('soft', 'model', 'Model (MBSE)', R(8.5, 2, 7, 5, 1) + R(2, 16, 7, 5, 1) + R(15, 16, 7, 5, 1) + P('M12 7v4.5M5.5 16v-4.5h13V16'));
+  D('soft', 'filter', 'Filtre / İşleme', P('M3 4h18l-7 8.5V19l-4 2v-8.5z'));
+
+  /* ---- İnsan ve Organizasyon ---- */
+  D('org', 'user', 'Kullanıcı', C(12, 8, 4) + P('M4 21a8 8 0 0 1 16 0'));
+  D('org', 'team', 'Ekip', person(12, 12, .85) + person(5, 13.5, .65) + person(19, 13.5, .65));
+  D('org', 'operator', 'Operatör', C(12, 9, 3.8) + P('M6.5 10a5.5 5.5 0 0 1 11 0M6.5 10v2.5M17.5 10v3l-3 2.5h-2') + P('M4.5 21.5a7.5 7.5 0 0 1 15 0'));
+  D('org', 'pilot', 'Pilot', P('M6.5 10a5.5 5.5 0 0 1 11 0v1.5h-11z') + R(7.5, 10, 9, 3, 1.5) + P('M8 13.5a4 4 0 0 0 8 0M4.5 21.5a7.5 7.5 0 0 1 15 0'));
+  D('org', 'engineer', 'Mühendis', P('M7 9.5a5 5 0 0 1 10 0zM5.5 9.5h13') + P('M8 11a4 4 0 0 0 8 0M4.5 21.5a7.5 7.5 0 0 1 15 0M12 4.5V3'));
+  D('org', 'customer', 'Müşteri / Paydaş', C(9, 8, 3.5) + P('M2.5 20a6.5 6.5 0 0 1 13 0') + P('M16 4.5a3.5 3.5 0 0 1 0 7M18 13.5a6.5 6.5 0 0 1 3.5 6.5'));
+  D('org', 'building', 'Kurum / Bina', R(5, 3, 14, 18.5, 1) + P('M9 7h1.5M13.5 7H15M9 11h1.5M13.5 11H15M9 15h1.5M13.5 15H15M10.5 21.5v-3h3v3M2.5 21.5h19'));
+  D('org', 'briefcase', 'Yönetim', R(3, 7, 18, 13, 2) + P('M8.5 7V5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v2M3 13h18'));
+  D('org', 'edu', 'Eğitim', P('M2 9l10-5 10 5-10 5zM6 11v5.5c3 2 9 2 12 0V11M22 9v5'));
+  D('org', 'checklist', 'Kontrol Listesi', P('M10 6h11M10 12h11M10 18h11M3 6l1.5 1.5L7.5 4.5M3 12l1.5 1.5 3-3M3 18l1.5 1.5 3-3'));
+  D('org', 'calendar', 'Takvim / Plan', R(3, 5, 18, 16, 2) + P('M3 10h18M8 3v4M16 3v4M7 14h2M11 14h2M15 14h2M7 17.5h2M11 17.5h2'));
+  D('org', 'handshake', 'Anlaşma / Arayüz', P('M2 12l4-4 4 2 3-2 3 1 6 3M2 12l5 5 2-1.5 2 1.5 2-1.5 2 1.5 4-4') + P('M10 10l3 3'));
+  D('org', 'medical', 'Sağlık / Medikal', R(3, 3, 18, 18, 3) + P('M12 7v10M7 12h10'));
+  D('org', 'logistics', 'Lojistik', P('M2 6h11v10H2zM13 9h4.5L21 12.5V16h-8') + C(6, 17.5, 1.8) + C(17, 17.5, 1.8));
+
+  /* ---- Genel ---- */
+  D('gen', 'star', 'Yıldız', star(12, 12.5, 9.5, 4.2, 5));
+  D('gen', 'warning', 'Uyarı', P('M12 3L2 20.5h20z') + P('M12 9.5v5') + C(12, 17.3, .9, 1));
+  D('gen', 'info', 'Bilgi', C(12, 12, 9.5) + P('M12 11v6') + C(12, 7.8, .9, 1));
+  D('gen', 'check', 'Onay', C(12, 12, 9.5) + P('M7.5 12.5l3 3 6-6.5'));
+  D('gen', 'error', 'Hata', C(12, 12, 9.5) + P('M8.5 8.5l7 7M15.5 8.5l-7 7'));
+  D('gen', 'bulb', 'Fikir', P('M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-4 11.6c.7.6 1 1.4 1 2.4v1.5h6v-1.5c0-1 .3-1.8 1-2.4A6.5 6.5 0 0 0 12 2.5z'));
+  D('gen', 'globe', 'Dünya / Küresel', C(12, 12, 9.5) + El(12, 12, 4, 9.5) + P('M2.5 12h19M4 7h16M4 17h16'));
+  D('gen', 'map', 'Harita', P('M3 6l6-2.5 6 2.5 6-2.5v14.5l-6 2.5-6-2.5-6 2.5zM9 3.5V18M15 6v14.5'));
+  D('gen', 'home', 'Ana Birim', P('M3 11l9-7.5 9 7.5M5.5 9v11.5h13V9M10 20.5v-6h4v6'));
+  D('gen', 'bell', 'Alarm', P('M6 16.5V11a6 6 0 0 1 12 0v5.5l2 2H4zM10 21h4'));
+  D('gen', 'tag', 'Etiket', P('M3 12V3.5h8.5L21 13l-8.5 8.5z') + C(7.5, 7.5, 1.5));
+  D('gen', 'sliders', 'Ayarlar', P('M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1') + C(15, 6, 2) + C(9, 12, 2) + C(17, 18, 2));
+  D('gen', 'heart', 'Sağlık Durumu', P('M12 20.5S3 15 3 8.8A4.8 4.8 0 0 1 12 6.4a4.8 4.8 0 0 1 9 2.4c0 6.2-9 11.7-9 11.7z') + P('M5.5 12h3l1.5-2.5 2 4 1.5-1.5h5'));
+  D('gen', 'power', 'Açma / Kapama', P('M12 2.5V11M6.8 5.5a8 8 0 1 0 10.4 0'));
+  D('gen', 'recycle', 'Döngü', P('M20 12a8 8 0 1 1-2.3-5.6M20 4v4.5h-4.5'));
+  D('gen', 'eye', 'Gözlem', P('M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z') + C(12, 12, 3));
+  D('gen', 'puzzle', 'Entegrasyon', P('M4 9h3.5a2 2 0 1 1 4 0H15v3.5a2 2 0 1 1 0 4V20H11.5a2 2 0 1 0-4 0H4z'));
+  D('gen', 'arrows', 'Hareket', P('M12 2v20M2 12h20M9 5l3-3 3 3M9 19l3 3 3-3M5 9l-3 3 3 3M19 9l3 3-3 3'));
+  D('gen', 'water', 'Deniz / Su', P('M2 8c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2M2 13c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2M2 18c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2'));
+  D('gen', 'mountain', 'Arazi', P('M2 20l7-12 4 6 3-4 6 10z'));
+})();
+function iconOf(e){
+  if(!e) return null;
+  if(e.icon && ICONS[e.icon]) return {ic:ICONS[e.icon], col:e.iconColor || ICON_CAT_COL[ICONS[e.icon].cat], mode:e.iconMode || 'corner'};
+  if((e.kind === 'Part' || e.kind === 'Object' || e.kind === 'Port') && e.type){ const t = E(e.type); if(t && t.icon && ICONS[t.icon]) return {ic:ICONS[t.icon], col:t.iconColor || ICON_CAT_COL[ICONS[t.icon].cat], mode:'corner'}; }
+  return null;
+}
+function iconSVG(ic, x, y, size, col){
+  const sw = Math.max(1.25, Math.min(2.2, size / 16)) * 24 / size;
+  return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${(size / 24).toFixed(4)})" fill="none" stroke="${col}" color="${col}" stroke-width="${sw.toFixed(2)}" stroke-linecap="round" stroke-linejoin="round">${ic.svg}</g>`;
+}
+function iconInline(ic, px, col, sw){ return `<svg width="${px}" height="${px}" viewBox="0 0 24 24" fill="none" stroke="${col}" color="${col}" stroke-width="${sw || 1.7}" stroke-linecap="round" stroke-linejoin="round">${ic.svg}</svg>`; }
+
+/* ================= STATE ================= */
+let M = null;
+/* model revizyonu: alt eleman dizini ve sıralı gereksinim listesi bu sayaçla önbelleğe alınır */
+let REV = 0, KIDX = null, KIDX_REV = -1, KIDX_M = null;
+const bump = () => { REV++; };
+var MCHG = 0; /* model değişiklik sayacı (önbellekler için) */
+const COLL = new Intl.Collator('tr', {numeric:true}), COLLS = new Intl.Collator('tr');
+const ST = {back:[], fwd:[], open:[], cur:null, sel:new Set(), tool:null, exp:new Set(), tsel:null, focus:'canvas', grid:true, space:false, dragEl:null};
+const undoStack = [], redoStack = [];
+const clean = (k, v) => (k === '_pts' || k === '_rm' || k === '_num' || k === '_seqMsgs' || k === '_po' || k === '_hy') ? undefined : v;
+const E = id => (id && M.els[id]) || null;
+const cur = () => E(ST.cur);
+function snap(){ bump(); MCHG++; if(ST.batch) return; markDirty(); undoStack.push(JSON.stringify(M)); if(undoStack.length > 150) undoStack.shift(); redoStack.length = 0; }
+function undo(){ if(!undoStack.length) return toast('Geri alınacak işlem yok'); markDirty(); redoStack.push(JSON.stringify(M)); M = JSON.parse(undoStack.pop()); afterLoad(); }
+function redo(){ if(!redoStack.length) return; markDirty(); undoStack.push(JSON.stringify(M)); M = JSON.parse(redoStack.pop()); afterLoad(); }
+function afterLoad(){
+  bump(); MCHG++; if(typeof modSnapAll === 'function') modSnapAll();
+  ST.open = ST.open.filter(id => isView(id) || (E(id) && E(id).kind === 'Diagram'));
+  if(!isView(ST.cur) && !E(ST.cur)) ST.cur = ST.open[0] || null;
+  ST.sel.clear(); if(ST.tsel && !E(ST.tsel)) ST.tsel = null;
+  rebuildReqCache();
+  renderAll(); persist();
+}
+function afterChange(){ MCHG++; if(typeof modGuard === 'function') modGuard(); bump(); trackReqChanges(); renderAll(); persist(); }
+
+/* ================= MODEL HELPERS ================= */
+function kidsOf(id){
+  if(KIDX_REV !== REV || KIDX_M !== M){ KIDX = new Map(); for(const k in M.els){ const e = M.els[k]; let a = KIDX.get(e.owner); if(!a) KIDX.set(e.owner, a = []); a.push(e); } KIDX_REV = REV; KIDX_M = M; }
+  const a = KIDX.get(id); return a ? a.slice() : [];
+}
+function nearestPkg(id){ let e = E(id); while(e && e.kind !== 'Package' && e.kind !== 'Model') e = E(e.owner); return e ? e.id : M.rootId; }
+function isAnc(a, b){ let e = E(b); while(e){ if(e.owner === a) return true; e = E(e.owner); } return false; }
+function lcFirst(s){ s = String(s || '').replace(/\s+/g, ''); return s ? s.charAt(0).toLocaleLowerCase('tr') + s.slice(1) : s; }
+function uniqName(base, owner){ const n = new Set(kidsOf(owner).map(e => e.name)); if(!n.has(base)) return base; let i = 2; while(n.has(base + i)) i++; return base + i; }
+function defName(kind, owner){ const b = BASE[kind]; if(!b) return ''; const n = new Set(kidsOf(owner).map(e => e.name)); let i = 1; while(n.has(b + i)) i++; return b + i; }
+function mk(kind, owner, props){
+  const e = Object.assign({id:uid(), kind, owner, name:defName(kind, owner), doc:''}, props || {});
+  if(kind === 'Requirement'){ if(!e.level) e.level = 'Sistem'; if(!e.status) e.status = 'Taslak'; if(!e.reqId) e.reqId = nextReqId(e.level); if(e.text == null) e.text = ''; if(!e.attrs) e.attrs = {}; }
+  const kv = KIDX_REV === REV && KIDX_M === M, nv = NRI_REV === REV && NRI_M === M;
+  M.els[e.id] = e; bump();
+  if(kv){ let a = KIDX.get(e.owner); if(!a) KIDX.set(e.owner, a = []); a.push(e); KIDX_REV = REV; }
+  if(nv){ if(e.kind === 'Requirement' && e.reqId) NRI.forEach((mx, pre) => { if(String(e.reqId).startsWith(pre)){ const n = parseInt(String(e.reqId).slice(pre.length), 10); if(n > mx) NRI.set(pre, n); } }); NRI_REV = REV; }
+  return e;
+}
+function elLabel(e){
+  if(!e) return '';
+  if(KIND[e.kind] && KIND[e.kind].rel){ const a = E(e.src), b = E(e.tgt); const ab = (a ? nm(a) : '?') + ' → ' + (b ? nm(b) : '?'); return e.name ? e.name + '  (' + ab + ')' : ab; }
+  if(e.kind === 'Comment') return (e.name || 'Not').split('\n')[0].slice(0, 40);
+  return nm(e);
+}
+function nm(e){
+  if(e.kind === 'Requirement') return (e.reqId ? e.reqId + ' – ' : '') + (e.name || '(Gereksinim)');
+  if(e.kind === 'Lifeline'){ const t = E(e.type); return (e.name || '') + (t ? ' : ' + t.name : '') || '(Yaşam çizgisi)'; }
+  if(e.kind === 'ConstraintProp'){ const t = E(e.type); return (e.name || '') + (t ? ' : ' + t.name : ''); }
+  if(e.kind === 'Fragment') return (e.op || 'alt') + (e.name ? ' ' + e.name : '');
+  if(e.kind === 'History') return e.deep ? 'H*' : 'H';
+  return e.name || ('(' + KIND[e.kind].tr + ')');
+}
+function typeName(id){ const t = E(id); return t ? t.name : ''; }
+function partLabel(p){ return p.name + (p.type && E(p.type) ? ' : ' + typeName(p.type) : '') + (p.mult ? ' [' + p.mult + ']' : ''); }
+function valLabel(v){ const r = v.res != null && isFinite(v.res) && numOf(v.def) !== v.res ? fmtNum(v.res) : null; return v.name + (v.vtype ? ' : ' + v.vtype : '') + (v.def ? ' = ' + v.def : '') + (r != null ? (v.def ? ' ⚙ ' : ' = ') + r + (v.def ? '' : ' ⚙') : ''); }
+function portLabel(p){ return (p.dir ? p.dir + ' ' : '') + p.name + (p.type && E(p.type) ? ' : ' + (p.conj ? '~' : '') + typeName(p.type) : '') + (p.mult ? ' [' + p.mult + ']' : ''); }
+function tName(x){ return x.type && E(x.type) ? typeName(x.type) : (x.vtype || ''); }
+function flowLabel(f){ const t = tName(f); return (f.dir || 'inout') + ' ' + f.name + (t ? ' : ' + t : '') + (f.mult ? ' [' + f.mult + ']' : ''); }
+function pinLabel(p){ const t = tName(p); return p.name + (t ? ' : ' + t : ''); }
+function typeOpts(sel, kinds){ return '<option value="">(yok)</option>' + Object.values(M.els).filter(e => kinds.includes(e.kind)).sort(sortEls).map(b => `<option value="${b.id}"${b.id === sel ? ' selected' : ''}>${esc(b.name)}${kinds.length > 1 ? ' ‹' + KIND[b.kind].tr + '›' : ''}</option>`).join(''); }
+const VT_KINDS = ['ValueType','Enumeration'];
+function vtypeList(){ return ['Real','Integer','Boolean','String'].concat(Object.values(M.els).filter(e => VT_KINDS.includes(e.kind)).map(e => e.name)).filter((v, i, a) => v && a.indexOf(v) === i); }
+function vtypeOf(name){ return Object.values(M.els).find(e => VT_KINDS.includes(e.kind) && e.name === name) || null; }
+function unitOf(v){ if(v.unit) return v.unit; const t = vtypeOf(v.vtype); return t && t.unit || ''; }
+/* port yönü: açıkça verilmemişse arayüz bloğunun akış özelliklerinden türetilir (eşlenik ~ ise ters) */
+function portDir(p){
+  if(p.dir) return p.dir;
+  const t = p.type && E(p.type); if(!t) return '';
+  const fs = kidsOf(t.id).filter(c => c.kind === 'FlowProp'); if(!fs.length) return '';
+  const ds = new Set(fs.map(f => f.dir || 'inout'));
+  let d = ds.size === 1 ? [...ds][0] : 'inout';
+  if(p.conj && d !== 'inout') d = d === 'in' ? 'out' : 'in';
+  return d;
+}
+function pathOf(id){ const a = []; let e = E(id); while(e){ a.unshift(e.name || KIND[e.kind].tr); e = E(e.owner); } return a.join(' ▸ '); }
+function canOwn(ownerKind, childKind, child){
+  if(childKind === 'Diagram'){
+    const dt = child && child.dtype;
+    if(dt === 'ibd') return ownerKind === 'Block';
+    if(dt === 'act') return ownerKind === 'Activity';
+    if(dt === 'uc' || dt === 'req' || dt === 'pkg') return ownerKind === 'Package' || ownerKind === 'Model';
+    if(dt === 'stm') return ownerKind === 'StateMachine';
+    if(dt === 'sd') return ownerKind === 'Interaction';
+    if(dt === 'par') return ownerKind === 'Block';
+    return ['Package','Model','Block'].includes(ownerKind);
+  }
+  return (OWN[ownerKind] || []).includes(childKind);
+}
+function diagOpts(kind){
+  if(kind === 'Model' || kind === 'Package') return ['bdd','req','uc','act','stm','sd','ibd','par','pkg'];
+  if(kind === 'Block') return ['ibd','bdd','act','stm','sd','par'];
+  if(kind === 'Activity') return ['act'];
+  if(kind === 'UseCase') return ['act','sd'];
+  if(kind === 'StateMachine') return ['stm'];
+  if(kind === 'Interaction') return ['sd'];
+  if(kind === 'Requirement') return ['req'];
+  return [];
+}
+function navTargets(e, excludeId){
+  if(!e) return [];
+  const out = [], add = d => { if(d && d.kind === 'Diagram' && d.id !== excludeId && !out.includes(d)) out.push(d); };
+  const owned = id => kidsOf(id).filter(x => x.kind === 'Diagram').sort(sortEls).forEach(add);
+  const behav = id => { owned(id); kidsOf(id).filter(x => x.kind === 'Activity' || x.kind === 'StateMachine' || x.kind === 'Interaction').forEach(a => owned(a.id)); };
+  if(e.link) add(E(e.link));
+  if(e.kind === 'Diagram'){ add(e); return out; }
+  behav(e.id);
+  if((e.kind === 'Part' || e.kind === 'Object' || e.kind === 'Port') && e.type) behav(e.type);
+  if(e.kind === 'Action' && e.behavior) behav(e.behavior);
+  if(e.kind === 'Partition' && e.represents) behav(e.represents);
+  if((e.kind === 'Lifeline' || e.kind === 'ConstraintProp') && e.type) behav(e.type);
+  return out;
+}
+function diagramsShowing(id){ return Object.values(M.els).filter(d => d.kind === 'Diagram' && d.shapes.some(s => s.el === id)); }
+
+/* ================= DIAGRAM CORE ================= */
+const snapv = v => Math.round(v / G) * G;
+function shapeOf(d, sid){ return d.shapes.find(s => s.id === sid) || null; }
+function addShape(d, elId, x, y, w, h, parent){
+  const k = KIND[E(elId).kind];
+  const sh = {id:uid(), el:elId, x:Math.round(x), y:Math.round(y), w:w || k.w || 120, h:h || k.h || 60};
+  if(parent) sh.parent = parent;
+  d.shapes.push(sh); return sh;
+}
+function snapPort(sh, P, cx, cy){
+  const dl = Math.abs(cx - P.x), dr = Math.abs(cx - (P.x + P.w)), dt = Math.abs(cy - P.y), db = Math.abs(cy - (P.y + P.h));
+  const m = Math.min(dl, dr, dt, db), cl = (v, a, b) => Math.max(a, Math.min(b, v));
+  if(m === dl || m === dr){ cx = m === dl ? P.x : P.x + P.w; cy = cl(cy, P.y + sh.h / 2, P.y + P.h - sh.h / 2); }
+  else { cy = m === dt ? P.y : P.y + P.h; cx = cl(cx, P.x + sh.w / 2, P.x + P.w - sh.w / 2); }
+  sh.x = cx - sh.w / 2; sh.y = cy - sh.h / 2;
+}
+function portSide(sh, P){
+  const cx = sh.x + sh.w / 2, cy = sh.y + sh.h / 2;
+  const ds = [['l', Math.abs(cx - P.x)], ['r', Math.abs(cx - P.x - P.w)], ['t', Math.abs(cy - P.y)], ['b', Math.abs(cy - P.y - P.h)]];
+  ds.sort((a, b) => a[1] - b[1]); return ds[0][0];
+}
+function showPorts(d, P){
+  const p = E(P.el); if(!p) return [];
+  const pk = p.kind === 'ConstraintProp' ? 'Param' : (p.kind === 'Part' ? 'Port' : 'Pin');
+  const ports = [...(p.type && pk !== 'Pin' ? kidsOf(p.type) : []), ...kidsOf(p.id)].filter(e => e.kind === pk);
+  const existing = d.shapes.filter(s => s.parent === P.id);
+  const have = new Set(existing.map(s => s.el));
+  const todo = ports.filter(pt => !have.has(pt.id));
+  if(!todo.length) return [];
+  if(pk === 'Pin'){
+    const cntP = {t:0, b:0}; existing.forEach(s => { const sd = portSide(s, P); if(sd === 't' || sd === 'b') cntP[sd]++; });
+    const need = {t:cntP.t, b:cntP.b}; todo.forEach(pt => need[pt.dir === 'out' ? 'b' : 't']++);
+    P.w = Math.max(P.w, snapv(40 + Math.max(need.t, need.b) * 36));
+    const addedP = [];
+    todo.forEach(pt => { const sd = pt.dir === 'out' ? 'b' : 't', sh = addShape(d, pt.id, 0, 0, 12, 12, P.id); snapPort(sh, P, P.x + 26 + cntP[sd]++ * 36, sd === 't' ? P.y : P.y + P.h); addedP.push(sh); });
+    addedP.forEach(sh => autoEdges(d, sh));
+    return addedP;
+  }
+  const cnt = {l:0, r:0};
+  existing.forEach(s => { const sd = portSide(s, P); if(sd === 'l' || sd === 'r') cnt[sd]++; });
+  const sideOf = pt => pt.kind === 'Param' ? 'l' : (pt.dir === 'in' ? 'l' : 'r');
+  const need = {l:cnt.l, r:cnt.r}; todo.forEach(pt => need[sideOf(pt)]++);
+  P.h = Math.max(P.h, snapv(44 + Math.max(need.l, need.r) * 24));
+  const added = [];
+  todo.forEach(pt => {
+    const sd = sideOf(pt), sh = addShape(d, pt.id, 0, 0, 16, 16, P.id);
+    snapPort(sh, P, sd === 'l' ? P.x : P.x + P.w, P.y + 46 + cnt[sd]++ * 24);
+    added.push(sh);
+  });
+  added.forEach(sh => autoEdges(d, sh));
+  return added;
+}
+function findEnd(d, elId, partId){
+  return d.shapes.find(s => {
+    if(s.el !== elId) return false;
+    if(partId){ const P = s.parent && shapeOf(d, s.parent); return !!P && P.el === partId; }
+    return true;
+  }) || null;
+}
+function autoEdges(d, sh){
+  const allowed = DT[d.dtype].rels;
+  for(const k in M.els){
+    const r = M.els[k];
+    if(!KIND[r.kind].rel || !allowed.includes(r.kind)) continue;
+    if(r.src !== sh.el && r.tgt !== sh.el) continue;
+    if(d.edges.some(x => x.el === r.id)) continue;
+    const s = findEnd(d, r.src, r.sp), t = findEnd(d, r.tgt, r.tp);
+    if(s && t && s !== t) d.edges.push({id:uid(), el:r.id, s:s.id, t:t.id, route:d.dtype === 'uc' ? 'straight' : 'ortho'});
+  }
+}
+function newDiagramCore(ownerId, dtype, name){
+  let owner = E(ownerId);
+  if(dtype === 'ibd' && owner.kind !== 'Block') owner = mk('Block', nearestPkg(ownerId));
+  if(dtype === 'act' && owner.kind !== 'Activity') owner = mk('Activity', canOwn(owner.kind, 'Activity') ? owner.id : nearestPkg(ownerId), {name:(owner.kind === 'UseCase' || owner.kind === 'Block') ? owner.name : undefined});
+  if(dtype === 'act' && !owner.name) owner.name = defName('Activity', owner.owner);
+  if((dtype === 'uc' || dtype === 'req' || dtype === 'pkg') && owner.kind !== 'Package' && owner.kind !== 'Model') owner = E(nearestPkg(ownerId));
+  if(dtype === 'par' && owner.kind !== 'Block') owner = mk('Block', nearestPkg(ownerId));
+  if(dtype === 'stm' && owner.kind !== 'StateMachine') owner = mk('StateMachine', canOwn(owner.kind, 'StateMachine') ? owner.id : nearestPkg(ownerId), {name:owner.kind === 'Block' ? owner.name + ' Durumları' : defName('StateMachine', nearestPkg(ownerId))});
+  if(dtype === 'sd' && owner.kind !== 'Interaction') owner = mk('Interaction', canOwn(owner.kind, 'Interaction') ? owner.id : nearestPkg(ownerId), {name:(owner.kind === 'UseCase' || owner.kind === 'Block') ? owner.name : defName('Interaction', nearestPkg(ownerId))});
+  const d = mk('Diagram', owner.id, {name:name || (owner.name + ' ' + dtype.toUpperCase()), dtype, shapes:[], edges:[], vx:60, vy:70, z:1});
+  if(dtype === 'ibd') populateIBD(d);
+  if(dtype === 'par') populatePar(d);
+  return d;
+}
+function populateIBD(d){
+  const ch = kidsOf(d.owner);
+  const parts = ch.filter(e => e.kind === 'Part'), vals = ch.filter(e => e.kind === 'Value');
+  parts.forEach((p, i) => { const sh = addShape(d, p.id, 40 + (i % 3) * 320, 40 + Math.floor(i / 3) * 200, 200, 80); showPorts(d, sh); });
+  const y0 = 40 + Math.ceil(parts.length / 3) * 200;
+  vals.forEach((v, i) => addShape(d, v.id, 40 + (i % 4) * 190, y0 + Math.floor(i / 4) * 60, 160, 36));
+  d.shapes.slice().forEach(sh => autoEdges(d, sh));
+}
+function populatePar(d){
+  const ch = kidsOf(d.owner);
+  const cps = ch.filter(e => e.kind === 'ConstraintProp'), vals = ch.filter(e => e.kind === 'Value');
+  vals.forEach((v, i) => addShape(d, v.id, 40, 40 + i * 70, 160, 36));
+  cps.forEach((c, i) => { const sh = addShape(d, c.id, 320 + (i % 2) * 300, 40 + Math.floor(i / 2) * 170, 200, 90); showPorts(d, sh); });
+  d.shapes.slice().forEach(sh => autoEdges(d, sh));
+}
+function connect(d, kind, S, T){
+  const a = E(S.el), b = E(T.el);
+  const route = d.dtype === 'uc' ? 'straight' : 'ortho';
+  if(kind === 'Anchor'){ const ed = {id:uid(), el:null, kind:'Anchor', s:S.id, t:T.id, route:'straight'}; d.edges.push(ed); return ed; }
+  let owner;
+  if(kind === 'Connector' || kind === 'Binding' || kind === 'Transition' || isMsg(kind)) owner = d.owner;
+  else if(kind === 'ControlFlow' || kind === 'ObjectFlow') owner = (E(a.owner) && E(a.owner).kind === 'Activity') ? a.owner : d.owner;
+  else owner = nearestPkg(a.id);
+  const r = mk(kind, owner, {src:a.id, tgt:b.id, name:''});
+  if(kind === 'Connector' || kind === 'Binding'){
+    const ps = S.parent && shapeOf(d, S.parent), pt = T.parent && shapeOf(d, T.parent);
+    r.sp = ps ? ps.el : null; r.tp = pt ? pt.el : null;
+  }
+  if(kind === 'Composition' || kind === 'Aggregation'){
+    const p = mk('Part', a.id, {name:uniqName(lcFirst(b.name) || 'part', a.id), type:b.id});
+    if(kind === 'Aggregation') p.shared = true;
+    r.part = p.id;
+  }
+  const ed = {id:uid(), el:r.id, s:S.id, t:T.id, route:(d.dtype === 'req' || d.dtype === 'stm') && kind !== 'Transition' ? route : (d.dtype === 'stm' ? 'straight' : route)};
+  d.edges.push(ed); return ed;
+}
+function validate(kind, a, b, d){
+  if(a.id === b.id && kind !== 'ControlFlow' && kind !== 'Transition' && !isMsg(kind)) return 'Bir eleman kendisine bağlanamaz.';
+  const K = [a.kind, b.kind];
+  if(kind === 'Anchor') return (a.kind === 'Comment' || b.kind === 'Comment') ? '' : 'Not bağlantısının bir ucu Not olmalı.';
+  if(K.includes('Comment')) return 'Notlar yalnızca "Not Bağlantısı" ile bağlanır.';
+  if(K.includes('Partition')) return 'Kulvarlar bağlantı ucu olamaz.';
+  if(K.includes('Legend')) return 'Lejant bağlantı ucu olamaz.';
+  if(K.some(k => k === 'IRegion' || k === 'Region' || k === 'Fragment')) return 'Bölge / fragment bağlantı ucu olamaz.';
+  if(K.includes('Stereotype') && kind !== 'Generalization') return 'Stereotip yalnızca Generalization ile bağlanır.';
+  switch(kind){
+    case 'Composition': case 'Aggregation': return (['Block','InterfaceBlock'].includes(a.kind) && ['Block','InterfaceBlock'].includes(b.kind)) ? '' : 'Composition/Aggregation iki Blok arasında olmalı.';
+    case 'Association':
+      if(d.dtype === 'uc') return (K.includes('Actor') && (K.includes('UseCase') || K.includes('Subject'))) ? '' : 'Use Case diyagramında Association, Aktör ile Use Case arasında olmalı.';
+      return K.every(k => ['Block','Actor','InterfaceBlock','Signal'].includes(k)) ? '' : 'Association Blok/Aktör arasında olmalı.';
+    case 'Generalization': return a.kind === b.kind ? '' : 'Generalization aynı türdeki elemanlar arasında olmalı.';
+    case 'Include': case 'Extend': return (a.kind === 'UseCase' && b.kind === 'UseCase') ? '' : kind + ' iki Use Case arasında olmalı.';
+    case 'Connector': return K.every(k => ['Part','Port','Value'].includes(k)) ? '' : 'Connector part/port/value arasında olmalı.';
+    case 'ControlFlow': case 'ObjectFlow':
+      if(a.kind === 'Final' || a.kind === 'FlowFinal') return 'Bitiş düğümünden akış çıkamaz.';
+      if(b.kind === 'Initial') return 'Başlangıç düğümüne akış giremez.';
+      return '';
+    case 'Dependency': return '';
+    case 'DeriveReqt': return (a.kind === 'Requirement' && b.kind === 'Requirement') ? '' : 'Derive iki gereksinim arasında olmalı (türetilen → kaynak).';
+    case 'Satisfy': return b.kind === 'Requirement' && a.kind !== 'Requirement' ? '' : 'Satisfy, model elemanından gereksinime çizilmeli.';
+    case 'Verify': return b.kind === 'Requirement' && a.kind !== 'Requirement' ? '' : 'Verify, test durumundan gereksinime çizilmeli.';
+    case 'Refine': case 'Trace': return (a.kind === 'Requirement' || b.kind === 'Requirement') ? '' : kind + ' ilişkisinin bir ucu gereksinim olmalı.';
+    case 'Allocate': return (['Activity','Action','SendSignal','AcceptEvent','AcceptTime'].includes(a.kind) && ['Block','Part'].includes(b.kind)) ? '' : 'Allocate, fonksiyondan (aktivite/aksiyon) bloğa/part\'a çizilmeli.';
+    case 'Transition':
+      if(![a.kind, b.kind].every(k => ['State','Initial','Final','Choice','Junction','History'].includes(k))) return 'Geçiş durumlar arasında olmalı.';
+      if(a.kind === 'Final') return 'Son durumdan geçiş çıkamaz.';
+      if(b.kind === 'Initial') return 'Başlangıca geçiş giremez.';
+      return '';
+    case 'MsgSync': case 'MsgAsync': case 'MsgReply': return (a.kind === 'Lifeline' && b.kind === 'Lifeline') ? '' : 'Mesajlar yaşam çizgileri arasında olmalı.';
+    case 'Binding': return K.every(k => ['Param','Value','Port'].includes(k)) ? '' : 'Binding parametre/value arasında olmalı.';
+    case 'Import': return (a.kind === 'Package' || a.kind === 'Model') && (b.kind === 'Package' || b.kind === 'Model') ? '' : 'Import iki paket arasında olmalı.';
+  }
+  return '';
+}
+function delModel(ids){
+  const del = new Set();
+  const all = () => Object.values(M.els);
+  const add = id => {
+    if(!id || del.has(id) || !E(id) || id === M.rootId) return;
+    del.add(id); const e = E(id);
+    all().forEach(x => {
+      if(x.owner === id) add(x.id);
+      if(KIND[x.kind].rel && (x.src === id || x.tgt === id || x.sp === id || x.tp === id || x.part === id)) add(x.id);
+    });
+    if(e.part) add(e.part);
+  };
+  ids.forEach(add);
+  del.forEach(id => delete M.els[id]); bump();
+  all().forEach(x => {
+    if(del.has(x.type)) x.type = null;
+    if(del.has(x.behavior)) x.behavior = null;
+    if(del.has(x.represents)) x.represents = null;
+    if(del.has(x.link)) x.link = null;
+    if(del.has(x.signal)) x.signal = null;
+    if(x.st && x.st.some(i => del.has(i))) x.st = x.st.filter(i => !del.has(i));
+    if(x.kind === 'Diagram') purgeDiagram(x);
+  });
+  ST.open = ST.open.filter(id => isView(id) || E(id));
+  if(!isView(ST.cur) && !E(ST.cur)) ST.cur = ST.open[0] || null;
+  ST.sel.clear();
+  if(ST.tsel && !E(ST.tsel)) ST.tsel = null;
+}
+function purgeDiagram(d){
+  let changed = true;
+  while(changed){
+    const n = d.shapes.length;
+    const ids = new Set(d.shapes.map(s => s.id));
+    d.shapes = d.shapes.filter(s => E(s.el) && (!s.parent || ids.has(s.parent)));
+    changed = d.shapes.length !== n;
+  }
+  const ids = new Set(d.shapes.map(s => s.id));
+  d.edges = d.edges.filter(x => ids.has(x.s) && ids.has(x.t) && (x.el === null || x.el === undefined ? true : !!E(x.el)));
+}
+function removeFromDiagram(d, ids){
+  const rm = new Set(ids);
+  d.shapes.forEach(s => { if(rm.has(s.parent)) rm.add(s.id); });
+  d.shapes = d.shapes.filter(s => !rm.has(s.id));
+  d.edges = d.edges.filter(x => !rm.has(x.id));
+  purgeDiagram(d); ST.sel.clear();
+}
+
+/* ================= AUTO LAYOUT ================= */
+const LAYOUTS = {
+  bdd:[['tb','Hiyerarşik — yukarıdan aşağı'], ['lr','Hiyerarşik — soldan sağa'], ['grid','Izgara'], ['circle','Dairesel'], ['tidy','Toparla (çakışmaları gider, ızgaraya oturt)']],
+  ibd:[['lr','Akış — soldan sağa'], ['tb','Akış — yukarıdan aşağı'], ['grid','Izgara'], ['tidy','Toparla (çakışmaları gider, ızgaraya oturt)']],
+  uc:[['ucLeft','Aktörler solda, use case\'ler sınır içinde'], ['ucBoth','Aktörler iki yanda'], ['ucGrid','Use case ızgarası'], ['tidy','Toparla (çakışmaları gider, ızgaraya oturt)']],
+  act:[['tb','Akış — yukarıdan aşağı (kulvarlı)'], ['lr','Akış — soldan sağa'], ['tidy','Toparla (çakışmaları gider, ızgaraya oturt)']],
+  req:[['tb','Hiyerarşik — kaynak gereksinim üstte'], ['lr','Hiyerarşik — soldan sağa'], ['grid','Izgara'], ['tidy','Toparla (çakışmaları gider, ızgaraya oturt)']],
+  stm:[['tb','Akış — yukarıdan aşağı'], ['lr','Akış — soldan sağa'], ['circle','Dairesel'], ['tidy','Toparla (çakışmaları gider, ızgaraya oturt)']],
+  sd:[['seq','Sıralı yerleşim (yaşam çizgileri yan yana, mesajlar eşit aralıklı)'], ['tidy','Toparla (çakışmaları gider, ızgaraya oturt)']],
+  par:[['lr','Akış — soldan sağa'], ['grid','Izgara'], ['tidy','Toparla (çakışmaları gider, ızgaraya oturt)']],
+  pkg:[['tb','Hiyerarşik — yukarıdan aşağı'], ['grid','Izgara'], ['tidy','Toparla (çakışmaları gider, ızgaraya oturt)']]
+};
+const topShapes = d => d.shapes.filter(s => !s.parent && E(s.el));
+const topOf = (d, sh) => (sh.parent && shapeOf(d, sh.parent)) || sh;
+const kindOfSh = sh => E(sh.el).kind;
+function packLine(des, size, gap){
+  const n = des.length; if(!n) return [];
+  const a = des.slice(), b = des.slice();
+  for(let i = 1; i < n; i++) a[i] = Math.max(des[i], a[i - 1] + (size[i - 1] + size[i]) / 2 + gap);
+  for(let i = n - 2; i >= 0; i--) b[i] = Math.min(des[i], b[i + 1] - (size[i] + size[i + 1]) / 2 - gap);
+  return a.map((v, i) => (v + b[i]) / 2);
+}
+/* Katmanlı (Sugiyama tarzı) yerleşim. N: [{id,w,h,cx,cy,lane?,minLayer?,fixed?}], Eg: [[a,b]] */
+function layered(N, Eg, o){
+  o = o || {};
+  const TB = o.dir !== 'LR', gm = o.gapMain == null ? 70 : o.gapMain, gc = o.gapCross == null ? 50 : o.gapCross;
+  const n = N.length, ix = new Map(N.map((v, i) => [v.id, i]));
+  const ms = v => TB ? v.h : v.w, cs = v => TB ? v.w : v.h, mc = v => TB ? v.cy : v.cx, cc = v => TB ? v.cx : v.cy;
+  const seen = new Set(), E0 = [];
+  Eg.forEach(([a, b]) => { const i = ix.get(a), j = ix.get(b); if(i == null || j == null || i === j) return; if(seen.has(i + ',' + j) || seen.has(j + ',' + i)) return; seen.add(i + ',' + j); E0.push([i, j]); });
+  const out = N.map(() => []), inn = N.map(() => []);
+  E0.forEach(([i, j]) => out[i].push(j));
+  const order = N.map((_, i) => i).sort((p, q) => mc(N[p]) - mc(N[q]) || cc(N[p]) - cc(N[q]));
+  const st = new Array(n).fill(0), rev = new Set(), indeg0 = new Array(n).fill(0);
+  E0.forEach(([, j]) => indeg0[j]++);
+  const dfs = v => { st[v] = 1; out[v].slice().sort((p, q) => cc(N[p]) - cc(N[q])).forEach(w => { if(st[w] === 1) rev.add(v + ',' + w); else if(!st[w]) dfs(w); }); st[v] = 2; };
+  order.filter(v => !indeg0[v]).forEach(v => { if(!st[v]) dfs(v); });
+  order.forEach(v => { if(!st[v]) dfs(v); });
+  out.forEach(a => a.length = 0);
+  E0.forEach(([i, j]) => { if(rev.has(i + ',' + j)) [i, j] = [j, i]; out[i].push(j); inn[j].push(i); });
+  const L = N.map(v => v.minLayer || 0), indeg = inn.map(a => a.length), q = [], topo = [];
+  N.forEach((v, i) => { if(!indeg[i]) q.push(i); });
+  while(q.length){ const v = q.shift(); topo.push(v); out[v].forEach(w => { L[w] = Math.max(L[w], L[v] + 1); if(--indeg[w] === 0) q.push(w); }); }
+  for(let k = topo.length - 1; k >= 0; k--){ const v = topo[k]; if(out[v].length && !N[v].fixed){ const m = Math.min(...out[v].map(w => L[w])) - 1; if(m > L[v]) L[v] = m; } }
+  const maxL = Math.max(0, ...L);
+  const layers = Array.from({length:maxL + 1}, () => []);
+  N.forEach((_, i) => layers[L[i]].push(i));
+  const lane = i => N[i].lane || 0;
+  layers.forEach(ly => ly.sort((p, q) => lane(p) - lane(q) || cc(N[p]) - cc(N[q])));
+  const pos = new Array(n);
+  const setPos = ly => ly.forEach((v, k) => pos[v] = k - (ly.length - 1) / 2);
+  layers.forEach(setPos);
+  for(let it = 0; it < 8; it++){
+    const down = it % 2 === 0;
+    (down ? layers : layers.slice().reverse()).forEach(ly => {
+      const bc = new Map();
+      ly.forEach(v => { const nb = down ? inn[v] : out[v]; bc.set(v, nb.length ? nb.reduce((s, w) => s + pos[w], 0) / nb.length : pos[v]); });
+      ly.sort((p, q) => lane(p) - lane(q) || bc.get(p) - bc.get(q));
+      setPos(ly);
+    });
+  }
+  const lsz = layers.map(ly => Math.max(0, ...ly.map(v => ms(N[v]))));
+  const lst = []; let acc = 0;
+  lsz.forEach((s, i) => { lst[i] = acc; acc += s + gm; });
+  const lanes = [...new Set((o.lanes || []).concat(N.map((_, i) => lane(i))))].sort((a, b) => a - b);
+  const C = new Array(n).fill(0);
+  layers.forEach(ly => lanes.forEach(ln => {
+    const g = ly.filter(v => lane(v) === ln); let x = 0;
+    g.forEach((v, k) => { if(k) x += (cs(N[g[k - 1]]) + cs(N[v])) / 2 + gc; C[v] = x; });
+    g.forEach(v => C[v] -= x / 2);
+  }));
+  const nbs = i => inn[i].concat(out[i]).filter(w => lane(w) === lane(i));
+  for(let it = 0; it < 14; it++){
+    (it % 2 ? layers.slice().reverse() : layers).forEach(ly => lanes.forEach(ln => {
+      const g = ly.filter(v => lane(v) === ln); if(!g.length) return;
+      const des = g.map(v => { const nb = nbs(v); return nb.length ? nb.reduce((s, w) => s + C[w], 0) / nb.length : C[v]; });
+      const r = packLine(des, g.map(v => cs(N[v])), gc);
+      g.forEach((v, k) => C[v] = r[k]);
+    }));
+  }
+  const laneBox = {}; let off = 0;
+  lanes.forEach(ln => {
+    let lo = Infinity, hi = -Infinity;
+    N.forEach((v, i) => { if(lane(i) === ln){ lo = Math.min(lo, C[i] - cs(v) / 2); hi = Math.max(hi, C[i] + cs(v) / 2); } });
+    if(!isFinite(lo)){ lo = 0; hi = 0; }
+    const pad = o.lanePad || 0, size = Math.max(o.laneMin || 0, hi - lo + 2 * pad);
+    const shift = off + (size - (hi - lo)) / 2 - lo;
+    N.forEach((_, i) => { if(lane(i) === ln) C[i] += shift; });
+    laneBox[ln] = {start:off, size}; off += size + (o.laneGap || 0);
+  });
+  const res = new Map();
+  N.forEach((v, i) => { const m = o.alignStart ? lst[L[i]] + ms(v) / 2 : lst[L[i]] + lsz[L[i]] / 2; res.set(v.id, TB ? {cx:C[i], cy:m} : {cx:m, cy:C[i]}); });
+  return {pos:res, laneBox, mainSize:Math.max(0, acc - gm), crossSize:off};
+}
+function layoutEdges(d, nodeSet, mapTop){
+  const res = [];
+  d.edges.forEach(ed => {
+    const k = edgeKind(ed); if(k === 'Anchor') return;
+    const s0 = shapeOf(d, ed.s), t0 = shapeOf(d, ed.t); if(!s0 || !t0) return;
+    let S = topOf(d, s0), T2 = topOf(d, t0);
+    if(mapTop){ S = mapTop(S); T2 = mapTop(T2); }
+    if(!nodeSet.has(S.id) || !nodeSet.has(T2.id) || S === T2) return;
+    let a = S.id, b = T2.id;
+    if(['Generalization','Extend','DeriveReqt','Satisfy','Verify','Refine','Trace','Import','Dependency'].includes(k) && d.dtype !== 'bdd') [a, b] = [b, a];
+    else if(k === 'Generalization' || k === 'Extend') [a, b] = [b, a];
+    if(k === 'Connector' || k === 'Binding'){ const da = E(s0.el).dir, db = E(t0.el).dir; if(da === 'in' || db === 'out') [a, b] = [b, a]; }
+    res.push([a, b, k]);
+  });
+  return res;
+}
+function layoutDiagram(d, mode){
+  const geo = new Map(d.shapes.map(s => [s.id, {x:s.x, y:s.y, w:s.w, h:s.h}]));
+  const g = id => geo.get(id);
+  /* iç içe: bileşik durum / bölge içindeki şekiller kapsayıcıyla birlikte taşınır */
+  const nestC = new Map();
+  const within = (a, c) => a.x >= c.x && a.y >= c.y && a.x + a.w <= c.x + c.w && a.y + a.h <= c.y + c.h;
+  if(d.dtype === 'stm') topShapes(d).forEach(s0 => { let best = null; topShapes(d).forEach(c => { if(c === s0) return; const ce = E(c.el); if(!(ce.kind === 'Region' || isComposite(ce))) return; if(within(s0, c) && (!best || c.w * c.h < best.w * best.h)) best = c; }); if(best) nestC.set(s0.id, best); });
+  const outer = s0 => { let c = s0; while(nestC.has(c.id)) c = nestC.get(c.id); return c; };
+  const moveTo = (sh, nx, ny) => { const a = g(sh.id), dx = nx - a.x, dy = ny - a.y; a.x = nx; a.y = ny; d.shapes.forEach(c => { if(c.parent === sh.id || (nestC.size && !c.parent && c !== sh && nestC.has(c.id) && outer(c) === sh)){ const b = g(c.id); b.x += dx; b.y += dy; d.shapes.forEach(q => { if(q.parent === c.id){ const bq = g(q.id); bq.x += dx; bq.y += dy; } }); } }); };
+  const centerTo = (sh, cx, cy) => { const a = g(sh.id); moveTo(sh, Math.round(cx / 5) * 5 - a.w / 2, Math.round(cy / 5) * 5 - a.h / 2); };
+  const tops = topShapes(d);
+  if(!tops.length) return geo;
+  const ox = Math.min(...tops.map(s => s.x)), oy = Math.min(...tops.map(s => s.y));
+  const comments = tops.filter(s => kindOfSh(s) === 'Comment');
+  const C0 = s => ({id:s.id, w:g(s.id).w, h:g(s.id).h, cx:s.x + s.w / 2, cy:s.y + s.h / 2});
+  let placeComments = true;
+
+  if(mode === 'tidy'){
+    tidy(d, geo, tops); placeComments = false;
+  } else if(mode === 'seq'){
+    const lls = tops.filter(s => kindOfSh(s) === 'Lifeline').sort((a, b) => a.x - b.x);
+    const msgs = d.edges.filter(ed => isMsg(edgeKind(ed))).sort((a, b) => (a.y || 0) - (b.y || 0));
+    const H = 90 + msgs.length * 46 + 30;
+    let x = 0;
+    const frs = tops.filter(s => kindOfSh(s) === 'Fragment').map(f => ({f, ll:lls.filter(l => l.x + l.w / 2 >= f.x && l.x + l.w / 2 <= f.x + f.w), ms:msgs.filter(ed => (ed.y || 0) >= f.y && (ed.y || 0) <= f.y + f.h).map(ed => msgs.indexOf(ed))}));
+    lls.forEach(l => { const a = g(l.id); a.h = Math.max(160, H); moveTo(l, x, 0); x += Math.max(a.w, 120) + 70; });
+    d._seqMsgs = msgs.map((ed, k) => [ed, 90 + k * 46]);
+    frs.forEach(({f, ll, ms}) => {
+      const a = g(f.id);
+      if(ll.length){ const xs = ll.map(l => g(l.id)); a.x = Math.min(...xs.map(b => b.x)) - 10; a.w = Math.max(...xs.map(b => b.x + b.w)) + 10 - a.x; }
+      if(ms.length){ const y0 = 90 + Math.min(...ms) * 46, y1 = 90 + Math.max(...ms) * 46; const oh = a.h; a.y = y0 - 34; a.h = Math.max(60, y1 - y0 + 58); if(f.seps) f.seps = f.seps.map(v => Math.round(v * a.h / oh)); }
+    });
+  } else if(d.dtype === 'uc' && mode.startsWith('uc')){
+    layoutUC(d, geo, mode, moveTo, centerTo);
+  } else if(mode === 'grid' || mode === 'circle'){
+    const nodes = tops.filter(s => !['Comment','Partition','Subject'].includes(kindOfSh(s)) && !(d.dtype === 'ibd' && kindOfSh(s) === 'Value'));
+    if(mode === 'grid'){
+      const sorted = nodes.slice().sort((a, b) => Math.round(a.y / 120) - Math.round(b.y / 120) || a.x - b.x);
+      const cols = Math.max(1, Math.ceil(Math.sqrt(sorted.length * 1.4)));
+      const cw = Math.max(...sorted.map(s => g(s.id).w)) + 60;
+      let y = 0;
+      for(let r = 0; r * cols < sorted.length; r++){
+        const row = sorted.slice(r * cols, r * cols + cols), rh = Math.max(...row.map(s => g(s.id).h));
+        row.forEach((s, c) => centerTo(s, c * cw + cw / 2, y + rh / 2));
+        y += rh + 60;
+      }
+    } else {
+      const cx0 = nodes.reduce((t, s) => t + s.x + s.w / 2, 0) / nodes.length, cy0 = nodes.reduce((t, s) => t + s.y + s.h / 2, 0) / nodes.length;
+      const sorted = nodes.slice().sort((a, b) => Math.atan2(a.y + a.h / 2 - cy0, a.x + a.w / 2 - cx0) - Math.atan2(b.y + b.h / 2 - cy0, b.x + b.w / 2 - cx0));
+      const per = sorted.reduce((t, s) => t + Math.hypot(g(s.id).w, g(s.id).h) + 30, 0);
+      const maxDiag = Math.max(...sorted.map(s => Math.hypot(g(s.id).w, g(s.id).h)));
+      const R = Math.max(160, per / (2 * Math.PI), sorted.length > 1 ? (maxDiag + 40) / (2 * Math.sin(Math.PI / sorted.length)) : 0);
+      sorted.forEach((s, i) => { const a = -Math.PI / 2 + i / sorted.length * Math.PI * 2; centerTo(s, R * Math.cos(a), R * Math.sin(a)); });
+    }
+    if(d.dtype === 'ibd') placeValues(d, geo, tops, centerTo);
+  } else {
+    const dir = mode === 'lr' ? 'LR' : 'TB';
+    const nodes = tops.filter(s => { const k = kindOfSh(s); return k !== 'Comment' && k !== 'Partition' && k !== 'IRegion' && !nestC.has(s.id) && !(d.dtype === 'ibd' && k === 'Value'); });
+    const iregs = tops.filter(s => kindOfSh(s) === 'IRegion').map(R => ({R, inn:nodes.filter(n => within(n, R))}));
+    if(d.dtype === 'act') nodes.forEach(s => { const k = kindOfSh(s); if(k === 'Fork' || k === 'Join'){ const a = g(s.id), Lg = Math.max(a.w, a.h, 80), t = Math.min(a.w, a.h); if(dir === 'TB'){ a.w = Lg; a.h = t; } else { a.w = t; a.h = Lg; } } });
+    const allP = tops.filter(s => kindOfSh(s) === 'Partition');
+    const parts = d.dtype === 'act' ? allP.filter(s => dir === 'TB' ? !s.horiz : s.horiz).sort((a, b) => dir === 'TB' ? a.x - b.x : a.y - b.y) : [];
+    if(d.dtype === 'act' && allP.length && allP.length !== parts.length) toast(dir === 'TB' ? 'Yatay kulvarlar için "soldan sağa" düzenini kullanın; yön uymayan kulvarlar yerinde bırakıldı.' : 'Dikey kulvarlar için "yukarıdan aşağı" düzenini kullanın; yön uymayan kulvarlar yerinde bırakıldı.');
+    const nodeSet = new Set(nodes.map(s => s.id));
+    const eg = layoutEdges(d, nodeSet, nestC.size ? outer : null);
+    const gap = d.dtype === 'ibd' ? {gapMain:130, gapCross:60} : d.dtype === 'act' ? {gapMain:45, gapCross:50} : {gapMain:80, gapCross:40};
+    const mkN = () => nodes.map(s => {
+      const v = C0(s); const a = g(s.id); v.w = a.w; v.h = a.h;
+      if(parts.length){
+        let li = parts.findIndex(P => v.cx >= P.x && v.cx <= P.x + P.w && v.cy >= P.y && v.cy <= P.y + P.h);
+        if(li < 0){ let bd = Infinity; parts.forEach((P, k) => { const dd = dir === 'TB' ? Math.abs(P.x + P.w / 2 - v.cx) : Math.abs(P.y + P.h / 2 - v.cy); if(dd < bd){ bd = dd; li = k; } }); }
+        v.lane = li;
+      }
+      return v;
+    });
+    const opts = Object.assign({dir, alignStart:d.dtype !== 'act', lanes:parts.map((_, i) => i), lanePad:parts.length ? 30 : 0, laneMin:parts.length ? (dir === 'TB' ? 200 : 130) : 0}, gap);
+    if(d.dtype === 'ibd' || d.dtype === 'par') arrangeAllPorts(d, geo, dir);
+    let r = layered(mkN(), eg, opts);
+    r.pos.forEach((p, id) => centerTo(shapeOf(d, id), p.cx, p.cy));
+    if(d.dtype === 'ibd' || d.dtype === 'par'){
+      arrangeAllPorts(d, geo, dir);
+      const N2 = mkN(); N2.forEach(v => { const p = r.pos.get(v.id); v.cx = p.cx; v.cy = p.cy; });
+      r = layered(N2, eg, opts);
+      r.pos.forEach((p, id) => centerTo(shapeOf(d, id), p.cx, p.cy));
+      arrangeAllPorts(d, geo, dir);
+      if(d.dtype === 'ibd') placeValues(d, geo, tops, centerTo);
+    }
+    iregs.forEach(({R, inn}) => { if(!inn.length) return; const a = g(R.id), bs = inn.map(n => g(n.id)); a.x = Math.min(...bs.map(b => b.x)) - 25; a.y = Math.min(...bs.map(b => b.y)) - 30; a.w = Math.max(...bs.map(b => b.x + b.w)) + 25 - a.x; a.h = Math.max(...bs.map(b => b.y + b.h)) + 25 - a.y; });
+    if(parts.length && dir === 'TB'){
+      const ys = nodes.map(s => [g(s.id).y, g(s.id).y + g(s.id).h]);
+      const y0 = Math.min(...ys.map(v => v[0])), y1 = Math.max(...ys.map(v => v[1]));
+      parts.forEach((P, k) => { const lb = r.laneBox[k]; const a = g(P.id); a.x = lb.start; a.w = lb.size; a.y = y0 - 58; a.h = (y1 - y0) + 88; });
+    } else if(parts.length){
+      const xs = nodes.map(s => [g(s.id).x, g(s.id).x + g(s.id).w]);
+      const x0 = Math.min(...xs.map(v => v[0])), x1 = Math.max(...xs.map(v => v[1]));
+      parts.forEach((P, k) => { const lb = r.laneBox[k]; const a = g(P.id); a.y = lb.start; a.h = lb.size; a.x = x0 - 68; a.w = (x1 - x0) + 98; });
+    }
+  }
+  if(placeComments && comments.length) placeCommentShapes(d, geo, comments, moveTo);
+  // keep diagram where it was
+  const t2 = topShapes(d);
+  const mx = Math.min(...t2.map(s => g(s.id).x)), my = Math.min(...t2.map(s => g(s.id).y));
+  const dx = Math.round((ox - mx) / G) * G, dy = Math.round((oy - my) / G) * G;
+  geo.forEach(a => { a.x += dx; a.y += dy; });
+  if(d._seqMsgs){ const top = Math.min(...t2.filter(s => kindOfSh(s) === 'Lifeline').map(s => g(s.id).y)); d._seqMsgs = d._seqMsgs.map(([ed, y]) => [ed, top + y]); }
+  return geo;
+}
+function placeValues(d, geo, tops, centerTo){
+  const vals = tops.filter(s => kindOfSh(s) === 'Value'); if(!vals.length) return;
+  const others = tops.filter(s => !['Value','Comment'].includes(kindOfSh(s)));
+  const bottom = others.length ? Math.max(...others.map(s => geo.get(s.id).y + geo.get(s.id).h)) : 0;
+  const left = others.length ? Math.min(...others.map(s => geo.get(s.id).x)) : 0;
+  let x = left;
+  vals.forEach(s => { const a = geo.get(s.id); centerTo(s, x + a.w / 2, bottom + 60 + a.h / 2); x += a.w + 30; });
+}
+function placeCommentShapes(d, geo, comments, moveTo){
+  const others = topShapes(d).filter(s => kindOfSh(s) !== 'Comment' && !['Partition','Subject'].includes(kindOfSh(s)));
+  if(!others.length) return;
+  const placed = others.map(s => geo.get(s.id));
+  const free = r => !placed.some(o => r.x < o.x + o.w + 18 && o.x < r.x + r.w + 18 && r.y < o.y + o.h + 18 && o.y < r.y + r.h + 18);
+  const right = Math.max(...placed.map(o => o.x + o.w)) + 50, top = Math.min(...placed.map(o => o.y));
+  let colY = top;
+  comments.forEach(c => {
+    const a = geo.get(c.id), w = a.w, h = a.h;
+    const ed = d.edges.find(x => edgeKind(x) === 'Anchor' && (x.s === c.id || x.t === c.id));
+    const o = ed && shapeOf(d, ed.s === c.id ? ed.t : ed.s);
+    let pos = null;
+    if(o){
+      const t = geo.get(topOf(d, o).id), G2 = 40;
+      const cands = [
+        {x:t.x + t.w + G2, y:t.y + t.h / 2 - h / 2}, {x:t.x - G2 - w, y:t.y + t.h / 2 - h / 2},
+        {x:t.x + t.w / 2 - w / 2, y:t.y - G2 - h}, {x:t.x + t.w / 2 - w / 2, y:t.y + t.h + G2},
+        {x:t.x + t.w + G2, y:t.y - h - 10}, {x:t.x + t.w + G2, y:t.y + t.h + 10}, {x:t.x - G2 - w, y:t.y - h - 10}, {x:t.x - G2 - w, y:t.y + t.h + 10}
+      ];
+      for(let k = 1; k <= 4 && !pos; k++) for(const p of cands){ const q = {x:p.x + (p.x > t.x ? 1 : -1) * (k - 1) * 60, y:p.y, w, h}; if(free(q)){ pos = q; break; } }
+    }
+    if(!pos){ pos = {x:right, y:colY, w, h}; colY += h + 20; }
+    moveTo(c, snapv(pos.x), snapv(pos.y));
+    placed.push(geo.get(c.id));
+  });
+}
+function arrangeAllPorts(d, geo, dir){
+  topShapes(d).forEach(P => {
+    const ports = d.shapes.filter(c => c.parent === P.id); if(!ports.length) return;
+    const a = geo.get(P.id), pcx = a.x + a.w / 2, pcy = a.y + a.h / 2;
+    const info = ports.map(pt => {
+      const peers = [];
+      d.edges.forEach(ed => { if(ed.s === pt.id || ed.t === pt.id){ const o = shapeOf(d, ed.s === pt.id ? ed.t : ed.s); if(o){ const b = geo.get(o.id); peers.push([b.x + b.w / 2, b.y + b.h / 2]); } } });
+      const e = E(pt.el);
+      let side;
+      if(peers.length){ const px = peers.reduce((t, p) => t + p[0], 0) / peers.length; side = Math.abs(px - pcx) < 1 ? (e.dir === 'in' ? 'l' : 'r') : (px > pcx ? 'r' : 'l'); }
+      else side = e.dir === 'in' ? 'l' : e.dir === 'out' ? 'r' : (geo.get(pt.id).x + 8 < pcx ? 'l' : 'r');
+      const key = peers.length ? peers.reduce((t, p) => t + p[1], 0) / peers.length : geo.get(pt.id).y;
+      return {pt, side, key};
+    });
+    const L = info.filter(i => i.side === 'l').sort((p, q) => p.key - q.key), R = info.filter(i => i.side === 'r').sort((p, q) => p.key - q.key);
+    a.h = Math.max(a.h, snapv(44 + Math.max(L.length, R.length) * 24));
+    const place = (arr, x) => { const span = arr.length * 24, y0 = a.y + Math.max(46, (a.h - span) / 2 + 12); arr.forEach((i, k) => { const b = geo.get(i.pt.id); b.x = x - b.w / 2; b.y = y0 + k * 24 - b.h / 2; }); };
+    place(L, a.x); place(R, a.x + a.w);
+  });
+}
+function tidy(d, geo, tops){
+  const movable = tops.filter(s => !['Subject','Partition','Package','IRegion','Region','Fragment'].includes(kindOfSh(s)) && !isComposite(E(s.el)));
+  const sh = (s, dx, dy) => { const a = geo.get(s.id); a.x += dx; a.y += dy; d.shapes.forEach(c => { if(c.parent === s.id){ const b = geo.get(c.id); b.x += dx; b.y += dy; } }); };
+  movable.forEach(s => { const a = geo.get(s.id); sh(s, snapv(a.x) - a.x, snapv(a.y) - a.y); });
+  const M0 = 20;
+  for(let it = 0; it < 120; it++){
+    let moved = false;
+    for(let i = 0; i < movable.length; i++) for(let j = i + 1; j < movable.length; j++){
+      const A = geo.get(movable[i].id), B = geo.get(movable[j].id);
+      if(!(A.x < B.x + B.w + M0 && B.x < A.x + A.w + M0 && A.y < B.y + B.h + M0 && B.y < A.y + A.h + M0)) continue;
+      const ox = Math.min(A.x + A.w, B.x + B.w) - Math.max(A.x, B.x) + M0, oy = Math.min(A.y + A.h, B.y + B.h) - Math.max(A.y, B.y) + M0;
+      moved = true;
+      if(ox < oy){ const s = (A.x + A.w / 2 <= B.x + B.w / 2) ? 1 : -1, m = Math.ceil(ox / 2 / G) * G; sh(movable[i], -s * m, 0); sh(movable[j], s * m, 0); }
+      else { const s = (A.y + A.h / 2 <= B.y + B.h / 2) ? 1 : -1, m = Math.ceil(oy / 2 / G) * G; sh(movable[i], 0, -s * m); sh(movable[j], 0, s * m); }
+    }
+    if(!moved) break;
+  }
+  // containers grow to enclose what they contained before
+  tops.filter(s => ['Subject','Partition','IRegion','Region'].includes(kindOfSh(s)) || isComposite(E(s.el))).sort((p, q) => p.w * p.h - q.w * q.h).forEach(Cs => {
+    const inside = movable.filter(s => { const cx = s.x + s.w / 2, cy = s.y + s.h / 2; return cx >= Cs.x && cx <= Cs.x + Cs.w && cy >= Cs.y && cy <= Cs.y + Cs.h; });
+    if(!inside.length) return;
+    const a = geo.get(Cs.id);
+    const x0 = Math.min(...inside.map(s => geo.get(s.id).x)) - 30, y0 = Math.min(...inside.map(s => geo.get(s.id).y)) - 50;
+    const x1 = Math.max(...inside.map(s => geo.get(s.id).x + geo.get(s.id).w)) + 30, y1 = Math.max(...inside.map(s => geo.get(s.id).y + geo.get(s.id).h)) + 30;
+    const nx = Math.min(a.x, x0), ny = Math.min(a.y, y0);
+    a.w = Math.max(a.x + a.w, x1) - nx; a.h = Math.max(a.y + a.h, y1) - ny; a.x = nx; a.y = ny;
+  });
+}
+function layoutUC(d, geo, mode, moveTo, centerTo){
+  const tops = topShapes(d), g = id => geo.get(id);
+  const actors = tops.filter(s => kindOfSh(s) === 'Actor'), ucs = tops.filter(s => kindOfSh(s) === 'UseCase');
+  const subs = tops.filter(s => kindOfSh(s) === 'Subject').sort((a, b) => a.y - b.y || a.x - b.x);
+  const grpOf = u => {
+    let k = subs.findIndex(S => E(S.el).id === E(u.el).owner);
+    if(k < 0){ const cx = u.x + u.w / 2, cy = u.y + u.h / 2; k = subs.findIndex(S => cx >= S.x && cx <= S.x + S.w && cy >= S.y && cy <= S.y + S.h); }
+    return k;
+  };
+  const groups = subs.map(S => ({S, u:[]})), free = {S:null, u:[]};
+  ucs.forEach(u => { let k = grpOf(u); if(k < 0 && subs.length === 1 && (!E(E(u.el).owner) || E(E(u.el).owner).kind !== 'Subject')) k = 0; (k < 0 ? free : groups[k]).u.push(u); });
+  if(free.u.length) groups.push(free);
+  const all = layoutEdges(d, new Set(tops.map(s => s.id)));
+  const ucSet = new Set(ucs.map(u => u.id)), acSet = new Set(actors.map(a => a.id));
+  const assoc = all.filter(([a, b]) => (acSet.has(a) && ucSet.has(b)) || (acSet.has(b) && ucSet.has(a))).map(([a, b]) => acSet.has(a) ? [a, b] : [b, a]);
+  const ucE = all.filter(([a, b]) => ucSet.has(a) && ucSet.has(b));
+  const keyY = u => { const ys = assoc.filter(x => x[1] === u.id).map(x => { const s = shapeOf(d, x[0]); return s.y + s.h / 2; }); return ys.length ? ys.reduce((p, q) => p + q, 0) / ys.length : u.y + u.h / 2; };
+  let y = 0;
+  const pad = 40, top = 56;
+  groups.forEach(G0 => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    if(G0.u.length){
+      let pos = new Map();
+      if(mode === 'ucGrid'){
+        const srt = G0.u.slice().sort((a, b) => keyY(a) - keyY(b));
+        const cols = Math.max(1, Math.round(Math.sqrt(srt.length / 1.5)) || 1);
+        const cw = Math.max(...srt.map(u => g(u.id).w)) + 40, rh = Math.max(...srt.map(u => g(u.id).h)) + 30;
+        srt.forEach((u, i) => pos.set(u.id, {cx:(i % cols) * cw, cy:Math.floor(i / cols) * rh}));
+      } else {
+        const ids = new Set(G0.u.map(u => u.id));
+        const N = G0.u.map(u => ({id:u.id, w:g(u.id).w, h:g(u.id).h, cx:u.x + u.w / 2, cy:keyY(u)}));
+        pos = layered(N, ucE.filter(([a, b]) => ids.has(a) && ids.has(b)), {dir:'LR', gapMain:70, gapCross:28}).pos;
+      }
+      G0.u.forEach(u => { const p = pos.get(u.id), a = g(u.id); x0 = Math.min(x0, p.cx - a.w / 2); x1 = Math.max(x1, p.cx + a.w / 2); y0 = Math.min(y0, p.cy - a.h / 2); y1 = Math.max(y1, p.cy + a.h / 2); });
+      G0.u.forEach(u => { const p = pos.get(u.id); centerTo(u, p.cx - x0, p.cy - y0 + y + top); });
+    } else { x0 = 0; x1 = 160; y0 = 0; y1 = 60; }
+    const w = Math.max(220, x1 - x0 + 2 * pad), h = (y1 - y0) + top + pad;
+    if(G0.S){ const a = g(G0.S.id); a.x = -pad - Math.max(0, (w - 2 * pad - (x1 - x0)) / 2); a.y = y; a.w = w; a.h = h; }
+    y += (G0.S ? h : (y1 - y0) + top) + 50;
+  });
+  if(!actors.length) return;
+  const boxL = Math.min(...tops.filter(s => kindOfSh(s) !== 'Actor').map(s => g(s.id).x));
+  const boxR = Math.max(...tops.filter(s => kindOfSh(s) !== 'Actor' && kindOfSh(s) !== 'Comment').map(s => g(s.id).x + g(s.id).w));
+  const desired = a => { const ys = assoc.filter(x => x[0] === a.id).map(x => { const b = g(x[1]); return b.y + b.h / 2; }); return ys.length ? ys.reduce((p, q) => p + q, 0) / ys.length : null; };
+  let left = actors.slice(), right = [];
+  if(mode === 'ucBoth' && actors.length > 1){
+    const cnt = a => assoc.filter(x => x[0] === a.id).length;
+    const srt = actors.slice().sort((a, b) => cnt(b) - cnt(a) || a.y - b.y);
+    const half = Math.ceil(srt.length / 2);
+    left = srt.slice(0, half); right = srt.slice(half);
+  }
+  const col = (arr, xc) => {
+    let fallback = 0;
+    const des = arr.map(a => { const v = desired(a); return v == null ? 1e5 + fallback++ : v; });
+    const idx = arr.map((_, i) => i).sort((p, q) => des[p] - des[q]);
+    const sizes = idx.map(i => g(arr[i].id).h + 24);
+    let last = 0; const dv = idx.map(i => des[i] >= 1e5 ? (last += 120) : (last = des[i]));
+    const r = packLine(dv, sizes, 20);
+    idx.forEach((i, k) => centerTo(arr[i], xc, r[k] - 10));
+  };
+  const aw = Math.max(...actors.map(a => g(a.id).w));
+  col(left, boxL - 150 - aw / 2);
+  if(right.length) col(right, boxR + 150 + aw / 2);
+}
+function applyGeo(d, geo, label){
+  snap();
+  d.edges.forEach(ed => { delete ed.mx; delete ed.my; delete ed.wp; delete ed.lo; });
+  if(d._seqMsgs){ d._seqMsgs.forEach(([ed, y]) => ed.y = y); delete d._seqMsgs; }
+  const from = new Map(d.shapes.map(s => [s.id, {x:s.x, y:s.y, w:s.w, h:s.h}]));
+  const t0 = performance.now(), dur = 340;
+  const fin = () => { d.shapes.forEach(s => { const b = geo.get(s.id); if(b){ s.x = b.x; s.y = b.y; s.w = b.w; s.h = b.h; } }); afterChange(); fit(); if(label) toast(label); };
+  const step = now => {
+    if(cur() !== d) return fin();
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    d.shapes.forEach(s => { const a = from.get(s.id), b = geo.get(s.id); if(!a || !b) return; s.x = a.x + (b.x - a.x) * e; s.y = a.y + (b.y - a.y) * e; s.w = a.w + (b.w - a.w) * e; s.h = a.h + (b.h - a.h) * e; });
+    renderDiagram();
+    if(k < 1) requestAnimationFrame(step); else fin();
+  };
+  requestAnimationFrame(step);
+}
+function runLayout(mode){
+  const d = cur(); if(!d) return;
+  if(!topShapes(d).length) return toast('Diyagram boş');
+  const it = (LAYOUTS[d.dtype] || []).find(x => x[0] === mode);
+  applyGeo(d, layoutDiagram(d, mode), (it ? it[1].split(' (')[0] : 'Düzen') + ' uygulandı — Ctrl+Z ile geri alabilirsiniz');
+}
+function alignSel(how){
+  const d = cur(); if(!d) return;
+  const sel = d.shapes.filter(s => ST.sel.has(s.id) && !s.parent);
+  if(sel.length < 2) return toast('Hizalama için en az iki şekil seçin (Shift+tık veya alan seçimi)');
+  const geo = new Map(d.shapes.map(s => [s.id, {x:s.x, y:s.y, w:s.w, h:s.h}]));
+  const mv = (s, nx, ny) => { const a = geo.get(s.id), dx = nx - a.x, dy = ny - a.y; a.x = nx; a.y = ny; d.shapes.forEach(c => { if(c.parent === s.id){ const b = geo.get(c.id); b.x += dx; b.y += dy; } }); };
+  const x0 = Math.min(...sel.map(s => s.x)), x1 = Math.max(...sel.map(s => s.x + s.w)), y0 = Math.min(...sel.map(s => s.y)), y1 = Math.max(...sel.map(s => s.y + s.h));
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  switch(how){
+    case 'left': sel.forEach(s => mv(s, x0, s.y)); break;
+    case 'right': sel.forEach(s => mv(s, x1 - s.w, s.y)); break;
+    case 'hc': sel.forEach(s => mv(s, cx - s.w / 2, s.y)); break;
+    case 'top': sel.forEach(s => mv(s, s.x, y0)); break;
+    case 'bottom': sel.forEach(s => mv(s, s.x, y1 - s.h)); break;
+    case 'vc': sel.forEach(s => mv(s, s.x, cy - s.h / 2)); break;
+    case 'dh': { const srt = sel.slice().sort((a, b) => a.x - b.x), tot = srt.reduce((t, s) => t + s.w, 0), gap = (x1 - x0 - tot) / (srt.length - 1); let x = x0; srt.forEach(s => { mv(s, x, s.y); x += s.w + gap; }); break; }
+    case 'dv': { const srt = sel.slice().sort((a, b) => a.y - b.y), tot = srt.reduce((t, s) => t + s.h, 0), gap = (y1 - y0 - tot) / (srt.length - 1); let y = y0; srt.forEach(s => { mv(s, s.x, y); y += s.h + gap; }); break; }
+    case 'size': {
+      const ok = sel.filter(s => !UNNAMED.has(kindOfSh(s)) && kindOfSh(s) !== 'Port');
+      const w = Math.max(...ok.map(s => s.w)), h = Math.max(...ok.map(s => s.h));
+      ok.forEach(s => { const a = geo.get(s.id); a.w = w; a.h = h; });
+      break;
+    }
+  }
+  applyGeo(d, geo, null);
+}
+function layoutMenuItems(){
+  const d = cur(); if(!d) return [{h:'Önce bir diyagram açın'}];
+  const it = [{h:'Otomatik düzen — ' + d.dtype.toUpperCase()}];
+  LAYOUTS[d.dtype].forEach(([m, t], i) => it.push({t, k:i === 0 ? 'Ctrl+Shift+L' : '', f:() => runLayout(m)}));
+  const n = d.shapes.filter(s => ST.sel.has(s.id) && !s.parent).length;
+  it.push({h:'Hizala / dağıt (seçili ' + n + ')'});
+  [['left','Sola hizala'], ['hc','Yatay ortala'], ['right','Sağa hizala'], ['top','Üste hizala'], ['vc','Dikey ortala'], ['bottom','Alta hizala'], ['dh','Yatay eşit dağıt'], ['dv','Dikey eşit dağıt'], ['size','Aynı boyuta getir']]
+    .forEach(([k, t]) => it.push({t, dis:n < 2, f:() => alignSel(k)}));
+  return it;
+}
+
+/* ================= TEXT ================= */
+const mctx = document.createElement('canvas').getContext('2d');
+let FSC = 1;
+function tw(s, bold, size){ mctx.font = (bold ? 'bold ' : '') + ((size || 12) * FSC) + 'px ' + FF; return mctx.measureText(s).width; }
+function wrap(s, maxW, bold, size){
+  const out = [];
+  String(s == null ? '' : s).split('\n').forEach(para => {
+    let line = '';
+    para.split(/\s+/).filter(Boolean).forEach(w => {
+      const cand = line ? line + ' ' + w : w;
+      if(tw(cand, bold, size) <= maxW){ line = cand; return; }
+      if(line) out.push(line);
+      line = '';
+      if(tw(w, bold, size) <= maxW){ line = w; return; }
+      let chunk = '';
+      for(const ch of w){ if(chunk && tw(chunk + ch, bold, size) > maxW){ out.push(chunk); chunk = ''; } chunk += ch; }
+      line = chunk;
+    });
+    out.push(line);
+  });
+  return out;
+}
+function T(lines, x, y, o){
+  o = o || {}; if(!Array.isArray(lines)) lines = [lines];
+  const sz = (o.size || 12) * FSC, lh = o.lh ? o.lh * FSC : Math.round(sz * 1.27);
+  let s = `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-family="${FF}" font-size="${sz}" text-anchor="${o.anchor || 'middle'}" fill="${o.fill || '#151515'}"` +
+    (o.bold ? ' font-weight="bold"' : '') + (o.italic ? ' font-style="italic"' : '') +
+    (o.halo ? ' stroke="#ffffff" stroke-width="3" stroke-linejoin="round" paint-order="stroke"' : '') + '>';
+  lines.forEach((l, i) => { s += `<tspan x="${x.toFixed(1)}" dy="${i ? lh : 0}">${esc(l)}</tspan>`; });
+  return s + '</text>';
+}
+function Tc(lines, cx, cy, o){ o = o || {}; const sz = (o.size || 12) * FSC, lh = o.lh ? o.lh * FSC : Math.round(sz * 1.27); return T(lines, cx, cy - (lines.length - 1) * lh / 2 + sz * 0.36, o); }
+
+/* ================= SYSML 1.7 HELPERS ================= */
+const ST_TOP = new Set(['Part','Object','Action','UseCase','State','SendSignal','AcceptEvent','Lifeline','Value','Actor','ActParam']);
+function stNames(e){ return (e && e.st || []).map(E).filter(Boolean).map(s => s.name); }
+function kwd(e, base){ const n = (base ? [base] : []).concat(stNames(e)); return n.length ? '«' + n.join(', ') + '»' : ''; }
+function stFill(e){ const s = (e && e.st || []).map(E).find(x => x && x.fill); return s ? s.fill : ''; }
+function stTags(st){ return String(st.tags || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => { const m = l.match(/^([^:=]+?)\s*(?::\s*([^=]+?))?\s*(?:=\s*(.*))?$/); return m ? {key:m[1].trim(), type:(m[2] || '').trim(), def:(m[3] || '').trim()} : null; }).filter(Boolean); }
+function tagVal(e, st, key){ const v = e.tv && e.tv[st.id + '.' + key]; if(v != null && v !== '') return v; const t = stTags(st).find(q => q.key === key); return t ? t.def : ''; }
+function tagLines(e){ const out = []; (e.st || []).map(E).filter(Boolean).forEach(st => stTags(st).forEach(t => { const v = tagVal(e, st, t.key); if(v !== '') out.push(t.key + ' = ' + v); })); return out; }
+function legendItems(e){ return String(e.items || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => { const m = l.match(/^(-?)(#[0-9a-fA-F]{3,8})\s+(.*)$/); return m ? {line:!!m[1], c:m[2], t:m[3]} : {c:'', t:l}; }); }
+function legendAuto(d){
+  const out = [], seen = new Set();
+  d.shapes.forEach(s0 => { const e = E(s0.el); if(!e || e.kind === 'Legend') return; const f = s0.fill || stFill(e); if(f && !seen.has(f)){ seen.add(f); const st = (e.st || []).map(E).find(x => x && x.fill === f); out.push(f + ' ' + (st ? '«' + st.name + '»' : KIND[e.kind].tr + ' (açıklama)')); } });
+  d.edges.forEach(ed => { if(ed.stroke && !seen.has('-' + ed.stroke)){ seen.add('-' + ed.stroke); out.push('-' + ed.stroke + ' ' + KIND[edgeKind(ed)].tr + ' (açıklama)'); } });
+  return out.join('\n');
+}
+function enumLits(e){ return String(e.lits || '').split('\n').map(x => x.trim()).filter(Boolean); }
+function isComposite(e){ return !!e && e.kind === 'State' && kidsOf(e.id).some(c => ['State','Region','Initial','Final','Choice','Junction','History'].includes(c.kind)); }
+function fragOps(e){ const o = String(e.guards == null ? '' : e.guards).split('\n'); return o.length ? o : ['']; }
+function fragSeps(sh, n){
+  const seps = (sh.seps || []).slice(0, Math.max(0, n - 1));
+  for(let i = seps.length; i < n - 1; i++) seps.push(Math.round(sh.h * (i + 1) / n));
+  return seps.map(v => Math.max(24, Math.min(sh.h - 10, v)));
+}
+function compBox(sh, e, head, comps, fill, SW){
+  const x = sh.x, y = sh.y;
+  let needW = tw(e.name || '', true) + 24; comps.forEach(c => c[1].forEach(t => { needW = Math.max(needW, tw(t) + 16); }));
+  if(sh.w < needW) sh.w = Math.ceil(needW / G) * G;
+  const W = sh.w, lines = wrap(e.name, W - 12, true);
+  let b = T(head, x + W / 2, y + 15, {italic:1, size:11}) + T(lines, x + W / 2, y + 30, {bold:1});
+  let yy = y + 30 + (lines.length - 1) * 15 + 9;
+  comps.forEach(c => {
+    b += `<line x1="${x}" y1="${yy}" x2="${x + W}" y2="${yy}" ${SW}/>`;
+    if(c[0]){ b += T(c[0], x + W / 2, yy + 14, {italic:1, size:11, fill:'#444'}); yy += 15; }
+    b += T(c[1], x + 7, yy + 14, {anchor:'start'});
+    yy += 14 + (c[1].length - 1) * 15 + 8;
+  });
+  const needH = Math.ceil((yy - y + 2) / G) * G; if(sh.h < needH) sh.h = needH;
+  return `<rect x="${x}" y="${y}" width="${W}" height="${sh.h}" fill="${fill}" ${SW}/>` + b;
+}
+
+/* ================= SHAPE DRAWING ================= */
+function drawShape(sh, e, d, SM, exp){
+  const x = sh.x, y = sh.y, k = e.kind;
+  const fill = legendFill(d, e) || sh.fill || stFill(e) || FILL[k] || '#fff';
+  const SW = `stroke="${sh.stroke || STROKE}" stroke-width="${sh.stroke ? 1.6 : 1.2}"`;
+  let s = '';
+  switch(k){
+    case 'Block': case 'InterfaceBlock': {
+      const ch = kidsOf(e.id);
+      const comps = [];
+      const flows = ch.filter(c => c.kind === 'FlowProp').map(flowLabel);
+      const parts = ch.filter(c => c.kind === 'Part' && !c.shared).map(partLabel);
+      const refs = ch.filter(c => c.kind === 'Part' && c.shared).map(partLabel);
+      const vals = ch.filter(c => c.kind === 'Value').map(valLabel);
+      const ports = ch.filter(c => c.kind === 'Port').map(portLabel);
+      const hd = sh.hide || {};
+      if(parts.length && !hd.parts) comps.push(['parts', parts]);
+      if(refs.length && !hd.references) comps.push(['references', refs]);
+      if(vals.length && !hd.values) comps.push(['values', vals]);
+      if(ports.length && !hd.ports) comps.push(['ports', ports]);
+      if(flows.length && !hd.flows) comps.push(['flow properties', flows]);
+      const tg = tagLines(e); if(tg.length && !hd.tags) comps.push(['tags', tg]);
+      let needW = 0; comps.forEach(c => c[1].forEach(t => { needW = Math.max(needW, tw(t) + 16); }));
+      if(sh.w < needW) sh.w = Math.ceil(needW / G) * G;
+      const io = iconOf(e), large = io && io.mode === 'large', top = y + (large ? 42 : 0);
+      if(io && !large && sh.w < 140) sh.w = 140;
+      const W = sh.w, lines = wrap(e.name, W - 12 - (io && !large ? 48 : 0), true);
+      let body = io ? (large ? iconSVG(io.ic, x + W / 2 - 17, y + 7, 34, io.col) : iconSVG(io.ic, x + 6, y + 6, 22, io.col)) : '';
+      body += T(kwd(e, k === 'Block' ? 'block' : 'interfaceBlock'), x + W / 2, top + 15, {italic:1, size:11});
+      body += T(lines, x + W / 2, top + 30, {bold:1});
+      let yy = top + 30 + (lines.length - 1) * 15 + 9;
+      comps.forEach(c => {
+        body += `<line x1="${x}" y1="${yy}" x2="${x + W}" y2="${yy}" ${SW}/>`;
+        body += T(c[0], x + W / 2, yy + 14, {italic:1, size:11, fill:'#444'});
+        body += T(c[1], x + 7, yy + 29, {anchor:'start'});
+        yy += 29 + (c[1].length - 1) * 15 + 8;
+      });
+      const needH = Math.ceil((yy - y + 2) / G) * G;
+      if(sh.h < needH) sh.h = needH;
+      s = `<rect x="${x}" y="${y}" width="${W}" height="${sh.h}" fill="${fill}" ${SW}/>` + body;
+      break;
+    }
+    case 'Package': {
+      const tabW = Math.min(sh.w * 0.6, Math.max(60, tw(e.name, true) + 16));
+      s = `<rect x="${x}" y="${y}" width="${tabW}" height="18" fill="${fill}" ${SW}/><rect x="${x}" y="${y + 18}" width="${sh.w}" height="${sh.h - 18}" fill="${fill}" ${SW}/>`;
+      s += T(e.name, x + 8, y + 14, {anchor:'start', bold:1});
+      if(d.dtype === 'pkg'){
+        const ch = kidsOf(e.id).filter(c => !KIND[c.kind].rel && c.kind !== 'Diagram' && c.kind !== 'Comment').sort(sortEls);
+        const lines = ch.slice(0, 7).map(c => (c.kind === 'Requirement' ? '[' + (c.reqId || '') + '] ' : '') + nm(c) + '  ‹' + KIND[c.kind].tr + '›');
+        if(ch.length > 7) lines.push('… +' + (ch.length - 7));
+        if(lines.length){ const W = Math.max(...lines.map(l => tw(l, false, 11))) + 20; if(sh.w < W) sh.w = Math.ceil(W / G) * G; const H = snapv(18 + 14 + lines.length * 14 + 10); if(sh.h < H) sh.h = H; s += T(lines, x + 10, y + 36, {anchor:'start', size:11, fill:'#333'}); }
+      }
+      break;
+    }
+    case 'Requirement': {
+      const W = sh.w, lines = wrap(e.name, W - 16, true);
+      let b = T(kwd(e, 'requirement'), x + W / 2, y + 15, {italic:1, size:11});
+      b += T(lines, x + W / 2, y + 30, {bold:1});
+      let yy = y + 30 + (lines.length - 1) * 15 + 9;
+      b += `<line x1="${x}" y1="${yy}" x2="${x + W}" y2="${yy}" ${SW}/>`;
+      const tl = wrap('Text = "' + (e.text || '') + '"', W - 14).slice(0, 8);
+      const rows = ['Id = "' + (e.reqId || '') + '"'].concat(tl);
+      if(e.verif) rows.push('Doğrulama = ' + e.verif);
+      b += T(rows, x + 7, yy + 15, {anchor:'start', size:11.5});
+      yy += 15 + (rows.length - 1) * 14.6 + 8;
+      const lvl = reqLevel(e);
+      const tg = lvl === 'Sistem' ? 'Sistem' : (e.subsys ? String(e.subsys).slice(0, 18) : 'Alt sistem'), tgw = tw(tg, false, 9.5) + 14;
+      b += `<rect x="${x + W - tgw - 4}" y="${y + 4}" width="${tgw}" height="14" rx="7" fill="${lvl === 'Sistem' ? '#e8d9f5' : '#d9ecf7'}"/>` + T(tg, x + W - 4 - tgw / 2, y + 14.5, {size:9.5, fill:'#444'});
+      const needH = Math.ceil((yy - y + 2) / G) * G; if(sh.h < needH) sh.h = needH;
+      s = `<rect x="${x}" y="${y}" width="${W}" height="${sh.h}" fill="${fill}" ${SW}/>` + b;
+      break;
+    }
+    case 'TestProfile': {
+      const W = sh.w, t0 = PT[e.ptype || 'psd'], mx = pfMetrics(e), nl = wrap(e.name, W - 12, true);
+      s = `<rect x="${x}" y="${y}" width="${W}" height="${sh.h}" fill="${fill}" ${SW}/>`;
+      s += T(kwd(e, 'testProfile'), x + W / 2, y + 15, {italic:1, size:11}) + T(nl, x + W / 2, y + 30, {bold:1});
+      const cy = y + 30 + (nl.length - 1) * 15 + 8, chH = Math.max(40, sh.h - (cy - y) - 22);
+      s += `<line x1="${x}" y1="${cy}" x2="${x + W}" y2="${cy}" ${SW}/>`;
+      s += pfChart([{p:e}], {w:W - 12, h:chH, mini:true}).replace('<svg ', `<svg x="${x + 6}" y="${cy + 4}" `);
+      s += T(t0.sh + ' · ' + (mx.main || '—'), x + W / 2, y + sh.h - 7, {size:10.5, fill:'#0f5f5f', bold:1});
+      break;
+    }
+    case 'TestCase': case 'Activity': case 'StateMachine': case 'Interaction': {
+      const stp = {TestCase:'«testCase»', Activity:'«activity»', StateMachine:'«stateMachine»', Interaction:'«interaction»'}[k];
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="12" fill="${fill}" ${SW}/>`;
+      s += T(kwd(e, stp.slice(1, -1)), x + sh.w / 2, y + 17, {italic:1, size:11});
+      s += T(wrap(e.name, sh.w - 16, true), x + sh.w / 2, y + 33, {bold:1});
+      if(k === 'TestCase' && (e.result || e.procNo || e.tLevel)){
+        const rs = testResult(e), rw = tw(rs, true, 9.5) + 12;
+        s += `<rect x="${x + sh.w - rw - 5}" y="${y + 4}" width="${rw}" height="14" rx="7" fill="${RES_COL[rs]}"/>` + T(rs, x + sh.w - 5 - rw / 2, y + 14.5, {size:9.5, bold:1, fill:'#fff'});
+        const info = [e.procNo, e.tLevel].filter(Boolean).join(' · ');
+        if(info){ const nl = wrap(e.name, sh.w - 16, true).length, iy = y + 33 + nl * 15; if(sh.h < iy - y + 8) sh.h = snapv(iy - y + 10); s += T(info.length > 34 ? info.slice(0, 33) + '…' : info, x + sh.w / 2, iy, {size:10.5, fill:'#556'}); }
+      }
+      break;
+    }
+    case 'State': {
+      const comp = [['entry', e.entry], ['do', e.doAct], ['exit', e.exit]].filter(c => c[1]).map(c => c[0] + ' / ' + c[1]);
+      const nl = wrap(e.name, sh.w - 16, true);
+      if(isComposite(e)){
+        const st0 = stNames(e).length ? [kwd(e)] : [];
+        let hy = y + 18;
+        s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="14" fill="${fill}" ${SW}/>`;
+        if(st0.length){ s += T(st0, x + sh.w / 2, hy, {italic:1, size:10.5}); hy += 14; }
+        s += T(nl, x + sh.w / 2, hy, {bold:1}); hy += (nl.length - 1) * 15 + 8;
+        if(comp.length){ s += T(comp, x + 8, hy + 12, {anchor:'start', size:11}); hy += comp.length * 14 + 4; }
+        s += `<line x1="${x}" y1="${hy}" x2="${x + sh.w}" y2="${hy}" ${SW}/>`;
+        sh._hy = hy - y;
+        break;
+      }
+      const needH = snapv(14 + nl.length * 15 + (comp.length ? 14 + comp.length * 14 : 10));
+      if(sh.h < needH) sh.h = needH;
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="12" fill="${fill}" ${SW}/>`;
+      if(comp.length){
+        s += T(nl, x + sh.w / 2, y + 20, {bold:1});
+        const ly = y + 20 + (nl.length - 1) * 15 + 9;
+        s += `<line x1="${x}" y1="${ly}" x2="${x + sh.w}" y2="${ly}" ${SW}/>` + T(comp, x + 8, ly + 15, {anchor:'start', size:11});
+      } else s += Tc(nl, x + sh.w / 2, y + sh.h / 2, {bold:1});
+      break;
+    }
+    case 'Lifeline': {
+      const hh = 40, cx = x + sh.w / 2;
+      const t = e.type && E(e.type);
+      const lbl = (e.name || '') + (t ? ' : ' + t.name : '');
+      s = `<rect x="${cx - 8}" y="${y + hh}" width="16" height="${Math.max(0, sh.h - hh)}" fill="transparent" stroke="none"/>`;
+      s += `<line x1="${cx}" y1="${y + hh}" x2="${cx}" y2="${y + sh.h}" stroke="${STROKE}" stroke-width="1.1" stroke-dasharray="7 5"/>`;
+      s += `<rect x="${x}" y="${y}" width="${sh.w}" height="${hh}" fill="${fill}" ${SW}/>`;
+      const io = iconOf(t || e);
+      if(io) s += iconSVG(io.ic, x + 5, y + 11, 18, io.col);
+      s += Tc(wrap(lbl, sh.w - 12 - (io ? 26 : 0), true).slice(0, 2), cx + (io ? 10 : 0), y + hh / 2, {bold:1});
+      break;
+    }
+    case 'ConstraintBlock': {
+      const W = sh.w, lines = wrap(e.name, W - 12, true);
+      let b = T('«constraintBlock»', x + W / 2, y + 15, {italic:1, size:11}) + T(lines, x + W / 2, y + 30, {bold:1});
+      let yy = y + 30 + (lines.length - 1) * 15 + 9;
+      const params = kidsOf(e.id).filter(c => c.kind === 'Param').map(p => p.name + (p.vtype ? ' : ' + p.vtype : ''));
+      const comps = [['constraints', ['{' + (e.expr || '') + '}']]];
+      if(params.length) comps.push(['parameters', params]);
+      comps.forEach(c => {
+        b += `<line x1="${x}" y1="${yy}" x2="${x + W}" y2="${yy}" ${SW}/>` + T(c[0], x + W / 2, yy + 14, {italic:1, size:11, fill:'#444'}) + T(c[1], x + 7, yy + 29, {anchor:'start'});
+        yy += 29 + (c[1].length - 1) * 15 + 8;
+      });
+      const needH = Math.ceil((yy - y + 2) / G) * G; if(sh.h < needH) sh.h = needH;
+      s = `<rect x="${x}" y="${y}" width="${W}" height="${sh.h}" fill="${fill}" ${SW}/>` + b;
+      break;
+    }
+    case 'ConstraintProp': {
+      const t = e.type && E(e.type);
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="16" fill="${fill}" ${SW}/>`;
+      const np = d.shapes.filter(c => c.parent === sh.id).length;
+      const needH = snapv(46 + np * 24 + 24); if(sh.h < needH) sh.h = needH;
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="16" fill="${fill}" ${SW}/>`;
+      s += T('«constraint»', x + sh.w / 2, y + 16, {italic:1, size:10.5});
+      s += T(wrap((e.name || '') + (t ? ' : ' + t.name : ''), sh.w - 30, true).slice(0, 2), x + sh.w / 2, y + 31, {bold:1});
+      if(t && t.expr) s += T('{' + t.expr + '}', x + sh.w - 14, y + sh.h - 10, {anchor:'end', italic:1, size:11, fill:'#444'});
+      break;
+    }
+    case 'Actor': {
+      const cx = x + sh.w / 2, fh = Math.max(30, sh.h - 24), sc = fh / 66;
+      const hy = y + 10 * sc;
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="transparent" stroke="none"/>`;
+      const aio = iconOf(e);
+      if(aio){ const sz = Math.min(sh.w + 16, fh); s += iconSVG(aio.ic, cx - sz / 2, y + (fh - sz) / 2, sz, aio.col); }
+      else s += `<circle cx="${cx}" cy="${hy}" r="${9 * sc}" fill="${sh.fill || '#fff'}" ${SW}/>`;
+      if(!aio) s += `<path d="M${cx},${hy + 9 * sc} V${y + 44 * sc} M${cx - 16 * sc},${y + 25 * sc} H${cx + 16 * sc} M${cx},${y + 44 * sc} L${cx - 14 * sc},${y + 64 * sc} M${cx},${y + 44 * sc} L${cx + 14 * sc},${y + 64 * sc}" fill="none" ${SW}/>`;
+      s += T(wrap(e.name, Math.max(110, sh.w + 50), false), cx, y + fh + 16, {halo:1});
+      break;
+    }
+    case 'UseCase': {
+      s = `<ellipse cx="${x + sh.w / 2}" cy="${y + sh.h / 2}" rx="${sh.w / 2}" ry="${sh.h / 2}" fill="${fill}" ${SW}/>`;
+      s += Tc(wrap(e.name, sh.w * 0.74), x + sh.w / 2, y + sh.h / 2);
+      break;
+    }
+    case 'Subject': {
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/>`;
+      s += T(wrap(e.name, sh.w - 16, true), x + sh.w / 2, y + 20, {bold:1});
+      break;
+    }
+    case 'Part': case 'Object': {
+      const lbl = k === 'Part' ? (e.name + (e.type && E(e.type) ? ' : ' + typeName(e.type) : '')) : ((e.name || '') + (e.type && E(e.type) ? ' : ' + typeName(e.type) : ''));
+      const dash = (k === 'Part' && e.shared) ? ' stroke-dasharray="6 3"' : '';
+      const io = iconOf(e), iw = io ? 44 : 0;
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}${dash}/>`;
+      if(io) s += iconSVG(io.ic, x + 5, y + 5, 18, io.col);
+      if(k === 'Part' && d.shapes.some(c => c.parent === sh.id)) s += T(wrap(lbl, sh.w - 14 - iw, true).slice(0, 2), x + sh.w / 2, y + 18, {bold:1});
+      else s += Tc(wrap(lbl, sh.w - 14 - iw, k === 'Part'), x + sh.w / 2, y + Math.min(sh.h / 2, 26), {bold:k === 'Part'});
+      if(e.mult) s += T('[' + e.mult + ']', x + sh.w - 6, y + 14, {anchor:'end', size:11, fill:'#444'});
+      break;
+    }
+    case 'Value': {
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="8" fill="${fill}" ${SW}/>`;
+      s += Tc(wrap(valLabel(e), sh.w - 12), x + sh.w / 2, y + sh.h / 2);
+      break;
+    }
+    case 'Port': case 'Param': case 'Pin': {
+      const P = sh.parent ? SM.get(sh.parent) : null;
+      const side = P ? portSide(sh, P) : 't';
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/>`;
+      const cx = x + sh.w / 2, cy = y + sh.h / 2, pd = k === 'Port' ? portDir(e) : e.dir, ar = k === 'Pin' ? 3 : 4;
+      if(pd === 'in' || pd === 'out'){
+        let v = {l:[1,0], r:[-1,0], t:[0,1], b:[0,-1]}[side];
+        if(pd === 'out') v = [-v[0], -v[1]];
+        const n = [-v[1], v[0]];
+        const tip = [cx + v[0] * ar, cy + v[1] * ar], b1 = [cx - v[0] * ar + n[0] * ar, cy - v[1] * ar + n[1] * ar], b2 = [cx - v[0] * ar - n[0] * ar, cy - v[1] * ar - n[1] * ar];
+        s += `<polygon points="${tip.join(',')} ${b1.join(',')} ${b2.join(',')}" fill="#333"/>`;
+      } else if(pd === 'inout'){
+        s += `<path d="M${cx - ar},${cy} H${cx + ar} M${cx},${cy - ar} V${cy + ar}" stroke="#333" stroke-width="1.4"/>`;
+      }
+      const lbl = k === 'Pin' ? pinLabel(e) : e.name + (e.kind === 'Param' ? (e.vtype ? ' : ' + e.vtype : '') : (e.type && E(e.type) ? ' : ' + (e.conj ? '~' : '') + typeName(e.type) : ''));
+      const o = {size:k === 'Pin' ? 10.5 : 11, halo:1};
+      if(k === 'Pin' && P){ const lf = cx < P.x + P.w / 2, ax = lf ? x - 3 : x + sh.w + 3, an = lf ? 'end' : 'start'; if(side === 't') s += T(lbl, ax, y - 4, Object.assign({anchor:an}, o)); else if(side === 'b') s += T(lbl, ax, y + sh.h + 12, Object.assign({anchor:an}, o)); else if(side === 'l') s += T(lbl, x - 4, y - 3, Object.assign({anchor:'end'}, o)); else s += T(lbl, x + sh.w + 4, y - 3, Object.assign({anchor:'start'}, o)); }
+      else if(!P) s += T(lbl, x + sh.w + 4, y + sh.h / 2 + 4, Object.assign({anchor:'start'}, o));
+      else if(side === 'l') s += T(lbl, x + sh.w + 4, y + sh.h / 2 + 4, Object.assign({anchor:'start'}, o));
+      else if(side === 'r') s += T(lbl, x - 4, y + sh.h / 2 + 4, Object.assign({anchor:'end'}, o));
+      else if(side === 't') s += T(lbl, x + sh.w / 2, y + sh.h + 12, o);
+      else s += T(lbl, x + sh.w / 2, y - 5, o);
+      break;
+    }
+    case 'Action': {
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="12" fill="${fill}" ${SW}/>`;
+      const bh = e.behavior && E(e.behavior), albl = bh && bh.name && e.name && bh.name.toLocaleLowerCase('tr') !== e.name.toLocaleLowerCase('tr') ? e.name + ' : ' + bh.name : (e.name || (bh ? bh.name : ''));
+      s += Tc(wrap(albl, sh.w - 16), x + sh.w / 2, y + sh.h / 2);
+      if(e.behavior && E(e.behavior)){
+        const rx = x + sh.w - 16, ry = y + sh.h - 14;
+        s += `<path d="M${rx + 5},${ry} V${ry + 9} M${rx},${ry + 9} V${ry + 4} H${rx + 10} V${ry + 9}" fill="none" stroke="#333" stroke-width="1.1"/>`;
+      }
+      break;
+    }
+    case 'Initial': s = `<circle cx="${x + sh.w / 2}" cy="${y + sh.h / 2}" r="${Math.min(sh.w, sh.h) / 2}" fill="#222" stroke="#222"/>`; break;
+    case 'Final': {
+      const r = Math.min(sh.w, sh.h) / 2;
+      s = `<circle cx="${x + sh.w / 2}" cy="${y + sh.h / 2}" r="${r}" fill="#fff" ${SW}/><circle cx="${x + sh.w / 2}" cy="${y + sh.h / 2}" r="${r - 5}" fill="#222"/>`; break;
+    }
+    case 'FlowFinal': {
+      const r = Math.min(sh.w, sh.h) / 2, cx = x + sh.w / 2, cy = y + sh.h / 2, q = r * 0.707;
+      s = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" ${SW}/><path d="M${cx - q},${cy - q} L${cx + q},${cy + q} M${cx + q},${cy - q} L${cx - q},${cy + q}" ${SW}/>`; break;
+    }
+    case 'Decision': case 'Merge': case 'Choice': {
+      const cx = x + sh.w / 2, cy = y + sh.h / 2;
+      s = `<polygon points="${cx},${y} ${x + sh.w},${cy} ${cx},${y + sh.h} ${x},${cy}" fill="${sh.fill || '#fff'}" ${SW}/>`;
+      if(e.name) s += T(e.name, x + sh.w + 4, y - 2, {anchor:'start', size:11, halo:1});
+      break;
+    }
+    case 'Fork': case 'Join': s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="#222" stroke="#222"/>`; break;
+    case 'ValueType': case 'Enumeration': case 'Signal': case 'Stereotype': {
+      const base = {ValueType:'valueType', Enumeration:'enumeration', Signal:'signal', Stereotype:'stereotype'}[k];
+      const comps = [];
+      if(k === 'ValueType'){ const r = []; if(e.base) r.push('base = ' + e.base); if(e.unit) r.push('unit = ' + e.unit); if(e.qk) r.push('quantityKind = ' + e.qk); if(r.length) comps.push(['', r]); }
+      if(k === 'Enumeration'){ const l = enumLits(e); if(l.length) comps.push(['literals', l]); }
+      if(k === 'Signal'){ const v = kidsOf(e.id).filter(c => c.kind === 'Value').map(valLabel); if(v.length) comps.push(['attributes', v]); }
+      if(k === 'Stereotype'){ const m = (e.meta || []).map(q => KIND[q] ? KIND[q].en || q : q); comps.push(['', ['[' + (m.length ? m.join(', ') : 'tüm elemanlar') + ']']]); const tg = stTags(e).map(t => t.key + (t.type ? ' : ' + t.type : '') + (t.def ? ' = ' + t.def : '')); if(tg.length) comps.push(['tags', tg]); }
+      s = compBox(sh, e, kwd(e, base), comps, fill, SW);
+      break;
+    }
+    case 'ActParam': {
+      const lbl = pinLabel(e);
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/>` + Tc(wrap(lbl, sh.w - 10), x + sh.w / 2, y + sh.h / 2, {size:11.5});
+      if(e.dir) s += T(e.dir, x + 3, y - 3, {anchor:'start', size:9.5, fill:'#555'});
+      break;
+    }
+    case 'SendSignal': case 'AcceptEvent': {
+      const t = Math.min(sh.h / 2, 18);
+      const pts = k === 'SendSignal' ? [[x, y], [x + sh.w - t, y], [x + sh.w, y + sh.h / 2], [x + sh.w - t, y + sh.h], [x, y + sh.h]] : [[x, y], [x + sh.w, y], [x + sh.w, y + sh.h], [x, y + sh.h], [x + t, y + sh.h / 2]];
+      s = `<polygon points="${pts.map(q => q.join(',')).join(' ')}" fill="${fill}" ${SW}/>`;
+      const sg = e.signal && E(e.signal), lb = e.name || (sg ? sg.name : '');
+      s += Tc(wrap(lb, sh.w - 22 - t * 0.5), x + sh.w / 2 + (k === 'AcceptEvent' ? t / 3 : -t / 3), y + sh.h / 2);
+      break;
+    }
+    case 'AcceptTime': {
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="transparent" stroke="none"/><polygon points="${x},${y} ${x + sh.w},${y} ${x},${y + sh.h} ${x + sh.w},${y + sh.h}" fill="${fill}" ${SW}/>`;
+      if(e.name) s += T(wrap(e.name, 140), x + sh.w / 2, y + sh.h + 14, {size:11, halo:1});
+      break;
+    }
+    case 'IRegion': {
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" rx="12" fill="transparent" stroke="${sh.stroke || STROKE}" stroke-width="1.2" stroke-dasharray="7 4"/>`;
+      if(e.name) s += T(e.name, x + 10, y + 16, {anchor:'start', size:11, italic:1, fill:'#555'});
+      break;
+    }
+    case 'Region': {
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="transparent" stroke="${sh.stroke || '#777'}" stroke-width="1" stroke-dasharray="6 4"/>`;
+      if(e.name) s += T(e.name, x + 8, y + 15, {anchor:'start', size:11, italic:1, fill:'#555'});
+      break;
+    }
+    case 'History': {
+      const r = Math.min(sh.w, sh.h) / 2;
+      s = `<circle cx="${x + sh.w / 2}" cy="${y + sh.h / 2}" r="${r}" fill="${fill}" ${SW}/>` + Tc([e.deep ? 'H*' : 'H'], x + sh.w / 2, y + sh.h / 2, {bold:1, size:11.5});
+      break;
+    }
+    case 'Junction': s = `<circle cx="${x + sh.w / 2}" cy="${y + sh.h / 2}" r="${Math.min(sh.w, sh.h) / 2}" fill="#222" stroke="#222"/>`; break;
+    case 'Legend': {
+      const items = e.rule ? (legendCalc(d).items.get(e.id) || []) : legendItems(e);
+      let need = tw(e.name || 'Lejant', true) + 30; items.forEach(it => { need = Math.max(need, tw(it.t, false, 11.5) + 44); });
+      if(sh.w < need) sh.w = Math.ceil(need / G) * G;
+      const H = snapv(30 + Math.max(1, items.length) * 20 + 8); if(sh.h < H) sh.h = H;
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/><rect x="${x}" y="${y}" width="${sh.w}" height="24" fill="#eef1f5" ${SW}/>` + T(e.name || 'Lejant', x + 8, y + 16, {anchor:'start', bold:1, size:11.5});
+      items.forEach((it, i) => {
+        const yy = y + 34 + i * 20;
+        if(it.line) s += `<line x1="${x + 8}" y1="${yy + 6}" x2="${x + 30}" y2="${yy + 6}" stroke="${it.c}" stroke-width="2.4"/>`;
+        else if(it.c) s += `<rect x="${x + 8}" y="${yy}" width="22" height="13" rx="2" fill="${it.c}" stroke="#555" stroke-width=".8"/>`;
+        s += T(it.t, x + (it.c ? 38 : 10), yy + 10.5, {anchor:'start', size:11.5});
+      });
+      if(!items.length) s += T(e.rule ? '(diyagramda kurala uyan eleman yok)' : '(Özelliklerden öğe ekleyin)', x + 10, y + 44, {anchor:'start', size:11, italic:1, fill:'#888'});
+      break;
+    }
+    case 'Fragment': {
+      const op = e.op || 'alt', lw = Math.max(44, tw(op, true, 11.5) + 22);
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="none" stroke="transparent" stroke-width="9" pointer-events="stroke"/><rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="none" stroke="${sh.stroke || STROKE}" stroke-width="1.3" pointer-events="none"/>`;
+      s += `<path d="M${x},${y} H${x + lw} V${y + 12} L${x + lw - 8},${y + 20} H${x} Z" fill="#ffffff" stroke="${sh.stroke || STROKE}" stroke-width="1.1"/>` + T(op, x + 7, y + 15, {anchor:'start', bold:1, size:11.5});
+      if(op === 'ref'){ const ld = e.link && E(e.link); s += Tc(wrap(e.name || (ld ? ld.name : ''), sh.w - 20, true), x + sh.w / 2, y + sh.h / 2 + 6, {bold:1}); break; }
+      const ops = fragOps(e), ys = fragSeps(sh, ops.length);
+      ops.forEach((g, i) => {
+        const oy = i ? y + ys[i - 1] : y;
+        if(i) s += `<line x1="${x}" y1="${oy}" x2="${x + sh.w}" y2="${oy}" stroke="${sh.stroke || STROKE}" stroke-width="1.1" stroke-dasharray="8 5"/>`;
+        if(g) s += T('[' + g + ']', x + (i ? 10 : lw + 10), oy + 15, {anchor:'start', size:11, halo:1});
+      });
+      if(e.name && op !== 'ref') s += T(e.name, x + sh.w - 8, y + 15, {anchor:'end', size:10.5, italic:1, fill:'#555'});
+      break;
+    }
+    case 'Partition': {
+      const rep = e.represents && E(e.represents) ? ' : ' + typeName(e.represents) : '';
+      if(sh.horiz){
+        s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/><rect x="${x}" y="${y}" width="28" height="${sh.h}" fill="#eef1f5" ${SW}/>`;
+        s += `<g transform="rotate(-90 ${x + 14} ${y + sh.h / 2})">` + Tc(wrap(e.name + rep, sh.h - 12, true).slice(0, 1), x + 14, y + sh.h / 2, {bold:1}) + '</g>';
+        break;
+      }
+      s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="${fill}" ${SW}/><rect x="${x}" y="${y}" width="${sh.w}" height="28" fill="#eef1f5" ${SW}/>`;
+      s += Tc(wrap(e.name + rep, sh.w - 12, true).slice(0, 1), x + sh.w / 2, y + 14, {bold:1});
+      break;
+    }
+    case 'Comment': {
+      const f = 12;
+      s = `<path d="M${x},${y} H${x + sh.w - f} L${x + sh.w},${y + f} V${y + sh.h} H${x} Z M${x + sh.w - f},${y} V${y + f} H${x + sh.w}" fill="${fill}" ${SW}/>`;
+      const lines = wrap(e.name, sh.w - 16);
+      const needH = snapv(lines.length * 15 + 20);
+      if(sh.h < needH) sh.h = needH;
+      s += T(lines, x + 8, y + 18, {anchor:'start'});
+      break;
+    }
+    default: if(typeof SHAPE_EXT !== 'undefined' && SHAPE_EXT[k]){ s = SHAPE_EXT[k](sh, e, d, x, y, SW, fill); break; } s = `<rect x="${x}" y="${y}" width="${sh.w}" height="${sh.h}" fill="#fff" ${SW}/>` + Tc([e.name], x + sh.w / 2, y + sh.h / 2);
+  }
+  if(typeof shapeExtras === 'function') s += shapeExtras(sh, e, d, x, y);
+  if(ST_TOP.has(k) && stNames(e).length && !(k === 'State' && isComposite(e))) s += T(kwd(e), x + sh.w / 2, k === 'Actor' ? y + sh.h + 30 : y + 11, {italic:1, size:9.5, fill:'#555', halo:k === 'Actor'});
+  if(!exp && !BORDER.has(e.kind) && e.kind !== 'Lifeline' && !UNNAMED.has(e.kind) && !(e.kind === 'Action' && e.behavior && E(e.behavior)) && navTargets(e, d.id).length){
+    const ix = e.kind === 'Actor' ? sh.x + sh.w - 4 : sh.x + sh.w - 19, iy = e.kind === 'Actor' ? sh.y : (e.kind === 'UseCase' ? sh.y + sh.h - 22 : sh.y + sh.h - 15);
+    const ux = e.kind === 'UseCase' ? sh.x + sh.w / 2 - 7 : ix;
+    s += `<g class="navi"><title>Çift tık: alt diyagramı aç</title><rect x="${ux}" y="${iy}" width="15" height="11" rx="1.5" fill="#fff" stroke="#2d7ff9" stroke-width="1"/><path d="M${ux + 3},${iy + 3.5} h5 M${ux + 3},${iy + 6.5} h9 M${ux + 9},${iy + 3.5} l3,0" stroke="#2d7ff9" stroke-width="1.2"/></g>`;
+  }
+  return `<g data-sid="${sh.id}">${s}</g>`;
+}
+
+/* ================= EDGE GEOMETRY ================= */
+function bx(sh){ const e = E(sh.el), k = e ? e.kind : ''; return {x:sh.x, y:sh.y, w:sh.w, h:sh.h, cx:sh.x + sh.w / 2, cy:sh.y + sh.h / 2, hw:sh.w / 2, hh:sh.h / 2, f:ELL.has(k) ? 'e' : (DIA.has(k) ? 'd' : 'r')}; }
+function clipT(b, dx, dy){
+  const ax = Math.abs(dx) || 1e-9, ay = Math.abs(dy) || 1e-9;
+  if(b.f === 'e') return 1 / Math.sqrt((dx / b.hw) ** 2 + (dy / b.hh) ** 2);
+  if(b.f === 'd') return 1 / (ax / b.hw + ay / b.hh);
+  return Math.min(b.hw / ax, b.hh / ay);
+}
+function sideX(b, y, dir){ const dy = y - b.cy; let off = b.hw; if(b.f === 'e') off = b.hw * Math.sqrt(Math.max(0, 1 - (dy / b.hh) ** 2)); else if(b.f === 'd') off = b.hw * Math.max(0, 1 - Math.abs(dy) / b.hh); return b.cx + dir * off; }
+function sideY(b, x, dir){ const dx = x - b.cx; let off = b.hh; if(b.f === 'e') off = b.hh * Math.sqrt(Math.max(0, 1 - (dx / b.hw) ** 2)); else if(b.f === 'd') off = b.hh * Math.max(0, 1 - Math.abs(dx) / b.hw); return b.cy + dir * off; }
+function straight(A, B){
+  const dx = B.cx - A.cx, dy = B.cy - A.cy;
+  if(!dx && !dy) return [{x:A.cx, y:A.cy}, {x:B.cx, y:B.cy + 0.01}];
+  const ta = clipT(A, dx, dy), tb = clipT(B, -dx, -dy);
+  return [{x:A.cx + dx * ta, y:A.cy + dy * ta}, {x:B.cx - dx * tb, y:B.cy - dy * tb}];
+}
+/* ---- engelden kaçan dik açılı bağlantı yönlendirici ---- */
+function segHitsRect(a, b, r, pad){
+  const x0 = r.x + pad, x1 = r.x + r.w - pad, y0 = r.y + pad, y1 = r.y + r.h - pad;
+  if(x1 <= x0 || y1 <= y0) return false;
+  const dx = b.x - a.x, dy = b.y - a.y; if(!dx && !dy) return false;
+  let t0 = 0, t1 = 1;
+  const P = [-dx, dx, -dy, dy], Q = [a.x - x0, x1 - a.x, a.y - y0, y1 - a.y];
+  for(let i = 0; i < 4; i++){
+    if(P[i] === 0){ if(Q[i] < 0) return false; }
+    else { const t = Q[i] / P[i]; if(P[i] < 0){ if(t > t1) return false; if(t > t0) t0 = t; } else { if(t < t0) return false; if(t < t1) t1 = t; } }
+  }
+  return t1 - t0 > 1e-6;
+}
+function routeCtx(d, SM){
+  const shapes = d.shapes.filter(s => { const e = E(s.el); return e && !s.parent && !['Partition','Subject','Lifeline'].includes(e.kind) && !(CONT.has(e.kind) && e.kind !== 'Package') && !isComposite(e); });
+  const xs = [], ys = [];
+  shapes.forEach(s => { xs.push(s.x - 20, s.x + s.w + 20); ys.push(s.y - 20, s.y + s.h + 20); });
+  return {d, SM, obs:shapes, xs, ys, routed:[]};
+}
+function endInfo(sh, other, ctx){
+  const e = E(sh.el), par = sh.parent && ctx.SM.get(sh.parent);
+  const ocx = other.x + other.w / 2, ocy = other.y + other.h / 2, cx = sh.x + sh.w / 2, cy = sh.y + sh.h / 2;
+  if(par && e && BORDER.has(e.kind)){
+    const sd = portSide(sh, par);
+    const pt = {l:{x:sh.x, y:cy, nx:-1, ny:0}, r:{x:sh.x + sh.w, y:cy, nx:1, ny:0}, t:{x:cx, y:sh.y, nx:0, ny:-1}, b:{x:cx, y:sh.y + sh.h, nx:0, ny:1}}[sd];
+    return [Object.assign({pen:0}, pt)];
+  }
+  const b = bx(sh), out = [];
+  const vx = ocx - cx, vy = ocy - cy, L = Math.hypot(vx, vy) || 1;
+  const fr = b.f === 'r' ? [0.5, 0.3, 0.7] : [0.5];
+  [['l', -1, 0], ['r', 1, 0], ['t', 0, -1], ['b', 0, 1]].forEach(([sd, nx, ny]) => {
+    const dot = (nx * vx + ny * vy) / L, sp = dot < -0.2 ? 160 : dot < 0.25 ? 45 : 0;
+    fr.forEach(f => {
+      let x, y;
+      if(nx){ y = sh.y + sh.h * f; x = b.f === 'r' ? (nx < 0 ? sh.x : sh.x + sh.w) : sideX(b, y, nx); }
+      else { x = sh.x + sh.w * f; y = b.f === 'r' ? (ny < 0 ? sh.y : sh.y + sh.h) : sideY(b, x, ny); }
+      out.push({x, y, nx, ny, pen:sp + (f === 0.5 ? 0 : 10)});
+    });
+  });
+  return out;
+}
+function simplifyPath(p){
+  const q = [];
+  p.forEach(pt => { const l = q[q.length - 1]; if(!l || Math.abs(l.x - pt.x) > 0.01 || Math.abs(l.y - pt.y) > 0.01) q.push({x:pt.x, y:pt.y}); });
+  for(let i = q.length - 2; i > 0; i--){ const a = q[i - 1], b = q[i], c = q[i + 1]; if((Math.abs(a.x - b.x) < 0.01 && Math.abs(b.x - c.x) < 0.01) || (Math.abs(a.y - b.y) < 0.01 && Math.abs(b.y - c.y) < 0.01)) q.splice(i, 1); }
+  return q;
+}
+function pathCost(p, ctx, S, T2, lim){
+  let c = (p.length - 2) * 30;
+  if(lim == null) lim = Infinity;
+  for(let i = 0; i < p.length - 1; i++){
+    if(c >= lim) return c;
+    const a = p[i], b = p[i + 1];
+    c += Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+    for(const r of ctx.obs){
+      if(r === S || r === T2){ if(segHitsRect(a, b, r, 2)) c += 900; }
+      else if(segHitsRect(a, b, r, 2)) c += 1400;
+      else if(segHitsRect(a, b, r, -8)) c += 60;
+    }
+    const hz = Math.abs(a.y - b.y) < 0.01;
+    for(const g of ctx.routed){
+      const gh = Math.abs(g.a.y - g.b.y) < 0.01;
+      if(hz === gh){
+        const k1 = hz ? a.y : a.x, k2 = hz ? g.a.y : g.a.x;
+        if(Math.abs(k1 - k2) < 7){
+          const lo = Math.max(Math.min(hz ? a.x : a.y, hz ? b.x : b.y), Math.min(hz ? g.a.x : g.a.y, hz ? g.b.x : g.b.y));
+          const hi = Math.min(Math.max(hz ? a.x : a.y, hz ? b.x : b.y), Math.max(hz ? g.a.x : g.a.y, hz ? g.b.x : g.b.y));
+          if(hi - lo > 6) c += 250 + (hi - lo) * 2;
+        }
+      } else {
+        const H = hz ? [a, b] : [g.a, g.b], V = hz ? [g.a, g.b] : [a, b];
+        const hy = H[0].y, vx = V[0].x;
+        if(vx > Math.min(H[0].x, H[1].x) + 1 && vx < Math.max(H[0].x, H[1].x) - 1 && hy > Math.min(V[0].y, V[1].y) + 1 && hy < Math.max(V[0].y, V[1].y) - 1) c += 14;
+      }
+    }
+  }
+  return c;
+}
+const ROUTE_CACHE = new Map();
+function routeOrtho(S, T2, ctx0){
+  /* yalnız bölgedeki engeller ve hatlar değerlendirilir; aynı yerel durum için önceki rota yeniden kullanılır */
+  const pad = 240, rx0 = Math.min(S.x, T2.x) - pad, ry0 = Math.min(S.y, T2.y) - pad, rx1 = Math.max(S.x + S.w, T2.x + T2.w) + pad, ry1 = Math.max(S.y + S.h, T2.y + T2.h) + pad;
+  const obs = ctx0.obs.filter(r => r.x < rx1 && r.x + r.w > rx0 && r.y < ry1 && r.y + r.h > ry0);
+  const routed = ctx0.routed.filter(g => Math.max(g.a.x, g.b.x) >= rx0 && Math.min(g.a.x, g.b.x) <= rx1 && Math.max(g.a.y, g.b.y) >= ry0 && Math.min(g.a.y, g.b.y) <= ry1);
+  const xs = [], ys = []; obs.forEach(o => { xs.push(o.x - 20, o.x + o.w + 20); ys.push(o.y - 20, o.y + o.h + 20); });
+  const ctx = {d:ctx0.d, SM:ctx0.SM, obs, xs, ys, routed};
+  const pr = s0 => s0.parent && ctx0.SM.get(s0.parent);
+  const key = [S, T2, pr(S), pr(T2)].map(o => o ? o.x + ',' + o.y + ',' + o.w + ',' + o.h : '-').join('|') + '#' + obs.map(o => o.x + ',' + o.y + ',' + o.w + ',' + o.h).join(';') ;
+  const ck = ctx0.d.id + '|' + S.id + '|' + T2.id, hit = ROUTE_CACHE.get(ck);
+  if(hit && hit.k === key) return hit.p.map(q => ({x:q.x, y:q.y}));
+  const res = routeOrtho0(S, T2, ctx);
+  if(ROUTE_CACHE.size > 4000) ROUTE_CACHE.clear();
+  if(res) ROUTE_CACHE.set(ck, {k:key, p:res.map(q => ({x:q.x, y:q.y}))});
+  return res;
+}
+function routeOrtho0(S, T2, ctx){
+  const A0 = endInfo(S, T2, ctx), B0 = endInfo(T2, S, ctx);
+  const heavy = ctx.obs.length + ctx.routed.length / 4 > 30, NC = heavy ? 6 : 9, NJ = heavy ? 4 : 6;
+  const best3 = arr => arr.slice().sort((a, b) => a.pen - b.pen).slice(0, NC);
+  const As = best3(A0), Bs = best3(B0);
+  const ST = 16;
+  let best = null, bestC = Infinity;
+  const BA = bx(S), BB = bx(T2);
+  const ovx = [Math.max(S.x, T2.x) + 6, Math.min(S.x + S.w, T2.x + T2.w) - 6], ovy = [Math.max(S.y, T2.y) + 6, Math.min(S.y + S.h, T2.y + T2.h) - 6];
+  const direct = [];
+  if(!S.parent && !T2.parent){
+    if(ovx[1] - ovx[0] > 4 && (T2.y >= S.y + S.h || S.y >= T2.y + T2.h)){ const x = snapv((ovx[0] + ovx[1]) / 2) === snapv((ovx[0] + ovx[1]) / 2) ? (ovx[0] + ovx[1]) / 2 : 0, dn = T2.y >= S.y + S.h ? 1 : -1; direct.push([{x, y:sideY(BA, x, dn)}, {x, y:sideY(BB, x, -dn)}]); }
+    if(ovy[1] - ovy[0] > 4 && (T2.x >= S.x + S.w || S.x >= T2.x + T2.w)){ const y = (ovy[0] + ovy[1]) / 2, dn = T2.x >= S.x + S.w ? 1 : -1; direct.push([{x:sideX(BA, y, dn), y}, {x:sideX(BB, y, -dn), y}]); }
+  }
+  direct.forEach(p => { const c = pathCost(p, ctx, S, T2) - 15; if(c < bestC){ bestC = c; best = p; } });
+  for(const a of As) for(const b of Bs){
+    const s0 = {x:a.x + a.nx * ST, y:a.y + a.ny * ST}, s1 = {x:b.x + b.nx * ST, y:b.y + b.ny * ST};
+    const mxs = [(s0.x + s1.x) / 2].concat(ctx.xs.filter(v => v > Math.min(s0.x, s1.x) - 140 && v < Math.max(s0.x, s1.x) + 140)).sort((u, v) => Math.abs(u - (s0.x + s1.x) / 2) - Math.abs(v - (s0.x + s1.x) / 2)).slice(0, NJ);
+    const mys = [(s0.y + s1.y) / 2].concat(ctx.ys.filter(v => v > Math.min(s0.y, s1.y) - 140 && v < Math.max(s0.y, s1.y) + 140)).sort((u, v) => Math.abs(u - (s0.y + s1.y) / 2) - Math.abs(v - (s0.y + s1.y) / 2)).slice(0, NJ);
+    const joins = [[{x:s1.x, y:s0.y}], [{x:s0.x, y:s1.y}]];
+    mxs.forEach(m => joins.push([{x:m, y:s0.y}, {x:m, y:s1.y}]));
+    mys.forEach(m => joins.push([{x:s0.x, y:m}, {x:s1.x, y:m}]));
+    for(const j of joins){
+      const raw = [{x:a.x, y:a.y}, s0].concat(j, [s1, {x:b.x, y:b.y}]);
+      const n1 = raw[2], dx0 = n1.x - s0.x, dy0 = n1.y - s0.y;
+      if(dx0 * a.nx + dy0 * a.ny < -0.01) continue;
+      const pl = raw[raw.length - 3], dx1 = s1.x - pl.x, dy1 = s1.y - pl.y;
+      if(dx1 * b.nx + dy1 * b.ny > 0.01) continue;
+      const p = simplifyPath(raw);
+      if(p.length < 2) continue;
+      const c = pathCost(p, ctx, S, T2, bestC - a.pen - b.pen) + a.pen + b.pen;
+      if(c < bestC){ bestC = c; best = p; }
+    }
+  }
+  return best;
+}
+function barOff(d, sh, y){ const B = d && BARS.get(d.id), arr = B && B.get(sh.id); if(!arr) return null; let best = null; arr.forEach(b => { if(y >= b.y1 - 0.5 && y <= b.y2 + 0.5 && (!best || b.lv > best.lv)) best = b; }); return best ? best.lv * 4 : null; }
+/* elle bükme noktaları (waypoint) */
+function wpEnd(sh, w, ortho, ctx){
+  const e = E(sh.el), par = sh.parent && ctx && ctx.SM.get(sh.parent);
+  if(par && e && BORDER.has(e.kind)){ const sd = portSide(sh, par), cx = sh.x + sh.w / 2, cy = sh.y + sh.h / 2; const pt = {l:{x:sh.x, y:cy}, r:{x:sh.x + sh.w, y:cy}, t:{x:cx, y:sh.y}, b:{x:cx, y:sh.y + sh.h}}[sd]; return ortho ? [pt, (sd === 'l' || sd === 'r') ? {x:w.x, y:pt.y} : {x:pt.x, y:w.y}] : [pt]; }
+  const b = bx(sh);
+  if(!ortho){ const dx = w.x - b.cx, dy = w.y - b.cy; if(!dx && !dy) return [{x:b.cx, y:b.cy}]; const t = clipT(b, dx, dy); return [{x:b.cx + dx * t, y:b.cy + dy * t}]; }
+  if((w.x < sh.x || w.x > sh.x + sh.w) && w.y > sh.y + 3 && w.y < sh.y + sh.h - 3) return [{x:sideX(b, w.y, w.x < sh.x ? -1 : 1), y:w.y}];
+  if((w.y < sh.y || w.y > sh.y + sh.h) && w.x > sh.x + 3 && w.x < sh.x + sh.w - 3) return [{x:w.x, y:sideY(b, w.x, w.y < sh.y ? -1 : 1)}];
+  const gx = Math.max(sh.x - w.x, w.x - sh.x - sh.w), gy = Math.max(sh.y - w.y, w.y - sh.y - sh.h);
+  if(gx >= gy){ const dir = w.x < b.cx ? -1 : 1; return [{x:sideX(b, b.cy, dir), y:b.cy}, {x:w.x, y:b.cy}]; }
+  const dir = w.y < b.cy ? -1 : 1; return [{x:b.cx, y:sideY(b, b.cx, dir)}, {x:b.cx, y:w.y}];
+}
+function wpPath(S, T2, ed, ctx){
+  const w = ed.wp.map(q => ({x:q.x, y:q.y})), ortho = ed.route !== 'straight';
+  const a = wpEnd(S, w[0], ortho, ctx), b = wpEnd(T2, w[w.length - 1], ortho, ctx).reverse();
+  const mid = [];
+  for(let i = 0; i < w.length; i++){ mid.push(w[i]); if(ortho && i < w.length - 1 && w[i].x !== w[i + 1].x && w[i].y !== w[i + 1].y) mid.push({x:w[i + 1].x, y:w[i].y}); }
+  let pts = a.concat(mid, b);
+  if(ortho){ const out = [pts[0]]; for(let i = 1; i < pts.length; i++){ const p = out[out.length - 1], q = pts[i]; if(Math.abs(p.x - q.x) > 0.5 && Math.abs(p.y - q.y) > 0.5) out.push({x:q.x, y:p.y}); out.push(q); } pts = out; }
+  return simplifyPath(pts);
+}
+function edgeGeom(S, T2, ed, ctx){
+  const ek = edgeKind(ed);
+  if(ed.wp && ed.wp.length && !isMsg(ek) && S !== T2){ const r = wpPath(S, T2, ed, ctx); if(ctx) for(let i = 0; i < r.length - 1; i++) ctx.routed.push({a:r[i], b:r[i + 1]}); return r; }
+  if(isMsg(ek)){
+    const y = ed.y != null ? ed.y : Math.max(S.y, T2.y) + 70;
+    let xs = S.x + S.w / 2, xt = T2.x + T2.w / 2;
+    const dd = ctx && ctx.d;
+    if(S === T2){ const o = barOff(dd, S, y); const x0 = xs + (o != null ? o + 5 : 0); return [{x:x0, y}, {x:xs + 45, y}, {x:xs + 45, y:y + 22}, {x:x0 + 4 + 1, y:y + 22}]; }
+    const dir = xt >= xs ? 1 : -1, os = barOff(dd, S, y), ot = barOff(dd, T2, y + 0.01);
+    if(os != null) xs += os + dir * 5;
+    if(ot != null) xt += ot - dir * 5;
+    return [{x:xs, y}, {x:xt, y}];
+  }
+  if(S === T2){
+    const x = S.x + S.w, y = S.y + S.h / 2;
+    return [{x, y:y - 10}, {x:x + 34, y:y - 10}, {x:x + 34, y:y + 12}, {x:x + 1, y:y + 12}];
+  }
+  const A = bx(S), B = bx(T2);
+  if(ctx && ctx.fast && ed._pts && ed._pts.length > 1 && !ctx.fast.has(S.id) && !ctx.fast.has(T2.id) && !(S.parent && ctx.fast.has(S.parent)) && !(T2.parent && ctx.fast.has(T2.parent))){ const r = ed._pts; for(let i = 0; i < r.length - 1; i++) ctx.routed.push({a:r[i], b:r[i + 1]}); return r.map(q => ({x:q.x, y:q.y})); }
+  if(ctx && ed.mx == null && ed.my == null){
+    let r = null;
+    if(ed.route === 'straight'){
+      const st = straight(A, B), po = ctx.pair && ctx.pair.get(ed);
+      ed._po = po ? po * (ed.s < ed.t ? 1 : -1) : 0;
+      if(po){ const dx = st[1].x - st[0].x, dy = st[1].y - st[0].y, L = Math.hypot(dx, dy) || 1, sg = ed.s < ed.t ? 1 : -1; st.forEach(q => { q.x += -dy / L * po * sg; q.y += dx / L * po * sg; }); }
+      const pS = S.parent && ctx.SM.get(S.parent), pT = T2.parent && ctx.SM.get(T2.parent);
+      if(!ctx.obs.some(o => o !== S && o !== T2 && o !== pS && o !== pT && segHitsRect(st[0], st[1], o, 2))) r = st;
+    }
+    if(!r) r = routeOrtho(S, T2, ctx);
+    if(r){ for(let i = 0; i < r.length - 1; i++) ctx.routed.push({a:r[i], b:r[i + 1]}); return r; }
+  }
+  if(ed.route === 'straight' && ed.mx == null && ed.my == null) return straight(A, B);
+  let hd = 0, hg = 0, vd = 0, vg = 0;
+  if(B.x >= A.x + A.w){ hd = 1; hg = B.x - A.x - A.w; } else if(A.x >= B.x + B.w){ hd = -1; hg = A.x - B.x - B.w; }
+  if(B.y >= A.y + A.h){ vd = 1; vg = B.y - A.y - A.h; } else if(A.y >= B.y + B.h){ vd = -1; vg = A.y - B.y - B.h; }
+  let mode = hd && (!vd || hg >= vg) ? 'h' : (vd ? 'v' : 's');
+  if(ed.mx != null){ mode = 'h'; if(!hd) hd = B.cx >= A.cx ? 1 : -1; }
+  else if(ed.my != null){ mode = 'v'; if(!vd) vd = B.cy >= A.cy ? 1 : -1; }
+  if(mode === 's') return straight(A, B);
+  if(mode === 'h'){
+    const lo = Math.max(A.y, B.y), hi = Math.min(A.y + A.h, B.y + B.h);
+    if(hi - lo > 4 && ed.mx == null){ const y = (lo + hi) / 2; return [{x:sideX(A, y, hd), y}, {x:sideX(B, y, -hd), y}]; }
+    const sx = sideX(A, A.cy, hd), tx = sideX(B, B.cy, -hd), mx = ed.mx != null ? ed.mx : snapv((sx + tx) / 2);
+    return [{x:sx, y:A.cy}, {x:mx, y:A.cy}, {x:mx, y:B.cy}, {x:tx, y:B.cy}];
+  }
+  const lo = Math.max(A.x, B.x), hi = Math.min(A.x + A.w, B.x + B.w);
+  if(hi - lo > 4 && ed.my == null){ const x = (lo + hi) / 2; return [{x, y:sideY(A, x, vd)}, {x, y:sideY(B, x, -vd)}]; }
+  const sy = sideY(A, A.cx, vd), ty = sideY(B, B.cx, -vd), my = ed.my != null ? ed.my : snapv((sy + ty) / 2);
+  return [{x:A.cx, y:sy}, {x:A.cx, y:my}, {x:B.cx, y:my}, {x:B.cx, y:ty}];
+}
+function head(type, p, q, sc, col){
+  const STROKE = col || STROKE0;
+  sc = sc || 1;
+  const dx = p.x - q.x, dy = p.y - q.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+  const P = (a, b) => (p.x - ux * a * sc + nx * b * sc).toFixed(1) + ',' + (p.y - uy * a * sc + ny * b * sc).toFixed(1);
+  const tip = p.x.toFixed(1) + ',' + p.y.toFixed(1);
+  switch(type){
+    case 'open': return `<polyline points="${P(11, 5)} ${tip} ${P(11, -5)}" fill="none" stroke="${STROKE}" stroke-width="1.3"/>`;
+    case 'tri': return `<polygon points="${tip} ${P(14, 8)} ${P(14, -8)}" fill="#fff" stroke="${STROKE}" stroke-width="1.2"/>`;
+    case 'fd': return `<polygon points="${tip} ${P(8, 5)} ${P(16, 0)} ${P(8, -5)}" fill="${STROKE}" stroke="${STROKE}" stroke-width="1"/>`;
+    case 'fill': return `<polygon points="${tip} ${P(12, 5)} ${P(12, -5)}" fill="${STROKE}" stroke="${STROKE}" stroke-width="1"/>`;
+    case 'hd': return `<polygon points="${tip} ${P(8, 5)} ${P(16, 0)} ${P(8, -5)}" fill="#fff" stroke="${STROKE}" stroke-width="1.2"/>`;
+  }
+  return '';
+}
+function edgeKind(ed){ const r = ed.el ? E(ed.el) : null; return r ? r.kind : ed.kind; }
+function drawEdge(d, ed, SM, pts, exp){
+  const r = ed.el ? E(ed.el) : null, kind = edgeKind(ed), st = ER[kind] || {};
+  const flp = r && r.fl && isMsg(kind) && typeof flPts === 'function' ? flPts(r, pts) : null; if(flp) pts = flp;
+  const dstr = 'M' + pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' L');
+  let s = `<g data-eid="${ed.id}">`;
+  if(!exp) s += `<path d="${dstr}" fill="none" stroke="#000" stroke-opacity="0" stroke-width="12" pointer-events="stroke"/>`;
+  const ec = ed.stroke || STROKE;
+  s += `<path d="${dstr}" fill="none" stroke="${ec}" stroke-width="${st.dash === 2 ? 1 : (ed.stroke ? 1.6 : 1.2)}"${st.dash ? ' stroke-dasharray="' + (st.dash === 2 ? '3 3' : '6 4') + '"' : ''}/>`;
+  const n = pts.length;
+  if(st.tgt) s += head(st.tgt, pts[n - 1], pts[n - 2], 1, ec);
+  if(st.src) s += head(st.src, pts[0], pts[1], 1, ec);
+  const lab = [];
+  if(st.st) lab.push(st.st);
+  if(isMsg(kind)){ lab.push((ed._num ? ed._num + ': ' : '') + (r && r.name ? r.name : '')); }
+  else if(kind === 'Transition'){ const t = (r && r.name ? r.name : '') + (r && r.guard ? ' [' + r.guard + ']' : '') + (r && r.effect ? ' / ' + r.effect : ''); if(t) lab.push(t); }
+  else {
+    if(r && r.name) lab.push(r.name);
+    if(r && r.guard) lab.push('[' + r.guard + ']');
+  }
+  const lo = ed.lo || {x:0, y:0}, LG = t0 => `<g data-lab="${ed.id}"${!exp ? ' style="cursor:move"' : ''}>${t0}</g>`;
+  if(isMsg(kind)){
+    const a = pts[0], b = pts[1];
+    if(pts.length === 4) s += LG(T(lab.join(' '), a.x + 50 + lo.x, a.y + 4 + lo.y, {anchor:'start', size:11, halo:1}));
+    else s += LG(T(lab.join(' '), (a.x + b.x) / 2 + lo.x, a.y - 6 + lo.y, {size:11, halo:1}));
+  } else if(lab.length){
+    let li = 0, lm = -1; for(let i = 0; i < n - 1; i++){ const L = Math.abs(pts[i].x - pts[i + 1].x) + Math.abs(pts[i].y - pts[i + 1].y) + (i > 0 && i < n - 2 ? 20 : 0); if(L > lm){ lm = L; li = i; } }
+    const a = pts[li], b = pts[li + 1];
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, vert = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
+    const pr = ed._po && ed.route === 'straight', side = pr ? Math.sign((vert ? -(b.y - a.y) : (b.x - a.x)) * ed._po) || 1 : 1;
+    s += LG(vert ? T(lab.join(' '), mx + 6 * side + lo.x, my + 4 + lo.y, {anchor:side < 0 ? 'end' : 'start', size:11, halo:1}) : T(lab.join(' '), mx + lo.x, (!pr || side < 0 ? my - 6 : my + 14) + lo.y, {size:11, halo:1}));
+  }
+  if(r && r.interrupt && n >= 2){
+    let li = 0, lm = -1; for(let i = 0; i < n - 1; i++){ const L = Math.hypot(pts[i].x - pts[i + 1].x, pts[i].y - pts[i + 1].y); if(L > lm){ lm = L; li = i; } }
+    const a = pts[li], b = pts[li + 1], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, L = Math.hypot(b.x - a.x, b.y - a.y) || 1, ux = (b.x - a.x) / L, uy = (b.y - a.y) / L, nx = -uy, ny = ux;
+    const P = (t, q) => (mx + ux * t + nx * q).toFixed(1) + ',' + (my + uy * t + ny * q).toFixed(1);
+    s += `<polyline points="${P(-9, -7)} ${P(2, -2)} ${P(-2, 2)} ${P(9, 7)}" fill="none" stroke="${ec}" stroke-width="1.6"/>`;
+  }
+  if(r && (kind === 'Composition' || kind === 'Aggregation') && E(r.part)){
+    const p = E(r.part), q = pts[n - 1], o = pts[n - 2];
+    const dx = q.x - o.x, dy = q.y - o.y, L = Math.hypot(dx, dy) || 1;
+    const lx = q.x - dx / L * 16 + (-dy / L) * 10, ly = q.y - dy / L * 16 + (dx / L) * 10;
+    s += T(p.name + (p.mult ? ' [' + p.mult + ']' : ''), lx, ly + 4, {anchor:Math.abs(dy) > Math.abs(dx) ? 'start' : 'middle', size:11, halo:1, fill:'#333'});
+  }
+  if(r && typeof edgeExtras === 'function') s += edgeExtras(d, ed, r, kind, pts, ec);
+  if(flp) s += flDot(r, pts, ec);
+  return s + '</g>';
+}
+
+/* ================= DIAGRAM RENDER ================= */
+const BARS = new Map();
+/* yürütme çubukları: senkron mesaj hedefte çubuk açar, aynı yaşam çizgisinden dönen yanıt kapatır */
+function seqBars(d, SM){
+  const out = new Map();
+  if(d.exec === false) return out;
+  const msgs = d.edges.filter(ed => isMsg(edgeKind(ed)) && SM.get(ed.s) && SM.get(ed.t)).sort((a, b) => (a.y || 0) - (b.y || 0));
+  const open = new Map(), push = (sid, b) => { if(!out.has(sid)) out.set(sid, []); out.get(sid).push(b); };
+  const lastY = new Map();
+  msgs.forEach(ed => { const y = ed.y || 0; [ed.s, ed.t].forEach(id => lastY.set(id, Math.max(lastY.get(id) || 0, y + (ed.s === ed.t ? 22 : 0)))); });
+  msgs.forEach(ed => {
+    const k = edgeKind(ed), y = ed.y || 0;
+    if(ed.s === ed.t){ const st = open.get(ed.s) || []; if(k !== 'MsgReply') push(ed.s, {y1:y + 14, y2:y + 30, lv:st.length}); return; }
+    if(k === 'MsgReply'){ const st = open.get(ed.s); if(st && st.length){ const b = st.pop(); b.y2 = y; } return; }
+    if(k === 'MsgSync' || k === 'MsgAsync'){
+      const st = open.get(ed.t) || []; open.set(ed.t, st);
+      const b = {y1:y, y2:null, lv:st.length}; st.push(b); push(ed.t, b);
+      if(k === 'MsgAsync'){ st.pop(); b.y2 = y + 24; }
+    }
+  });
+  out.forEach((arr, sid) => arr.forEach(b => { if(b.y2 == null) b.y2 = Math.max(b.y1 + 30, (lastY.get(sid) || b.y1) + 14); }));
+  return out;
+}
+function diagramSVG(d, exp){
+  FSC = d.fs || 1;
+  try { return diagramSVG0(d, exp); } finally { FSC = 1; }
+}
+function diagramSVG0(d, exp){
+  const SM = new Map(d.shapes.map(s => [s.id, s]));
+  if(d.dtype === 'sd'){
+    const msgs = d.edges.filter(ed => isMsg(edgeKind(ed))).sort((a, b) => (a.y || 0) - (b.y || 0));
+    msgs.forEach((ed, i) => ed._num = i + 1);
+    const maxY = msgs.reduce((m, ed) => Math.max(m, (ed.y || 0) + 30), 0);
+    d.shapes.forEach(sh => { const e = E(sh.el); if(e && e.kind === 'Lifeline' && maxY > sh.y + sh.h - 20) sh.h = snapv(maxY - sh.y + 40); });
+  }
+  const cont = [], norm = [], ports = [], over = [];
+  d.shapes.forEach(sh => {
+    const e = E(sh.el); if(!e) return;
+    let str = drawShape(sh, e, d, SM, exp);
+    if(!exp && e.notes) str += noteBadge(sh, e);
+    if(e.kind === 'Fragment') over.push(str);
+    else if(CONT.has(e.kind) || isComposite(e)) cont.push([sh.w * sh.h, str]);
+    else (BORDER.has(e.kind) && sh.parent ? ports : norm).push(str);
+  });
+  cont.sort((a, b) => b[0] - a[0]);
+  let bars = '';
+  if(d.dtype === 'sd'){ const B = seqBars(d, SM); BARS.set(d.id, B); B.forEach((arr, sid) => { const L = SM.get(sid); if(!L) return; const cx = L.x + L.w / 2; arr.forEach(b => { bars += `<rect x="${cx - 5 + b.lv * 4}" y="${b.y1}" width="10" height="${Math.max(6, b.y2 - b.y1)}" fill="#ffffff" stroke="${STROKE}" stroke-width="1" pointer-events="none"/>`; }); }); }
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const grow = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
+  d.shapes.forEach(sh => {
+    const e = E(sh.el); if(!e) return;
+    grow(sh.x, sh.y); grow(sh.x + sh.w, sh.y + sh.h);
+    if(BORDER.has(e.kind)){ const L = tw(e.name + (e.type ? ' : ' + typeName(e.type) : ''), false, 11); grow(sh.x - L - 6, sh.y - 14); grow(sh.x + sh.w + L + 6, sh.y + sh.h + 14); }
+    if(e.kind === 'AcceptTime' && e.name){ grow(sh.x - 50, sh.y); grow(sh.x + sh.w + 50, sh.y + sh.h + 20); }
+    if(e.kind === 'Actor'){ grow(sh.x - 30, sh.y); grow(sh.x + sh.w + 30, sh.y + sh.h + 14); }
+  });
+  let edges = '';
+  const rctx = routeCtx(d, SM);
+  if(!exp && drag && (drag.type === 'move' || drag.type === 'resize') && d.edges.length > 30) rctx.fast = new Set(drag.type === 'move' ? [...drag.set] : [drag.sh.id]);
+  else if(!exp && deferRoute && deferRoute.d === d.id) rctx.fast = deferRoute.set;
+  const ord = d.edges.slice().sort((a, b) => (edgeKind(a) === 'Anchor') - (edgeKind(b) === 'Anchor'));
+  const pairN = new Map(); ord.forEach(ed => { if(ed.s === ed.t || isMsg(edgeKind(ed))) return; const k = ed.s < ed.t ? ed.s + '|' + ed.t : ed.t + '|' + ed.s; const a = pairN.get(k) || []; a.push(ed); pairN.set(k, a); });
+  rctx.pair = new Map(); pairN.forEach(a => { if(a.length > 1) a.forEach((ed, i) => rctx.pair.set(ed, (i - (a.length - 1) / 2) * 26)); });
+  ord.forEach(ed => {
+    const S = SM.get(ed.s), T2 = SM.get(ed.t); if(!S || !T2) return;
+    if(ed.el && !E(ed.el)) return;
+    const pts = edgeGeom(S, T2, ed, rctx); ed._pts = pts;
+    pts.forEach(p => grow(p.x, p.y));
+    edges += drawEdge(d, ed, SM, pts, exp);
+  });
+  let frame = '', bbox = null;
+  if(isFinite(x0) && d.noFrame){ bbox = {x:x0 - 20, y:y0 - 20, w:(x1 - x0) + 40, h:(y1 - y0) + 40}; }
+  else if(isFinite(x0)){
+    const owner = E(d.owner);
+    const label = d.dtype + ' [' + (owner ? (KIND[owner.kind].en || owner.kind) : '') + '] ' + (owner ? owner.name : '') + ' [' + d.name + ']';
+    const fx = x0 - 30, fy = y0 - 50, fw = (x1 - x0) + 60, fh = (y1 - y0) + 80;
+    const L = tw(label, false, 12) + 16;
+    const FW = Math.max(fw, L + 30);
+    frame = `<g class="frame"><rect x="${fx}" y="${fy}" width="${FW}" height="${fh}" fill="none" stroke="#555" stroke-width="1"/>` +
+      `<path d="M${fx},${fy + 22} H${fx + L} L${fx + L + 10},${fy + 12} V${fy}" fill="none" stroke="#555" stroke-width="1"/>` +
+      T(label, fx + 7, fy + 15, {anchor:'start', size:12}) + '</g>';
+    bbox = {x:fx, y:fy, w:FW, h:fh};
+  }
+  return {svg:frame + cont.map(c => c[1]).join('') + norm.join('') + bars + over.join('') + ports.join('') + edges, bbox};
+}
+const svgEl = $('#svg'), wrapEl = $('#canvasWrap');
+function renderDiagram(){
+  const d = cur();
+  const emp = $('#empty'), vw = $('#view');
+  if(isView(ST.cur) || !d) renderMini(null);
+  if(isView(ST.cur)){ svgEl.style.display = 'none'; emp.style.display = 'none'; vw.style.display = 'flex'; $('#zoomLbl').textContent = '—'; renderView(); renderStatus(); return; }
+  vw.style.display = 'none'; svgEl.style.display = '';
+  if(!d){
+    svgEl.innerHTML = '';
+    emp.style.display = 'flex';
+    emp.innerHTML = 'Açık diyagram yok.<br>Model ağacında bir pakete / bloğa / aktiviteye <b>sağ tıklayıp</b> "Yeni diyagram" seçin<br>veya mevcut bir diyagrama <b>çift tıklayın</b>.';
+    $('#zoomLbl').textContent = '—';
+    return;
+  }
+  emp.style.display = d.shapes.length ? 'none' : 'flex';
+  emp.innerHTML = d.shapes.length ? '' : 'Diyagram boş.<br>Soldaki <b>paletten</b> eleman sürükleyip bırakın ya da <b>model ağacından</b> mevcut elemanları sürükleyin.';
+  const {svg, bbox} = diagramSVG(d, false);
+  const z = d.z;
+  const grid = ST.grid ? `<defs><pattern id="gp" width="${G * 2}" height="${G * 2}" patternUnits="userSpaceOnUse"><circle cx="0.8" cy="0.8" r="0.8" fill="#c9d1dc"/></pattern></defs><rect x="-20000" y="-20000" width="40000" height="40000" fill="url(#gp)"/>` : '';
+  svgEl.innerHTML = `<g id="vp" transform="translate(${d.vx},${d.vy}) scale(${z})">${grid}${svg}${simOverlay(d)}${selSVG(d)}<g id="ovl"></g></g>`;
+  $('#zoomLbl').textContent = Math.round(z * 100) + '%';
+  renderMini(d, bbox);
+  renderStatus();
+}
+/* ---- mini harita ---- */
+ST.mini = (() => { try { return localStorage.getItem('sysml-mini') !== '0'; } catch(e){ return true; } })();
+function renderMini(d, bbox){
+  let mm = $('#minimap');
+  if(!mm){
+    mm = document.createElement('div'); mm.id = 'minimap'; $('#canvasWrap').appendChild(mm);
+    const go = ev => { const r = mm.getBoundingClientRect(), k = mm._k, d0 = cur(); if(!k || !d0) return; const x = k.x + (ev.clientX - r.left) / k.s, y = k.y + (ev.clientY - r.top) / k.s, W = svgEl.getBoundingClientRect(); d0.vx = W.width / 2 - x * d0.z; d0.vy = W.height / 2 - y * d0.z; renderDiagram(); persistSoon(); };
+    mm.addEventListener('mousedown', ev => { ev.preventDefault(); ev.stopPropagation(); go(ev); const mv = e2 => go(e2), up = () => { window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); }; window.addEventListener('mousemove', mv); window.addEventListener('mouseup', up); });
+  }
+  if(!ST.mini || !d || !bbox || !d.shapes.length){ mm.style.display = 'none'; return; }
+  const W = svgEl.getBoundingClientRect(); if(!W.width) { mm.style.display = 'none'; return; }
+  const vx0 = -d.vx / d.z, vy0 = -d.vy / d.z, vw = W.width / d.z, vh = W.height / d.z;
+  if(vx0 <= bbox.x && vy0 <= bbox.y && vx0 + vw >= bbox.x + bbox.w && vy0 + vh >= bbox.y + bbox.h){ mm.style.display = 'none'; return; }
+  const x0 = Math.min(bbox.x, vx0), y0 = Math.min(bbox.y, vy0), x1 = Math.max(bbox.x + bbox.w, vx0 + vw), y1 = Math.max(bbox.y + bbox.h, vy0 + vh);
+  const MW = 190, MH = 130, sc = Math.min(MW / (x1 - x0), MH / (y1 - y0));
+  mm._k = {x:x0, y:y0, s:sc};
+  const R = (x, y, w, h) => `x="${((x - x0) * sc).toFixed(1)}" y="${((y - y0) * sc).toFixed(1)}" width="${Math.max(1, w * sc).toFixed(1)}" height="${Math.max(1, h * sc).toFixed(1)}"`;
+  let g = '';
+  d.shapes.forEach(sh => { const e = E(sh.el); if(!e || sh.parent) return; const c = CONT.has(e.kind) || isComposite(e); g += `<rect ${R(sh.x, sh.y, sh.w, sh.h)} fill="${c ? 'none' : (sh.fill || FILL[e.kind] || '#dde3ea')}" stroke="#7b8796" stroke-width=".6"/>`; });
+  d.edges.forEach(ed => { if(ed._pts) g += `<polyline points="${ed._pts.map(q => ((q.x - x0) * sc).toFixed(1) + ',' + ((q.y - y0) * sc).toFixed(1)).join(' ')}" fill="none" stroke="#9aa4b1" stroke-width=".6"/>`; });
+  g += `<rect ${R(vx0, vy0, vw, vh)} fill="rgba(45,127,249,.10)" stroke="#2d7ff9" stroke-width="1.2"/>`;
+  mm.style.display = 'block';
+  mm.innerHTML = `<svg width="${Math.ceil((x1 - x0) * sc)}" height="${Math.ceil((y1 - y0) * sc)}">${g}</svg>`;
+}
+function selSVG(d){
+  let s = '';
+  const z = d.z, hs = 7 / z, sw = 1.3 / z;
+  d.shapes.forEach(sh => {
+    if(!ST.sel.has(sh.id)) return;
+    s += `<rect x="${sh.x - 3 / z}" y="${sh.y - 3 / z}" width="${sh.w + 6 / z}" height="${sh.h + 6 / z}" fill="none" stroke="#2d7ff9" stroke-width="${sw}" stroke-dasharray="${4 / z} ${3 / z}" pointer-events="none"/>`;
+    const e = E(sh.el);
+    if(e && !BORDER.has(e.kind) && ST.sel.size === 1){
+      if(e.kind === 'Fragment' && (e.op || 'alt') !== 'ref'){ const n = fragOps(e).length; fragSeps(sh, n).forEach((v, i) => { s += `<rect data-sep="${i}" data-ss="${sh.id}" x="${sh.x + sh.w / 2 - hs}" y="${sh.y + v - hs / 2}" width="${hs * 2}" height="${hs}" fill="#2d7ff9" stroke="#fff" stroke-width="${sw / 2}" style="cursor:ns-resize"><title>Operand sınırını taşı</title></rect>`; }); }
+      s += plusSVG(d, sh);
+      s += maniSVG(d, sh);
+      [['nw', sh.x, sh.y], ['ne', sh.x + sh.w, sh.y], ['sw', sh.x, sh.y + sh.h], ['se', sh.x + sh.w, sh.y + sh.h]].forEach(([h, hx, hy]) => {
+        s += `<rect data-h="${h}" data-hs="${sh.id}" x="${hx - hs / 2}" y="${hy - hs / 2}" width="${hs}" height="${hs}" fill="#fff" stroke="#2d7ff9" stroke-width="${sw}" style="cursor:${h === 'nw' || h === 'se' ? 'nwse' : 'nesw'}-resize"/>`;
+      });
+    }
+  });
+  d.edges.forEach(ed => {
+    if(!ST.sel.has(ed.id) || !ed._pts) return;
+    const p = ed._pts;
+    s += `<path d="M${p.map(q => q.x + ',' + q.y).join(' L')}" fill="none" stroke="#2d7ff9" stroke-width="${3 / z}" stroke-opacity=".55" pointer-events="none"/>`;
+    if(!isMsg(edgeKind(ed)) && ST.sel.size === 1){
+      const r0 = 5.5 / z;
+      s += `<circle data-ep="s" data-epe="${ed.id}" cx="${p[0].x}" cy="${p[0].y}" r="${r0}" fill="#fff" stroke="#2d7ff9" stroke-width="${sw}" style="cursor:crosshair"><title>Sürükleyip başka elemana bırakın</title></circle>`;
+      s += `<circle data-ep="t" data-epe="${ed.id}" cx="${p[p.length - 1].x}" cy="${p[p.length - 1].y}" r="${r0}" fill="#fff" stroke="#2d7ff9" stroke-width="${sw}" style="cursor:crosshair"><title>Sürükleyip başka elemana bırakın</title></circle>`;
+    }
+    if(!isMsg(edgeKind(ed)) && ST.sel.size === 1 && ed.s !== ed.t){
+      (ed.wp || []).forEach((q, i) => { s += `<rect data-wp="${i}" data-wpe="${ed.id}" x="${q.x - hs / 2}" y="${q.y - hs / 2}" width="${hs}" height="${hs}" fill="#fff" stroke="#e67e22" stroke-width="${sw * 1.4}" style="cursor:move"><title>Bükme noktası — sürükleyin; çift tık: sil</title></rect>`; });
+      for(let i = 0; i < p.length - 1; i++){ const L = Math.hypot(p[i + 1].x - p[i].x, p[i + 1].y - p[i].y); if(L * z < 34) continue; s += `<circle data-wpadd="${i}" data-wpe="${ed.id}" cx="${(p[i].x + p[i + 1].x) / 2}" cy="${(p[i].y + p[i + 1].y) / 2}" r="${4 / z}" fill="#fff" stroke="#e67e22" stroke-width="${sw}" style="cursor:copy"><title>Sürükleyerek bükme noktası ekleyin</title></circle>`; }
+    }
+    if(isMsg(edgeKind(ed))){
+      const mx = p.length === 4 ? p[1].x : (p[0].x + p[1].x) / 2, my = p[0].y;
+      s += `<rect data-mid="${ed.id}" x="${mx - hs / 2}" y="${my - hs / 2}" width="${hs}" height="${hs}" fill="#2d7ff9" stroke="#fff" stroke-width="${sw / 2}" style="cursor:ns-resize"/>`;
+    } else if(p.length === 4 && ed.s !== ed.t && !(ed.wp && ed.wp.length)){
+      const mx = (p[1].x + p[2].x) / 2, my = (p[1].y + p[2].y) / 2;
+      s += `<rect data-mid="${ed.id}" x="${mx - hs / 2}" y="${my - hs / 2}" width="${hs}" height="${hs}" fill="#2d7ff9" stroke="#fff" stroke-width="${sw / 2}" style="cursor:move"/>`;
+    }
+  });
+  return s;
+}
+
+/* ================= TREE ================= */
+function childIndex(){ const idx = {}; for(const k in M.els){ const e = M.els[k]; (idx[e.owner] = idx[e.owner] || []).push(e); } return idx; }
+function sortEls(a, b){ const ra = RANK.indexOf(a.kind), rb = RANK.indexOf(b.kind); if(ra !== rb) return (ra < 0 ? 99 : ra) - (rb < 0 ? 99 : rb); return COLLS.compare(a.name || '', b.name || ''); }
+function icon(e){
+  const io = (e.kind === 'Block' || e.kind === 'Part' || e.kind === 'Actor') && iconOf(e);
+  if(io) return `<span class="ic" style="background:${io.col}">${iconInline(io.ic, 12, '#fff', 2.3)}</span>`;
+  if(e.kind === 'Diagram'){ const t = DT[e.dtype]; return `<span class="ic" style="background:${t ? t.col : '#555'}">${e.dtype}</span>`; }
+  const k = KIND[e.kind];
+  if(k.rel) return `<span class="ic" style="background:#8a94a3">↗</span>`;
+  return `<span class="ic" style="background:${k.col}">${k.ic}</span>`;
+}
+function renderTree(){
+  if(ST.ttab && ST.ttab !== 'tree' && typeof renderTreeAlt === 'function'){ renderTreeAlt(); return; }
+  const idx = childIndex(), TQ = typeof treeQuerySet === 'function' ? treeQuerySet() : null;
+  let h = '';
+  const row = (e, depth, has, open) => {
+    const k = KIND[e.kind];
+    const kd = e.kind === 'Diagram' ? '' : (k.rel ? k.tr : (e.kind === 'Part' && e.type ? '' : ''));
+    h += `<div class="tr${ST.tsel === e.id || ST.tmulti.has(e.id) ? ' sel' : ''}${TQ && TQ.hit.has(e.id) ? ' thit' : ''}" data-id="${e.id}" draggable="${e.id !== M.rootId}" style="padding-left:${depth * 14 + 4}px">` +
+      `<span class="tw" data-tog="${e.id}">${has ? (open ? '▾' : '▸') : ''}</span>${icon(e)}<span class="nm">${esc(treeName(e))}</span>${M.mods && M.mods[e.id] ? `<span class="tlk" title="Salt okunur modül (rev ${esc(String(M.mods[e.id].rev || ''))})">🔒</span>` : e.modOut ? `<span class="tlk" title="Modül olarak paylaşılıyor (rev ${e.modOut.rev})">⇪</span>` : ''}${kd ? `<span class="kd">${esc(kd)}</span>` : ''}${e.notes && noteOpen(e) ? `<span class="tnb" title="${noteOpen(e)} açık inceleme notu">${noteOpen(e)}</span>` : ''}</div>`;
+  };
+  const rec = (id, depth) => {
+    const e = E(id); if(!e) return;
+    if(TQ && !TQ.keep.has(id)) return;
+    const ch = (idx[id] || []).slice().sort(sortEls);
+    const struct = ch.filter(c => !KIND[c.kind].rel), rels = ch.filter(c => KIND[c.kind].rel && !TQ);
+    const open = depth === 0 || ST.exp.has(id) || !!(TQ && TQ.keep.has(id) && !TQ.hit.has(id));
+    row(e, depth, struct.length + rels.length > 0 || e.kind === 'SmartPackage', open);
+    if(!open) return;
+    if(e.kind === 'SmartPackage' && typeof smartMembers === 'function'){ smartMembers(e).forEach(m => { h += treeRow(m, depth + 1, {virt:true, sub:pathOf(m.owner)}); }); return; }
+    struct.forEach(c => rec(c.id, depth + 1));
+    if(rels.length){
+      const gid = 'rel:' + id, go = ST.exp.has(gid);
+      h += `<div class="tr grp" style="padding-left:${(depth + 1) * 14 + 4}px"><span class="tw" data-tog="${gid}">${go ? '▾' : '▸'}</span><span class="ic" style="background:#a0a9b6">⇄</span><span class="nm">İlişkiler (${rels.length})</span></div>`;
+      if(go) rels.forEach(r => row(r, depth + 2, false, false));
+    }
+  };
+  rec(M.rootId, 0);
+  $('#tree').innerHTML = h;
+}
+function treeName(e){
+  if(e.kind === 'Part') return partLabel(e);
+  if(e.kind === 'Port') return portLabel(e);
+  if(e.kind === 'FlowProp') return flowLabel(e);
+  if(e.kind === 'Pin' || e.kind === 'ActParam') return (e.dir ? e.dir + ' ' : '') + pinLabel(e);
+  if(e.kind === 'ValueType' && e.unit) return e.name + ' [' + e.unit + ']';
+  if(e.st && e.st.length && stNames(e).length) return '«' + stNames(e).join(', ') + '» ' + elLabel(e);
+  if(e.kind === 'Value') return valLabel(e);
+  return elLabel(e);
+}
+function revealInTree(id){
+  let e = E(id); if(!e) return;
+  let o = E(e.owner);
+  if(KIND[e.kind].rel && o) ST.exp.add('rel:' + o.id);
+  while(o){ ST.exp.add(o.id); o = E(o.owner); }
+  ST.tsel = id; renderTree();
+  const r = $('#tree').querySelector(`[data-id="${id}"]`);
+  if(r) r.scrollIntoView({block:'nearest'});
+}
+function treeRename(id){
+  revealInTree(id);
+  const row = $('#tree').querySelector(`[data-id="${id}"]`); if(!row) return;
+  const e = E(id), span = row.querySelector('.nm');
+  const inp = document.createElement('input'); inp.value = e.name || '';
+  span.replaceWith(inp); inp.focus(); inp.select();
+  let done = false;
+  const fin = ok => { if(done) return; done = true; if(ok && inp.value !== e.name){ snap(); e.name = inp.value.trim(); afterChange(); } else renderTree(); };
+  inp.addEventListener('keydown', ev => { ev.stopPropagation(); if(ev.key === 'Enter') fin(true); if(ev.key === 'Escape') fin(false); });
+  inp.addEventListener('blur', () => fin(true));
+}
+function newChild(owner, kind){
+  snap();
+  const e = mk(kind, owner);
+  if(kind === 'Comment') e.name = 'Not';
+  ST.exp.add(owner); ST.tsel = e.id; afterChange();
+  if(!UNNAMED.has(kind)) treeRename(e.id);
+}
+function openD(id, nav){
+  if(!isView(id) && (!E(id) || E(id).kind !== 'Diagram')) return;
+  if(!nav && ST.cur && ST.cur !== id){ ST.back.push(ST.cur); if(ST.back.length > 100) ST.back.shift(); ST.fwd.length = 0; }
+  if(!ST.open.includes(id)) ST.open.push(id);
+  ST.cur = id; ST.sel.clear(); ST.tool = null; renderAll(); persist();
+}
+function navBack(){ while(ST.back.length){ const id = ST.back.pop(); if((isView(id) || E(id)) && id !== ST.cur){ if(ST.cur) ST.fwd.push(ST.cur); openD(id, true); return; } } toast('Geri gidilecek diyagram yok'); }
+function navFwd(){ while(ST.fwd.length){ const id = ST.fwd.pop(); if((isView(id) || E(id)) && id !== ST.cur){ if(ST.cur) ST.back.push(ST.cur); openD(id, true); return; } } toast('İleri gidilecek diyagram yok'); }
+function goTargets(e, x, y){
+  if(e && e.kind === 'TestProfile'){ PF.sel = e.id; PF.cmp = ''; openD('@profiles'); return true; }
+  if(e && typeof GO_EXT !== 'undefined' && GO_EXT[e.kind]){ GO_EXT[e.kind](e); return true; }
+  if(e && (e.kind === 'FailureMode' || e.kind === 'Risk')){ ST.tsel = e.id; if(e.kind === 'FailureMode'){ FV.item = 'all'; FV.q = ''; } else { RV2.cell = null; RV2.q = ''; RV2.st = 'all'; } openD(e.kind === 'Risk' ? '@risk' : '@fmea'); return true; }
+  const t = navTargets(e, ST.cur);
+  if(!t.length) return false;
+  if(t.length === 1){ openD(t[0].id); return true; }
+  menu(x, y, [{h:'Açılacak diyagram'}].concat(t.map(d => ({t:'[' + d.dtype + '] ' + d.name + '  —  ' + E(d.owner).name, f:() => openD(d.id)}))));
+  return true;
+}
+function newSubDiagram(e, dt){
+  snap();
+  let d;
+  if(e.kind === 'Action'){
+    let act = e.behavior && E(e.behavior);
+    if(!act){ act = mk('Activity', nearestPkg(e.owner), {name:e.name || defName('Activity', nearestPkg(e.owner))}); e.behavior = act.id; }
+    d = newDiagramCore(act.id, 'act', act.name);
+  } else if((e.kind === 'Part' || e.kind === 'Object') && dt === 'ibd'){
+    let b = e.type && E(e.type);
+    if(!b){ b = mk('Block', nearestPkg(d0owner(e)), {name:e.name ? e.name.charAt(0).toLocaleUpperCase('tr') + e.name.slice(1) : 'Blok'}); e.type = b.id; }
+    d = newDiagramCore(b.id, 'ibd', b.name);
+  } else d = newDiagramCore(e.id, dt, e.name + (dt === 'act' ? '' : ' ' + dt.toUpperCase()));
+  ST.exp.add(d.owner); openD(d.id); revealInTree(d.id); afterChange();
+}
+function d0owner(e){ let o = E(e.owner); while(o && o.kind !== 'Package' && o.kind !== 'Model') o = E(o.owner); return o ? o.id : M.rootId; }
+function subDiagramOpts(e){
+  switch(e.kind){
+    case 'Block': return [['ibd','İç Blok Diyagramı (IBD)'], ['act','Aktivite Diyagramı (davranış)'], ['bdd','Blok Tanım Diyagramı (BDD)']];
+    case 'Package': return [['bdd','BDD'], ['uc','Use Case Diyagramı'], ['act','Aktivite Diyagramı'], ['ibd','IBD (yeni blok ile)']];
+    case 'UseCase': return [['act','Aktivite Diyagramı (senaryo akışı)']];
+    case 'Action': return [['act', e.behavior ? 'Çağrılan aktivitenin diyagramı' : 'Yeni aktivite oluştur, çağır ve diyagramını aç']];
+    case 'Part': return [['ibd', e.type ? 'Tip bloğun IBD\'si' : 'Tip blok + IBD oluştur']];
+    case 'Activity': return [['act','Aktivite Diyagramı']];
+  }
+  return [];
+}
+function closeD(id){
+  ST.open = ST.open.filter(x => x !== id);
+  if(ST.cur === id) ST.cur = ST.open[ST.open.length - 1] || null;
+  ST.sel.clear(); renderAll(); persist();
+}
+const tree = $('#tree'), treeBox = $('#treeBox');
+tree.addEventListener('click', ev => {
+  if(ev.target.tagName === 'INPUT') return;
+  if(ev.detail === 2){ treeDbl(ev); return; }
+  const t = ev.target.closest('[data-tog]');
+  if(t){ const id = t.dataset.tog; ST.exp.has(id) ? ST.exp.delete(id) : ST.exp.add(id); renderTree(); persistSoon(); return; }
+  const r = ev.target.closest('.tr[data-id]'); if(!r) return;
+  if(ev.ctrlKey || ev.metaKey){ const id = r.dataset.id; if(ST.tmulti.has(id)) ST.tmulti.delete(id); else { if(!ST.tmulti.size && ST.tsel) ST.tmulti.add(ST.tsel); ST.tmulti.add(id); } }
+  else if(ev.shiftKey && ST.tsel){ const rows = [...tree.querySelectorAll('.tr[data-id]')].map(x => x.dataset.id); const a = rows.indexOf(ST.tsel), b = rows.indexOf(r.dataset.id); if(a >= 0 && b >= 0){ ST.tmulti = new Set(rows.slice(Math.min(a, b), Math.max(a, b) + 1)); } }
+  else ST.tmulti = new Set();
+  ST.tsel = r.dataset.id;
+  const d = cur();
+  if(d){ ST.sel = new Set(d.shapes.filter(s => s.el === ST.tsel).map(s => s.id).concat(d.edges.filter(x => x.el === ST.tsel).map(x => x.id))); }
+  renderTree(); renderDiagram(); renderProps();
+});
+function treeDbl(ev){
+  if(ev.target.tagName === 'INPUT') return;
+  const r = ev.target.closest('.tr[data-id]'); if(!r || ev.target.closest('[data-tog]')) return;
+  const e = E(r.dataset.id); if(!e) return;
+  if(e.kind === 'Diagram') openD(e.id);
+  else if(goTargets(e, ev.clientX, ev.clientY)) return;
+  else if(OWN[e.kind] || diagOpts(e.kind).length){ ST.exp.has(e.id) ? ST.exp.delete(e.id) : ST.exp.add(e.id); renderTree(); }
+  else treeRename(e.id);
+}
+tree.addEventListener('contextmenu', ev => {
+  ev.preventDefault();
+  const r = ev.target.closest('.tr[data-id]'); if(!r) return;
+  ST.tsel = r.dataset.id; renderTree(); renderProps();
+  treeMenu(r.dataset.id, ev.clientX, ev.clientY);
+});
+tree.addEventListener('dragstart', ev => {
+  const r = ev.target.closest('.tr[data-id]'); if(!r) return;
+  ST.dragEl = r.dataset.id;
+  if(ST.tmulti.size > 1 && ST.tmulti.has(r.dataset.id)){ ev.dataTransfer.setData('text/plain', 'els:' + [...ST.tmulti].join(',')); ST.dragEl = null; }
+  else ev.dataTransfer.setData('text/plain', 'el:' + r.dataset.id);
+  ev.dataTransfer.effectAllowed = 'copyMove';
+});
+tree.addEventListener('dragend', () => { ST.dragEl = null; tree.querySelectorAll('.drop').forEach(x => x.classList.remove('drop')); });
+tree.addEventListener('dragover', ev => {
+  const r = ev.target.closest('.tr[data-id]'); if(!r || !ST.dragEl) return;
+  const c = E(ST.dragEl), o = E(r.dataset.id);
+  tree.querySelectorAll('.drop').forEach(x => x.classList.remove('drop'));
+  if(c && o && c.id !== o.id && !isAnc(c.id, o.id) && canOwn(o.kind, c.kind, c) && c.owner !== o.id){ ev.preventDefault(); r.classList.add('drop'); }
+});
+tree.addEventListener('drop', ev => {
+  ev.preventDefault();
+  const r = ev.target.closest('.tr[data-id]'); if(!r || !ST.dragEl) return;
+  const c = E(ST.dragEl), o = E(r.dataset.id);
+  if(c && o && !isAnc(c.id, o.id) && canOwn(o.kind, c.kind, c)){ snap(); c.owner = o.id; bump(); ST.exp.add(o.id); afterChange(); toast(`"${nm(c)}" → "${o.name}" altına taşındı`); }
+});
+treeBox.addEventListener('mousedown', () => { ST.focus = 'tree'; });
+function treeMenu(id, x, y){
+  const e = E(id), it = [];
+  if(e.kind === 'Diagram') it.push({t:'Diyagramı aç', f:() => openD(id)});
+  const ok = OWN[e.kind];
+  if(ok){ it.push({h:'Yeni eleman'}); ok.forEach(k => it.push({t:KIND[k].tr, f:() => newChild(id, k)})); }
+  const dts = diagOpts(e.kind);
+  if(dts.length){
+    it.push({h:'Yeni diyagram'});
+    dts.forEach(dt => {
+      let t = DT[dt].tr;
+      if(dt === 'ibd' && e.kind !== 'Block') t += ' + yeni blok';
+      if(dt === 'act' && e.kind !== 'Activity') t += ' + yeni aktivite';
+      it.push({t, f:() => { snap(); const d = newDiagramCore(id, dt); ST.exp.add(id); ST.exp.add(d.owner); openD(d.id); revealInTree(d.id); }});
+    });
+  }
+  it.push('-');
+  const d = cur();
+  if(d && e.kind !== 'Diagram' && !KIND[e.kind].rel) it.push({t:'Açık diyagrama ekle', dis:!canDrop(d, e), f:() => { const r = wrapEl.getBoundingClientRect(); dropExisting(id, {x:(r.width / 2 - d.vx) / d.z, y:(r.height / 2 - d.vy) / d.z}, null); }});
+  const shown = diagramsShowing(id);
+  if(shown.length){ it.push({h:'Gösterildiği diyagramlar'}); shown.slice(0, 8).forEach(dd => it.push({t:'↪ ' + dd.name, f:() => { openD(dd.id); const dd2 = cur(); ST.sel = new Set(dd2.shapes.filter(s => s.el === id).map(s => s.id)); renderDiagram(); }})); it.push('-'); }
+  if(e.kind !== 'Diagram' && !KIND[e.kind].rel) it.push({t:'Etki analizi…', f:() => impactAnalysis(id)});
+  it.push({t:'Spesifikasyon…', k:'Enter', f:() => openSpec(id)});
+  if(e.kind === 'Package' || e.kind === 'Model') it.push({t:'Yeni akıllı paket…', f:() => smartDialog(null, id)});
+  if(e.kind === 'SmartPackage') it.push({t:'Akıllı paket kuralları…', f:() => smartDialog(id)});
+  if(e.kind === 'Package' && !isRO(id)) it.push({t:'Modül olarak dışa aktar…', f:() => exportModule(id, false)});
+  if(M.mods && M.mods[id]) it.push({t:'Modülü güncelle (karşılaştır)…', f:() => moduleUpdate(id, null, true)}, {t:'Modüller görünümü', f:() => openD('@modules')});
+  it.push({t:'Yeniden adlandır', k:'F2', f:() => treeRename(id)});
+  if(id !== M.rootId) it.push({t:'Modelden sil', k:'Del', f:() => { snap(); delModel([id]); afterChange(); }});
+  menu(x, y, it);
+}
+
+/* ================= TABS / PALETTE ================= */
+function renderTabs(){
+  $('#tabs').innerHTML = ST.open.map(id => {
+    if(isView(id)){ const v = VIEWS[id]; return `<div class="tab${id === ST.cur ? ' cur' : ''}" data-tab="${id}"><span class="ti" style="background:#8e44ad">${v.ic}</span>${esc(v.tr)}<span class="x" data-close="${id}">×</span></div>`; }
+    const d = E(id); if(!d) return '';
+    return `<div class="tab${id === ST.cur ? ' cur' : ''}" data-tab="${id}"><span class="ti" style="background:${DT[d.dtype].col}">${d.dtype}</span>${esc(d.name)}<span class="x" data-close="${id}">×</span></div>`;
+  }).join('');
+}
+$('#tabs').addEventListener('mousedown', ev => {
+  const x = ev.target.closest('[data-close]');
+  if(x){ ev.stopPropagation(); closeD(x.dataset.close); return; }
+  if(ev.button === 1){ const t = ev.target.closest('[data-tab]'); if(t){ ev.preventDefault(); closeD(t.dataset.tab); } return; }
+  const t = ev.target.closest('[data-tab]');
+  if(t && t.dataset.tab !== ST.cur) openD(t.dataset.tab);
+});
+$('#tabs').addEventListener('click', ev => { if(ev.detail !== 2) return; const t = ev.target.closest('[data-tab]'); if(t) revealInTree(t.dataset.tab); });
+function palIcon(k){
+  if(typeof PAL_EXT !== 'undefined' && PAL_EXT[k]) return PAL_EXT[k];
+  const W = 26, H = 18, sw = 'stroke="#333" stroke-width="1.1"';
+  let s = '';
+  switch(k){
+    case 'Block': s = `<rect x="2" y="2" width="22" height="14" fill="#fff8d8" ${sw}/><line x1="2" y1="8" x2="24" y2="8" ${sw}/>`; break;
+    case 'Package': s = `<rect x="2" y="2" width="10" height="4" fill="#f6eed6" ${sw}/><rect x="2" y="6" width="22" height="10" fill="#f6eed6" ${sw}/>`; break;
+    case 'Part': s = `<rect x="2" y="3" width="22" height="12" fill="#fff8d8" ${sw}/>`; break;
+    case 'Port': s = `<rect x="2" y="4" width="14" height="10" fill="#fff8d8" ${sw}/><rect x="13" y="6" width="6" height="6" fill="#fff" ${sw}/>`; break;
+    case 'Value': s = `<rect x="2" y="4" width="22" height="10" rx="4" fill="#f3eeff" ${sw}/>`; break;
+    case 'Actor': s = `<circle cx="13" cy="4" r="2.6" fill="#fff" ${sw}/><path d="M13,7 V12 M9,9 H17 M13,12 L10,17 M13,12 L16,17" fill="none" ${sw}/>`; break;
+    case 'UseCase': s = `<ellipse cx="13" cy="9" rx="11" ry="6" fill="#fff8d8" ${sw}/>`; break;
+    case 'Subject': s = `<rect x="2" y="2" width="22" height="14" fill="#fff" ${sw}/><line x1="6" y1="6" x2="20" y2="6" ${sw}/>`; break;
+    case 'Action': s = `<rect x="2" y="3" width="22" height="12" rx="4" fill="#fff8d8" ${sw}/>`; break;
+    case 'Initial': s = `<circle cx="13" cy="9" r="5" fill="#222"/>`; break;
+    case 'Final': s = `<circle cx="13" cy="9" r="6" fill="#fff" ${sw}/><circle cx="13" cy="9" r="3.4" fill="#222"/>`; break;
+    case 'FlowFinal': s = `<circle cx="13" cy="9" r="6" fill="#fff" ${sw}/><path d="M9,5 L17,13 M17,5 L9,13" ${sw}/>`; break;
+    case 'Decision': case 'Merge': s = `<polygon points="13,2 21,9 13,16 5,9" fill="#fff" ${sw}/>`; break;
+    case 'Fork': s = `<rect x="3" y="7" width="20" height="4" fill="#222"/><path d="M13,1 V7 M7,11 V17 M19,11 V17" ${sw}/>`; break;
+    case 'Join': s = `<rect x="3" y="7" width="20" height="4" fill="#222"/><path d="M7,1 V7 M19,1 V7 M13,11 V17" ${sw}/>`; break;
+    case 'Object': s = `<rect x="2" y="4" width="22" height="10" fill="#fff" ${sw}/>`; break;
+    case 'Partition': s = `<rect x="2" y="1" width="22" height="16" fill="#fff" ${sw}/><line x1="2" y1="5" x2="24" y2="5" ${sw}/><line x1="13" y1="1" x2="13" y2="17" ${sw}/>`; break;
+    case 'PartitionH': s = `<rect x="2" y="1" width="22" height="16" fill="#fff" ${sw}/><line x1="6" y1="1" x2="6" y2="17" ${sw}/><line x1="2" y1="9" x2="24" y2="9" ${sw}/>`; break;
+    case 'Comment': s = `<path d="M3,2 H19 L23,6 V16 H3 Z M19,2 V6 H23" fill="#fffde9" ${sw}/>`; break;
+    case 'Requirement': s = `<rect x="2" y="2" width="22" height="14" fill="#f6efff" ${sw}/><line x1="2" y1="7" x2="24" y2="7" ${sw}/><path d="M5 10h12M5 13h9" stroke="#8e44ad" stroke-width="1"/>`; break;
+    case 'TestCase': s = `<rect x="2" y="3" width="22" height="12" rx="4" fill="#eafaf0" ${sw}/><path d="M8 9l3 3 6-6" fill="none" stroke="#27ae60" stroke-width="1.4"/>`; break;
+    case 'TestProfile': s = `<rect x="2" y="1" width="22" height="16" fill="#f2fbfb" ${sw}/><path d="M4 14L8 9L14 9L22 13" fill="none" stroke="#0f8a8a" stroke-width="1.5"/>`; break;
+    case 'State': s = `<rect x="2" y="3" width="22" height="12" rx="5" fill="#fff8d8" ${sw}/>`; break;
+    case 'Choice': s = `<polygon points="13,2 21,9 13,16 5,9" fill="#fff" ${sw}/>`; break;
+    case 'Lifeline': s = `<rect x="5" y="1" width="16" height="6" fill="#fff8d8" ${sw}/><path d="M13 7v11" stroke="#333" stroke-dasharray="2 2"/>`; break;
+    case 'ConstraintBlock': s = `<rect x="2" y="2" width="22" height="14" fill="#fff1e6" ${sw}/><line x1="2" y1="7" x2="24" y2="7" ${sw}/><path d="M6 11h1M19 11h1" stroke="#d35400" stroke-width="2"/>`; break;
+    case 'ConstraintProp': s = `<rect x="2" y="3" width="22" height="12" rx="6" fill="#fff1e6" ${sw}/>`; break;
+    case 'Param': s = `<rect x="2" y="4" width="14" height="10" rx="4" fill="#fff1e6" ${sw}/><rect x="13" y="6" width="6" height="6" fill="#fff" ${sw}/>`; break;
+    case 'InterfaceBlock': s = `<rect x="2" y="2" width="22" height="14" fill="#e8f6f8" ${sw}/><line x1="2" y1="8" x2="24" y2="8" ${sw}/><path d="M6 12h6M14 12l3-2v4z" stroke="#1f8a99" stroke-width="1.1" fill="#1f8a99"/>`; break;
+    case 'ValueType': s = `<rect x="2" y="2" width="22" height="14" fill="#f3eeff" ${sw}/><text x="13" y="13" font-size="8" text-anchor="middle" font-family="Arial" fill="#6d4fb3">kg</text>`; break;
+    case 'Enumeration': s = `<rect x="2" y="2" width="22" height="14" fill="#f3eeff" ${sw}/><path d="M6 7h14M6 10h10M6 13h12" stroke="#6d4fb3" stroke-width="1"/>`; break;
+    case 'Signal': s = `<path d="M2 3h18l4 6-4 6H2z" fill="#fff1e6" ${sw}/>`; break;
+    case 'Stereotype': s = `<rect x="2" y="2" width="22" height="14" fill="#f8f3df" ${sw}/><text x="13" y="12" font-size="8" text-anchor="middle" font-family="Arial" fill="#7b6a2e">«»</text>`; break;
+    case 'Pin': s = `<rect x="2" y="4" width="16" height="10" rx="3" fill="#fff8d8" ${sw}/><rect x="15" y="6" width="6" height="6" fill="#fff" ${sw}/>`; break;
+    case 'ActParam': s = `<rect x="2" y="1" width="22" height="16" fill="none" stroke="#999" stroke-dasharray="2 2"/><rect x="2" y="5" width="10" height="8" fill="#fff" ${sw}/>`; break;
+    case 'SendSignal': s = `<path d="M2 3h15l6 6-6 6H2z" fill="#fff8d8" ${sw}/>`; break;
+    case 'AcceptEvent': s = `<path d="M2 3h22v12H2l6-6z" fill="#fff8d8" ${sw}/>`; break;
+    case 'AcceptTime': s = `<path d="M8 2h10L8 16h10z" fill="#fff" ${sw}/>`; break;
+    case 'IRegion': s = `<rect x="2" y="2" width="22" height="14" rx="4" fill="none" ${sw} stroke-dasharray="3 2"/><path d="M10 6l4 3-3 1 4 3" fill="none" stroke="#333"/>`; break;
+    case 'Fragment': s = `<rect x="2" y="2" width="22" height="14" fill="#fff" ${sw}/><path d="M2 7h7l2-2V2" fill="none" ${sw}/><line x1="2" y1="11" x2="24" y2="11" stroke="#333" stroke-dasharray="2 2"/>`; break;
+    case 'Region': s = `<rect x="2" y="2" width="22" height="14" fill="#fff" stroke="#777" stroke-dasharray="3 2"/>`; break;
+    case 'History': s = `<circle cx="13" cy="9" r="7" fill="#fff" ${sw}/><text x="13" y="12.5" font-size="9" text-anchor="middle" font-weight="bold" font-family="Arial">H</text>`; break;
+    case 'Junction': s = `<circle cx="13" cy="9" r="4" fill="#222"/>`; break;
+    case 'Legend': s = `<rect x="2" y="1" width="22" height="16" fill="#fff" ${sw}/><rect x="5" y="5" width="5" height="3.5" fill="#fdf1d6" stroke="#555" stroke-width=".6"/><rect x="5" y="11" width="5" height="3.5" fill="#d9ecf7" stroke="#555" stroke-width=".6"/><path d="M12 7h9M12 13h9" stroke="#555"/>`; break;
+    default: {
+      const st = ER[k] || {};
+      const p = {x:22, y:9}, q = {x:4, y:9};
+      s = `<line x1="4" y1="9" x2="22" y2="9" ${sw}${st.dash ? ' stroke-dasharray="3 2"' : ''}/>`;
+      if(st.tgt) s += head(st.tgt, p, q, 0.65);
+      if(st.src) s += head(st.src, q, p, 0.65);
+    }
+  }
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${s}</svg>`;
+}
+function renderPalette(){
+  const d = cur(), el = $('#palette');
+  if(isView(ST.cur)){ el.innerHTML = '<div class="ph"><span>' + esc(VIEWS[ST.cur].tr) + '</span></div><div class="pnote">' + VIEWS[ST.cur].note + '</div>'; return; }
+  if(!d){ el.innerHTML = '<div class="ph"><span>Palet</span></div><div class="pnote">Bir diyagram açıldığında, o diyagram türüne özgü elemanlar burada görünür.</div>'; return; }
+  const t = DT[d.dtype];
+  const it = (k, rel) => `<div class="pi${ST.tool && ST.tool.kind === k ? ' on' : ''}" ${rel ? `data-rk="${k}"` : `data-pk="${k}" draggable="true"`} title="${rel ? 'Tıklayın, sonra kaynaktan hedefe sürükleyin' : 'Sürükleyip bırakın veya tıklayıp tuvale tıklayın'}">${palIcon(k)}<span>${esc(KIND[k].tr)}</span></div>`;
+  el.innerHTML = `<div class="ph"><span>Palet · ${d.dtype.toUpperCase()}</span></div>` +
+    `<div class="pi${!ST.tool ? ' on' : ''}" data-sel="1">${'<svg width="26" height="18"><path d="M8,2 L8,15 L11,12 L14,17 L16,16 L13,11 L17,11 Z" fill="#fff" stroke="#333"/></svg>'}<span>Seçim</span></div>` +
+    `<div class="pg">Elemanlar</div>` + t.shapes.map(k => it(k, false)).join('') +
+    `<div class="pg">İlişkiler</div>` + t.rels.map(k => it(k, true)).join('') +
+    `<div class="pnote">Çift tık: aracı sabitle<br>Esc: aracı bırak</div>`;
+}
+const pal = $('#palette');
+function setTool(kind, type, sticky){
+  if(ST.tool && ST.tool.kind === kind && !sticky) ST.tool = null; else ST.tool = kind ? {kind, type, sticky:!!sticky} : null;
+  wrapEl.classList.toggle('tool', !!ST.tool); renderPalette(); renderStatus();
+}
+pal.addEventListener('click', ev => {
+  const p = ev.target.closest('.pi'); if(!p) return;
+  if(p.dataset.sel) return setTool(null);
+  if(p.dataset.pk) setTool(p.dataset.pk, 'shape');
+  if(p.dataset.rk) setTool(p.dataset.rk, 'rel');
+});
+pal.addEventListener('dblclick', ev => {
+  const p = ev.target.closest('.pi'); if(!p || p.dataset.sel) return;
+  ST.tool = null; setTool(p.dataset.pk || p.dataset.rk, p.dataset.pk ? 'shape' : 'rel', true);
+});
+pal.addEventListener('dragstart', ev => {
+  const p = ev.target.closest('[data-pk]'); if(!p) return;
+  ev.dataTransfer.setData('text/plain', 'pal:' + p.dataset.pk); ev.dataTransfer.effectAllowed = 'copy';
+});
+
+/* ================= CANVAS INTERACTION ================= */
+function cpt(ev){ const r = svgEl.getBoundingClientRect(), d = cur(); return {x:(ev.clientX - r.left - d.vx) / d.z, y:(ev.clientY - r.top - d.vy) / d.z}; }
+function shapeAt(ev){ const el = document.elementFromPoint(ev.clientX, ev.clientY); const g = el && el.closest && el.closest('[data-sid]'); return g ? shapeOf(cur(), g.dataset.sid) : null; }
+function canDrop(d, e){
+  if(!e || e.kind === 'Diagram' || KIND[e.kind].rel) return false;
+  if(d.dtype === 'ibd' && e.kind === 'Block') return true;
+  if(d.dtype === 'act' && (e.kind === 'Activity' || e.kind === 'Block' || e.kind === 'Signal')) return true;
+  if(d.dtype === 'bdd' && e.kind === 'Stereotype') return true;
+  if(d.dtype === 'sd' && ['Block','Actor','Part'].includes(e.kind)) return true;
+  if(d.dtype === 'par' && e.kind === 'ConstraintBlock') return true;
+  if(d.dtype === 'req' && ['Requirement','Block','TestCase','Activity','Action','UseCase','Part','Actor','ConstraintBlock','StateMachine','Interaction','State'].includes(e.kind)) return true;
+  if(d.dtype === 'pkg' && ['Package','Block','Requirement','ConstraintBlock','Actor','UseCase','Activity'].includes(e.kind)) return true;
+  return DT[d.dtype].shapes.includes(e.kind);
+}
+function ownerFor(kind, d){
+  if(kind === 'Legend') return d.owner;
+  if(d.dtype === 'bdd') return kind === 'Comment' ? d.owner : nearestPkg(d.owner);
+  if(d.dtype === 'uc' || d.dtype === 'pkg') return nearestPkg(d.owner);
+  if(d.dtype === 'req') return kind === 'Requirement' ? reqHome(nearestPkg(d.owner)) : nearestPkg(d.owner);
+  return d.owner;
+}
+function placeNew(kind, p, target){
+  const d = cur(); if(!d) return;
+  const k = KIND[kind];
+  if(BORDER.has(kind)){
+    const hosts = HOST[kind];
+    const P = target && E(target.el) && hosts.includes(E(target.el).kind) ? target : (target && target.parent && hosts.includes(E(shapeOf(d, target.parent).el).kind) ? shapeOf(d, target.parent) : null);
+    if(kind === 'Pin' && !P) return toast('Pin\'i bir aksiyonun üzerine bırakın.');
+    snap();
+    let port, sh;
+    const props = kind === 'Port' ? {dir:''} : kind === 'Pin' ? {dir:P && p.y > P.y + P.h / 2 ? 'out' : 'in'} : {vtype:'Real'};
+    const sz = kind === 'Pin' ? 12 : 16;
+    if(P){
+      const part = E(P.el);
+      port = mk(kind, kind === 'Pin' ? part.id : (part.type || part.id), props);
+      sh = addShape(d, port.id, 0, 0, sz, sz, P.id); snapPort(sh, P, p.x, p.y);
+    } else {
+      port = mk(kind, d.owner, props);
+      sh = addShape(d, port.id, snapv(p.x) - 8, snapv(p.y) - 8, 16, 16);
+      toast(kind === 'Port' ? 'İpucu: Port\'u bir part\'ın üzerine bırakırsanız kenarına yerleşir.' : 'İpucu: Parametreyi bir kısıt özelliğinin üzerine bırakın.');
+    }
+    ST.sel = new Set([sh.id]); ST.tsel = port.id; afterChange(); editShape(sh);
+    return;
+  }
+  let horiz = false;
+  if(kind === 'PartitionH'){ kind = 'Partition'; horiz = true; }
+  snap();
+  const e = mk(kind, ownerFor(kind, d));
+  if(kind === 'Comment') e.name = 'Not';
+  let w = k.w || 120, h = k.h || 60, yy = snapv(p.y - h / 2);
+  if(kind === 'Lifeline'){ const ll = d.shapes.filter(s => E(s.el) && E(s.el).kind === 'Lifeline'); if(ll.length){ yy = Math.min(...ll.map(s => s.y)); h = Math.max(...ll.map(s => s.h)); } }
+  if(horiz){ w = 640; h = 170; yy = snapv(p.y - h / 2); }
+  const sh = addShape(d, e.id, snapv(p.x - w / 2), yy, w, h);
+  if(horiz) sh.horiz = true;
+  if(CONT.has(kind)){ d.shapes.splice(d.shapes.indexOf(sh), 1); d.shapes.unshift(sh); }
+  if(kind === 'Fragment'){ e.op = 'alt'; e.guards = 'koşul\nelse'; }
+  if(kind === 'AcceptTime') e.name = 'after (1 s)';
+  if(kind === 'Legend'){ e.name = 'Lejant'; e.items = legendAuto(d) || '#fff8d8 Açıklama'; }
+  ST.sel = new Set([sh.id]); ST.tsel = e.id;
+  syncNesting(d, [sh.id]);
+  revealInTree(e.id); afterChange();
+  if(!UNNAMED.has(kind) && !['Fragment','AcceptTime','Legend'].includes(kind)) editShape(sh);
+}
+function dropExisting(id, p, target){
+  const d = cur(), e = E(id); if(!d || !e) return;
+  if(e.kind === 'Diagram'){ openD(id); return; }
+  if(!canDrop(d, e)) return toast(`"${KIND[e.kind].tr}" bu diyagram türüne eklenemez.`);
+  snap();
+  let sh = null;
+  if(d.dtype === 'ibd' && e.kind === 'Block'){
+    const tp = target && E(target.el);
+    if(tp && tp.kind === 'Part'){ tp.type = e.id; showPorts(d, target); toast(`"${tp.name}" part'ının tipi "${e.name}" yapıldı`); afterChange(); return; }
+    const part = mk('Part', d.owner, {name:uniqName(lcFirst(e.name) || 'part', d.owner), type:e.id});
+    sh = addShape(d, part.id, snapv(p.x - 85), snapv(p.y - 40), 170, 80); showPorts(d, sh);
+  } else if(d.dtype === 'act' && e.kind === 'Activity'){
+    const a = mk('Action', d.owner, {name:e.name, behavior:e.id});
+    sh = addShape(d, a.id, snapv(p.x - 70), snapv(p.y - 25), 140, 50);
+    syncPins(a, true);
+  } else if(d.dtype === 'act' && e.kind === 'Signal'){
+    const a = mk('SendSignal', d.owner, {name:'', signal:e.id});
+    sh = addShape(d, a.id, snapv(p.x - 75), snapv(p.y - 25), 150, 50);
+  } else if(d.dtype === 'act' && e.kind === 'Block'){
+    const o = mk('Object', d.owner, {name:'', type:e.id});
+    sh = addShape(d, o.id, snapv(p.x - 65), snapv(p.y - 22), 130, 44);
+  } else if(d.dtype === 'sd' && ['Block','Actor','Part'].includes(e.kind)){
+    const t = e.kind === 'Part' ? (e.type || null) : e.id;
+    const l = mk('Lifeline', d.owner, {name:e.kind === 'Part' ? e.name : '', type:t});
+    const top = d.shapes.filter(s => E(s.el) && E(s.el).kind === 'Lifeline');
+    sh = addShape(d, l.id, snapv(p.x - 75), top.length ? Math.min(...top.map(s => s.y)) : snapv(p.y - 20), 150, top.length ? Math.max(...top.map(s => s.h)) : 380);
+  } else if(d.dtype === 'par' && e.kind === 'ConstraintBlock'){
+    const tp = target && E(target.el);
+    if(tp && tp.kind === 'ConstraintProp'){ tp.type = e.id; showPorts(d, target); afterChange(); return; }
+    const cp = mk('ConstraintProp', d.owner, {name:uniqName(lcFirst(e.name) || 'kısıt', d.owner), type:e.id});
+    sh = addShape(d, cp.id, snapv(p.x - 100), snapv(p.y - 45), 200, 90); showPorts(d, sh);
+  } else if(BORDER.has(e.kind)){
+    const P = target && E(target.el) && HOST[e.kind].includes(E(target.el).kind) ? target : null;
+    if(P){ sh = addShape(d, e.id, 0, 0, 16, 16, P.id); snapPort(sh, P, p.x, p.y); }
+    else sh = addShape(d, e.id, snapv(p.x) - 8, snapv(p.y) - 8, 16, 16);
+    autoEdges(d, sh);
+  } else {
+    const ex = d.shapes.find(s => s.el === id && !s.parent);
+    if(ex){ if(!ST.batch) undoStack.pop(); ST.sel = new Set([ex.id]); renderDiagram(); renderProps(); return toast('Bu eleman diyagramda zaten var.'); }
+    if((e.kind === 'Part' || e.kind === 'Value') && e.owner !== d.owner) toast('Uyarı: bu part/value, diyagramın bağlam bloğuna ait değil.');
+    const k = KIND[e.kind];
+    sh = addShape(d, id, snapv(p.x - (k.w || 120) / 2), snapv(p.y - (k.h || 60) / 2));
+    if(CONT.has(e.kind)){ d.shapes.splice(d.shapes.indexOf(sh), 1); d.shapes.unshift(sh); }
+    if(['Part','ConstraintProp','Action','SendSignal','AcceptEvent'].includes(e.kind)) showPorts(d, sh);
+    autoEdges(d, sh);
+  }
+  syncNesting(d, [sh.id]);
+  ST.sel = new Set([sh.id]); ST.tsel = E(sh.el).id; afterChange();
+}
+/* ---- stereotipler ---- */
+function stApplicable(st, el){ return !(st.meta && st.meta.length) || st.meta.includes(el.kind); }
+function stPropsHTML(el, pf){
+  const all = Object.values(M.els).filter(x => x.kind === 'Stereotype').sort(sortEls);
+  const cur0 = (el.st || []).map(E).filter(Boolean);
+  const avail = all.filter(x => stApplicable(x, el) && !(el.st || []).includes(x.id));
+  let h = `<div class="sub"><span>Stereotipler</span><button data-stnew="1" title="Bu eleman türü için yeni stereotip tanımla">+ Yeni</button></div>`;
+  h += `<div class="li">${cur0.map(x => `<span class="stchip">«${esc(x.name)}»<b data-strm="${x.id}" title="Kaldır">×</b></span>`).join(' ') || '<span class="muted">Uygulanmış stereotip yok</span>'}</div>`;
+  if(avail.length) h += pf('Uygula', `<select data-stadd="1"><option value="">Stereotip seç…</option>${avail.map(x => `<option value="${x.id}">«${esc(x.name)}»</option>`).join('')}</select>`);
+  cur0.forEach(st => stTags(st).forEach(t => {
+    const key = st.id + '.' + t.key, v = el.tv && el.tv[key] != null ? el.tv[key] : '';
+    const ty = (t.type || '').toLowerCase();
+    let inp;
+    if(ty === 'boolean') inp = `<label class="vchk"><input type="checkbox" data-tv="${key}"${(v || t.def) === 'true' ? ' checked' : ''}> ${esc(t.key)}</label>`;
+    else { const en = vtypeOf(t.type); inp = en && en.kind === 'Enumeration' ? `<select data-tv="${key}"><option value=""></option>${enumLits(en).map(l => `<option${(v || t.def) === l ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>` : `<input data-tv="${key}" value="${esc(v)}" placeholder="${esc(t.def || t.type || '')}">`; }
+    h += pf(esc(t.key), inp);
+  }));
+  return h;
+}
+function newStereotypeFor(el){
+  snap();
+  const pk = findOrMkPkg(M.rootId, 'Profil');
+  const st = mk('Stereotype', pk, {name:uniqName(KIND[el.kind].tr.replace(/\s+/g, '') + 'Tipi', pk), meta:[el.kind], tags:''});
+  el.st = (el.st || []).concat([st.id]);
+  ST.exp.add(pk); afterChange(); treeRename(st.id);
+  toast('Stereotip oluşturuldu ve uygulandı — etiketlerini stereotipin özelliklerinden tanımlayın');
+}
+/* çağrılan aktivitenin parametrelerinden pin üret */
+function syncPins(a, quiet){
+  const act = a && a.behavior && E(a.behavior); if(!act) return 0;
+  const have = new Set(kidsOf(a.id).filter(c => c.kind === 'Pin').map(c => c.name));
+  let n = 0;
+  kidsOf(act.id).filter(c => c.kind === 'ActParam').forEach(pp => { if(have.has(pp.name)) return; mk('Pin', a.id, {name:pp.name, dir:pp.dir || 'in', type:pp.type || null, vtype:pp.vtype || ''}); n++; });
+  if(n){ Object.values(M.els).forEach(d => { if(d.kind === 'Diagram' && d.dtype === 'act') d.shapes.filter(s => s.el === a.id && !s.parent).forEach(s => showPorts(d, s)); }); if(!quiet){ afterChange(); toast(n + ' pin aktivite parametrelerinden oluşturuldu'); } }
+  return n;
+}
+/* durum makinesinde iç içe yerleşim → model ağacındaki sahiplik (bileşik durum / bölge) */
+const NESTK = new Set(['State','Region','Initial','Final','Choice','Junction','History']);
+function syncNesting(d, ids){
+  if(!d || d.dtype !== 'stm') return 0;
+  let n = 0;
+  ids.forEach(id => {
+    const sh = shapeOf(d, id); if(!sh || sh.parent) return;
+    const e = E(sh.el); if(!e || !NESTK.has(e.kind)) return;
+    let best = null;
+    d.shapes.forEach(c => {
+      if(c === sh) return; const ce = E(c.el); if(!ce || (ce.kind !== 'State' && ce.kind !== 'Region')) return;
+      if(ce.id === e.id || isAnc(e.id, ce.id)) return;
+      if(sh.x >= c.x && sh.y >= c.y && sh.x + sh.w <= c.x + c.w && sh.y + sh.h <= c.y + c.h && (!best || c.w * c.h < best.w * best.h)) best = c;
+    });
+    const no = best ? best.el : d.owner;
+    if(no !== e.owner && E(no) && canOwn(E(no).kind, e.kind, e)){ e.owner = no; bump(); n++; }
+  });
+  return n;
+}
+function showRelated(d, sh){
+  const allowed = DT[d.dtype].rels; let n = 0, i = 0;
+  snap();
+  Object.values(M.els).forEach(r => {
+    if(!KIND[r.kind].rel || !allowed.includes(r.kind)) return;
+    let other = r.src === sh.el ? r.tgt : (r.tgt === sh.el ? r.src : null);
+    if(!other || !E(other)) return;
+    const oe = E(other);
+    if(!DT[d.dtype].shapes.includes(oe.kind) || d.shapes.some(s => s.el === other)) return;
+    const k = KIND[oe.kind];
+    const ns = addShape(d, other, sh.x + (i % 4) * 210 - 210, sh.y + sh.h + 90 + Math.floor(i / 4) * 140, k.w, k.h); i++; n++;
+    autoEdges(d, ns);
+  });
+  autoEdges(d, sh);
+  if(!n) undoStack.pop(); else afterChange();
+  toast(n ? n + ' ilişkili eleman eklendi' : 'Eklenecek ilişkili eleman yok');
+}
+
+let drag = null, deferRoute = null, deferT = 0;
+svgEl.addEventListener('mousedown', ev => {
+  hideMenu(); ST.focus = 'canvas';
+  const d = cur(); if(!d) return;
+  if(ev.button === 1 || (ev.button === 0 && ST.space)){ ev.preventDefault(); drag = {type:'pan', sx:ev.clientX, sy:ev.clientY, vx:d.vx, vy:d.vy}; return; }
+  if(ev.button !== 0) return;
+  if(ev.detail === 2 && !ST.tool && !ST.space){ ev.preventDefault(); drag = null; handleDbl(ev); return; }
+  const ae = document.activeElement;
+  if(ae && ae !== inl && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) ae.blur();
+  else if(ae === inl && inlDone) inlDone(true);
+  ev.preventDefault();
+  const p = cpt(ev), t = ev.target;
+  const mn = t.closest('[data-mani]');
+  if(mn){ ev.stopPropagation(); const msh = shapeOf(d, mn.dataset.ms); if(msh) drag = {type:'link', s:msh, p, kind:mn.dataset.mani}; return; }
+  const pl = t.closest('[data-plus]');
+  if(pl){ ev.preventDefault(); ev.stopPropagation(); const psh = shapeOf(d, pl.dataset.plus); if(psh) setTimeout(() => plusMenu(d, psh, ev.clientX + 10, ev.clientY - 6), 0); return; }
+  const h = t.closest('[data-h]');
+  if(h){ const sh = shapeOf(d, h.dataset.hs); drag = {type:'resize', h:h.dataset.h, sh, o:{x:sh.x, y:sh.y, w:sh.w, h:sh.h}, kids:d.shapes.filter(s => s.parent === sh.id), start:p, snapped:false}; return; }
+  const ep = t.closest('[data-ep]');
+  if(ep){ const ed = d.edges.find(x => x.id === ep.dataset.epe); if(ed){ drag = {type:'reconn', ed, end:ep.dataset.ep}; return; } }
+  const wph = t.closest('[data-wp]'), wpa = t.closest('[data-wpadd]');
+  if(wph || wpa){
+    const ed = d.edges.find(x => x.id === (wph || wpa).dataset.wpe);
+    if(ed){
+      snap();
+      if(wpa){ const i = +wpa.dataset.wpadd; if(!ed.wp || !ed.wp.length) ed.wp = ed._pts.slice(1, -1).map(q => ({x:snapv(q.x), y:snapv(q.y)})); const pi = Math.min(i, ed.wp.length); ed.wp.splice(pi, 0, {x:snapv(p.x), y:snapv(p.y)}); delete ed.mx; delete ed.my; drag = {type:'wp', ed, i:pi, snapped:true}; }
+      else drag = {type:'wp', ed, i:+wph.dataset.wp, snapped:true};
+      renderDiagram(); return;
+    }
+  }
+  const lbh = t.closest('[data-lab]');
+  if(lbh && ST.sel.has(lbh.dataset.lab)){ const ed = d.edges.find(x => x.id === lbh.dataset.lab); if(ed){ drag = {type:'lab', ed, start:p, o:Object.assign({x:0, y:0}, ed.lo), snapped:false}; return; } }
+  const sp = t.closest('[data-sep]');
+  if(sp){ const sh0 = shapeOf(d, sp.dataset.ss); if(sh0){ drag = {type:'sep', sh:sh0, i:+sp.dataset.sep, snapped:false}; return; } }
+  const mh = t.closest('[data-mid]');
+  if(mh){ const ed = d.edges.find(x => x.id === mh.dataset.mid); const pts = ed._pts; drag = {type:'mid', ed, ax:isMsg(edgeKind(ed)) ? 'msg' : (Math.abs(pts[1].x - pts[2].x) < 0.5 ? 'x' : 'y'), snapped:false}; return; }
+  const sg = t.closest('[data-sid]'), eg = t.closest('[data-eid]');
+  const sh = sg ? shapeOf(d, sg.dataset.sid) : null;
+  if(ST.painter){
+    const P = ST.painter;
+    if(sh && P.kind === 'shape'){ snap(); ['fill', 'stroke'].forEach(k => { if(P.st[k]) sh[k] = P.st[k]; else delete sh[k]; }); if(P.st.hide && ['Block','InterfaceBlock'].includes(E(sh.el).kind)) sh.hide = Object.assign({}, P.st.hide); if(P.size && !sh.parent && !UNNAMED.has(E(sh.el).kind)){ sh.w = P.size.w; sh.h = P.size.h; } afterChange(); return; }
+    if(eg && P.kind === 'edge'){ const ed = d.edges.find(x => x.id === eg.dataset.eid); if(ed){ snap(); if(P.st.stroke) ed.stroke = P.st.stroke; else delete ed.stroke; if(P.st.route) ed.route = P.st.route; afterChange(); } return; }
+    if(!sh && !eg){ fmtPainter(true); }
+    return;
+  }
+  if(ST.tool && ST.tool.type === 'rel'){
+    if(sh) drag = {type:'link', s:sh, p};
+    return;
+  }
+  if(ST.tool && ST.tool.type === 'shape'){
+    const k = ST.tool.kind; if(!ST.tool.sticky) setTool(null);
+    placeNew(k, p, sh); return;
+  }
+  if(sh){
+    if(ev.shiftKey || ev.ctrlKey){ ST.sel.has(sh.id) ? ST.sel.delete(sh.id) : ST.sel.add(sh.id); }
+    else if(!ST.sel.has(sh.id)) ST.sel = new Set([sh.id]);
+    ST.tsel = sh.el;
+    renderDiagram(); renderProps(); renderTree();
+    // move set
+    const set = new Set(d.shapes.filter(s => ST.sel.has(s.id)).map(s => s.id));
+    d.shapes.forEach(s => { if(set.has(s.id)){ const e = E(s.el); if(e && (CONT.has(e.kind) || isComposite(e))) d.shapes.forEach(o => { if(o !== s && o.x >= s.x && o.y >= s.y && o.x + o.w <= s.x + s.w && o.y + o.h <= s.y + s.h) set.add(o.id); }); } });
+    d.shapes.forEach(s => { if(s.parent && set.has(s.parent)) set.add(s.id); });
+    const orig = new Map(); set.forEach(id => { const s = shapeOf(d, id); orig.set(id, {x:s.x, y:s.y}); });
+    const msgs = new Map();
+    if(d.dtype === 'sd') d.shapes.forEach(f => { if(set.has(f.id) && E(f.el) && E(f.el).kind === 'Fragment') d.edges.forEach(ed => { if(isMsg(edgeKind(ed)) && ed._pts && ed.y >= f.y && ed.y <= f.y + f.h && ed._pts.every(q => q.x >= f.x - 2 && q.x <= f.x + f.w + 2)) msgs.set(ed, ed.y); }); });
+    const wps = new Map(); d.edges.forEach(ed => { if(ed.wp && ed.wp.length && set.has(ed.s) && set.has(ed.t)) wps.set(ed, ed.wp.map(q => ({x:q.x, y:q.y}))); });
+    drag = {type:'move', start:p, anchor:sh, orig, set, moved:false, msgs, wps};
+    return;
+  }
+  if(eg){
+    const id = eg.dataset.eid;
+    if(ev.shiftKey || ev.ctrlKey){ ST.sel.has(id) ? ST.sel.delete(id) : ST.sel.add(id); } else ST.sel = new Set([id]);
+    const ed = d.edges.find(x => x.id === id); if(ed && ed.el) ST.tsel = ed.el;
+    renderDiagram(); renderProps(); renderTree(); return;
+  }
+  if(!ev.shiftKey) ST.sel.clear();
+  ST.tsel = null;
+  drag = {type:'rubber', start:p, add:ev.shiftKey};
+  renderDiagram(); renderProps(); renderTree();
+});
+window.addEventListener('mousemove', ev => {
+  if(!drag) return;
+  const d = cur(); if(!d){ drag = null; return; }
+  if(drag.type === 'pan'){ d.vx = drag.vx + ev.clientX - drag.sx; d.vy = drag.vy + ev.clientY - drag.sy; const vp = $('#vp'); if(vp) vp.setAttribute('transform', `translate(${d.vx},${d.vy}) scale(${d.z})`); return; }
+  const p = cpt(ev);
+  if(drag.type === 'move'){
+    let dx = p.x - drag.start.x, dy = p.y - drag.start.y;
+    if(!drag.moved){ if(Math.hypot(dx, dy) * d.z < 3) return; snap(); drag.moved = true; }
+    const a = drag.orig.get(drag.anchor.id);
+    const ae = E(drag.anchor.el);
+    const single = drag.set.size === 1 && ae && BORDER.has(ae.kind) && drag.anchor.parent;
+    if(single){
+      const P = shapeOf(d, drag.anchor.parent);
+      snapPort(drag.anchor, P, a.x + drag.anchor.w / 2 + dx, a.y + drag.anchor.h / 2 + dy);
+    } else {
+      if(!ev.altKey){ dx = snapv(a.x + dx) - a.x; dy = snapv(a.y + dy) - a.y; }
+      drag.gl = null; if(!ev.altKey && typeof smartGuides === 'function'){ const G = smartGuides(d, drag.set, dx, dy); dx = G.dx; dy = G.dy; drag.gl = G.lines; }
+      drag.set.forEach(id => { const s = shapeOf(d, id), o = drag.orig.get(id); s.x = o.x + dx; s.y = o.y + dy; });
+      if(drag.msgs) drag.msgs.forEach((y0, ed) => { ed.y = y0 + dy; });
+      if(drag.wps) drag.wps.forEach((w0, ed) => { ed.wp = w0.map(q => ({x:q.x + dx, y:q.y + dy})); });
+    }
+    renderDiagram();
+    if(drag.gl && drag.gl.length){ const ov = $('#ovl'); if(ov) ov.innerHTML = `<g stroke="#e0457b" stroke-width="${1 / d.z}" stroke-dasharray="${4 / d.z} ${3 / d.z}" pointer-events="none">${drag.gl.join('')}</g>`; }
+    return;
+  }
+  if(drag.type === 'resize'){
+    if(!drag.snapped){ snap(); drag.snapped = true; }
+    const o = drag.o, sh = drag.sh, e = E(sh.el), k = e.kind;
+    let x1 = o.x, y1 = o.y, x2 = o.x + o.w, y2 = o.y + o.h;
+    const px = ev.altKey ? p.x : snapv(p.x), py = ev.altKey ? p.y : snapv(p.y);
+    if(drag.h.includes('w')) x1 = px; else x2 = px;
+    if(drag.h.includes('n')) y1 = py; else y2 = py;
+    const minW = (k === 'Fork' || k === 'Join') ? 4 : (UNNAMED.has(k) ? 16 : 40), minH = (k === 'Fork' || k === 'Join') ? 4 : (UNNAMED.has(k) ? 16 : 24);
+    if(x2 - x1 < minW){ if(drag.h.includes('w')) x1 = x2 - minW; else x2 = x1 + minW; }
+    if(y2 - y1 < minH){ if(drag.h.includes('n')) y1 = y2 - minH; else y2 = y1 + minH; }
+    sh.x = x1; sh.y = y1; sh.w = x2 - x1; sh.h = y2 - y1;
+    drag.kids.forEach(c => snapPort(c, sh, c.x + c.w / 2, c.y + c.h / 2));
+    renderDiagram(); return;
+  }
+  if(drag.type === 'wp'){ const q = drag.ed.wp[drag.i]; if(q){ q.x = ev.altKey ? Math.round(p.x) : snapv(p.x); q.y = ev.altKey ? Math.round(p.y) : snapv(p.y); } renderDiagram(); return; }
+  if(drag.type === 'lab'){ if(!drag.snapped){ snap(); drag.snapped = true; } drag.ed.lo = {x:Math.round(drag.o.x + p.x - drag.start.x), y:Math.round(drag.o.y + p.y - drag.start.y)}; renderDiagram(); return; }
+  if(drag.type === 'sep'){
+    if(!drag.snapped){ snap(); drag.snapped = true; }
+    const sh = drag.sh, n = fragOps(E(sh.el)).length; sh.seps = fragSeps(sh, n);
+    const lo = drag.i ? sh.seps[drag.i - 1] + 20 : 24, hi = drag.i < sh.seps.length - 1 ? sh.seps[drag.i + 1] - 20 : sh.h - 10;
+    sh.seps[drag.i] = Math.max(lo, Math.min(hi, snapv(p.y - sh.y)));
+    renderDiagram(); return;
+  }
+  if(drag.type === 'mid'){
+    if(!drag.snapped){ snap(); drag.snapped = true; }
+    if(drag.ax === 'msg') drag.ed.y = snapv(p.y); else if(drag.ax === 'x') drag.ed.mx = snapv(p.x); else drag.ed.my = snapv(p.y);
+    renderDiagram(); return;
+  }
+  const ovl = $('#ovl'); if(!ovl) return;
+  if(drag.type === 'rubber'){
+    const x = Math.min(p.x, drag.start.x), y = Math.min(p.y, drag.start.y), w = Math.abs(p.x - drag.start.x), h = Math.abs(p.y - drag.start.y);
+    drag.r = {x, y, w, h};
+    ovl.innerHTML = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="rgba(45,127,249,.08)" stroke="#2d7ff9" stroke-width="${1 / d.z}" stroke-dasharray="${4 / d.z}"/>`;
+    return;
+  }
+  if(drag.type === 'reconn'){
+    const fx = drag.ed._pts[drag.end === 's' ? drag.ed._pts.length - 1 : 0];
+    ovl.innerHTML = `<line x1="${fx.x}" y1="${fx.y}" x2="${p.x}" y2="${p.y}" stroke="#2d7ff9" stroke-width="${1.5 / d.z}" stroke-dasharray="${5 / d.z}" pointer-events="none"/>`;
+    return;
+  }
+  if(drag.type === 'link'){
+    const s = drag.s, ts = shapeAt(ev), ok = ts && ts.id !== s.id;
+    ovl.innerHTML = `<line x1="${s.x + s.w / 2}" y1="${s.y + s.h / 2}" x2="${p.x}" y2="${p.y}" stroke="#2d7ff9" stroke-width="${1.5 / d.z}" stroke-dasharray="${5 / d.z}" pointer-events="none"/>` + (ok ? `<rect x="${ts.x - 4 / d.z}" y="${ts.y - 4 / d.z}" width="${ts.w + 8 / d.z}" height="${ts.h + 8 / d.z}" rx="${4 / d.z}" fill="none" stroke="#2e9e6a" stroke-width="${2.2 / d.z}" pointer-events="none"/>` : '');
+  }
+});
+window.addEventListener('mouseup', ev => {
+  if(!drag) return;
+  const d = cur(), dr = drag; drag = null;
+  if(!d) return;
+  if(dr.type === 'pan'){ persistSoon(); return; }
+  if(dr.type === 'move' && dr.moved) syncNesting(d, [...dr.set]);
+  if(dr.type === 'resize' && dr.snapped && d.dtype === 'stm'){ const R = dr.sh; syncNesting(d, d.shapes.filter(o => o === R || (o.x >= R.x && o.y >= R.y && o.x + o.w <= R.x + R.w && o.y + o.h <= R.y + R.h) || (R.x >= o.x && R.y >= o.y)).map(o => o.id)); }
+  if(dr.type === 'wp'){ if(dr.ed.wp){ dr.ed.wp = dr.ed.wp.filter((q, i, a) => !a.some((o, j) => j < i && Math.abs(o.x - q.x) < 2 && Math.abs(o.y - q.y) < 2)); } renderAll(); persist(); return; }
+  if(dr.type === 'move' || dr.type === 'resize' || dr.type === 'mid' || dr.type === 'sep' || dr.type === 'lab'){
+    if(dr.moved || dr.snapped){
+      /* büyük diyagramda bırakınca önce yalnız taşınan şeklin bağlantıları, ardından tüm rotalar arka planda yenilenir */
+      if((dr.type === 'move' || dr.type === 'resize') && d.edges.length > 30){ deferRoute = {d:d.id, set:new Set(dr.type === 'move' ? [...dr.set] : [dr.sh.id])}; renderAll(); deferRoute = null; clearTimeout(deferT); deferT = setTimeout(() => { if(!drag && cur() === d) renderDiagram(); }, 40); }
+      else renderAll();
+      persist();
+    }
+    return;
+  }
+  if(dr.type === 'rubber'){
+    if(dr.r && dr.r.w > 2){
+      const r = dr.r;
+      d.shapes.forEach(s => { if(s.x >= r.x && s.y >= r.y && s.x + s.w <= r.x + r.w && s.y + s.h <= r.y + r.h) ST.sel.add(s.id); });
+      d.edges.forEach(x => { if(x._pts && x._pts.every(q => q.x >= r.x && q.y >= r.y && q.x <= r.x + r.w && q.y <= r.y + r.h)) ST.sel.add(x.id); });
+    }
+    renderDiagram(); renderProps(); return;
+  }
+  if(dr.type === 'reconn'){ const tsh = shapeAt(ev); if(tsh) reconnectEdge(d, dr.ed, dr.end, tsh); else renderDiagram(); return; }
+  if(dr.type === 'link' && dr.kind){ linkDrop(d, dr, shapeAt(ev), ev); return; }
+  if(dr.type === 'link'){
+    const tsh = shapeAt(ev);
+    const kind = ST.tool && ST.tool.kind;
+    if(!ST.tool || !ST.tool.sticky) setTool(null);
+    if(!tsh || !kind){ renderDiagram(); return; }
+    if(tsh.id === dr.s.id && !isMsg(kind) && kind !== 'Transition'){ renderDiagram(); return toast('Hedef olarak başka bir elemanın üzerine bırakın.'); }
+    const a = E(dr.s.el), b = E(tsh.el);
+    const err = validate(kind, a, b, d);
+    if(err){ renderDiagram(); return toast(err); }
+    snap();
+    const ed = connect(d, kind, dr.s, tsh);
+    if(isMsg(kind)){ const lo = Math.max(dr.s.y, tsh.y) + 50; ed.y = Math.max(lo, snapv(dr.p.y)); }
+    ST.sel = new Set([ed.id]); if(ed.el) ST.tsel = ed.el;
+    afterChange();
+    if(['ControlFlow','ObjectFlow'].includes(kind) && (a.kind === 'Decision' || a.kind === 'Choice')) editEdge(ed, 'guard');
+    if(isMsg(kind) || kind === 'Transition') editEdge(ed, 'name');
+  }
+});
+function handleDbl(ev){
+  const d = cur(); if(!d) return;
+  const hit = document.elementFromPoint(ev.clientX, ev.clientY) || ev.target;
+  const wph = hit.closest && hit.closest('[data-wp]');
+  if(wph){ const ed = d.edges.find(x => x.id === wph.dataset.wpe); if(ed && ed.wp){ snap(); ed.wp.splice(+wph.dataset.wp, 1); if(!ed.wp.length) delete ed.wp; afterChange(); } return; }
+  const sg = hit.closest && hit.closest('[data-sid]'), eg = hit.closest && hit.closest('[data-eid]');
+  if(sg){
+    const sh = shapeOf(d, sg.dataset.sid), e = E(sh.el);
+    if(!ev.altKey && goTargets(e, ev.clientX, ev.clientY)) return;
+    if(UNNAMED.has(e.kind) && !DIA.has(e.kind)) return;
+    editShape(sh); return;
+  }
+  if(eg){ const ed = d.edges.find(x => x.id === eg.dataset.eid); if(ed && ed.el){ const r = E(ed.el); editEdge(ed, (r.kind === 'ControlFlow' || r.kind === 'ObjectFlow') ? 'guard' : 'name'); } }
+}
+svgEl.addEventListener('contextmenu', ev => {
+  ev.preventDefault();
+  const d = cur(); if(!d) return;
+  const sg = ev.target.closest('[data-sid]'), eg = ev.target.closest('[data-eid]');
+  const it = [];
+  if(sg){
+    const sh = shapeOf(d, sg.dataset.sid), e = E(sh.el);
+    if(!ST.sel.has(sh.id)){ ST.sel = new Set([sh.id]); ST.tsel = sh.el; renderDiagram(); renderProps(); renderTree(); }
+    it.push({h:KIND[e.kind].tr + (e.name ? ': ' + e.name.slice(0, 30) : '')});
+    if(!UNNAMED.has(e.kind) || DIA.has(e.kind)) it.push({t:'Yeniden adlandır', k:'F2', f:() => editShape(sh)});
+    it.push({t:'Ağaçta göster', f:() => revealInTree(e.id)});
+    it.push({t:'Spesifikasyon…', k:'Enter', f:() => openSpec(e.id)});
+    if(e.kind === 'Lifeline'){ const addFL = fl => { snap(); const ed = connect(d, 'MsgAsync', sh, sh); E(ed.el).fl = fl; E(ed.el).name = fl === 'found' ? 'olay' : 'mesaj'; ed.y = Math.max(...d.edges.filter(x => isMsg(edgeKind(x))).map(x => x.y || 0), sh.y + 40) + 45; afterChange(); editEdge(ed, 'name'); }; it.push({t:'Bulunan mesaj (found) ekle', f:() => addFL('found')}, {t:'Kayıp mesaj (lost) ekle', f:() => addFL('lost')}, {t:e.destroyed ? 'Yok etmeyi kaldır' : 'Yok etme (destroy) ✕', f:() => { snap(); e.destroyed = !e.destroyed; afterChange(); }}); }
+    if(e.kind === 'Block') it.push({t:'Örnek ağacı üret (instantiate)…', f:() => instGenDialog(e.id)});
+    if(e.kind === 'UseCase') it.push({t:'Aktivite senaryosu üret', f:() => ucGenerate(e, 'act')}, {t:'Sequence senaryosu üret', f:() => ucGenerate(e, 'sd')});
+    if(plusOK(d, e)) it.push({t:'Ekle / ilişkilendir (+)…', f:() => setTimeout(() => plusMenu(d, sh, ev.clientX, ev.clientY), 0)});
+    if(['Block','Part','Actor'].includes(e.kind)) it.push({t:'İkon ata…', f:() => iconPicker(iconTargets(d, e))});
+    if(e.kind === 'Part') it.push({t:'Portları göster', f:() => { snap(); const a = showPorts(d, sh); if(!a.length){ undoStack.pop(); toast('Gösterilecek yeni port yok'); } else afterChange(); }});
+    if(['Block','Actor','UseCase','Package','Requirement','TestCase','State','Lifeline'].includes(e.kind)) it.push({t:'İlişkili elemanları göster', f:() => showRelated(d, sh)});
+    if(e.kind === 'Block') it.push({t:'Bağlam diyagramı üret', f:() => contextDiagram(e.id)});
+    if(e.kind === 'Block' && d.dtype === 'bdd') it.push({t:ibdsOf(e).length ? 'IBD\'yi modelle eşitle' : 'IBD üret (part\'lardan)', f:() => { const x = ibdsOf(e); if(x.length){ snap(); const r = syncIBD(x[0]); afterChange(); openD(x[0].id); toast(`Eklenen: ${r.parts} part, ${r.ports} port, ${r.edges} bağlantı`); } else { snap(); compParts(e); const nd = newDiagramCore(e.id, 'ibd', e.name + ' İç Yapısı'); ST.exp.add(e.id); afterChange(); openD(nd.id); } }});
+    const tg = navTargets(e, d.id);
+    if(tg.length){ it.push({h:'Alt diyagrama git (çift tık)'}); tg.forEach(x => it.push({t:'↪ [' + x.dtype + '] ' + x.name, f:() => openD(x.id)})); }
+    const so = subDiagramOpts(e);
+    if(so.length){ it.push({h:'Yeni alt diyagram'}); so.forEach(([dt, t]) => it.push({t:'＋ ' + t, f:() => newSubDiagram(e, dt)})); }
+    it.push({t:'Diyagram bağla (hiperlink)…', f:() => linkMenu(e, ev.clientX, ev.clientY)});
+    if(ST.sel.size > 1){ it.push({h:'Hizala / dağıt'}); layoutMenuItems().filter(x => x.f && x.dis === false).forEach(x => it.push(x)); }
+    it.push('-');
+    it.push({t:'Kopyala', k:'Ctrl+C', f:() => copySel()});
+    it.push({t:'Çoğalt (yeni eleman)', k:'Ctrl+D', f:() => duplicateSel()});
+    it.push({t:'Etki analizi…', f:() => impactAnalysis(e.id)});
+    it.push({t:'Öne getir', f:() => { snap(); reorder(d, true); afterChange(); }});
+    it.push({t:'Arkaya gönder', f:() => { snap(); reorder(d, false); afterChange(); }});
+    it.push('-');
+    it.push({t:'Diyagramdan kaldır', k:'Shift+Del', f:() => { snap(); removeFromDiagram(d, [...ST.sel]); afterChange(); }});
+    it.push({t:'Modelden sil', k:'Del', f:() => delSelectedModel()});
+  } else if(eg){
+    const ed = d.edges.find(x => x.id === eg.dataset.eid);
+    if(!ST.sel.has(ed.id)){ ST.sel = new Set([ed.id]); if(ed.el) ST.tsel = ed.el; renderDiagram(); renderProps(); renderTree(); }
+    it.push({h:KIND[edgeKind(ed)].tr});
+    if(ed.el) it.push({t:'Adı düzenle', f:() => editEdge(ed, 'name')});
+    if(ed.el && ['ControlFlow','ObjectFlow'].includes(edgeKind(ed))) it.push({t:'Koşul (guard) düzenle', f:() => editEdge(ed, 'guard')});
+    it.push({t:ed.route === 'straight' ? 'Dik açılı çizgi yap' : 'Düz çizgi yap', f:() => { snap(); ed.route = ed.route === 'straight' ? 'ortho' : 'straight'; afterChange(); }});
+    it.push({t:'Rotayı sıfırla (bükme noktalarını sil)', f:() => { snap(); delete ed.mx; delete ed.my; delete ed.wp; afterChange(); }});
+    if(ed.lo) it.push({t:'Etiket konumunu sıfırla', f:() => { snap(); delete ed.lo; afterChange(); }});
+    if(ed.el) it.push({t:'Ağaçta göster', f:() => revealInTree(ed.el)});
+    it.push('-');
+    it.push({t:'Diyagramdan kaldır', k:'Shift+Del', f:() => { snap(); removeFromDiagram(d, [...ST.sel]); afterChange(); }});
+    if(ed.el) it.push({t:'Modelden sil', k:'Del', f:() => delSelectedModel()});
+  } else {
+    it.push({t:'Tümünü seç', k:'Ctrl+A', f:() => { ST.sel = new Set(d.shapes.map(s => s.id)); renderDiagram(); }});
+    if(ST.clip){ it.push({t:'Yapıştır', k:'Ctrl+V', f:() => { ST.mouse = cpt(ev); pasteClip(false); }}); it.push({t:'Yeni eleman olarak yapıştır', k:'Ctrl+Shift+V', f:() => { ST.mouse = cpt(ev); pasteClip(true); }}); }
+    it.push({t:'Model içinde ara…', k:'Ctrl+F', f:searchModel});
+    it.push({t:'Ekrana sığdır', f:fit});
+    it.push({h:'Otomatik düzen'});
+    LAYOUTS[d.dtype].forEach(([m, t]) => it.push({t, f:() => runLayout(m)}));
+    it.push('-');
+    it.push({t:'PNG olarak indir', f:() => exportPNG()});
+    it.push({t:'SVG olarak indir', f:() => exportSVG()});
+    it.push({t:'Panoya resim olarak kopyala', f:() => copyImage()});
+    it.push('-');
+    it.push({t:'Diyagramı ağaçta göster', f:() => revealInTree(d.id)});
+    it.push({t:'Diyagramı yeniden adlandır', f:() => treeRename(d.id)});
+  }
+  menu(ev.clientX, ev.clientY, it);
+});
+function iconTargets(d, e){
+  const ids = new Set([e.id]);
+  d.shapes.forEach(s => { if(ST.sel.has(s.id)){ const x = E(s.el); if(x && ['Block','Part','Actor'].includes(x.kind)) ids.add(x.id); } });
+  return [...ids];
+}
+let icState = {cat:'all', q:'', col:''};
+function iconPicker(ids){
+  const els = ids.map(E).filter(Boolean); if(!els.length) return;
+  const curIc = els[0].icon;
+  icState.col = els[0].iconColor || '';
+  const box = $('#modalBox');
+  box.style.width = 'min(920px, 94vw)'; box.style.maxWidth = 'none';
+  const sw = ['', '#26364b', '#1f6fd1', '#c0392b', '#2e7d32', '#d18a00', '#6c3fc4', '#0f8a8a', '#5a6b24', '#000000'];
+  box.innerHTML = `<h2>İkon seç — ${els.length > 1 ? els.length + ' eleman' : esc(nm(els[0]))}</h2>
+    <div class="icbar"><input id="icq" placeholder="Ara… (ör. uçak, radar, motor, batarya, sunucu)" value="${esc(icState.q)}">
+    <span class="icsw" title="İkon rengi (boş = kategori rengi)">${sw.map(c => `<b data-col="${c}" class="${icState.col === c ? 'on' : ''}" style="background:${c || 'conic-gradient(#c0392b,#d18a00,#2e7d32,#1f6fd1,#6c3fc4,#c0392b)'}" title="${c ? c : 'Kategori rengi'}"></b>`).join('')}</span>
+    ${els.some(e => e.icon) ? '<button class="pbtn" id="icnone">İkonu kaldır</button>' : ''}<button class="pbtn" id="icclose">Kapat</button></div>
+    <div class="iccats"><span class="chip${icState.cat === 'all' ? ' on' : ''}" data-cat="all">Tümü (${Object.keys(ICONS).length})</span>${ICON_CATS.map(([k, n, c]) => `<span class="chip${icState.cat === k ? ' on' : ''}" data-cat="${k}"><i style="background:${c}"></i>${esc(n)}</span>`).join('')}</div>
+    <div class="icgrid" id="icgrid"></div>
+    ${els.some(e => e.kind === 'Block') ? '<p class="muted" style="margin:8px 0 0">İpucu: Blokta ikonun başlıkta büyük görünmesi için Özellikler panelinden "Gösterim → Başlıkta büyük" seçin. Part\'lar ikonu tip bloğundan otomatik alır.</p>' : ''}`;
+  const grid = $('#icgrid');
+  const draw = () => {
+    const q = icState.q.toLocaleLowerCase('tr').trim();
+    const list = Object.values(ICONS).filter(ic => (icState.cat === 'all' || ic.cat === icState.cat) && (!q || ic.name.toLocaleLowerCase('tr').includes(q) || ic.id.includes(q) || ICON_CATS.find(c => c[0] === ic.cat)[1].toLocaleLowerCase('tr').includes(q)));
+    grid.innerHTML = list.map(ic => `<button class="icb${ic.id === curIc ? ' on' : ''}" data-ic="${ic.id}" title="${esc(ic.name)}">${iconInline(ic, 30, icState.col || ICON_CAT_COL[ic.cat])}<span>${esc(ic.name)}</span></button>`).join('') || '<div class="muted">Sonuç bulunamadı</div>';
+  };
+  draw();
+  $('#modal').style.display = 'flex';
+  const q = $('#icq'); q.focus();
+  q.oninput = () => { icState.q = q.value; draw(); };
+  q.onkeydown = ev => { ev.stopPropagation(); if(ev.key === 'Escape') close(); if(ev.key === 'Enter'){ const b = grid.querySelector('[data-ic]'); if(b) pick(b.dataset.ic); } };
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; };
+  const pick = id => { snap(); els.forEach(e => { e.icon = id; if(icState.col) e.iconColor = icState.col; else delete e.iconColor; }); close(); afterChange(); toast(`"${ICONS[id].name}" ikonu atandı`); };
+  box.onclick = ev => {
+    const t = ev.target;
+    const b = t.closest('[data-ic]'); if(b) return pick(b.dataset.ic);
+    const c = t.closest('[data-cat]'); if(c){ icState.cat = c.dataset.cat; box.querySelectorAll('[data-cat]').forEach(x => x.classList.toggle('on', x === c)); draw(); return; }
+    const s0 = t.closest('[data-col]'); if(s0){ icState.col = s0.dataset.col; box.querySelectorAll('[data-col]').forEach(x => x.classList.toggle('on', x === s0)); draw(); return; }
+    if(t.id === 'icnone'){ snap(); els.forEach(e => { delete e.icon; delete e.iconColor; }); close(); afterChange(); return; }
+    if(t.id === 'icclose') close();
+  };
+}
+function linkMenu(e, x, y){
+  const ds = Object.values(M.els).filter(v => v.kind === 'Diagram').sort(sortEls);
+  const it = [{h:'"' + nm(e) + '" için bağlı diyagram'}];
+  if(e.link) it.push({t:'✕ Bağlantıyı kaldır', f:() => { snap(); e.link = null; afterChange(); }});
+  ds.forEach(v => it.push({t:(e.link === v.id ? '✓ ' : '') + '[' + v.dtype + '] ' + v.name, f:() => { snap(); e.link = v.id; afterChange(); toast('Bağlandı — çift tıklayınca "' + v.name + '" açılır'); }}));
+  setTimeout(() => menu(x, y, it), 0);
+}
+function openBehavior(e){
+  const act = E(e.behavior); if(!act) return;
+  let d = kidsOf(act.id).find(x => x.kind === 'Diagram' && x.dtype === 'act');
+  if(!d){ snap(); d = newDiagramCore(act.id, 'act'); }
+  openD(d.id);
+}
+function reorder(d, front){
+  const sel = d.shapes.filter(s => ST.sel.has(s.id)), rest = d.shapes.filter(s => !ST.sel.has(s.id));
+  d.shapes = front ? rest.concat(sel) : sel.concat(rest);
+}
+function delSelectedModel(){
+  const d = cur(); if(!d) return;
+  const ids = new Set();
+  d.shapes.forEach(s => { if(ST.sel.has(s.id)) ids.add(s.el); });
+  d.edges.forEach(x => { if(ST.sel.has(x.id)){ if(x.el) ids.add(x.el); else x._rm = 1; } });
+  snap();
+  d.edges = d.edges.filter(x => !x._rm);
+  delModel([...ids]);
+  afterChange();
+}
+wrapEl.addEventListener('wheel', ev => {
+  const d = cur(); if(!d || ev.target.closest('#simbar')) return;
+  ev.preventDefault();
+  if(ev.ctrlKey){
+    const r = svgEl.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
+    zoomAt(d, d.z * Math.exp(-ev.deltaY * 0.0015), mx, my);
+  } else { d.vx -= ev.shiftKey ? ev.deltaY : ev.deltaX; d.vy -= ev.shiftKey ? 0 : ev.deltaY; renderDiagram(); }
+  persistSoon();
+}, {passive:false});
+function zoomAt(d, nz, mx, my){
+  nz = Math.max(0.15, Math.min(4, nz));
+  d.vx = mx - (mx - d.vx) * nz / d.z; d.vy = my - (my - d.vy) * nz / d.z; d.z = nz; renderDiagram();
+}
+function zoomBtn(f){ const d = cur(); if(!d) return; const r = svgEl.getBoundingClientRect(); zoomAt(d, d.z * f, r.width / 2, r.height / 2); persistSoon(); }
+function fit(){
+  const d = cur(); if(!d) return;
+  const {bbox} = diagramSVG(d, true);
+  const r = svgEl.getBoundingClientRect();
+  if(!bbox){ d.vx = 60; d.vy = 70; d.z = 1; }
+  else { const z = Math.max(0.15, Math.min(1.5, (r.width - 60) / bbox.w, (r.height - 60) / bbox.h)); d.z = z; d.vx = (r.width - bbox.w * z) / 2 - bbox.x * z; d.vy = (r.height - bbox.h * z) / 2 - bbox.y * z; }
+  renderDiagram(); persistSoon();
+}
+wrapEl.addEventListener('dragover', ev => { if(cur()){ ev.preventDefault(); ev.dataTransfer.dropEffect = 'copy'; } });
+wrapEl.addEventListener('drop', ev => {
+  ev.preventDefault();
+  const d = cur(); if(!d) return;
+  const data = ev.dataTransfer.getData('text/plain') || '';
+  const p = cpt(ev), target = shapeAt(ev);
+  if(data.startsWith('pal:')) placeNew(data.slice(4), p, target);
+  else if(data.startsWith('els:')) dropMany(data.slice(4).split(','), p, target);
+  else if(data.startsWith('el:')) dropExisting(data.slice(3), p, target);
+  ST.dragEl = null;
+});
+
+/* ================= PHASE 1: CLIPBOARD, SEARCH, MULTI-DROP, RECONNECT ================= */
+ST.clip = null; ST.tmulti = new Set(); ST.mouse = null;
+svgEl.addEventListener('mousemove', ev => { if(cur()) ST.mouse = cpt(ev); });
+function copySel(){
+  const d = cur(); if(!d) return false;
+  const tops = d.shapes.filter(s => ST.sel.has(s.id) && !s.parent);
+  if(!tops.length) return false;
+  const set = new Set(tops.map(s => s.id));
+  d.shapes.forEach(s => { if(s.parent && set.has(s.parent)) set.add(s.id); });
+  const shapes = d.shapes.filter(s => set.has(s.id)).map(s => JSON.parse(JSON.stringify(s)));
+  const edges = d.edges.filter(ed => set.has(ed.s) && set.has(ed.t) && !isMsg(edgeKind(ed))).map(ed => ({el:ed.el, kind:ed.kind, s:ed.s, t:ed.t, route:ed.route, stroke:ed.stroke, wp:ed.wp ? ed.wp.map(q => ({x:q.x, y:q.y})) : undefined, lo:ed.lo}));
+  ST.clip = {from:d.id, dtype:d.dtype, shapes, edges};
+  toast(tops.length + ' şekil kopyalandı');
+  return true;
+}
+function cloneSubtree(id, owner, map){
+  const e = E(id); if(!e) return null;
+  const c = JSON.parse(JSON.stringify(e));
+  c.id = uid(); c.owner = owner;
+  if(c.kind === 'Requirement'){ c.reqId = nextReqId(reqLevel(c)); }
+  else if(c.name && !map.size) c.name = uniqName(c.name + ' kopya', owner);
+  M.els[c.id] = c; bump(); map.set(id, c.id);
+  kidsOf(id).filter(k => k.kind !== 'Diagram' && !KIND[k.kind].rel && k.id !== c.id).forEach(k => cloneSubtree(k.id, c.id, map));
+  return c;
+}
+function pasteClip(forceCopy){
+  const d = cur(), C = ST.clip; if(!d || !C) return toast('Pano boş');
+  const tops = C.shapes.filter(s => !s.parent);
+  const present = tops.some(s => d.shapes.some(x => x.el === s.el && !x.parent));
+  const copy = forceCopy || present;
+  const minX = Math.min(...tops.map(s => s.x)), minY = Math.min(...tops.map(s => s.y));
+  let ox, oy;
+  if(ST.mouse && !forceCopy && C.from !== d.id){ ox = snapv(ST.mouse.x) - minX; oy = snapv(ST.mouse.y) - minY; }
+  else { ox = 30; oy = 30; }
+  snap();
+  const emap = new Map(), smap = new Map(), skipped = [];
+  if(copy){
+    tops.forEach(s => {
+      const e = E(s.el); if(!e) return;
+      if(!canDrop(d, e)){ skipped.push(e); return; }
+      const owner = e.kind === 'Requirement' ? e.owner : (E(e.owner) ? e.owner : ownerFor(e.kind, d));
+      const m1 = new Map(); cloneSubtree(e.id, owner, m1); m1.forEach((v, k) => emap.set(k, v));
+    });
+  }
+  C.shapes.forEach(s => {
+    const parentNew = s.parent ? smap.get(s.parent) : null;
+    if(s.parent && !parentNew) return;
+    let el = s.el;
+    if(copy) el = emap.get(s.el) || (s.parent ? s.el : null);
+    if(!el || !E(el)) return;
+    if(!s.parent && !canDrop(d, E(el))) return;
+    const n = Object.assign(JSON.parse(JSON.stringify(s)), {id:uid(), el, x:s.x + ox, y:s.y + oy});
+    if(parentNew) n.parent = parentNew; else delete n.parent;
+    d.shapes.push(n); smap.set(s.id, n.id);
+  });
+  C.edges.forEach(ed => {
+    const S = smap.get(ed.s), T0 = smap.get(ed.t); if(!S || !T0) return;
+    let el = ed.el;
+    if(el && copy){
+      const r = E(el); if(!r) return;
+      const src = emap.get(r.src) || r.src, tgt = emap.get(r.tgt) || r.tgt;
+      if(src === r.src && tgt === r.tgt) return;
+      const nr = Object.assign(JSON.parse(JSON.stringify(r)), {id:uid(), src, tgt});
+      if(nr.sp) nr.sp = emap.get(nr.sp) || nr.sp; if(nr.tp) nr.tp = emap.get(nr.tp) || nr.tp;
+      if(nr.part){ delete nr.part; }
+      M.els[nr.id] = nr; bump(); el = nr.id;
+    }
+    if(el && d.edges.some(x => x.el === el)) return;
+    const ne = {id:uid(), el:el || null, kind:ed.kind, s:S, t:T0, route:ed.route, stroke:ed.stroke}; if(ed.wp) ne.wp = ed.wp.map(q => ({x:q.x + ox, y:q.y + oy})); if(ed.lo) ne.lo = Object.assign({}, ed.lo);
+    d.edges.push(ne);
+  });
+  d.shapes.filter(s => [...smap.values()].includes(s.id)).forEach(s => autoEdges(d, s));
+  ST.sel = new Set([...smap.values()].filter(id => { const s = shapeOf(d, id); return s && !s.parent; }));
+  afterChange();
+  toast((copy ? 'Yeni eleman olarak yapıştırıldı' : 'Mevcut elemanlar bu diyagramda gösterildi') + (skipped.length ? ` · ${skipped.length} eleman bu diyagram türüne uygun değil` : ''));
+}
+function duplicateSel(){ if(copySel()) pasteClip(true); }
+
+/* ---- model içinde arama ---- */
+function searchModel(){
+  const box = $('#modalBox');
+  box.style.width = 'min(720px, 94vw)'; box.style.maxWidth = 'none';
+  box.innerHTML = `<h2>Model içinde ara</h2><div class="icbar"><input id="sq" placeholder="Ad, gereksinim ID, gereksinim metni, açıklama…"></div><div class="plist" id="sres"></div><p class="muted" style="margin:8px 0 0">Enter: ilk sonuca git · Sonuca tıklayınca ağaçta ve diyagramda gösterilir</p>`;
+  $('#modal').style.display = 'flex';
+  const q = $('#sq'); q.focus();
+  let res = [];
+  const draw = () => {
+    const v = asciiTr(q.value);
+    if(!v){ $('#sres').innerHTML = '<div class="muted" style="padding:8px">Aramak için yazın…</div>'; res = []; return; }
+    res = Object.values(M.els).filter(e => !KIND[e.kind] || !KIND[e.kind].rel ? true : !!e.name).map(e => {
+      const hay = [e.name, e.reqId, e.text, e.doc, e.srcNo, e.srcText, e.subsys, e.expr].concat(Object.values(e.attrs || {})).filter(Boolean).join(' ');
+      const a = asciiTr(hay), i = a.indexOf(v);
+      return i < 0 ? null : {e, score:(asciiTr(e.name || '') === v || asciiTr(e.reqId || '') === v ? 0 : asciiTr(e.name || '').startsWith(v) ? 1 : 2), snip:hay.slice(Math.max(0, i - 30), i + 70)};
+    }).filter(Boolean).sort((a, b) => a.score - b.score || nm(a.e).localeCompare(nm(b.e), 'tr')).slice(0, 150);
+    $('#sres').innerHTML = res.map((r, i) => `<div class="pli" data-sr="${i}">${icon(r.e)} <b>${esc(nm(r.e))}</b> <span class="muted">${esc(KIND[r.e.kind].tr)} · ${esc(pathOf(r.e.owner))}</span><em>${esc(r.snip)}</em></div>`).join('') || '<div class="muted" style="padding:8px">Sonuç yok</div>';
+  };
+  const go = r => {
+    $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null;
+    const e = r.e; ST.tsel = e.id; revealInTree(e.id);
+    const d0 = cur(), here = d0 && d0.shapes.find(s => s.el === e.id);
+    const dd = here ? d0 : diagramsShowing(e.id)[0];
+    if(e.kind === 'Diagram') openD(e.id);
+    else if(dd){ openD(dd.id); const d = cur(); ST.sel = new Set(d.shapes.filter(s => s.el === e.id).map(s => s.id)); const sh = d.shapes.find(s => s.el === e.id); if(sh){ const rr = svgEl.getBoundingClientRect(); d.vx = rr.width / 2 - (sh.x + sh.w / 2) * d.z; d.vy = rr.height / 2 - (sh.y + sh.h / 2) * d.z; } renderAll(); }
+    else if(e.kind === 'Requirement'){ openD('@reqtable'); ST.tsel = e.id; renderAll(); }
+    renderProps();
+  };
+  q.oninput = draw;
+  q.onkeydown = ev => { ev.stopPropagation(); if(ev.key === 'Escape'){ $('#modal').style.display = 'none'; box.onclick = null; } if(ev.key === 'Enter' && res[0]) go(res[0]); };
+  box.onclick = ev => { const it = ev.target.closest('[data-sr]'); if(it) go(res[+it.dataset.sr]); };
+  draw();
+}
+
+/* ---- ağaçta çoklu seçim ve toplu sürükleme ---- */
+function dropMany(ids, p, target){
+  const d = cur(); if(!d) return;
+  const ok = ids.map(E).filter(e => e && canDrop(d, e) && !d.shapes.some(s => s.el === e.id && !s.parent));
+  if(!ok.length) return toast('Seçili elemanlar bu diyagrama eklenemiyor veya zaten var');
+  snap(); ST.batch = true;
+  const added = [];
+  try {
+    const cols = Math.ceil(Math.sqrt(ok.length));
+    ok.forEach((e, i) => { dropExisting(e.id, {x:p.x + (i % cols) * 230, y:p.y + Math.floor(i / cols) * 150}, null); ST.sel.forEach(x => added.push(x)); });
+  } finally { ST.batch = false; }
+  ST.sel = new Set(added); afterChange();
+  toast(ok.length + ' eleman eklendi; aralarındaki ilişkiler otomatik çizildi');
+}
+
+/* ---- bağlantı ucunu yeniden bağlama ---- */
+function reconnectEdge(d, ed, end, tsh){
+  const keepSh = shapeOf(d, end === 's' ? ed.t : ed.s);
+  const S = end === 's' ? tsh : keepSh, T0 = end === 's' ? keepSh : tsh;
+  if(!S || !T0 || (end === 's' ? ed.s : ed.t) === tsh.id) return;
+  const kind = edgeKind(ed), a = E(S.el), b = E(T0.el);
+  const err = validate(kind, a, b, d); if(err) return toast(err);
+  snap();
+  ed[end] = tsh.id; delete ed.mx; delete ed.my; delete ed.wp;
+  if(ed.el){
+    const r = E(ed.el);
+    if(end === 's') r.src = a.id; else r.tgt = b.id;
+    if(kind === 'Connector' || kind === 'Binding'){ const ps = S.parent && shapeOf(d, S.parent), pt = T0.parent && shapeOf(d, T0.parent); r.sp = ps ? ps.el : null; r.tp = pt ? pt.el : null; }
+    if(r.part && E(r.part)){ const p = E(r.part); if(end === 't'){ p.type = b.id; } else { p.owner = a.id; } }
+    Object.values(M.els).forEach(dd => {
+      if(dd.kind !== 'Diagram' || dd === d) return;
+      const before = dd.edges.length;
+      dd.edges = dd.edges.filter(x => x.el !== r.id);
+      if(dd.edges.length !== before || dd.shapes.some(s => s.el === r.src || s.el === r.tgt)) dd.shapes.filter(s => s.el === r.src || s.el === r.tgt).forEach(s => autoEdges(dd, s));
+    });
+  }
+  afterChange(); toast('Bağlantı yeniden bağlandı');
+}
+
+/* ================= INLINE EDIT ================= */
+const inl = $('#inl');
+let inlDone = null;
+function inlineEdit(sx, sy, w, h, val, multi, cb){
+  const d = cur();
+  inl.style.left = (d.vx + sx * d.z) + 'px'; inl.style.top = (d.vy + sy * d.z) + 'px';
+  inl.style.width = Math.max(120, w * d.z) + 'px'; inl.style.height = Math.max(26, h * d.z) + 'px';
+  inl.style.textAlign = multi ? 'left' : 'center';
+  inl.value = val || ''; inl.style.display = 'block'; inl.focus(); inl.select();
+  let done = false;
+  inlDone = ok => { if(done) return; done = true; inl.style.display = 'none'; inlDone = null; if(ok && inl.value !== (val || '')) cb(inl.value); };
+  inl.onkeydown = ev => {
+    ev.stopPropagation();
+    if(ev.key === 'Escape') inlDone(false);
+    if(ev.key === 'Enter' && (!multi || ev.ctrlKey)){ ev.preventDefault(); inlDone(true); }
+  };
+  inl.onblur = () => inlDone && inlDone(true);
+}
+function editShape(sh){
+  const e = E(sh.el); if(!e) return;
+  const multi = e.kind === 'Comment';
+  let y = sh.y, h = sh.h;
+  if(e.kind === 'Actor'){ y = sh.y + sh.h - 22; h = 26; }
+  else if(BORDER.has(e.kind) || DIA.has(e.kind) || e.kind === 'AcceptTime'){ y = e.kind === 'AcceptTime' ? sh.y + sh.h + 2 : sh.y - 28; h = 26; }
+  else if(e.kind === 'Lifeline'){ h = 40; }
+  else if(['Block','Subject','Partition','Package','Requirement','ConstraintBlock','State','TestCase','ConstraintProp'].includes(e.kind)){ y = sh.y + 18; h = 28; }
+  else if(!multi) { y = sh.y + sh.h / 2 - 15; h = 30; }
+  const x = BORDER.has(e.kind) || DIA.has(e.kind) || e.kind === 'AcceptTime' ? sh.x - 50 : (e.kind === 'Actor' ? sh.x - 30 : sh.x);
+  const w = BORDER.has(e.kind) || DIA.has(e.kind) || e.kind === 'AcceptTime' ? 140 : (e.kind === 'Actor' ? sh.w + 60 : sh.w);
+  inlineEdit(x, y, w, h, e.name, multi, v => { snap(); e.name = multi ? v : v.trim(); afterChange(); });
+}
+function editEdge(ed, field){
+  const r = E(ed.el); if(!r) return;
+  if(!ed._pts) renderDiagram();
+  if(!ed._pts) return;
+  const p = ed._pts, a = p.length === 4 ? p[1] : p[0], b = p.length === 4 ? p[2] : p[1];
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  inlineEdit(mx - 70, my - 14, 140, 26, r[field] || '', false, v => { snap(); r[field] = v.trim(); afterChange(); });
+}
+
+/* ================= PROPERTIES ================= */
+function propTarget(){
+  const d = cur();
+  if(d && ST.sel.size === 1){
+    const id = [...ST.sel][0];
+    const sh = shapeOf(d, id); if(sh) return {el:E(sh.el), sh};
+    const ed = d.edges.find(x => x.id === id); if(ed) return {el:ed.el ? E(ed.el) : null, ed};
+  }
+  if(ST.tsel && E(ST.tsel)) return {el:E(ST.tsel)};
+  if(d && !ST.sel.size) return {el:d};
+  return {};
+}
+function blockOpts(sel){ return '<option value="">(yok)</option>' + Object.values(M.els).filter(e => e.kind === 'Block').sort(sortEls).map(b => `<option value="${b.id}"${b.id === sel ? ' selected' : ''}>${esc(b.name)}</option>`).join(''); }
+function renderProps(){
+  const BT = typeof bulkTargets === 'function' ? bulkTargets() : null; if(BT){ $('#props').innerHTML = bulkPropsHTML(BT); return; }
+  const {el, sh, ed} = propTarget();
+  const pf = (l, c) => `<div class="pf"><label>${l}</label><div>${c}</div></div>`;
+  let h = '';
+  if(!el && !ed){ h = `<div class="muted">${ST.sel.size > 1 ? ST.sel.size + ' öğe seçili.' : 'Özelliklerini görmek için ağaçta veya diyagramda bir eleman seçin.'}</div>`; $('#props').innerHTML = h; return; }
+  if(!el && ed){
+    h = `<div class="pt">${KIND.Anchor.tr}</div>` + pf('Çizgi', `<select data-ef="route"><option value="ortho"${ed.route !== 'straight' ? ' selected' : ''}>Dik açılı</option><option value="straight"${ed.route === 'straight' ? ' selected' : ''}>Düz</option></select>`);
+    $('#props').innerHTML = h; return;
+  }
+  const k = KIND[el.kind];
+  h += `<div class="pt">${icon(el)} ${esc(el.kind === 'Diagram' ? DT[el.dtype].tr : k.tr)}</div>`;
+  if(el.kind === 'Comment') h += pf('Metin', `<textarea data-f="name">${esc(el.name)}</textarea>`);
+  else h += pf('Ad', `<input data-f="name" value="${esc(el.name)}">`);
+  if(el.owner) h += pf('Sahibi', `<a class="lnk" data-goto="${el.owner}">${esc(pathOf(el.owner))}</a>`);
+  switch(el.kind){
+    case 'Part':
+      h += pf('Tip', `<select data-f="type">${blockOpts(el.type)}</select>`);
+      h += pf('Çokluk', `<input data-f="mult" value="${esc(el.mult || '')}" placeholder="ör. 1, 0..1, 1..*">`);
+      h += pf('Toplama', `<select data-f="shared"><option value="">composite (parça)</option><option value="1"${el.shared ? ' selected' : ''}>shared (referans)</option></select>`);
+      break;
+    case 'Value': {
+      const vt = vtypeOf(el.vtype);
+      h += pf('Tip', `<input data-f="vtype" list="vtypes" value="${esc(el.vtype || '')}"><datalist id="vtypes">${vtypeList().map(v => `<option>${esc(v)}</option>`).join('')}</datalist>`);
+      h += pf('Varsayılan', `<input data-f="def" value="${esc(el.def || '')}">`);
+      h += pf('Birim', `<input data-f="unit" value="${esc(el.unit || '')}" placeholder="${vt && vt.unit ? esc(vt.unit) + ' (değer tipinden)' : 'ör. V, kg, Hz'}">`);
+      break;
+    }
+    case 'Port':
+      h += pf('Yön', `<select data-f="dir">${['', 'in', 'out', 'inout'].map(v => `<option value="${v}"${(el.dir || '') === v ? ' selected' : ''}>${v || (portDir(el) ? '(tipten: ' + portDir(el) + ')' : '(belirsiz)')}</option>`).join('')}</select>`);
+      h += pf('Tip', `<select data-f="type">${typeOpts(el.type, ['InterfaceBlock','Block','Signal','ValueType'])}</select>`);
+      h += pf('Eşlenik (~)', `<label class="vchk"><input type="checkbox" data-f="conj"${el.conj ? ' checked' : ''}> conjugated — akış yönleri ters</label>`);
+      h += pf('Port türü', `<select data-f="pkind">${[['', 'standart'], ['proxy', 'proxy'], ['full', 'full']].map(([v, t]) => `<option value="${v}"${(el.pkind || '') === v ? ' selected' : ''}>${t}</option>`).join('')}</select>`);
+      h += pf('Çokluk', `<input data-f="mult" value="${esc(el.mult || '')}" placeholder="ör. 1, 0..*">`);
+      break;
+    case 'Object':
+      h += pf('Tip', `<select data-f="type">${typeOpts(el.type, ['Block','InterfaceBlock','Signal','ValueType','Enumeration'])}</select>`); break;
+    case 'FlowProp': case 'Pin': case 'ActParam':
+      h += pf('Yön', `<select data-f="dir">${(el.kind === 'FlowProp' ? ['in', 'out', 'inout'] : ['in', 'out']).map(v => `<option${(el.dir || (el.kind === 'FlowProp' ? 'inout' : 'in')) === v ? ' selected' : ''}>${v}</option>`).join('')}</select>`);
+      h += pf('Tip', `<select data-f="type">${typeOpts(el.type, ['Signal','Block','InterfaceBlock','ValueType','Enumeration'])}</select>`);
+      if(!el.type) h += pf('veya ilkel tip', `<input data-f="vtype" list="vtypesF" value="${esc(el.vtype || '')}"><datalist id="vtypesF">${vtypeList().map(v => `<option>${esc(v)}</option>`).join('')}</datalist>`);
+      h += pf('Çokluk', `<input data-f="mult" value="${esc(el.mult || '')}" placeholder="ör. 1, 0..*">`);
+      break;
+    case 'ValueType':
+      h += pf('Temel tip', `<select data-f="base">${['Real', 'Integer', 'Boolean', 'String'].map(v => `<option${(el.base || 'Real') === v ? ' selected' : ''}>${v}</option>`).join('')}</select>`);
+      h += pf('Birim', `<input data-f="unit" value="${esc(el.unit || '')}" placeholder="ör. kg, Hz, g²/Hz">`);
+      h += pf('Büyüklük türü', `<input data-f="qk" value="${esc(el.qk || '')}" placeholder="ör. mass, frequency">`);
+      break;
+    case 'Legend':
+      h += pf('Renk kuralı', `<select data-f="rule">${legendRules().map(([k, t]) => `<option value="${esc(k)}"${(el.rule || '') === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>`);
+      if(el.rule){ h += `<div class="muted" style="font-size:12px;margin:2px 0 6px">Diyagramdaki elemanların dolgu rengi bu kurala göre verilir; lejant öğeleri otomatik oluşur. Elle verilen dolgu rengini geçersiz kılar.</div>`; break; }
+      h += pf('Öğeler', `<textarea data-f="items" rows="6" placeholder="Her satır: #renk açıklama&#10;ör. #fdf1d6 Tedarikçi ürünü&#10;Çizgi için: -#c0392b Kritik arayüz">${esc(el.items || '')}</textarea>`);
+      h += pf('', `<button class="pbtn" data-legauto="1">Diyagramdaki renklerden doldur</button>`); break;
+    case 'Enumeration':
+      h += pf('Değerler', `<textarea data-f="lits" placeholder="Her satıra bir değer">${esc(el.lits || '')}</textarea>`); break;
+    case 'SendSignal': case 'AcceptEvent':
+      h += pf('Sinyal', `<select data-f="signal">${typeOpts(el.signal, ['Signal'])}</select>`); break;
+    case 'AcceptTime':
+      h += pf('', '<span class="muted">Ad alanına zaman ifadesini yazın: <i>after (5 s)</i>, <i>at (08:00)</i></span>'); break;
+    case 'Fragment': {
+      const OPS = [['alt','alt — seçenekler'], ['opt','opt — isteğe bağlı'], ['loop','loop — döngü'], ['par','par — paralel'], ['break','break — kesme'], ['critical','critical — kritik bölge'], ['seq','seq — zayıf sıra'], ['strict','strict — kesin sıra'], ['neg','neg — geçersiz'], ['assert','assert'], ['ignore','ignore'], ['consider','consider'], ['ref','ref — etkileşim kullanımı']];
+      h += pf('Operatör', `<select data-f="op">${OPS.map(([v, t]) => `<option value="${v}"${(el.op || 'alt') === v ? ' selected' : ''}>${t}</option>`).join('')}</select>`);
+      if((el.op || 'alt') !== 'ref') h += pf('Operandlar', `<textarea data-f="guards" placeholder="Her satır bir operandın koşulu, ör.&#10;sıcaklık > 70&#10;else">${esc(el.guards || '')}</textarea><div class="muted">Her satır bir operand. Ayırıcıları diyagramda mavi tutamakla taşıyın.</div>`);
+      else h += pf('', '<span class="muted">Başvurulan etkileşimi aşağıdaki "Bağlı diyagram" alanından seçin; çift tıklayınca açılır.</span>');
+      break;
+    }
+    case 'History':
+      h += pf('Tür', `<label class="vchk"><input type="checkbox" data-f="deep"${el.deep ? ' checked' : ''}> Derin geçmiş (H*)</label>`); break;
+    case 'Stereotype': {
+      const kinds = Object.keys(KIND).filter(q => !['Model','Diagram','Stereotype'].includes(q) && !KIND[q].pseudo);
+      const meta = new Set(el.meta || []);
+      h += pf('Uygulanır', `<div class="stmeta">${kinds.map(q => `<label class="vchk"><input type="checkbox" data-stmeta="${q}"${meta.has(q) ? ' checked' : ''}> ${esc(KIND[q].tr)}</label>`).join('')}</div><div class="muted">Hiçbiri seçili değilse tüm elemanlara uygulanabilir.</div>`);
+      h += pf('Etiketler', `<textarea data-f="tags" placeholder="Her satır: ad : tip = varsayılan&#10;ör. üretici : String&#10;kütleSınırı : Real = 2.5">${esc(el.tags || '')}</textarea>`);
+      h += pf('Dolgu rengi', `<input type="color" data-f="fill" value="${el.fill || '#ffffff'}"> <button class="pbtn" data-stfillclr="1">Yok</button>`);
+      const users = Object.values(M.els).filter(x => (x.st || []).includes(el.id));
+      if(users.length) h += `<div class="sub"><span>Uygulandığı elemanlar (${users.length})</span></div>` + users.slice(0, 60).map(u => `<div class="li"><a class="lnk" data-goto="${u.id}">${esc(elLabel(u))}</a> <span class="muted">${esc(KIND[u.kind].tr)}</span></div>`).join('');
+      break;
+    }
+    case 'State':
+      h += pf('entry /', `<input data-f="entry" value="${esc(el.entry || '')}">`) + pf('do /', `<input data-f="doAct" value="${esc(el.doAct || '')}">`) + pf('exit /', `<input data-f="exit" value="${esc(el.exit || '')}">`); break;
+    case 'Lifeline': {
+      const cands = Object.values(M.els).filter(e => e.kind === 'Block' || e.kind === 'Actor').sort(sortEls);
+      h += pf('Tip', `<select data-f="type"><option value="">(yok)</option>${cands.map(b => `<option value="${b.id}"${b.id === el.type ? ' selected' : ''}>${esc(b.name)} ‹${KIND[b.kind].tr}›</option>`).join('')}</select>`); break;
+    }
+    case 'ConstraintBlock':
+      h += pf('Kısıt ifadesi', `<input data-f="expr" value="${esc(el.expr || '')}" placeholder="ör. P = V * I">`);
+      h += `<div class="sub"><span>Parametreler</span><button data-add="Param">+ Ekle</button></div>` + kidsOf(el.id).filter(c => c.kind === 'Param').map(c => `<div class="li"><a class="lnk" data-goto="${c.id}">${esc(c.name + (c.vtype ? ' : ' + c.vtype : ''))}</a></div>`).join('');
+      break;
+    case 'ConstraintProp': {
+      const cbs = Object.values(M.els).filter(e => e.kind === 'ConstraintBlock').sort(sortEls);
+      h += pf('Tip', `<select data-f="type"><option value="">(yok)</option>${cbs.map(b => `<option value="${b.id}"${b.id === el.type ? ' selected' : ''}>${esc(b.name)}</option>`).join('')}</select>`); break;
+    }
+    case 'Param':
+      h += pf('Tip', `<input data-f="vtype" list="vtypes2" value="${esc(el.vtype || '')}"><datalist id="vtypes2"><option>Real</option><option>Integer</option><option>Boolean</option></datalist>`); break;
+    case 'Requirement':
+      h += reqPropsHTML(el, pf); break;
+    case 'TestCase':
+      h += testPropsHTML(el, pf); break;
+    case 'FailureMode': {
+      const r1 = rpnOf(el), r2 = rpnOf(el, true);
+      h += pf('Eleman', esc(nm(fmHost(el) || {}))) + pf('Fonksiyon', esc(el.fn || '—')) + pf('Neden', esc(el.cause || '—')) + pf('Son etki', esc(el.effE || el.effN || el.effL || '—'));
+      h += pf('Ş / O / T', `${n10(el.S) || '–'} / ${n10(el.O) || '–'} / ${n10(el.D) || '–'} → <span class="rpn" style="background:${rpnCol(r1)}">${r1 == null ? '—' : r1}</span>` + (r2 != null ? ` → <span class="rpn" style="background:${rpnCol(r2)}">${r2}</span>` : '')) + pf('Önlem', esc(el.act || '—')) + pf('Gereksinimler', esc(fmReqs(el).map(r => r.reqId || nm(r)).join(', ') || '—'));
+      h += pf('', `<button class="pbtn" data-openview="@fmea">FMEA tablosunda aç</button>`); break;
+    }
+    case 'Risk': {
+      const s1 = rkScore(el), s2 = rkScore(el, true);
+      h += pf('Risk ID', esc(el.riskId || '')) + pf('Açıklama', esc(el.desc || '—')) + pf('Kategori', esc(el.cat || '')) + pf('O × E', s1 == null ? '—' : `${n5(el.P)} × ${n5(el.I)} = <span class="rpn" style="background:${RK_COL[rkLevel(s1)]}">${s1}</span> ${rkLevel(s1)}`) + (s2 != null ? pf('Artık', `<span class="rpn" style="background:${RK_COL[rkLevel(s2)]}">${s2}</span> ${rkLevel(s2)}`) : '') + pf('Önlem', esc(el.act || '—')) + pf('Sorumlu / tarih', esc([el.resp, fmtD(el.due)].filter(Boolean).join(' · ') || '—')) + pf('Durum', esc(el.rst || 'Açık'));
+      h += pf('', `<button class="pbtn" data-openview="@risk">Risk kaydında aç</button>`); break;
+    }
+    case 'TestProfile': {
+      const mx = pfMetrics(el);
+      h += pf('Tür', esc(PT[el.ptype || 'psd'].tr)) + pf('Değer', `<b>${esc(mx.main || '—')}</b>`) + (el.plevel ? pf('Seviye', esc(el.plevel)) : '') + (el.std ? pf('Standart', esc(el.std)) : '');
+      h += `<div style="margin:6px 0">${pfChart([{p:el}], {w:270, h:150})}</div>` + pf('', `<button class="pbtn" data-openpf="${el.id}">Profil düzenleyicide aç</button>`);
+      break;
+    }
+    case 'Partition':
+      h += pf('Temsil eder', `<select data-f="represents">${blockOpts(el.represents)}</select>`); break;
+    case 'Action': {
+      const acts = Object.values(M.els).filter(e => e.kind === 'Activity').sort(sortEls);
+      h += pf('Çağırır', `<select data-f="behavior"><option value="">(yok)</option>${acts.map(a => `<option value="${a.id}"${a.id === el.behavior ? ' selected' : ''}>${esc(a.name)}</option>`).join('')}</select>`);
+      if(el.behavior && E(el.behavior)) h += pf('', `<button class="pbtn" data-openbeh="1">Aktiviteyi aç</button>`);
+      break;
+    }
+    case 'Diagram':
+      h += pf('Şekil / bağlantı', `${el.shapes.length} / ${el.edges.length}`);
+      h += pf('', `<button class="pbtn" data-opend="${el.id}">Diyagramı aç</button>`); break;
+    default:
+      /* v1.36: eklenti türleri genel dağıtımla — yeni tür eklemek için yalnız PROPS_EXT[tür] tanımlamak yeterli */
+      if(typeof PROPS_EXT !== 'undefined' && PROPS_EXT[el.kind]){ try { h += PROPS_EXT[el.kind](el, pf); } catch(e){ appErr('PROPS_EXT.' + el.kind, e); } }
+  }
+  if(k.rel){
+    h += pf('Kaynak', `<a class="lnk" data-goto="${el.src}">${esc(E(el.src) ? nm(E(el.src)) : '?')}</a>`);
+    h += pf('Hedef', `<a class="lnk" data-goto="${el.tgt}">${esc(E(el.tgt) ? nm(E(el.tgt)) : '?')}</a>`);
+    if(el.kind === 'Transition'){ h += pf('Koşul [guard]', `<input data-f="guard" value="${esc(el.guard || '')}">`) + pf('Etki / effect', `<input data-f="effect" value="${esc(el.effect || '')}">`); }
+    if(el.kind === 'ControlFlow' || el.kind === 'ObjectFlow'){ h += pf('Koşul', `<input data-f="guard" value="${esc(el.guard || '')}" placeholder="guard, ör. başarılı">`); h += pf('Kesme', `<label class="vchk"><input type="checkbox" data-f="interrupt"${el.interrupt ? ' checked' : ''}> Kesme akışı (kesilebilir bölgeden çıkar)</label>`); }
+    if(el.part && E(el.part)) h += pf('Oluşan part', `<a class="lnk" data-goto="${el.part}">${esc(partLabel(E(el.part)))}</a>`);
+    if(el.kind === 'Connector'){ if(el.sp && E(el.sp)) h += pf('Kaynak part', esc(E(el.sp).name)); if(el.tp && E(el.tp)) h += pf('Hedef part', esc(E(el.tp).name));
+      h += `<div class="sub"><span>Arayüz (ICD)</span></div>` + pf('Arayüz ID', `<input data-f="icdId" value="${esc(el.icdId || '')}" placeholder="ör. IF-001">`) + pf('Arayüz türü', `<select data-f="ifType">${IF_TYPES.map(t => `<option value="${esc(t)}"${(el.ifType || '') === t ? ' selected' : ''}>${esc(t || '—')}</option>`).join('')}</select>`) + pf('Taşınan öğeler', `<input data-f="items" value="${esc(el.items || '')}" placeholder="virgülle ayırın">`) + pf('Protokol', `<input data-f="proto" value="${esc(el.proto || '')}">`);
+      const is = icdIssues(el); if(is.length) h += `<div class="gaps">${is.map(q => '• ' + esc(q[1])).join('<br>')}</div>`; h += pf('', `<button class="pbtn" data-openview="@icd">ICD tablosunda aç</button> <button class="pbtn" data-openview="@n2">N²</button>`); }
+  }
+  if(['Block','Part','Actor'].includes(el.kind)){
+    const io = iconOf(el);
+    h += `<div class="sub"><span>İkon</span></div>`;
+    h += pf('İkon', (io ? `<span class="icprev">${iconInline(io.ic, 22, io.col)}</span> ${esc(io.ic.name)}${!el.icon ? ' <span class="muted">(tipten)</span>' : ''}<br>` : '') + `<button class="pbtn" data-icpick="1">${io ? 'Değiştir…' : 'İkon seç…'}</button>${el.icon ? ' <button class="pbtn" data-icclear="1">Kaldır</button>' : ''}`);
+    if(el.icon && ICONS[el.icon]){
+      h += pf('İkon rengi', `<input type="color" data-f="iconColor" value="${el.iconColor || ICON_CAT_COL[ICONS[el.icon].cat]}"> <button class="pbtn" data-iccol="1">Varsayılan</button>`);
+      if(el.kind === 'Block') h += pf('Gösterim', `<select data-f="iconMode"><option value="corner">Köşede küçük</option><option value="large"${el.iconMode === 'large' ? ' selected' : ''}>Başlıkta büyük</option></select>`);
+    }
+  }
+  if(['Block','InterfaceBlock','Signal'].includes(el.kind)){
+    const ch = kidsOf(el.id);
+    const sec = (title, kind, fmt) => {
+      const list = ch.filter(c => c.kind === kind);
+      return `<div class="sub"><span>${title} (${list.length})</span><button data-add="${kind}">+ Ekle</button></div>` + list.map(c => `<div class="li"><a class="lnk" data-goto="${c.id}">${esc(fmt(c))}</a></div>`).join('');
+    };
+    if(el.kind === 'Block') h += sec('Parts', 'Part', partLabel);
+    if(el.kind !== 'Signal') h += sec('Flow properties', 'FlowProp', flowLabel);
+    h += sec(el.kind === 'Signal' ? 'Attributes' : 'Value properties', 'Value', valLabel);
+    if(el.kind !== 'Signal') h += sec('Ports', 'Port', portLabel);
+    const used = Object.values(M.els).filter(p => (p.kind === 'Part' || p.kind === 'Port' || p.kind === 'Object') && p.type === el.id);
+    if(used.length) h += `<div class="sub"><span>Bu bloğu tip olarak kullananlar</span></div>` + used.map(p => `<div class="li"><a class="lnk" data-goto="${p.id}">${esc(pathOf(p.id))}</a></div>`).join('');
+  }
+  if(el.kind !== 'Diagram' && !k.rel){
+    const ds = Object.values(M.els).filter(v => v.kind === 'Diagram').sort(sortEls);
+    h += pf('Bağlı diyagram', `<select data-f="link"><option value="">(yok)</option>${ds.map(v => `<option value="${v.id}"${v.id === el.link ? ' selected' : ''}>[${v.dtype}] ${esc(v.name)}</option>`).join('')}</select>`);
+    const tg = navTargets(el, null);
+    if(tg.length) h += `<div class="sub"><span>Alt diyagramlar (çift tıkla açılır)</span></div>` + tg.map(v => `<div class="li"><a class="lnk" data-opend="${v.id}">[${v.dtype}] ${esc(v.name)}</a></div>`).join('');
+  }
+  if(el.kind !== 'Diagram' && !k.rel) h += pf('', `<button class="pbtn" data-impact="${el.id}">⇶ Etki analizi</button>`);
+  if(el.kind !== 'Diagram' && el.kind !== 'Stereotype') h += stPropsHTML(el, pf);
+  if(el.kind !== 'Diagram') h += pf('Açıklama', `<textarea data-f="doc">${esc(el.doc || '')}</textarea>`);
+  if(el.kind !== 'Diagram' && !k.rel){
+    const shown = diagramsShowing(el.id);
+    if(shown.length) h += `<div class="sub"><span>Gösterildiği diyagramlar</span></div>` + shown.map(d => `<div class="li"><a class="lnk" data-opend="${d.id}" data-focus="${el.id}">${esc(d.name)}</a> <span class="muted">${d.dtype}</span></div>`).join('');
+  }
+  if(sh){
+    h += `<div class="sub"><span>Görünüm</span></div>`;
+    h += pf('Dolgu', `<input type="color" data-sf="fill" value="${sh.fill || (FILL[el.kind] && FILL[el.kind].startsWith('#') ? FILL[el.kind] : '#ffffff')}"> <button class="pbtn" data-resetfill="1">Varsayılan</button>`);
+    h += pf('Çizgi rengi', `<input type="color" data-sf="stroke" value="${sh.stroke || '#3a3a3a'}"> <button class="pbtn" data-resetstroke="1">Varsayılan</button>`);
+    if(el.kind === 'Block' || el.kind === 'InterfaceBlock'){
+      const hd = sh.hide || {};
+      h += pf('Bölmeler', ['parts', 'references', 'values', 'ports', 'flows', 'tags'].map(c => `<label class="vchk" style="margin-right:8px"><input type="checkbox" data-shide="${c}"${hd[c] ? '' : ' checked'}> ${c}</label>`).join(''));
+    }
+    if(el.kind === 'Partition') h += pf('Yön', `<select data-sf="horiz"><option value="">Dikey</option><option value="1"${sh.horiz ? ' selected' : ''}>Yatay</option></select>`);
+    h += pf('Konum/Boyut', `<span class="muted">${Math.round(sh.x)}, ${Math.round(sh.y)} · ${Math.round(sh.w)}×${Math.round(sh.h)}</span>`);
+  }
+  if(ed){
+    h += `<div class="sub"><span>Görünüm</span></div>`;
+    h += pf('Çizgi', `<select data-ef="route"><option value="ortho"${ed.route !== 'straight' ? ' selected' : ''}>Dik açılı</option><option value="straight"${ed.route === 'straight' ? ' selected' : ''}>Düz</option></select>`);
+    h += pf('Çizgi rengi', `<input type="color" data-ef="stroke" value="${ed.stroke || '#3a3a3a'}"> <button class="pbtn" data-resetestroke="1">Varsayılan</button>`);
+    if(ed.mx != null || ed.my != null || (ed.wp && ed.wp.length)) h += pf('', `<button class="pbtn" data-resetroute="1">Otomatik rotaya dön</button>`);
+    if(ed.lo) h += pf('', `<button class="pbtn" data-resetlab="1">Etiketi yerine koy</button>`);
+    h += pf('', '<span class="muted">Turuncu noktaları sürükleyerek bükme noktası ekleyin; etiketi sürükleyerek taşıyın.</span>');
+  }
+  if(el && el.kind === 'Diagram'){
+    h += `<div class="sub"><span>Diyagram görünümü</span></div>`;
+    h += pf('Çerçeve', `<label class="vchk"><input type="checkbox" data-f="noFrame"${el.noFrame ? ' checked' : ''}> SysML diyagram çerçevesini gizle</label>`);
+    if(el.dtype === 'sd') h += pf('Yürütme çubukları', `<label class="vchk"><input type="checkbox" data-f="exec"${el.exec !== false ? ' checked' : ''}> Senkron mesajlarda otomatik göster</label>`);
+    h += pf('Yazı boyutu', `<select data-f="fs">${[[0.9, '%90 (küçük)'], [1, '%100'], [1.15, '%115 (büyük)'], [1.3, '%130 (sunum)']].map(([v, t]) => `<option value="${v}"${(el.fs || 1) == v ? ' selected' : ''}>${t}</option>`).join('')}</select>`);
+  }
+  if(el && el.kind === 'StateMachine') h += pf('', `<button class="pbtn" data-stmtab="${el.id}">Durum geçiş tablosu</button>`);
+  if(el && el.id !== M.rootId && el.kind !== 'Diagram') h += whereUsedHTML(el);
+  if(el && el.id !== M.rootId) h += notesHTML(el);
+  $('#props').innerHTML = h;
+}
+const propsEl = $('#props');
+propsEl.addEventListener('change', ev => {
+  const t = ev.target, tg = propTarget();
+  if(t.dataset.stmeta && tg.el){ snap(); const m = new Set(tg.el.meta || []); t.checked ? m.add(t.dataset.stmeta) : m.delete(t.dataset.stmeta); tg.el.meta = [...m]; afterChange(); return; }
+  if(t.dataset.stadd && tg.el){ if(!t.value) return; snap(); tg.el.st = (tg.el.st || []).concat([t.value]); afterChange(); return; }
+  if(t.dataset.tv && tg.el){ snap(); tg.el.tv = tg.el.tv || {}; tg.el.tv[t.dataset.tv] = t.type === 'checkbox' ? (t.checked ? 'true' : 'false') : t.value; afterChange(); return; }
+  if(t.dataset.f && tg.el){
+    if(t.dataset.f === 'level' && tg.el.kind === 'Requirement'){ changeLevel(tg.el, t.value); return; }
+    snap();
+    const f = t.dataset.f; let v = t.type === 'checkbox' ? t.checked : t.value;
+    if(['type', 'behavior', 'represents', 'link', 'signal'].includes(f) && !v) v = null;
+    if(f === 'type' && v && tg.el.vtype && ['FlowProp','Pin','ActParam'].includes(tg.el.kind)) delete tg.el.vtype;
+    if(f === 'behavior' && v && tg.el.kind === 'Action') setTimeout(() => syncPins(tg.el), 0);
+    if(f === 'shared') v = !!v;
+    if(f === 'fs') v = parseFloat(v) || 1;
+    if(f.startsWith('attr:')){ tg.el.attrs = tg.el.attrs || {}; tg.el.attrs[f.slice(5)] = v; afterChange(); return; }
+    if(f === 'name' && tg.el.kind !== 'Comment') v = v.trim();
+    tg.el[f] = v;
+    if(tg.el.kind === 'TestCase'){ if(f === 'result' && ['Geçti', 'Kaldı', 'Koşullu'].includes(v) && !tg.el.rDate) tg.el.rDate = todayISO(); if(f === 'pStart' && v && (!tg.el.pEnd || tg.el.pEnd < v)) tg.el.pEnd = v; }
+    if(f === 'subsys' && tg.el.kind === 'Requirement'){ tg.el.subsys = String(v).trim(); relocateReq(tg.el); }
+    if(f === 'behavior' && v && !tg.el.name) tg.el.name = E(v).name;
+    if(f === 'type' && v && (tg.el.kind === 'Part' || tg.el.kind === 'ConstraintProp')){ Object.values(M.els).forEach(d => { if(d.kind === 'Diagram' && (d.dtype === 'ibd' || d.dtype === 'par')) d.shapes.filter(s => s.el === tg.el.id && !s.parent).forEach(s => showPorts(d, s)); }); }
+    afterChange(); return;
+  }
+  if(t.dataset.sf && tg.sh){ snap(); const k = t.dataset.sf; if(k === 'horiz'){ tg.sh.horiz = !!t.value; if(tg.sh.horiz && tg.sh.w < tg.sh.h){ const w = tg.sh.w; tg.sh.w = tg.sh.h; tg.sh.h = w; } if(!tg.sh.horiz && tg.sh.h < tg.sh.w){ const w = tg.sh.w; tg.sh.w = tg.sh.h; tg.sh.h = w; } } else tg.sh[k] = t.value; afterChange(); return; }
+  if(t.dataset.shide && tg.sh){ snap(); tg.sh.hide = tg.sh.hide || {}; tg.sh.hide[t.dataset.shide] = !t.checked; afterChange(); return; }
+  if(t.dataset.ef && tg.ed){ snap(); tg.ed[t.dataset.ef] = t.value; afterChange(); }
+});
+propsEl.addEventListener('click', ev => {
+  const t = ev.target;
+  if(t.dataset.goto){ revealInTree(t.dataset.goto); const d = cur(); if(d){ ST.sel = new Set(d.shapes.filter(s => s.el === t.dataset.goto).map(s => s.id)); renderDiagram(); } renderProps(); return; }
+  if(t.dataset.opend){ openD(t.dataset.opend); if(t.dataset.focus){ const d = cur(); ST.sel = new Set(d.shapes.filter(s => s.el === t.dataset.focus).map(s => s.id)); ST.tsel = t.dataset.focus; renderDiagram(); renderProps(); } return; }
+  if(t.dataset.openbeh){ const tg = propTarget(); if(tg.el) openBehavior(tg.el); return; }
+  if(t.dataset.add){ const tg = propTarget(); if(tg.el) newChild(tg.el.id, t.dataset.add); return; }
+  const bt = t.closest && t.closest('button');
+  if(bt && bt.dataset.icpick){ const tg = propTarget(); if(tg.el){ const d = cur(); iconPicker(d && ST.sel.size > 1 ? iconTargets(d, tg.el) : [tg.el.id]); } return; }
+  if(bt && bt.dataset.icclear){ const tg = propTarget(); if(tg.el){ snap(); delete tg.el.icon; delete tg.el.iconColor; afterChange(); } return; }
+  if(bt && bt.dataset.iccol){ const tg = propTarget(); if(tg.el){ snap(); delete tg.el.iconColor; afterChange(); } return; }
+  if(t.dataset.resetstroke){ const tg = propTarget(); if(tg.sh){ snap(); delete tg.sh.stroke; afterChange(); } return; }
+  if(t.dataset.resetestroke){ const tg = propTarget(); if(tg.ed){ snap(); delete tg.ed.stroke; afterChange(); } return; }
+  if(t.dataset.resetroute){ const tg = propTarget(); if(tg.ed){ snap(); delete tg.ed.mx; delete tg.ed.my; delete tg.ed.wp; afterChange(); } return; }
+  if(t.dataset.resetlab){ const tg = propTarget(); if(tg.ed){ snap(); delete tg.ed.lo; afterChange(); } return; }
+  if(t.dataset.resetfill){ const tg = propTarget(); if(tg.sh){ snap(); delete tg.sh.fill; afterChange(); } return; }
+  if(t.dataset.strm){ const tg = propTarget(); if(tg.el){ snap(); tg.el.st = (tg.el.st || []).filter(x => x !== t.dataset.strm); afterChange(); } return; }
+  if(t.dataset.stfillclr){ const tg = propTarget(); if(tg.el){ snap(); delete tg.el.fill; afterChange(); } return; }
+  if(t.dataset.stnew){ const tg = propTarget(); if(tg.el) newStereotypeFor(tg.el); return; }
+  if(t.dataset.legauto){ const tg = propTarget(), d = cur(); if(tg.el && d){ const v = legendAuto(d); if(!v) return toast('Diyagramda özel renk yok — önce şekillere dolgu/çizgi rengi verin'); snap(); tg.el.items = v; afterChange(); } return; }
+});
+
+/* ================= REQUIREMENTS & TRACEABILITY ================= */
+const VIEWS = {
+  '@reqtable':{tr:'Gereksinim Tablosu', ic:'TBL', note:'Gereksinimleri tablo halinde ekleyin ve düzenleyin. Hücreye tıklayıp yazın; <b>Enter</b> kaydeder.<br><br>İzlenebilirlik sütunlarındaki <b>+</b> ile üst gereksinim, karşılayan model elemanı, fonksiyon veya test bağlayın.<br><br><b>Excel</b> düğmeleriyle içe/dışa aktarın; <b>Sütunlar</b> ile özellik ekleyin/çıkarın.'},
+  '@matrix':{tr:'İzlenebilirlik Matrisi', ic:'MTX', note:'Satır ve sütun kümelerini seçin; hücreye tıklayarak ilişki kurun veya kaldırın.<br><br>Kırmızı satır/sütun başlıkları hiç ilişkisi olmayanları gösterir.'},
+  '@coverage':{tr:'Kapsama Analizi', ic:'%', note:'Sistem ve alt sistem gereksinimlerinin alt gereksinim, model elemanı, fonksiyon ve doğrulama ile kapsanma durumu.<br><br>"Yalnız eksikler" ile boşlukları listeleyin; Excel\'e rapor alın.'}
+};
+function isView(id){ return typeof id === 'string' && id.charAt(0) === '@' && !!VIEWS[id]; }
+const VERIF = [['Test','T'], ['Analiz','A'], ['Muayene','M'], ['Gösterim','G']];
+const STD_COLS = [
+  {key:'reqId', label:'Gereksinim ID', w:12},
+  {key:'name', label:'Başlık', w:24},
+  {key:'text', label:'Gereksinim Metni', w:60},
+  {key:'level', label:'Seviye', w:12},
+  {key:'subsys', label:'Alt Sistem', w:18},
+  {key:'status', label:'Durum', w:14},
+  {key:'verif', label:'Doğrulama Yöntemi', w:18},
+  {key:'srcNo', label:'Müşteri İster No', w:16},
+  {key:'srcText', label:'Müşteri İsteri', w:40}
+];
+const TRACE_COLS = [
+  {key:'_parents', label:'Türetildiği Sistem Gereksinimi', trace:1, w:20},
+  {key:'_children', label:'Alt Sistem Gereksinimleri', trace:1, w:20},
+  {key:'_satisfy', label:'Karşılayan Model Elemanları', trace:1, w:26},
+  {key:'_funcs', label:'Fonksiyonlar', trace:1, w:24},
+  {key:'_verifyBy', label:'Doğrulayan Test', trace:1, w:20},
+  {key:'_status', label:'Kapsama Durumu', trace:1, w:30},
+  {key:'_verst', label:'Doğrulama Durumu', trace:1, w:16},
+  {key:'_quality', label:'Kalite', trace:1, w:30}
+];
+const FUNC_KINDS = new Set(['Activity','Action']);
+const ELEM_KINDS = ['Block','InterfaceBlock','Part','Port','Value','FlowProp','Signal','UseCase','Actor','ConstraintBlock','StateMachine','Interaction','State'];
+function reqCfg(){ if(!M.reqCfg) M.reqCfg = {attrs:[], hidden:[], prefix:{'Sistem':'SYS-', 'Alt Sistem':'SUB-'}, digits:3}; return M.reqCfg; }
+function allCols(){ return STD_COLS.concat(reqCfg().attrs.map(a => ({key:'attr:' + a.key, label:a.label, custom:1, w:18}))).concat(TRACE_COLS); }
+function visCols(){ const h = new Set(reqCfg().hidden); return allCols().filter(c => !h.has(c.key)); }
+function reqLevel(e){ return e && e.level === 'Alt Sistem' ? 'Alt Sistem' : 'Sistem'; }
+function reqSort(a, b){ return (reqLevel(a) === 'Sistem' ? 0 : 1) - (reqLevel(b) === 'Sistem' ? 0 : 1) || COLL.compare(String(a.reqId || ''), String(b.reqId || '')); }
+let RQC = null, RQC_REV = -1, RQC_M = null;
+function allReqs(){ if(RQC_REV !== REV || RQC_M !== M){ RQC = Object.values(M.els).filter(e => e.kind === 'Requirement').sort(reqSort); RQC_REV = REV; RQC_M = M; } return RQC.slice(); }
+let RIC = null, RIC_REV = -1;
+function reqIdCount(){ if(RIC_REV !== REV){ RIC = new Map(); Object.values(M.els).forEach(e => { if(e.kind === 'Requirement' && e.reqId) RIC.set(e.reqId, (RIC.get(e.reqId) || 0) + 1); }); RIC_REV = REV; } return RIC; }
+let NRI = new Map(), NRI_REV = -1, NRI_M = null;
+function nextReqId(level){
+  const c = reqCfg(), pre = c.prefix[level === 'Alt Sistem' ? 'Alt Sistem' : 'Sistem'] || 'REQ-';
+  if(NRI_REV !== REV || NRI_M !== M){ NRI = new Map(); NRI_REV = REV; NRI_M = M; }
+  if(!NRI.has(pre)){
+    let max = 0;
+    Object.values(M.els).forEach(e => { if(e.kind === 'Requirement' && e.reqId && String(e.reqId).startsWith(pre)){ const n = parseInt(String(e.reqId).slice(pre.length), 10); if(n > max) max = n; } });
+    NRI.set(pre, max);
+  }
+  return pre + String(NRI.get(pre) + 1).padStart(c.digits || 3, '0');
+}
+function findOrMkPkg(owner, name){ let p = kidsOf(owner).find(e => e.kind === 'Package' && e.name === name); if(!p) p = mk('Package', owner, {name}); return p.id; }
+function reqHome(pkgId){ return pkgId === M.rootId ? findOrMkPkg(M.rootId, 'Gereksinimler') : pkgId; }
+function reqPkgFor(level, subsys){
+  const top = findOrMkPkg(M.rootId, 'Gereksinimler');
+  if(level !== 'Alt Sistem') return findOrMkPkg(top, 'Sistem Gereksinimleri');
+  const alt = findOrMkPkg(top, 'Alt Sistem Gereksinimleri');
+  return subsys && String(subsys).trim() ? findOrMkPkg(alt, String(subsys).trim()) : alt;
+}
+function subsystems(){ return [...new Set(allReqs().filter(r => reqLevel(r) !== 'Sistem' && r.subsys && String(r.subsys).trim()).map(r => String(r.subsys).trim()))].sort((a, b) => a.localeCompare(b, 'tr')); }
+function relocateReq(r){
+  const o = E(r.owner), top = kidsOf(M.rootId).find(e => e.kind === 'Package' && e.name === 'Gereksinimler');
+  if(!o || !top) return;
+  const auto = o.id === top.id || o.owner === top.id || (E(o.owner) && E(o.owner).owner === top.id && E(o.owner).name === 'Alt Sistem Gereksinimleri');
+  if(auto){ r.owner = reqPkgFor(reqLevel(r), r.subsys); bump(); }
+}
+function askSubsys(title, def, cb, oncancel){
+  const box = $('#modalBox');
+  box.style.width = 'min(460px, 94vw)'; box.style.maxWidth = 'none';
+  const names = [...new Set(subsystems().concat(Object.values(M.els).filter(e => e.kind === 'Block').map(b => b.name)))].sort((a, b) => a.localeCompare(b, 'tr'));
+  box.innerHTML = `<h2>${esc(title)}</h2><p class="muted" style="margin:0 0 8px">Bu gereksinim hangi alt sisteme ait? Listeden seçin veya yeni bir ad yazın.</p>
+    <div class="icbar"><input id="ssq" list="ssl" value="${esc(def || '')}" placeholder="ör. Güç Birimi, Kontrol Birimi, Yazılım"><datalist id="ssl">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist></div>
+    ${subsystems().length ? `<div class="iccats">${subsystems().map(n => `<span class="chip" data-ss="${esc(n)}">${esc(n)}</span>`).join('')}</div>` : ''}
+    <p style="text-align:right;margin:10px 0 0"><button class="pbtn" id="sscancel">Vazgeç</button> <button class="pbtn pri" id="ssok">Tamam</button></p>`;
+  $('#modal').style.display = 'flex';
+  const inp = $('#ssq'); inp.focus(); inp.select();
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null; };
+  const cancel = () => { close(); if(oncancel) oncancel(); };
+  const ok = () => { const v = inp.value.trim(); if(!v){ inp.style.borderColor = '#c0392b'; inp.focus(); return; } close(); cb(v); };
+  inp.onkeydown = ev => { ev.stopPropagation(); if(ev.key === 'Enter'){ ev.preventDefault(); setTimeout(ok, 0); } if(ev.key === 'Escape') cancel(); };
+  box.onclick = ev => { const c = ev.target.closest('[data-ss]'); if(c){ inp.value = c.dataset.ss; ok(); return; } if(ev.target.id === 'sscancel') cancel(); if(ev.target.id === 'ssok') ok(); };
+}
+function relIdx(){ const idx = {}; for(const k in M.els){ const e = M.els[k]; if(e.src && e.tgt && KIND[e.kind] && KIND[e.kind].rel) (idx[e.kind] = idx[e.kind] || []).push(e); } return idx; }
+function trace(r, idx){
+  idx = idx || relIdx();
+  const g = k => idx[k] || [];
+  const parents = g('DeriveReqt').filter(x => x.src === r.id).map(x => E(x.tgt)).filter(Boolean);
+  const children = g('DeriveReqt').filter(x => x.tgt === r.id).map(x => E(x.src)).filter(Boolean);
+  const sat = g('Satisfy').filter(x => x.tgt === r.id).map(x => E(x.src)).filter(Boolean);
+  const funcs = sat.filter(e => FUNC_KINDS.has(e.kind)), elems = sat.filter(e => !FUNC_KINDS.has(e.kind));
+  const verifyBy = g('Verify').filter(x => x.tgt === r.id).map(x => E(x.src)).filter(Boolean);
+  const refined = g('Refine').concat(g('Trace')).filter(x => x.tgt === r.id || x.src === r.id).map(x => E(x.tgt === r.id ? x.src : x.tgt)).filter(Boolean);
+  return {parents, children, funcs, elems, verifyBy, refined};
+}
+function covStatus(r, t){
+  const sys = reqLevel(r) === 'Sistem', gaps = [];
+  const sat = t.elems.length + t.funcs.length > 0;
+  let covered;
+  if(sys){
+    covered = t.children.length > 0 || sat;
+    if(!covered) gaps.push('Ne alt sistem gereksinimi ne model elemanı/fonksiyon tarafından karşılanıyor');
+  } else {
+    covered = sat;
+    if(!t.parents.length) gaps.push('Üst (sistem) gereksinimi yok — yetim');
+    if(!sat) gaps.push('Karşılayan model elemanı/fonksiyon yok');
+  }
+  if(!(r.verif && String(r.verif).trim())) gaps.push('Doğrulama yöntemi tanımsız');
+  return {st:!covered ? 'Eksik' : (gaps.length ? 'Kısmi' : 'Tam'), gaps};
+}
+function findRel(kind, src, tgt){ return Object.values(M.els).find(e => e.kind === kind && e.src === src && e.tgt === tgt) || null; }
+function addRel(kind, src, tgt){ if(!src || !tgt || src === tgt || findRel(kind, src, tgt)) return null; return mk(kind, nearestPkg(src), {src, tgt, name:''}); }
+function delRel(kind, src, tgt){ const r = findRel(kind, src, tgt); if(r) delModel([r.id]); }
+const ROLES = {
+  parent:{kind:'DeriveReqt', title:'Üst (kaynak) gereksinim seç', cands:r => allReqs().filter(x => x.id !== r.id && (reqLevel(r) === 'Sistem' || reqLevel(x) === 'Sistem')), rel:(r, x) => [r.id, x.id]},
+  child:{kind:'DeriveReqt', title:'Alt (türetilen) gereksinim seç', cands:r => allReqs().filter(x => x.id !== r.id && (reqLevel(r) !== 'Sistem' || reqLevel(x) !== 'Sistem')), rel:(r, x) => [x.id, r.id]},
+  elem:{kind:'Satisfy', title:'Karşılayan model elemanı seç', cands:() => Object.values(M.els).filter(e => ELEM_KINDS.includes(e.kind)).sort(sortEls), rel:(r, x) => [x.id, r.id]},
+  func:{kind:'Satisfy', title:'Fonksiyon seç (aktivite / aksiyon)', cands:() => Object.values(M.els).filter(e => FUNC_KINDS.has(e.kind)).sort(sortEls), rel:(r, x) => [x.id, r.id]},
+  test:{kind:'Verify', title:'Doğrulayan test durumu seç', cands:() => Object.values(M.els).filter(e => e.kind === 'TestCase').sort(sortEls), rel:(r, x) => [x.id, r.id]}
+};
+function roleCurrent(r, role, t){ return {parent:t.parents, child:t.children, elem:t.elems, func:t.funcs, test:t.verifyBy}[role]; }
+function elDesc(e){ if(!e) return ''; if(e.kind === 'Requirement') return nm(e); const o = E(e.owner); return nm(e) + (FUNC_KINDS.has(e.kind) && o && o.kind === 'Activity' ? '  (' + o.name + ')' : ''); }
+function pickTrace(rid, role){
+  const r = E(rid), R0 = ROLES[role]; if(!r || !R0) return;
+  const t = trace(r), curIds = new Set(roleCurrent(r, role, t).map(x => x.id));
+  const cands = R0.cands(r);
+  const extra = role === 'test' ? {label:'+ Yeni test durumu', fn:() => { const tc = mk('TestCase', nearestPkg(r.owner), {name:'Test – ' + (r.reqId || r.name)}); return tc.id; }} : null;
+  pickList(R0.title + ' — ' + nm(r), cands, curIds, ids => {
+    snap();
+    const want = new Set(ids);
+    cands.forEach(x => { const [s0, t0] = R0.rel(r, x); if(want.has(x.id) && !curIds.has(x.id)) addRel(R0.kind, s0, t0); if(!want.has(x.id) && curIds.has(x.id)) delRel(R0.kind, s0, t0); });
+    afterChange();
+  }, extra);
+}
+function pickList(title, cands, selected, onApply, extra){
+  const box = $('#modalBox');
+  box.style.width = 'min(640px, 94vw)'; box.style.maxWidth = 'none';
+  const sel = new Set(selected);
+  box.innerHTML = `<h2>${esc(title)}</h2><div class="icbar"><input id="plq" placeholder="Ara…">${extra ? `<button class="pbtn" id="plx">${esc(extra.label)}</button>` : ''}</div><div class="plist" id="pll"></div>
+    <p style="text-align:right;margin:10px 0 0"><span class="muted" id="plc"></span> &nbsp; <button class="pbtn" id="plcancel">Vazgeç</button> <button class="pbtn pri" id="plok">Uygula</button></p>`;
+  const draw = () => {
+    const q = $('#plq').value.toLocaleLowerCase('tr');
+    $('#pll').innerHTML = cands.filter(c => !q || elDesc(c).toLocaleLowerCase('tr').includes(q) || (c.text || '').toLocaleLowerCase('tr').includes(q)).map(c => `<label class="pli"><input type="checkbox" data-pid="${c.id}"${sel.has(c.id) ? ' checked' : ''}> ${icon(c)} <span>${esc(elDesc(c))}</span>${c.kind === 'Requirement' && c.text ? `<em>${esc(c.text.slice(0, 90))}</em>` : ''}</label>`).join('') || '<div class="muted">Uygun eleman yok. Önce modelde oluşturun.</div>';
+    $('#plc').textContent = sel.size + ' seçili';
+  };
+  draw();
+  $('#modal').style.display = 'flex'; $('#plq').focus();
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null; };
+  $('#plq').oninput = draw;
+  $('#plq').onkeydown = ev => { ev.stopPropagation(); if(ev.key === 'Escape') close(); };
+  box.onclick = ev => {
+    const cb = ev.target.closest('[data-pid]'); if(cb){ cb.checked ? sel.add(cb.dataset.pid) : sel.delete(cb.dataset.pid); $('#plc').textContent = sel.size + ' seçili'; return; }
+    if(ev.target.id === 'plcancel') close();
+    if(ev.target.id === 'plok'){ close(); onApply([...sel]); }
+    if(ev.target.id === 'plx' && extra){ const id = extra.fn(); cands.push(E(id)); sel.add(id); draw(); }
+  };
+}
+function verifChips(val, rid){
+  const set = new Set(String(val || '').split(/[,;\/]+/).map(x => x.trim()).filter(Boolean));
+  return `<span class="vchips">${VERIF.map(([v, a]) => `<b class="${set.has(v) ? 'on' : ''}" data-verif="${v}" data-vr="${rid}" title="${v}">${a}</b>`).join('')}</span>`;
+}
+function toggleVerif(rid, v){
+  const r = E(rid); if(!r) return;
+  const set = String(r.verif || '').split(/[,;\/]+/).map(x => x.trim()).filter(Boolean);
+  const i = set.indexOf(v); if(i >= 0) set.splice(i, 1); else set.push(v);
+  snap(); r.verif = VERIF.map(x => x[0]).filter(x => set.includes(x)).concat(set.filter(x => !VERIF.some(y => y[0] === x))).join(', '); afterChange();
+}
+function reqPropsHTML(el, pf){
+  const c = reqCfg(); let h = '';
+  h += pf('Gereksinim ID', `<input data-f="reqId" value="${esc(el.reqId || '')}">`);
+  h += pf('Seviye', `<select data-f="level"><option${reqLevel(el) === 'Sistem' ? ' selected' : ''}>Sistem</option><option${reqLevel(el) !== 'Sistem' ? ' selected' : ''}>Alt Sistem</option></select>`);
+  if(reqLevel(el) !== 'Sistem') h += pf('Alt sistem', `<input data-f="subsys" list="sslp" value="${esc(el.subsys || '')}" placeholder="Alt sistem adı"><datalist id="sslp">${subsystems().map(n => `<option value="${esc(n)}">`).join('')}</datalist>`);
+  h += pf('Gereksinim metni', `<textarea data-f="text" style="min-height:84px">${esc(el.text || '')}</textarea>`);
+  h += pf('Doğrulama', verifChips(el.verif, el.id));
+  h += pf('Müşteri ister no', `<input data-f="srcNo" value="${esc(el.srcNo || '')}">`);
+  h += pf('Müşteri isteri', `<textarea data-f="srcText">${esc(el.srcText || '')}</textarea>`);
+  c.attrs.forEach(a => { h += pf(esc(a.label), `<input data-f="attr:${esc(a.key)}" value="${esc((el.attrs || {})[a.key] || '')}">`); });
+  h += pf('Durum', `<select data-f="status" style="color:${STATUS_COL[reqStatus(el)]};font-weight:600">${REQ_STATUS.map(x => `<option${reqStatus(el) === x ? ' selected' : ''}>${x}</option>`).join('')}</select>`);
+  const iss = reqQuality(el, simIndex());
+  if(iss.length) h += `<div class="gaps" style="background:#fdf2f2;border-color:#f1c4c4;color:#8a2a2a">${iss.map(([sv, m]) => (sv === 'hata' ? '✖ ' : sv === 'uyarı' ? '⚠ ' : 'ℹ ') + esc(m)).join('<br>')}</div>`;
+  const t = trace(el), cs = covStatus(el, t);
+  h += `<div class="sub"><span>İzlenebilirlik</span><span class="cov cov-${cs.st}">${cs.st}</span></div>`;
+  const list = (title, arr, role) => `<div class="trl"><div><b>${title}</b> <button class="pbtn" data-trpick="${role}" data-rid="${el.id}">+ / −</button></div>${arr.map(x => `<span class="chip2"><a class="lnk" data-goto="${x.id}">${esc(elDesc(x))}</a></span>`).join('') || '<span class="muted">—</span>'}</div>`;
+  h += list('Türetildiği (üst) gereksinimler', t.parents, 'parent');
+  h += list('Alt gereksinimler', t.children, 'child');
+  h += list('Karşılayan model elemanları', t.elems, 'elem');
+  h += list('Fonksiyonlar', t.funcs, 'func');
+  h += list('Doğrulayan testler', t.verifyBy, 'test');
+  if(t.refined.length) h += `<div class="trl"><div><b>Refine / Trace</b></div>${t.refined.map(x => `<span class="chip2"><a class="lnk" data-goto="${x.id}">${esc(elDesc(x))}</a></span>`).join('')}</div>`;
+  if(cs.gaps.length) h += `<div class="gaps">${cs.gaps.map(g => '⚠ ' + esc(g)).join('<br>')}</div>`;
+  const hist = (M.reqLog || []).filter(x => x.id === el.id).slice(-5).reverse();
+  h += `<div class="sub"><span>Değişiklik geçmişi</span><button data-hist="${el.id}">Tümü</button></div>`;
+  h += pf('Gerekçe', `<input data-reason="1" value="${esc(ST.reason || '')}" placeholder="Sonraki değişikliklere eklenir (ör. ECR-012)">`);
+  h += hist.length ? hist.map(x => `<div class="hli"><span class="muted">${esc(new Date(x.t).toLocaleString('tr-TR'))} · ${esc(x.u)}</span><br><b>${esc(x.f)}</b>: ${x.f === 'Metin' ? wordDiff(x.o, x.n) : esc(String(x.n).slice(0, 120))}${x.why ? ` <span class="muted">(${esc(x.why)})</span>` : ''}</div>`).join('') : '<div class="muted" style="font-size:12px">Henüz değişiklik kaydı yok</div>';
+  return h;
+}
+function funcReqs(e, idx){ return (idx['Satisfy'] || []).filter(x => x.src === e.id).map(x => E(x.tgt)).filter(Boolean); }
+
+/* ---------- views ---------- */
+let RV = {lvl:'all', q:'', sortKey:null, sortDir:1, gaps:false};
+let MX = {rows:'sys', cols:'sub', rel:'auto', empty:false};
+let CV = {gaps:false};
+function openView(id){ openD(id); }
+function renderView(){
+  const v = $('#view');
+  if(v.dataset.v !== ST.cur){ v.dataset.v = ST.cur; v.innerHTML = `<div class="vbar"></div><div class="vbody"></div>`; renderViewBar(); }
+  const body = v.querySelector('.vbody');
+  const st = body.scrollTop, sl = body.scrollLeft;
+  if(ST.cur === '@reqtable'){ refreshLvlSelect(); body.innerHTML = reqTableHTML(); }
+  else if(ST.cur === '@matrix') body.innerHTML = matrixHTML();
+  else if(ST.cur === '@quality') body.innerHTML = qualityHTML();
+  else if(ST.cur === '@baseline'){ body.innerHTML = baselineHTML(); renderViewBar(); }
+  else if(ST.cur === '@vcrm'){ refreshLvlSelect(); body.innerHTML = vcrmHTML(); }
+  else if(ST.cur === '@campaign') body.innerHTML = campaignHTML();
+  else if(ST.cur === '@validation') body.innerHTML = validationHTML();
+  else if(VIEWS[ST.cur].render) body.innerHTML = VIEWS[ST.cur].render();
+  else body.innerHTML = coverageHTML();
+  body.scrollTop = st; body.scrollLeft = sl;
+  if(pendingFocus){ const el = body.querySelector(`[data-r="${pendingFocus[0]}"][data-c="${pendingFocus[1]}"]`); pendingFocus = null; if(el){ el.focus(); placeCaretEnd(el); } }
+}
+let pendingFocus = null;
+function placeCaretEnd(el){ try { const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } catch(e){} }
+function renderViewBar(){
+  const bar = $('#view .vbar');
+  const xl = `<span class="vsep"></span><button class="vb" data-va="import">⤓ Excel'den aktar</button><button class="vb" data-va="export">⤒ Excel'e aktar</button>`;
+  if(ST.cur === '@reqtable'){
+    bar.innerHTML = `<button class="vb pri" data-va="addSys">+ Sistem gereksinimi</button><button class="vb pri2" data-va="addSub">+ Alt sistem gereksinimi</button>
+      <span class="vsep"></span><select data-vf="lvl">${lvlOptions()}</select>
+      <select data-vf="st"><option value="all">Tüm durumlar</option>${REQ_STATUS.map(x => `<option${RV.st === x ? ' selected' : ''}>${x}</option>`).join('')}</select>
+      <input data-vf="q" placeholder="Ara (ID, metin, ister no…)" value="${esc(RV.q)}"><label class="vchk"><input type="checkbox" data-vf="gaps"${RV.gaps ? ' checked' : ''}> Yalnız eksikler</label>
+      <span class="vsep"></span><button class="vb" data-va="cols">☰ Sütunlar / özellikler</button>${xl}`;
+    const ls = bar.querySelector('[data-vf="lvl"]'); ls.value = RV.lvl; if(ls.value !== RV.lvl){ RV.lvl = 'all'; ls.value = 'all'; }
+  } else if(ST.cur === '@matrix'){
+    const so = (sel, opts) => opts.map(([k, t]) => `<option value="${k}"${sel === k ? ' selected' : ''}>${t}</option>`).join('');
+    bar.innerHTML = `<label>Satırlar <select data-mf="rows">${so(MX.rows, msetList().filter(x => x[2]).map(x => [x[0], x[1]]))}</select></label>
+      <label>Sütunlar <select data-mf="cols">${so(MX.cols, msetList().map(x => [x[0], x[1]]))}</select></label>
+      <label>İlişki <select data-mf="rel">${so(MX.rel, [['auto','Otomatik'], ['DeriveReqt','Derive'], ['Satisfy','Satisfy'], ['Verify','Verify'], ['Refine','Refine'], ['Trace','Trace']])}</select></label>
+      <label class="vchk"><input type="checkbox" data-mf="empty"${MX.empty ? ' checked' : ''}> Yalnız boş satırlar</label>${xl}`;
+  } else if(ST.cur === '@quality'){
+    bar.innerHTML = `<label class="vchk">Yazım kuralı: <select data-cf="qstyle">${RQ_STYLES.map(([k, t]) => `<option value="${k}"${reqStyle() === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label><span class="vsep"></span><label class="vchk"><input type="checkbox" data-cf="qall"${CV.qall ? ' checked' : ''}> Sorunsuzları da göster</label><span class="vsep"></span><button class="vb" data-va="export">⤒ Excel'e aktar (Kalite sayfası dahil)</button>`;
+  } else if(ST.cur === '@vcrm'){
+    bar.innerHTML = vcrmBar(); const ls = bar.querySelector('[data-xf="vc.lvl"]'); ls.value = VC.lvl; if(ls.value !== VC.lvl){ VC.lvl = 'all'; ls.value = 'all'; }
+  } else if(ST.cur === '@campaign'){
+    bar.innerHTML = campaignBar();
+  } else if(VIEWS[ST.cur].bar){
+    bar.innerHTML = VIEWS[ST.cur].bar();
+  } else if(ST.cur === '@validation'){
+    bar.innerHTML = validationBar();
+  } else if(ST.cur === '@baseline'){
+    const bls = M.baselines || [], opts = sel => bls.map(b => `<option value="${b.id}"${sel === b.id ? ' selected' : ''}>${esc(b.name)}</option>`).join('');
+    bar.innerHTML = `<button class="vb pri" data-va="mkbl">+ Taban çizgisi oluştur</button><span class="vsep"></span>
+      <label>Karşılaştır <select data-blf="a">${opts(BL.a)}</select></label><label>ile <select data-blf="b"><option value="@current"${BL.b === '@current' ? ' selected' : ''}>Güncel model</option>${opts(BL.b)}</select></label>
+      <label class="vchk"><input type="checkbox" data-blf="onlyCh"${BL.onlyCh ? ' checked' : ''}> Yalnız farklar</label><span class="vsep"></span><button class="vb" data-va="blx">⤒ Fark raporunu Excel'e aktar</button>`;
+  } else {
+    bar.innerHTML = `<label class="vchk"><input type="checkbox" data-cf="gaps"${CV.gaps ? ' checked' : ''}> Yalnız eksikleri göster</label><button class="vb" data-va="matrix">İzlenebilirlik matrisine git</button>${xl}`;
+  }
+}
+function lvlOptions(){
+  const ss = subsystems(), noName = allReqs().some(r => reqLevel(r) !== 'Sistem' && !(r.subsys && String(r.subsys).trim()));
+  return `<option value="all">Tüm gereksinimler</option><option value="Sistem">Sistem gereksinimleri</option><option value="Alt Sistem">Tüm alt sistemler</option>` +
+    (ss.length || noName ? `<optgroup label="Alt sistemler">${ss.map(n => `<option value="sub:${esc(n)}">Alt sistem: ${esc(n)}</option>`).join('')}${noName ? '<option value="sub:">Alt sistem: (adı girilmemiş)</option>' : ''}</optgroup>` : '');
+}
+function lvlMatch(r, lvl){
+  if(lvl === 'all') return true;
+  if(lvl === 'Sistem') return reqLevel(r) === 'Sistem';
+  if(lvl === 'Alt Sistem') return reqLevel(r) !== 'Sistem';
+  if(lvl.startsWith('sub:')) return reqLevel(r) !== 'Sistem' && String(r.subsys || '').trim() === lvl.slice(4);
+  return true;
+}
+function refreshLvlSelect(){ const vc = ST.cur === '@vcrm', ls = document.querySelector(vc ? '#view [data-xf="vc.lvl"]' : '#view [data-vf="lvl"]'), S0 = vc ? VC : RV; if(ls){ const h = lvlOptions(); if(ls.dataset.h !== h){ ls.innerHTML = h; ls.dataset.h = h; ls.value = S0.lvl; if(ls.value !== S0.lvl){ S0.lvl = 'all'; ls.value = 'all'; } } } }
+function cellVal(r, key){ if(key.startsWith('attr:')) return (r.attrs || {})[key.slice(5)] || ''; return r[key] == null ? '' : String(r[key]); }
+function reqTableHTML(){
+  const cols = visCols(), idx = relIdx();
+  let rs = allReqs();
+  rs = rs.filter(r => lvlMatch(r, RV.lvl));
+  const q = RV.q.toLocaleLowerCase('tr').trim();
+  if(q) rs = rs.filter(r => [r.reqId, r.name, r.text, r.srcNo, r.srcText].concat(Object.values(r.attrs || {})).join(' ').toLocaleLowerCase('tr').includes(q));
+  const T0 = new Map(rs.map(r => { const t = trace(r, idx); return [r.id, {t, c:covStatus(r, t)}]; }));
+  const SIMX = cols.some(c => c.key === '_quality') ? simIndex() : null;
+  if(RV.st && RV.st !== 'all') rs = rs.filter(r => reqStatus(r) === RV.st);
+  if(RV.gaps) rs = rs.filter(r => T0.get(r.id).c.st !== 'Tam');
+  if(RV.sortKey){ const k = RV.sortKey; rs.sort((a, b) => RV.sortDir * (k === '_status' ? T0.get(a.id).c.st.localeCompare(T0.get(b.id).c.st, 'tr') : cellVal(a, k).localeCompare(cellVal(b, k), 'tr', {numeric:true}))); }
+  if(!allReqs().length) return `<div class="vempty">Henüz gereksinim yok.<br><br><button class="vb pri" data-va="addSys">+ Sistem gereksinimi ekle</button> &nbsp; <button class="vb" data-va="import">⤓ Excel'den aktar</button></div>`;
+  const total = rs.length; RV.limit = RV.limit || 250;
+  if(ST.tsel){ const si = rs.findIndex(r => r.id === ST.tsel); if(si >= RV.limit) RV.limit = Math.ceil((si + 1) / 250) * 250; }
+  rs = rs.slice(0, RV.limit);
+  const chips = (arr, rid, role) => `<div class="tcell">${arr.map(x => `<span class="chip2" title="${esc(elDesc(x))}"><a class="lnk" data-goto="${x.id}">${esc(x.kind === 'Requirement' ? (x.reqId || nm(x)) : nm(x))}</a></span>`).join('')}<button class="tadd" data-trpick="${role}" data-rid="${rid}" title="Ekle / çıkar">+</button></div>`;
+  let h = `<table class="rt"><thead><tr><th class="rn">#</th>${cols.map(c => `<th data-sort="${c.key}" class="${c.trace ? 'th-tr' : ''}${c.custom ? ' th-cu' : ''}" style="min-width:${Math.min(320, c.w * 7)}px">${esc(c.label)}${RV.sortKey === c.key ? (RV.sortDir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}<th></th></tr></thead><tbody>`;
+  rs.forEach((r, i) => {
+    const {t, c} = T0.get(r.id);
+    h += `<tr data-row="${r.id}" class="${ST.tsel === r.id ? 'sel' : ''} lv-${reqLevel(r) === 'Sistem' ? 's' : 'a'}"><td class="rn">${i + 1}</td>`;
+    cols.forEach(col => {
+      const k = col.key;
+      if(k === 'level') h += `<td><select data-r="${r.id}" data-c="level"><option${reqLevel(r) === 'Sistem' ? ' selected' : ''}>Sistem</option><option${reqLevel(r) !== 'Sistem' ? ' selected' : ''}>Alt Sistem</option></select></td>`;
+      else if(k === 'verif') h += `<td>${verifChips(r.verif, r.id)}</td>`;
+      else if(k === 'subsys' && reqLevel(r) === 'Sistem') h += `<td class="muted" style="text-align:center">—</td>`;
+      else if(k === '_parents') h += `<td>${chips(t.parents, r.id, 'parent')}</td>`;
+      else if(k === '_children') h += `<td>${chips(t.children, r.id, 'child')}</td>`;
+      else if(k === '_satisfy') h += `<td>${chips(t.elems, r.id, 'elem')}</td>`;
+      else if(k === '_funcs') h += `<td>${chips(t.funcs, r.id, 'func')}</td>`;
+      else if(k === '_verifyBy') h += `<td>${chips(t.verifyBy, r.id, 'test')}</td>`;
+      else if(k === 'status') h += `<td><select class="stsel" style="color:${STATUS_COL[reqStatus(r)]}" data-r="${r.id}" data-c="status">${REQ_STATUS.map(x => `<option${reqStatus(r) === x ? ' selected' : ''}>${x}</option>`).join('')}</select></td>`;
+      else if(k === '_quality') h += `<td>${qualityBadge(reqQuality(r, SIMX))}</td>`;
+      else if(k === '_verst') h += `<td>${verChip(verStatus(r, t))}</td>`;
+      else if(k === '_status') h += `<td><span class="cov cov-${c.st}">${c.st}</span>${c.gaps.length ? `<div class="gapt">${c.gaps.map(esc).join('<br>')}</div>` : ''}</td>`;
+      else h += `<td><div class="ce${k === 'text' || k === 'srcText' ? ' long' : ''}${k === 'reqId' ? ' rid' : ''}" contenteditable="true" spellcheck="false" data-r="${r.id}" data-c="${esc(k)}">${esc(cellVal(r, k))}</div></td>`;
+    });
+    h += `<td class="ra"><button class="tdel" data-rdel="${r.id}" title="Gereksinimi sil">✕</button></td></tr>`;
+  });
+  return h + `</tbody></table><div class="vfoot">${rs.length} / ${allReqs().length} gereksinim gösteriliyor${total > rs.length ? ` · filtreye uyan ${total} · <button class="vb" data-va="more">+250 daha göster</button> <button class="vb" data-va="showall">Tümünü göster</button>` : ''}</div>`;
+}
+const MSETS = [
+  ['sys', 'Sistem gereksinimleri', 1, () => allReqs().filter(r => reqLevel(r) === 'Sistem')],
+  ['sub', 'Alt sistem gereksinimleri', 1, () => allReqs().filter(r => reqLevel(r) !== 'Sistem')],
+  ['all', 'Tüm gereksinimler', 1, () => allReqs()],
+  ['funcs', 'Fonksiyonlar (aktivite/aksiyon)', 0, () => Object.values(M.els).filter(e => FUNC_KINDS.has(e.kind)).sort(sortEls)],
+  ['blocks', 'Bloklar', 0, () => Object.values(M.els).filter(e => e.kind === 'Block').sort(sortEls)],
+  ['elems', 'Tüm model elemanları', 0, () => Object.values(M.els).filter(e => ELEM_KINDS.includes(e.kind)).sort(sortEls)],
+  ['tests', 'Test durumları', 0, () => Object.values(M.els).filter(e => e.kind === 'TestCase').sort(sortEls)],
+  ['ucs', 'Use case\'ler', 0, () => Object.values(M.els).filter(e => e.kind === 'UseCase').sort(sortEls)]
+];
+function msetList(){ return MSETS.slice(0, 3).concat(subsystems().map(n => ['sub:' + n, 'Alt sistem: ' + n, 1, () => allReqs().filter(r => reqLevel(r) !== 'Sistem' && String(r.subsys || '').trim() === n)]), MSETS.slice(3)); }
+const mset = k => (msetList().find(x => x[0] === k) || MSETS[0])[3]();
+function mxRel(row, col){
+  let kind = MX.rel;
+  const rq = row.kind === 'Requirement', cq = col.kind === 'Requirement';
+  if(kind === 'auto') kind = rq && cq ? 'DeriveReqt' : (col.kind === 'TestCase' || row.kind === 'TestCase' ? 'Verify' : 'Satisfy');
+  if(kind === 'DeriveReqt'){
+    if(!(rq && cq)) return null;
+    const rl = reqLevel(row), cl = reqLevel(col);
+    return rl === cl ? [kind, col.id, row.id] : (rl === 'Sistem' ? [kind, col.id, row.id] : [kind, row.id, col.id]);
+  }
+  if(rq && !cq) return [kind, col.id, row.id];
+  if(cq && !rq) return [kind, row.id, col.id];
+  if(rq && cq) return [kind, col.id, row.id];
+  return null;
+}
+function matrixHTML(){
+  const rows0 = mset(MX.rows), cols = mset(MX.cols).filter(c => !rows0.includes(c) || MX.rows !== MX.cols);
+  if(!rows0.length || !cols.length) return `<div class="vempty">Seçilen kümelerden biri boş.<br>${!rows0.length ? 'Satır kümesinde eleman yok.' : 'Sütun kümesinde eleman yok.'}</div>`;
+  const rel = new Set(Object.values(M.els).filter(e => e.src && e.tgt && KIND[e.kind].rel).map(e => e.kind + '|' + e.src + '|' + e.tgt));
+  const has = (r, c) => { const m = mxRel(r, c); return m && rel.has(m.join('|')); };
+  const rowCnt = new Map(rows0.map(r => [r.id, cols.reduce((n, c) => n + (has(r, c) ? 1 : 0), 0)]));
+  const rows = MX.empty ? rows0.filter(r => !rowCnt.get(r.id)) : rows0;
+  const colCnt = cols.map(c => rows0.reduce((n, r) => n + (has(r, c) ? 1 : 0), 0));
+  const lab = e => e.kind === 'Requirement' ? (e.reqId || '') + ' ' + (e.name || '') + (reqLevel(e) !== 'Sistem' && e.subsys ? ' [' + e.subsys + ']' : '') : elDesc(e);
+  const ml = k => (msetList().find(x => x[0] === k) || MSETS[0])[1];
+  let h = `<table class="mx"><thead><tr><th class="mxc">${esc(ml(MX.rows))} ↓ / ${esc(ml(MX.cols))} →</th>`;
+  cols.forEach((c, j) => { h += `<th class="mxh${colCnt[j] ? '' : ' zero'}" title="${esc(lab(c) + (c.text ? '\n' + c.text : ''))}"><div><span>${esc(lab(c).slice(0, 42))}</span></div></th>`; });
+  h += `<th class="mxh tot"><div><span>Toplam</span></div></th></tr></thead><tbody>`;
+  rows.forEach(r => {
+    const n = rowCnt.get(r.id);
+    h += `<tr><th class="mxr${n ? '' : ' zero'}" title="${esc(r.text || '')}"><a class="lnk" data-goto="${r.id}">${esc(lab(r).slice(0, 60))}</a></th>`;
+    cols.forEach(c => { const m = mxRel(r, c); h += m ? `<td class="mxd${has(r, c) ? ' on' : ''}" data-mx="${r.id}|${c.id}" title="${esc(KIND[m[0]].tr)}">${has(r, c) ? '↗' : ''}</td>` : `<td class="mxd na"></td>`; });
+    h += `<td class="mxt">${n}</td></tr>`;
+  });
+  h += `<tr><th class="mxr tot">Toplam</th>${colCnt.map(n => `<td class="mxt${n ? '' : ' zero'}">${n}</td>`).join('')}<td></td></tr></tbody></table>`;
+  const zr = rows0.filter(r => !rowCnt.get(r.id)).length, zc = colCnt.filter(n => !n).length;
+  h += `<div class="vfoot">${rows0.length} × ${cols.length} · İlişkisiz satır: <b class="${zr ? 'bad' : ''}">${zr}</b> · İlişkisiz sütun: <b class="${zc ? 'bad' : ''}">${zc}</b> · Hücreye tıklayarak ilişki kurun/kaldırın.</div>`;
+  return h;
+}
+function coverageData(){
+  const idx = relIdx(), rs = allReqs().filter(activeReq);
+  const rows = rs.map(r => { const t = trace(r, idx); return {r, t, c:covStatus(r, t)}; });
+  const sys = rows.filter(x => reqLevel(x.r) === 'Sistem'), sub = rows.filter(x => reqLevel(x.r) !== 'Sistem');
+  const pct = (arr, f) => arr.length ? Math.round(arr.filter(f).length / arr.length * 100) : 0;
+  const traced = new Set(); (idx['Satisfy'] || []).concat(idx['Refine'] || [], idx['Trace'] || [], idx['Allocate'] || []).forEach(x => { traced.add(x.src); traced.add(x.tgt); });
+  const tracedTypes = new Set(Object.values(M.els).filter(p => p.kind === 'Part' && p.type && traced.has(p.id)).map(p => p.type));
+  const untracedBlocks = Object.values(M.els).filter(e => e.kind === 'Block' && !traced.has(e.id) && !tracedTypes.has(e.id)).sort(sortEls);
+  const untracedFuncs = Object.values(M.els).filter(e => e.kind === 'Activity' && !traced.has(e.id) && !kidsOf(e.id).some(a => traced.has(a.id))).sort(sortEls);
+  return {sys, sub, untracedBlocks, untracedFuncs, cards:[
+    ['Sistem gereksinimi', sys.length, null, 0],
+    ['Karşılanan sistem gereksinimi', pct(sys, x => x.c.st !== 'Eksik'), 'alt sistem gereksinimi veya model elemanı/fonksiyon ile', 1],
+    ['Alt sisteme türetilmiş', pct(sys, x => x.t.children.length > 0), null, 1],
+    ['Fonksiyona izlenen (sistem)', pct(sys, x => x.t.funcs.length > 0), null, 1],
+    ['Alt sistem gereksinimi', sub.length, null, 0],
+    ['Üst gereksinimi olan (alt sistem)', pct(sub, x => x.t.parents.length > 0), null, 1],
+    ['Model/fonksiyonla karşılanan (alt sistem)', pct(sub, x => x.t.elems.length + x.t.funcs.length > 0), null, 1],
+    ['Doğrulama yöntemi tanımlı', pct(sys.concat(sub), x => !!(x.r.verif && x.r.verif.trim())), 'tüm gereksinimler', 1],
+    ['Doğrulama faaliyeti planlanan', pct(sys.concat(sub), x => x.t.verifyBy.length > 0), 'verify ilişkisi olan test/faaliyet', 1],
+    ['Doğrulanan (testleri geçen)', pct(sys.concat(sub), x => verStatus(x.r, x.t) === 'Doğrulandı'), 'tüm testleri "Geçti"', 1],
+    ['Başarısız doğrulama', sys.concat(sub).filter(x => verStatus(x.r, x.t) === 'Kaldı').length, null, 0]
+  ]};
+}
+function coverageHTML(){
+  const D = coverageData();
+  if(!D.sys.length && !D.sub.length) return `<div class="vempty">Analiz edilecek gereksinim yok.<br><br><button class="vb pri" data-va="table">Gereksinim tablosunu aç</button></div>`;
+  let h = '<div class="cards">' + D.cards.map(([t, v, sub, isPct]) => {
+    if(!isPct) return `<div class="card"><div class="cv">${v}</div><div class="ct">${esc(t)}</div></div>`;
+    const col = v >= 90 ? '#2e9e6a' : v >= 60 ? '#d18a00' : '#c0392b';
+    return `<div class="card"><div class="cv" style="color:${col}">%${v}</div><div class="ct">${esc(t)}</div><div class="cbar"><i style="width:${v}%;background:${col}"></i></div>${sub ? `<div class="cs">${esc(sub)}</div>` : ''}</div>`;
+  }).join('') + '</div>';
+  const nl0 = arr => arr.length ? arr.map(x => `<a class="lnk" data-goto="${x.id}">${esc(x.kind === 'Requirement' ? x.reqId || nm(x) : nm(x))}</a>`).join(', ') : '<span class="miss">—</span>';
+  const nl = arr => arr.length > 300 ? nl0(arr.slice(0, 300)) + ` <span class="muted">… ve ${arr.length - 300} eleman daha</span>` : nl0(arr);
+  const tbl = (title, rows, sys) => {
+    const all = CV.gaps ? rows.filter(x => x.c.st !== 'Tam') : rows, lim = CV.limit || 250, list = all.slice(0, lim);
+    let s = `<h3>${title} <span class="muted">(${all.length}${CV.gaps ? ' eksik' : ''})</span></h3>`;
+    if(!list.length) return s + `<div class="muted" style="margin:0 0 14px">${CV.gaps ? 'Eksik yok 🎉' : 'Kayıt yok'}</div>`;
+    s += `<table class="rt cvt"><thead><tr><th>ID</th><th>Gereksinim</th>${sys ? '<th>Alt Sistem Gereksinimleri</th>' : '<th>Üst Gereksinim</th>'}<th>Model Elemanları</th><th>Fonksiyonlar</th><th>Doğrulama</th><th>Test</th><th>Doğrulama Durumu</th><th>Durum</th><th>Eksikler</th></tr></thead><tbody>`;
+    list.forEach(({r, t, c}) => {
+      s += `<tr data-row="${r.id}" class="${ST.tsel === r.id ? 'sel' : ''}"><td style="white-space:nowrap"><a class="lnk" data-goto="${r.id}"><b>${esc(r.reqId || '')}</b></a></td><td class="cvtx">${!sys && r.subsys ? `<span class="chip2">${esc(r.subsys)}</span> ` : ''}${esc(r.name || '')}${r.text ? `<div class="muted">${esc(r.text.slice(0, 140))}</div>` : ''}</td>
+        <td>${nl(sys ? t.children : t.parents)}</td><td>${nl(t.elems)}</td><td>${nl(t.funcs)}</td><td>${r.verif ? esc(r.verif) : '<span class="miss">—</span>'}</td><td>${nl(t.verifyBy)}</td><td>${verChip(verStatus(r, t))}</td>
+        <td><span class="cov cov-${c.st}">${c.st}</span><div style="margin-top:3px">${statusChip(r)}</div></td><td class="gapt">${c.gaps.map(esc).join('<br>')}</td></tr>`;
+    });
+    return s + '</tbody></table>' + (all.length > list.length ? `<div class="vfoot">${list.length} / ${all.length} gösteriliyor · <button class="vb" data-va="cvmore">+250 daha göster</button> <button class="vb" data-va="cvall">Tümünü göster</button></div>` : '');
+  };
+  h += tbl('Sistem gereksinimleri', D.sys, true) + tbl('Alt sistem gereksinimleri', D.sub, false);
+  h += `<h3>Hiçbir gereksinime izlenmeyen model elemanları <span class="muted">(bilgi)</span></h3><div class="untr"><b>Bloklar:</b> ${nl(D.untracedBlocks)}<br><b>Fonksiyonlar (aktiviteler):</b> ${nl(D.untracedFuncs)}</div>`;
+  return h;
+}
+
+/* ---------- view events ---------- */
+(function(){
+  const V = $('#view');
+  V.addEventListener('click', ev => {
+    const t = ev.target;
+    const va = t.closest('[data-va]');
+    if(va){
+      const a = va.dataset.va;
+      if(a === 'cvmore' || a === 'cvall'){ CV.limit = a === 'cvmore' ? (CV.limit || 250) + 250 : 1e9; renderView(); return; }
+      if(a === 'more' || a === 'showall'){ RV.limit = a === 'more' ? (RV.limit || 250) + 250 : 1e9; renderView(); return; }
+      if(a === 'addSys' || a === 'addSub'){
+        const add = (lvl, ss) => {
+          snap(); const r = mk('Requirement', reqPkgFor(lvl, ss), {level:lvl, name:'', subsys:ss || ''}); ST.tsel = r.id; RV.q = '';
+          if(RV.lvl !== 'all' && !(lvl === 'Sistem' ? RV.lvl === 'Sistem' : (RV.lvl === 'Alt Sistem' || RV.lvl === 'sub:' + ss))) RV.lvl = 'all';
+          pendingFocus = [r.id, 'name']; renderViewBar(); afterChange(); const b = $('#view .vbody'); b.scrollTop = b.scrollHeight;
+        };
+        if(a === 'addSys') add('Sistem'); else askSubsys('Yeni alt sistem gereksinimi', RV.lvl.startsWith('sub:') ? RV.lvl.slice(4) : '', ss => add('Alt Sistem', ss));
+      }
+      if(a === 'import') importReqs();
+      if(a === 'export') reqExportDialog('xlsx');
+      if(a === 'cols') columnManager();
+      if(a === 'matrix') openD('@matrix');
+      if(a === 'mkbl') createBaseline();
+      if(a === 'blx'){ if((M.baselines || []).length) exportBaselineDiff(); else toast('Önce bir taban çizgisi oluşturun'); }
+      if(a === 'table') openD('@reqtable');
+      return;
+    }
+    const sk = t.closest('th[data-sort]');
+    if(sk){ const k = sk.dataset.sort; if(RV.sortKey === k) RV.sortDir = -RV.sortDir; else { RV.sortKey = k; RV.sortDir = 1; } renderView(); return; }
+    const vc = t.closest('[data-verif]'); if(vc){ toggleVerif(vc.dataset.vr, vc.dataset.verif); return; }
+    const tp = t.closest('[data-trpick]'); if(tp){ pickTrace(tp.dataset.rid, tp.dataset.trpick); return; }
+    const bd = t.closest('[data-bldel]'); if(bd){ const b = (M.baselines || []).find(x => x.id === bd.dataset.bldel); if(b && confirm(`"${b.name}" taban çizgisi silinsin mi?`)){ snap(); M.baselines = M.baselines.filter(x => x !== b); afterChange(); } return; }
+    const rd = t.closest('[data-rdel]'); if(rd){ const r = E(rd.dataset.rdel); if(r && confirm(`"${nm(r)}" silinsin mi? (İlişkileri de silinir)`)){ snap(); delModel([r.id]); afterChange(); } return; }
+    const g = t.closest('[data-goto]'); if(g){ const e = E(g.dataset.goto); if(e){ ST.tsel = e.id; revealInTree(e.id); renderProps(); markSelRow(); } return; }
+    const mc = t.closest('[data-mx]');
+    if(mc){
+      const [rid, cid] = mc.dataset.mx.split('|'), r = E(rid), c = E(cid), m = mxRel(r, c); if(!m) return;
+      snap(); if(findRel(m[0], m[1], m[2])) delRel(m[0], m[1], m[2]); else addRel(m[0], m[1], m[2]); afterChange(); return;
+    }
+    const row = t.closest('tr[data-row]');
+    if(row && ST.tsel !== row.dataset.row){ ST.tsel = row.dataset.row; renderTree(); renderProps(); markSelRow(); }
+  });
+  V.addEventListener('change', ev => {
+    const t = ev.target;
+    if(t.dataset.c === 'level'){ const r = E(t.dataset.r); if(r) changeLevel(r, t.value); return; }
+    if(t.dataset.c === 'status'){ const r = E(t.dataset.r); if(r){ snap(); r.status = t.value; afterChange(); } return; }
+    if(t.dataset.vf === 'st'){ RV.st = t.value; renderView(); return; }
+    if(t.dataset.cf === 'qall'){ CV.qall = t.checked; renderView(); return; }
+    if(t.dataset.cf === 'qstyle'){ snap(); reqCfg().style = t.value; markDirty(); persist(); renderView(); toast('Yazım kuralı: ' + RQ_STYLES.find(x => x[0] === t.value)[1]); return; }
+    if(t.dataset.blf){ const k = t.dataset.blf; BL[k] = t.type === 'checkbox' ? t.checked : t.value; renderView(); return; }
+    if(t.dataset.vf === 'lvl'){ RV.lvl = t.value; renderView(); }
+    if(t.dataset.vf === 'gaps'){ RV.gaps = t.checked; renderView(); }
+    if(t.dataset.mf){ const k = t.dataset.mf; MX[k] = t.type === 'checkbox' ? t.checked : t.value; renderView(); }
+    if(t.dataset.cf === 'gaps'){ CV.gaps = t.checked; renderView(); }
+  });
+  V.addEventListener('input', ev => { if(ev.target.dataset.vf === 'q'){ RV.q = ev.target.value; renderView(); } });
+  V.addEventListener('keydown', ev => {
+    const t = ev.target;
+    if(t.classList && t.classList.contains('ce')){
+      if(ev.key === 'Enter' && !ev.shiftKey){ ev.preventDefault(); const td = t.closest('td'), tr = td.parentElement, ci = [...tr.children].indexOf(td); const nx = tr.nextElementSibling && tr.nextElementSibling.children[ci] && tr.nextElementSibling.children[ci].querySelector('.ce'); if(nx) nx.focus(); else t.blur(); }
+      if(ev.key === 'Escape'){ const r = E(t.dataset.r); t.textContent = r ? cellVal(r, t.dataset.c) : ''; t.blur(); }
+      ev.stopPropagation();
+    }
+  });
+  V.addEventListener('focusout', ev => {
+    const t = ev.target; if(!t.classList || !t.classList.contains('ce')) return;
+    const r = E(t.dataset.r); if(!r) return;
+    const k = t.dataset.c; let v = t.innerText.replace(/\u00a0/g, ' ').replace(/\n+$/, '').replace(/^\n+/, '');
+    if(!['text', 'srcText'].includes(k)) v = v.replace(/\s*\n\s*/g, ' ');
+    if(v === cellVal(r, k)) return;
+    snap();
+    if(k.startsWith('attr:')){ r.attrs = r.attrs || {}; r.attrs[k.slice(5)] = v; } else r[k] = (k === 'reqId' || k === 'subsys') ? v.trim() : v;
+    if(k === 'subsys') relocateReq(r);
+    setTimeout(() => { const a = document.activeElement; if(a && a.dataset && a.dataset.c && a.dataset.r) pendingFocus = [a.dataset.r, a.dataset.c]; afterChange(); }, 0);
+  });
+  $('#props').addEventListener('change', ev => { if(ev.target.dataset.reason){ ST.reason = ev.target.value.trim(); toast(ST.reason ? 'Gerekçe sonraki değişikliklere eklenecek' : 'Gerekçe temizlendi'); } });
+  $('#props').addEventListener('click', ev => {
+    const hb = ev.target.closest('[data-hist]'); if(hb){ historyModal(hb.dataset.hist); return; }
+    const ib = ev.target.closest('[data-impact]'); if(ib){ impactAnalysis(ib.dataset.impact); return; }
+    const vc = ev.target.closest('[data-verif]'); if(vc){ toggleVerif(vc.dataset.vr, vc.dataset.verif); return; }
+    const tp = ev.target.closest('[data-trpick]'); if(tp) pickTrace(tp.dataset.rid, tp.dataset.trpick);
+  });
+})();
+function changeLevel(r, lvl){
+  const fin = ss => { snap(); r.level = lvl; if(lvl === 'Alt Sistem') r.subsys = ss; if(confirm('Gereksinim kimliği yeni seviyeye göre yeniden numaralandırılsın mı?')) r.reqId = nextReqId(lvl); relocateReq(r); afterChange(); };
+  if(lvl === 'Alt Sistem' && !(r.subsys && String(r.subsys).trim())) askSubsys('Alt sistem adı — ' + (r.reqId || ''), '', fin, () => afterChange());
+  else fin(r.subsys);
+}
+function markSelRow(){ document.querySelectorAll('#view tr[data-row]').forEach(tr => tr.classList.toggle('sel', tr.dataset.row === ST.tsel)); }
+
+/* ---------- column / attribute manager ---------- */
+function columnManager(){
+  const box = $('#modalBox'), c = reqCfg();
+  box.style.width = 'min(620px, 94vw)'; box.style.maxWidth = 'none';
+  const draw = () => {
+    const hid = new Set(c.hidden);
+    box.innerHTML = `<h2>Sütunlar ve gereksinim özellikleri</h2>
+    <p class="muted" style="margin:0 0 8px">İşaretli sütunlar tabloda görünür ve Excel'e aktarılır. Özel özellikler (attribute) her gereksinimde ayrı alan olarak tutulur.</p>
+    <table class="cm"><thead><tr><th>Göster</th><th>Sütun</th><th>Tür</th><th></th></tr></thead><tbody>
+    ${allCols().map(col => `<tr><td><input type="checkbox" data-cmv="${esc(col.key)}"${hid.has(col.key) ? '' : ' checked'}${col.key === 'reqId' ? ' disabled' : ''}></td>
+      <td>${col.custom ? `<input data-cmr="${esc(col.key.slice(5))}" value="${esc(col.label)}">` : esc(col.label)}</td>
+      <td class="muted">${col.custom ? 'Özel özellik' : col.trace ? 'İzlenebilirlik (otomatik)' : 'Standart'}</td>
+      <td>${col.custom ? `<button class="pbtn" data-cmd="${esc(col.key.slice(5))}">Sil</button>` : ''}</td></tr>`).join('')}
+    </tbody></table>
+    <div class="icbar" style="margin-top:10px"><input id="cmnew" placeholder="Yeni özellik adı (ör. Öncelik, Durum, Sorumlu, Alt sistem)"><button class="pbtn pri" id="cmadd">+ Özellik ekle</button></div>
+    <div class="icbar"><label>Sistem ID öneki <input id="cmp1" value="${esc(c.prefix['Sistem'])}" style="width:90px"></label><label>Alt sistem ID öneki <input id="cmp2" value="${esc(c.prefix['Alt Sistem'])}" style="width:90px"></label><label>Hane <input id="cmdg" type="number" min="1" max="6" value="${c.digits || 3}" style="width:56px"></label></div>
+    <p style="text-align:right;margin:10px 0 0"><button class="pbtn pri" id="cmclose">Kapat</button></p>`;
+  };
+  draw();
+  $('#modal').style.display = 'flex';
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null; box.onchange = null; afterChange(); };
+  box.onclick = ev => {
+    const t = ev.target;
+    if(t.id === 'cmclose') close();
+    if(t.id === 'cmadd'){ const v = $('#cmnew').value.trim(); if(!v) return; let key = v.toLocaleLowerCase('tr').replace(/[^a-z0-9ğüşıöç]+/g, '_').replace(/^_|_$/g, '') || 'ozellik'; while(c.attrs.some(a => a.key === key)) key += '_'; snap(); c.attrs.push({key, label:v}); draw(); }
+    if(t.dataset.cmd){ const a = c.attrs.find(x => x.key === t.dataset.cmd); if(a && confirm(`"${a.label}" özelliği ve tüm değerleri silinsin mi?`)){ snap(); c.attrs = c.attrs.filter(x => x !== a); allReqs().forEach(r => { if(r.attrs) delete r.attrs[a.key]; }); c.hidden = c.hidden.filter(h => h !== 'attr:' + a.key); draw(); } }
+  };
+  box.onchange = ev => {
+    const t = ev.target;
+    if(t.dataset.cmv){ snap(); const k = t.dataset.cmv; c.hidden = c.hidden.filter(h => h !== k); if(!t.checked) c.hidden.push(k); }
+    if(t.dataset.cmr){ const a = c.attrs.find(x => x.key === t.dataset.cmr); if(a && t.value.trim()){ snap(); a.label = t.value.trim(); } }
+    if(t.id === 'cmp1' || t.id === 'cmp2'){ snap(); c.prefix[t.id === 'cmp1' ? 'Sistem' : 'Alt Sistem'] = t.value; }
+    if(t.id === 'cmdg'){ snap(); c.digits = Math.max(1, Math.min(6, +t.value || 3)); }
+  };
+}
+
+/* ---------- XLSX writer (bağımlılıksız) ---------- */
+const CRC_T = (() => { const t = new Uint32Array(256); for(let n = 0; n < 256; n++){ let c = n; for(let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8){ let c = 0xFFFFFFFF; for(let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipStore(files){
+  const enc = new TextEncoder(), parts = [], cen = []; let off = 0;
+  files.forEach(f => {
+    const name = enc.encode(f.name), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true); h.setUint16(10, 0, true); h.setUint16(12, 0x21, true);
+    h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+    parts.push(new Uint8Array(h.buffer), name, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true); c.setUint16(12, 0, true); c.setUint16(14, 0x21, true);
+    c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+    cen.push(new Uint8Array(c.buffer), name);
+    off += 30 + name.length + data.length;
+  });
+  const cenSize = cen.reduce((n, a) => n + a.length, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cenSize, true); e.setUint32(16, off, true);
+  return new Blob(parts.concat(cen, [new Uint8Array(e.buffer)]), {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+const xe = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+const colName = i => { let s = ''; i++; while(i > 0){ const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+/* stil indeksleri: 0 normal, 1 başlık, 2 gövde, 3 yeşil, 4 kırmızı, 5 sarı, 6 kalın, 7 ortalı, 8 matris başlığı (dikey), 9 başlık-mor */
+const XL_STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="4"><font><sz val="10"/><name val="Calibri"/></font><font><b/><sz val="10"/><name val="Calibri"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="14"/><name val="Calibri"/></font></fonts>
+<fills count="7"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FF26364B"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9F2DF"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFF8D7DA"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF3CD"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF8E44AD"/></patternFill></fill></fills>
+<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFBFC8D3"/></left><right style="thin"><color rgb="FFBFC8D3"/></right><top style="thin"><color rgb="FFBFC8D3"/></top><bottom style="thin"><color rgb="FFBFC8D3"/></bottom><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="11">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="2" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="1" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="1" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="1" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="2" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="bottom" textRotation="90" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="2" fillId="6" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+function sheetXML(sh){
+  const rows = sh.rows.map((row, ri) => `<row r="${ri + 1}"${sh.rowH && sh.rowH[ri] ? ` ht="${sh.rowH[ri]}" customHeight="1"` : ''}>` + row.map((c, ci) => {
+    if(c == null || c === '') return '';
+    const v = typeof c === 'object' ? c.v : c, s = typeof c === 'object' ? c.s : (ri === 0 && sh.header ? 1 : 2);
+    if(typeof v === 'number') return `<c r="${colName(ci)}${ri + 1}" s="${s}"><v>${v}</v></c>`;
+    return `<c r="${colName(ci)}${ri + 1}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${xe(v)}</t></is></c>`;
+  }).join('') + '</row>').join('');
+  const ncol = Math.max(1, ...sh.rows.map(r => r.length));
+  const pane = sh.freeze ? `<pane${sh.freeze[0] ? ` xSplit="${sh.freeze[0]}"` : ''}${sh.freeze[1] ? ` ySplit="${sh.freeze[1]}"` : ''} topLeftCell="${colName(sh.freeze[0])}${sh.freeze[1] + 1}" activePane="${sh.freeze[0] && sh.freeze[1] ? 'bottomRight' : sh.freeze[1] ? 'bottomLeft' : 'topRight'}" state="frozen"/>` : '';
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheetViews><sheetView workbookViewId="0">${pane}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>
+${sh.widths && sh.widths.length ? `<cols>${sh.widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('')}</cols>` : ''}
+<sheetData>${rows}</sheetData>${sh.filter && sh.rows.length > 1 ? `<autoFilter ref="A${sh.filter}:${colName(ncol - 1)}${sh.rows.length}"/>` : ''}</worksheet>`;
+}
+function buildXlsx(sheets){
+  const names = sheets.map(s => s.name.replace(/[\\\/\?\*\[\]:]/g, ' ').slice(0, 31));
+  const files = [
+    {name:'[Content_Types].xml', data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`},
+    {name:'_rels/.rels', data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
+    {name:'xl/workbook.xml', data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${names.map((n, i) => `<sheet name="${xe(n)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets>${sheets.map((s, i) => s.filter && s.rows.length > 1 ? `<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="${i}" hidden="1">'${xe(names[i])}'!$A$${s.filter}:$${colName(Math.max(...s.rows.map(r => r.length)) - 1)}$${s.rows.length}</definedName></definedNames>` : '').find(Boolean) || ''}</workbook>`},
+    {name:'xl/_rels/workbook.xml.rels', data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
+    {name:'xl/styles.xml', data:XL_STYLES}
+  ].concat(sheets.map((s, i) => ({name:`xl/worksheets/sheet${i + 1}.xml`, data:sheetXML(s)})));
+  return zipStore(files);
+}
+const stStyle = st => st === 'Tam' ? 3 : st === 'Kısmi' ? 5 : 4;
+function traceText(key, t, c, r0){
+  const ids = a => a.map(x => x.reqId || nm(x)).join('\n'), names = a => a.map(x => x.name).join('\n');
+  return {_parents:ids(t.parents), _children:ids(t.children), _satisfy:names(t.elems), _funcs:names(t.funcs), _verifyBy:names(t.verifyBy), _verst:verStatus(r0 || {}, t), _status:c.st + (c.gaps.length ? ' — ' + c.gaps.join('; ') : '')}[key];
+}
+/* ---- v1.12: gereksinim dışa aktarma seçenekleri (sütun / attribute seçimi) ---- */
+const EXTRA_COLS = [{key:'doc', label:'Açıklama', w:40}, {key:'_pkg', label:'Paket', w:24}, {key:'_lastChg', label:'Son Değişiklik', w:22}];
+function expAllCols(){ return allCols().concat(EXTRA_COLS); }
+function expCfg(){
+  const c = reqCfg(); if(!c.exp || typeof c.exp !== 'object') c.exp = {};
+  const x = c.exp; if(!Array.isArray(x.cols) || !x.cols.length) x.cols = visCols().map(k => k.key);
+  if(!x.sheets) x.sheets = {mx:true, cov:true, q:true, vc:true}; if(!x.scope) x.scope = 'all'; if(x.noCancel == null) x.noCancel = false;
+  return x;
+}
+function expCols(){ const m = new Map(expAllCols().map(c => [c.key, c])); const r = expCfg().cols.map(k => m.get(k)).filter(Boolean); return r.length ? r : visCols(); }
+function expReqs(){ const x = expCfg(); return allReqs().filter(r => lvlMatch(r, x.scope) && (!x.noCancel || activeReq(r))); }
+let LCH = null, LCH_N = -1;
+function lastChg(){ const L = M.reqLog || []; if(LCH_N !== L.length){ LCH = new Map(); L.forEach(e => LCH.set(e.id, e)); LCH_N = L.length; } return LCH; }
+function expVal(r, col, t, c, sim){
+  if(col.key === '_pkg') return pathOf(r.owner);
+  if(col.key === '_lastChg'){ const h = lastChg().get(r.id); return h ? [new Date(h.t).toLocaleDateString('tr-TR'), h.u, h.f].filter(Boolean).join(' · ') : ''; }
+  if(col.key === 'level') return reqLevel(r);
+  if(col.key === 'status') return reqStatus(r);
+  if(col.trace) return col.key === '_quality' ? reqQuality(r, sim).map(x => x[1]).join('\n') : traceText(col.key, t, c, r);
+  return cellVal(r, col.key);
+}
+function reqExportDialog(fmt){
+  if(!allReqs().length) return toast('Dışa aktarılacak gereksinim yok');
+  const x = expCfg(), all = expAllCols(), sel = new Set(x.cols);
+  let order = x.cols.filter(k => all.some(c => c.key === k)).concat(all.map(c => c.key).filter(k => !sel.has(k)));
+  const FN = {xlsx:['Excel\'e aktar', '⤒ Excel (.xlsx)'], docx:['Word\'e aktar — gereksinim spesifikasyonu', '⤒ Word (.docx)'], reqif:['ReqIF olarak dışa aktar', '⤒ ReqIF (.reqif)']}[fmt];
+  const box = $('#modalBox'); box.style.width = 'min(640px, 96vw)'; box.style.maxWidth = 'none';
+  const lab = c => esc(c.label) + (c.trace ? ' <span class="kd">izlenebilirlik</span>' : c.custom ? ' <span class="kd">özel</span>' : EXTRA_COLS.includes(c) ? ' <span class="kd">ek</span>' : '');
+  const list = () => order.map((k, i) => { const c = all.find(y => y.key === k); return `<div class="pli" data-ek="${esc(k)}"><input type="checkbox" data-ec="${esc(k)}"${sel.has(k) ? ' checked' : ''}${fmt === 'reqif' && (k === 'reqId' || k === 'text') ? ' disabled' : ''}> <span style="flex:1">${lab(c)}</span><button class="pbtn" data-mv="-1" data-i="${i}" title="Yukarı">▲</button><button class="pbtn" data-mv="1" data-i="${i}" title="Aşağı">▼</button></div>`; }).join('');
+  box.innerHTML = `<h2>${FN[0]}</h2>
+    <div class="sub"><span>Çıktıya alınacak sütunlar (attribute'lar) — sırası ▲▼ ile</span><span><button class="pbtn" id="exAll">Tümü</button> <button class="pbtn" id="exNone">Hiçbiri</button> <button class="pbtn" id="exVis">Tablodaki görünür sütunlar</button></span></div>
+    <div class="plist" id="exList" style="max-height:40vh">${list()}</div>
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:10px"><span>Kapsam <select id="exScope">${lvlOptions()}</select></span><label class="vchk"><input type="checkbox" id="exNC"${x.noCancel ? ' checked' : ''}> İptal edilmiş gereksinimleri hariç tut</label></div>
+    ${fmt === 'xlsx' ? `<div class="sub" style="margin-top:8px"><span>Ek sayfalar</span></div><div class="rpsec">${[['mx', 'İzlenebilirlik matrisleri'], ['cov', 'Kapsama analizi'], ['q', 'Kalite bulguları'], ['vc', 'VCRM ve test durumları']].map(([k, t]) => `<label class="vchk"><input type="checkbox" data-es="${k}"${x.sheets[k] !== false ? ' checked' : ''}> ${t}</label>`).join('')}</div>` : ''}
+    ${fmt === 'reqif' ? '<p class="muted" style="margin:8px 0 0">ID ve gereksinim metni ReqIF için her zaman aktarılır. İzlenebilirlik ve ek sütunlar metin attribute olarak aktarılır; Derive / Refine / Trace ilişkileri ayrıca SPEC-RELATION olarak yazılır.</p>' : ''}
+    ${fmt === 'docx' ? `<div class="icbar" style="margin-top:8px"><label class="vchk"><input type="checkbox" id="exLand"${x.land ? ' checked' : ''}> Yatay sayfa (5'ten fazla sütunda önerilir)</label></div>` : ''}
+    <p style="text-align:right;margin:10px 0 0"><span class="muted" id="exSt"></span> &nbsp; <button class="pbtn" id="exC">Vazgeç</button> <button class="pbtn pri" id="exO">${FN[1]}</button></p>`;
+  const sc = $('#exScope'); sc.value = x.scope; if(sc.value !== x.scope) sc.value = 'all';
+  $('#modal').style.display = 'flex';
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null; box.onchange = null; };
+  const redraw = () => { $('#exList').innerHTML = list(); };
+  box.onchange = ev => { const k = ev.target.dataset.ec; if(k){ if(ev.target.checked) sel.add(k); else sel.delete(k); } };
+  box.onclick = async ev => {
+    const t = ev.target, id = t.id;
+    if(t.dataset.mv){ const i = +t.dataset.i, j = i + +t.dataset.mv; if(j >= 0 && j < order.length){ [order[i], order[j]] = [order[j], order[i]]; redraw(); } return; }
+    if(id === 'exAll'){ order.forEach(k => sel.add(k)); redraw(); }
+    if(id === 'exNone'){ sel.clear(); redraw(); }
+    if(id === 'exVis'){ sel.clear(); const v = visCols().map(c => c.key); v.forEach(k => sel.add(k)); order = v.concat(order.filter(k => !v.includes(k))); redraw(); }
+    if(id === 'exC') close();
+    if(id === 'exO'){
+      if(fmt === 'reqif'){ sel.add('reqId'); sel.add('text'); }
+      const cols = order.filter(k => sel.has(k)); if(!cols.length) return $('#exSt').textContent = 'En az bir sütun seçin';
+      x.cols = cols; x.scope = $('#exScope').value; x.noCancel = $('#exNC').checked;
+      box.querySelectorAll('[data-es]').forEach(c => x.sheets[c.dataset.es] = c.checked);
+      if($('#exLand')) x.land = $('#exLand').checked;
+      markDirty(); persist();
+      if(!expReqs().length) return $('#exSt').textContent = 'Seçilen kapsamda gereksinim yok';
+      t.disabled = true; $('#exSt').textContent = 'Hazırlanıyor…';
+      try { if(fmt === 'xlsx') exportReqsXlsx(); else if(fmt === 'reqif') exportReqIF(); else await exportReqsDocx(); close(); }
+      catch(e){ $('#exSt').textContent = 'Hata: ' + e.message; t.disabled = false; }
+    }
+  };
+}
+function reqSpecBlocks(){
+  const B = [], cols = expCols(), rs = expReqs(), idx = relIdx(), sim = simIndex();
+  const tw = cols.map(c => Math.max(6, Math.min(40, c.w || 14))), sw = tw.reduce((a, b) => a + b, 0), w = tw.map(v => Math.round(v / sw * 100));
+  const row = r => { const t = trace(r, idx), c = covStatus(r, t); return cols.map(col => expVal(r, col, t, c, sim) || ''); };
+  const grp = [['Sistem gereksinimleri', rs.filter(r => reqLevel(r) === 'Sistem')]].concat(subsystems().map(s => ['Alt sistem: ' + s, rs.filter(r => reqLevel(r) !== 'Sistem' && String(r.subsys || '').trim() === s)]));
+  const noName = rs.filter(r => reqLevel(r) !== 'Sistem' && !String(r.subsys || '').trim()); if(noName.length) grp.push(['Alt sistem gereksinimleri', noName]);
+  return {grp:grp.filter(g => g[1].length).map(([t, list]) => ({t, head:cols.map(c => c.label), rows:list.map(row), w})), n:rs.length};
+}
+async function exportReqsDocx(){
+  const S = reqSpecBlocks(), B = [], x = expCfg();
+  B.push({t:'h', lv:1, x:'1. Kapsam'}, {t:'p', x:`Bu doküman "${E(M.rootId).name}" modelindeki ${S.n} gereksinimi içerir. Sütunlar: ${expCols().map(c => c.label).join(', ')}.`});
+  B.push({t:'h', lv:1, x:'2. Gereksinimler'});
+  S.grp.forEach((g, i) => { B.push({t:'h', lv:2, x:`2.${i + 1}. ${g.t}`}); B.push({t:'table', head:g.head, rows:g.rows, w:g.w}); });
+  const o = {kind:'srs', title:E(M.rootId).name + ' Gereksinim Spesifikasyonu', subtitle:'Gereksinim Spesifikasyonu', author:userName(), land:x.land != null ? x.land : expCols().length > 5};
+  download(await buildDocx(B, o), fileSafe(E(M.rootId).name) + ' - Gereksinimler.docx');
+  toast(S.n + ' gereksinim Word dosyasına aktarıldı');
+}
+function exportReqsXlsx(){
+  const cols = expCols(), idx = relIdx(), rs = expReqs(), XS = expCfg().sheets, SIM0 = simIndex();
+  if(!rs.length) return toast('Dışa aktarılacak gereksinim yok');
+  const R1 = [cols.map(c => ({v:c.label, s:c.trace ? 9 : 1}))];
+  rs.forEach(r => { const t = trace(r, idx), c = covStatus(r, t); R1.push(cols.map(col => col.key === '_status' ? {v:traceText(col.key, t, c), s:stStyle(c.st)} : col.key === 'reqId' ? {v:cellVal(r, 'reqId'), s:6} : expVal(r, col, t, c, SIM0))); });
+  const sheets = [{name:'Gereksinimler', rows:R1, widths:cols.map(c => c.w), header:true, freeze:[1, 1], filter:1}];
+  const mat = (name, rows, colsE, kindF) => {
+    const hdr = [{v:name, s:1}].concat(colsE.map(c => ({v:(c.reqId ? c.reqId + ' ' : '') + c.name, s:8})));
+    const out = [hdr];
+    rows.forEach(r => { const row = [{v:(r.reqId ? r.reqId + ' ' : '') + (r.name || ''), s:6}]; colsE.forEach(c => { const k = kindF(r, c); row.push(k ? {v:'X', s:7} : {v:' ', s:2}); }); out.push(row); });
+    return {name, rows:out, widths:[42].concat(colsE.map(() => 5)), freeze:[1, 1], rowH:{0:150}};
+  };
+  const rel = new Set(Object.values(M.els).filter(e => e.src && e.tgt).map(e => e.kind + '|' + e.src + '|' + e.tgt));
+  const sys = rs.filter(r => reqLevel(r) === 'Sistem'), sub = rs.filter(r => reqLevel(r) !== 'Sistem');
+  const funcs = Object.values(M.els).filter(e => FUNC_KINDS.has(e.kind)).sort(sortEls);
+  const elems = Object.values(M.els).filter(e => e.kind === 'Block').sort(sortEls);
+  if(XS.mx !== false && sys.length && sub.length) sheets.push(mat('Sistem-Alt Sistem', sys, sub, (r, c) => rel.has('DeriveReqt|' + c.id + '|' + r.id)));
+  if(XS.mx !== false && funcs.length) sheets.push(mat('Gereksinim-Fonksiyon', rs, funcs, (r, c) => rel.has('Satisfy|' + c.id + '|' + r.id)));
+  if(XS.mx !== false && elems.length) sheets.push(mat('Gereksinim-Blok', rs, elems, (r, c) => rel.has('Satisfy|' + c.id + '|' + r.id)));
+  const D = coverageData();
+  const cv = [[{v:'Kapsama Analizi — ' + E(M.rootId).name, s:10}], [], [{v:'Gösterge', s:1}, {v:'Değer', s:1}]];
+  D.cards.forEach(([t, v, sub0, isPct]) => cv.push([t + (sub0 ? ' (' + sub0 + ')' : ''), {v:isPct ? '%' + v : v, s:6}]));
+  cv.push([], [{v:'ID', s:1}, {v:'Seviye', s:1}, {v:'Gereksinim', s:1}, {v:'Durum', s:1}, {v:'Eksikler', s:1}, {v:'Doğrulama Durumu', s:1}]);
+  const rsSet = new Set(rs.map(r => r.id));
+  D.sys.concat(D.sub).filter(({r}) => rsSet.has(r.id)).forEach(({r, c, t}) => cv.push([{v:r.reqId || '', s:6}, reqLevel(r), (r.name ? r.name + ': ' : '') + (r.text || ''), {v:c.st, s:stStyle(c.st)}, c.gaps.join('\n'), verStatus(r, t)]));
+  if(XS.cov !== false) sheets.push({name:'Kapsama Analizi', rows:cv, widths:[44, 14, 60, 12, 50, 16]});
+  const SIMQ = simIndex(), qr = [[{v:'ID', s:1}, {v:'Gereksinim', s:1}, {v:'Önem', s:1}, {v:'Bulgu', s:1}]];
+  rs.filter(activeReq).forEach(r => reqQuality(r, SIMQ).forEach(([sv, m]) => qr.push([{v:r.reqId || '', s:6}, r.text || '', {v:sv, s:sv === 'hata' ? 4 : sv === 'uyarı' ? 5 : 2}, m])));
+  if(XS.q !== false) sheets.push({name:'Kalite', rows:qr, widths:[12, 70, 10, 60], header:true, freeze:[0, 1], filter:1});
+  if(XS.vc !== false) vcrmSheets().forEach(x => sheets.push(x));
+  const blob = buildXlsx(sheets);
+  download(blob, fileSafe(E(M.rootId).name) + ' - Gereksinimler.xlsx');
+}
+
+/* ---------- XLSX / CSV reader ---------- */
+async function inflateRaw(u8){
+  if(typeof DecompressionStream === 'undefined') throw new Error('Bu tarayıcı sıkıştırılmış xlsx okuyamıyor; dosyayı CSV olarak kaydedip deneyin.');
+  const ds = new DecompressionStream('deflate-raw');
+  const buf = await new Response(new Blob([u8]).stream().pipeThrough(ds)).arrayBuffer();
+  return new Uint8Array(buf);
+}
+async function unzip(u8){
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let eo = -1; for(let i = u8.length - 22; i >= Math.max(0, u8.length - 66000); i--){ if(dv.getUint32(i, true) === 0x06054b50){ eo = i; break; } }
+  if(eo < 0) throw new Error('Geçerli bir xlsx (zip) dosyası değil.');
+  const n = dv.getUint16(eo + 10, true); let p = dv.getUint32(eo + 16, true);
+  const out = {}, dec = new TextDecoder();
+  for(let i = 0; i < n; i++){
+    if(dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lo = dv.getUint32(p + 42, true);
+    const name = dec.decode(u8.subarray(p + 46, p + 46 + nl));
+    const lnl = dv.getUint16(lo + 26, true), lxl = dv.getUint16(lo + 28, true), ds = lo + 30 + lnl + lxl;
+    const raw = u8.subarray(ds, ds + csize);
+    out[name] = {method, raw};
+    p += 46 + nl + xl + cl;
+  }
+  const get = async name => { const f = out[name] || out[Object.keys(out).find(k => k.toLowerCase() === name.toLowerCase())]; if(!f) return null; const d = f.method === 8 ? await inflateRaw(f.raw) : f.raw; return new TextDecoder().decode(d); };
+  return {names:Object.keys(out), get};
+}
+const xmlDoc = s => new DOMParser().parseFromString(s, 'application/xml');
+const tagsNS = (n, t) => Array.from(n.getElementsByTagNameNS('*', t));
+async function readXlsx(u8){
+  const z = await unzip(u8);
+  const wb = xmlDoc(await z.get('xl/workbook.xml'));
+  const relsTxt = await z.get('xl/_rels/workbook.xml.rels');
+  const rels = {}; if(relsTxt) tagsNS(xmlDoc(relsTxt), 'Relationship').forEach(r => rels[r.getAttribute('Id')] = r.getAttribute('Target'));
+  const ssTxt = await z.get('xl/sharedStrings.xml');
+  const ss = ssTxt ? tagsNS(xmlDoc(ssTxt), 'si').map(si => tagsNS(si, 't').map(t => t.textContent).join('')) : [];
+  const sheets = [];
+  for(const sh of tagsNS(wb, 'sheet')){
+    const rid = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+    let tgt = rels[rid] || ''; tgt = tgt.replace(/^\//, ''); if(!tgt.startsWith('xl/')) tgt = 'xl/' + tgt;
+    const txt = await z.get(tgt); if(!txt) continue;
+    const rows = [];
+    tagsNS(xmlDoc(txt), 'row').forEach(rw => {
+      const ri = (+rw.getAttribute('r') || rows.length + 1) - 1, row = [];
+      tagsNS(rw, 'c').forEach((c, k) => {
+        const ref = c.getAttribute('r'); let ci = k;
+        if(ref){ const m = ref.match(/^([A-Z]+)/); ci = m[1].split('').reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1; }
+        const t = c.getAttribute('t'), vEl = tagsNS(c, 'v')[0];
+        let v = '';
+        if(t === 's') v = ss[+(vEl ? vEl.textContent : 0)] || '';
+        else if(t === 'inlineStr') v = tagsNS(c, 't').map(x => x.textContent).join('');
+        else if(t === 'b') v = vEl && vEl.textContent === '1' ? 'TRUE' : 'FALSE';
+        else v = vEl ? vEl.textContent : '';
+        row[ci] = v;
+      });
+      rows[ri] = Array.from(row, x => x == null ? '' : String(x));
+    });
+    sheets.push({name:sh.getAttribute('name'), rows:Array.from(rows, r => r || [])});
+  }
+  return sheets;
+}
+function decodeText(u8){
+  let s; try { s = new TextDecoder('utf-8', {fatal:true}).decode(u8); } catch(e){ try { s = new TextDecoder('windows-1254').decode(u8); } catch(e2){ s = new TextDecoder().decode(u8); } }
+  return s.replace(/^﻿/, '');
+}
+function parseCSV(text){
+  const first = text.split(/\r?\n/)[0] || '';
+  const delim = ['\t', ';', ','].map(d => [d, first.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
+  const rows = []; let row = [], f = '', q = false;
+  for(let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if(q){ if(ch === '"'){ if(text[i + 1] === '"'){ f += '"'; i++; } else q = false; } else f += ch; continue; }
+    if(ch === '"'){ q = true; continue; }
+    if(ch === delim){ row.push(f); f = ''; continue; }
+    if(ch === '\n' || ch === '\r'){ if(ch === '\r' && text[i + 1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; continue; }
+    f += ch;
+  }
+  if(f || row.length){ row.push(f); rows.push(row); }
+  return [{name:'CSV', rows}];
+}
+async function pickBytes(){
+  if(NATIVE){
+    const r = await nDialog('open', '', 'Excel / CSV / ReqIF (*.xlsx;*.csv;*.reqif)|*.xlsx;*.csv;*.txt;*.tsv;*.reqif;*.xml|Tüm dosyalar (*.*)|*.*', '', true);
+    if(r.error) throw new Error(r.error);
+    if(!r.path) return null;
+    const bin = atob(r.b64 || ''), u8 = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return {name:r.path, u8};
+  }
+  return new Promise(res => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.csv,.txt,.tsv,.reqif,.xml';
+    inp.onchange = async () => { const f = inp.files[0]; if(!f) return res(null); res({name:f.name, u8:new Uint8Array(await f.arrayBuffer())}); };
+    inp.click();
+  });
+}
+async function importReqs(){
+  let file;
+  try { file = await pickBytes(); } catch(e){ return toast('Dosya açılamadı: ' + e.message); }
+  if(!file) return;
+  let sheets;
+  try {
+    if(/\.xls$/i.test(file.name)) throw new Error('Eski .xls biçimi desteklenmiyor; Excel\'de "Farklı kaydet → .xlsx" yapın.');
+    if(/\.(reqif|xml)$/i.test(file.name) || /<REQ-IF[\s>]/.test(new TextDecoder().decode(file.u8.subarray(0, 4000)))){ sheets = reqifToSheet(new TextDecoder().decode(file.u8)); if(!sheets) throw new Error('Geçerli bir ReqIF dosyası değil'); }
+    else sheets = /\.xlsx$/i.test(file.name) || (file.u8[0] === 0x50 && file.u8[1] === 0x4b) ? await readXlsx(file.u8) : parseCSV(decodeText(file.u8));
+  } catch(e){ return toast('Okunamadı: ' + e.message); }
+  sheets = sheets.filter(s => s.rows.some(r => r.some(c => String(c).trim())));
+  if(!sheets.length) return toast('Dosyada veri bulunamadı');
+  importDialog(sheets, file.name);
+}
+const IMP_TARGETS = [['', '— Yok say —'], ['reqId', 'Gereksinim ID'], ['name', 'Başlık'], ['text', 'Gereksinim metni'], ['level', 'Seviye (Sistem / Alt Sistem)'], ['subsys', 'Alt sistem adı'], ['status', 'Durum (Taslak / Onaylı …)'], ['verif', 'Doğrulama yöntemi'], ['srcNo', 'Müşteri ister no'], ['srcText', 'Müşteri isteri'], ['_parents', 'Üst gereksinim ID(ler)i → Derive'], ['_satisfy', 'Karşılayan model elemanı adları → Satisfy'], ['_funcs', 'Fonksiyon adları → Satisfy'], ['_verifyBy', 'Doğrulayan test adları → Verify'], ['new', '+ Yeni özellik olarak ekle']];
+const asciiTr = x => String(x || '').toLocaleLowerCase('tr').replace(/[çğıöşüâîû]/g, c => ({'ç':'c','ğ':'g','ı':'i','ö':'o','ş':'s','ü':'u','â':'a','î':'i','û':'u'}[c])).replace(/\s+/g, ' ').trim();
+function guessTarget(h){
+  const n = asciiTr(h);
+  if(!n) return '';
+  const has = (...a) => a.some(x => n.includes(x));
+  const attr = reqCfg().attrs.find(a => asciiTr(a.label) === n); if(attr) return 'attr:' + attr.key;
+  if(has('musteri', 'kaynak', 'source', 'customer', 'ister no') || n === 'ister') return /(^|\s)(no|numara|id|kimlik)\.?$/.test(n) || has(' no ', 'no.') ? 'srcNo' : 'srcText';
+  if(has('kapsama', 'alt sistem gereksinimleri', 'children', 'kalite')) return '';
+  if(has('durum', 'status', 'onay')) return 'status';
+  if((has('alt sistem', 'altsistem', 'subsystem', 'birim', 'unit') && !has('gereksinim', 'requirement')) || n === 'alt sistem') return 'subsys';
+  if(has('ust ', 'ust gereksinim', 'parent', 'turetildi', 'derived from')) return '_parents';
+  if(has('karsilayan', 'satisf', 'model eleman')) return '_satisfy';
+  if(has('fonksiyon', 'function')) return '_funcs';
+  if(has('dogrulayan', 'verified by')) return '_verifyBy';
+  if(has('dogrulama', 'verif', 'yontem')) return 'verif';
+  if(has('seviye', 'level') || n === 'tip' || n === 'type') return 'level';
+  if(/(^|\s)(id|no|numara|kimlik|ref)\.?$/.test(n) || n === 'id' || has('req id', 'gereksinim id', 'gereksinim no')) return 'reqId';
+  if(has('baslik', 'title', 'kisa ad') || n === 'ad' || n === 'name') return 'name';
+  if(has('metin', 'text', 'gereksinim', 'requirement', 'tanim', 'aciklama', 'description')) return 'text';
+  return 'new';
+}
+function importDialog(sheets, fname){
+  const box = $('#modalBox');
+  box.style.width = 'min(900px, 96vw)'; box.style.maxWidth = 'none';
+  let si = 0, hr = 0, map = [];
+  const headerRow = () => { const rows = sheets[si].rows; let i = 0; while(i < rows.length && !rows[i].some(c => String(c).trim())) i++; return i; };
+  const setup = () => { hr = headerRow(); const H = sheets[si].rows[hr] || []; map = H.map(h => guessTarget(h)); };
+  const draw = () => {
+    const rows = sheets[si].rows, H = rows[hr] || [], data = rows.slice(hr + 1).filter(r => r.some(c => String(c).trim()));
+    const opts = IMP_TARGETS.concat(reqCfg().attrs.map(a => ['attr:' + a.key, 'Özellik: ' + a.label]));
+    box.innerHTML = `<h2>Excel'den gereksinim aktar <span class="muted" style="font-size:12px;font-weight:normal">${esc(baseName(fname))}</span></h2>
+      <div class="icbar">${sheets.length > 1 ? `<label>Sayfa <select id="imsh">${sheets.map((s, i) => `<option value="${i}"${i === si ? ' selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label>` : ''}
+      <label>Başlık satırı <input id="imhr" type="number" min="1" value="${hr + 1}" style="width:60px"></label>
+      <label>Seviye sütunu yoksa <select id="imlv"><option>Sistem</option><option>Alt Sistem</option></select></label>
+      <label class="vchk"><input type="checkbox" id="imup" checked> Aynı ID'yi güncelle</label></div>
+      <div class="imwrap"><table class="rt imt"><thead><tr><th>Excel sütunu</th><th>Aktarılacağı alan</th><th>Örnek değerler</th></tr></thead><tbody>
+      ${H.map((h, i) => `<tr><td><b>${esc(h || colName(i))}</b></td><td><select data-imc="${i}">${opts.map(([k, t]) => `<option value="${k}"${map[i] === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></td><td class="muted">${data.slice(0, 3).map(r => esc(String(r[i] || '').slice(0, 50))).filter(Boolean).join(' · ')}</td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="muted" style="margin:8px 0 0">${data.length} veri satırı bulundu. Üst gereksinim sütunundaki ID'ler (virgül/satır ile ayrılmış) Derive ilişkisi olarak kurulur; model elemanı ve fonksiyon adları mevcut elemanlarla eşleştirilir.</p>
+      <p style="text-align:right;margin:10px 0 0"><button class="pbtn" id="imcancel">Vazgeç</button> <button class="pbtn pri" id="imok">${data.length} satırı içe aktar</button></p>`;
+  };
+  setup(); draw();
+  $('#modal').style.display = 'flex';
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null; box.onchange = null; };
+  box.onchange = ev => {
+    const t = ev.target;
+    if(t.id === 'imsh'){ si = +t.value; setup(); draw(); }
+    if(t.id === 'imhr'){ hr = Math.max(0, (+t.value || 1) - 1); const H = sheets[si].rows[hr] || []; map = H.map(h => guessTarget(h)); draw(); }
+    if(t.dataset.imc != null) map[+t.dataset.imc] = t.value;
+  };
+  box.onclick = ev => {
+    if(ev.target.id === 'imcancel') close();
+    if(ev.target.id === 'imok'){ const lv = $('#imlv').value, up = $('#imup').checked; close(); doImport(sheets[si].rows, hr, map, lv, up); }
+  };
+}
+function parseLevel(v, def){ const n = String(v || '').toLocaleLowerCase('tr'); if(!n.trim()) return def; return /alt|sub|birim|unit|ass/.test(n) ? 'Alt Sistem' : 'Sistem'; }
+function parseVerif(v){
+  const out = new Set();
+  String(v || '').split(/[,;\/\n+&]+|\s+ve\s+/).map(x => x.trim().toLocaleLowerCase('tr')).filter(Boolean).forEach(x => {
+    if(/^t$|test/.test(x)) out.add('Test'); else if(/^a$|anali/.test(x)) out.add('Analiz'); else if(/^(m|ı|i)$|muayene|inspect|incele/.test(x)) out.add('Muayene'); else if(/^(g|d)$|göster|goster|demo/.test(x)) out.add('Gösterim'); else out.add(x.charAt(0).toLocaleUpperCase('tr') + x.slice(1));
+  });
+  return VERIF.map(x => x[0]).filter(x => out.has(x)).concat([...out].filter(x => !VERIF.some(y => y[0] === x))).join(', ');
+}
+const splitList = v => String(v || '').split(/[\n,;]+/).map(x => x.trim()).filter(Boolean);
+function doImport(rows, hr, map, defLevel, update){
+  const H = rows[hr] || [], data = rows.slice(hr + 1).filter(r => r.some(c => String(c).trim()));
+  if(!map.some(m => m === 'text' || m === 'reqId' || m === 'name')) return toast('En az bir "Gereksinim ID", "Başlık" veya "Gereksinim metni" sütunu eşlenmeli');
+  snap();
+  const c = reqCfg();
+  map = map.map((m, i) => {
+    if(m !== 'new') return m;
+    const label = String(H[i] || colName(i)).trim();
+    let a = c.attrs.find(x => x.label === label);
+    if(!a){ let key = label.toLocaleLowerCase('tr').replace(/[^a-z0-9ğüşıöç]+/g, '_').replace(/^_|_$/g, '') || 'ozellik'; while(c.attrs.some(x => x.key === key)) key += '_'; a = {key, label}; c.attrs.push(a); }
+    return 'attr:' + a.key;
+  });
+  const byId = new Map(allReqs().filter(r => r.reqId).map(r => [String(r.reqId).trim(), r]));
+  let added = 0, updated = 0, rels = 0, miss = new Set();
+  const later = [];
+  data.forEach(row => {
+    const get = k => { const i = map.indexOf(k); return i < 0 ? undefined : String(row[i] == null ? '' : row[i]).trim(); };
+    const id = get('reqId');
+    const ssv = get('subsys');
+    const lvl = parseLevel(get('level'), ssv ? 'Alt Sistem' : defLevel);
+    let r = id && update ? byId.get(id) : null;
+    if(r) updated++;
+    else { r = mk('Requirement', reqPkgFor(lvl, ssv), {level:lvl, name:'', reqId:id || undefined, subsys:ssv || ''}); if(!id) r.reqId = nextReqId(lvl); byId.set(String(r.reqId), r); added++; }
+    if(ssv !== undefined && ssv !== r.subsys){ r.subsys = ssv; if(ssv && r.level !== 'Alt Sistem' && !get('level')) r.level = 'Alt Sistem'; relocateReq(r); }
+    if(get('level') !== undefined && get('level') !== '') { if(r.level !== lvl){ r.level = lvl; const tgtPkg = reqPkgFor(lvl); const o = E(r.owner); if(o && /Gereksinimleri$/.test(o.name)) r.owner = tgtPkg; } }
+    ['name', 'text', 'srcNo', 'srcText'].forEach(k => { const v = get(k); if(v !== undefined) r[k] = v; });
+    if(get('verif') !== undefined) r.verif = parseVerif(get('verif'));
+    if(get('status')){ const sv = asciiTr(get('status')); r.status = /iptal|cancel|delet/.test(sv) ? 'İptal' : /degisik|change|revize/.test(sv) ? 'Değişiklikte' : /onay|approv|accept|kabul/.test(sv) ? 'Onaylı' : /incele|review/.test(sv) ? 'İncelemede' : 'Taslak'; }
+    map.forEach((m, i) => { if(m.startsWith('attr:')){ r.attrs = r.attrs || {}; r.attrs[m.slice(5)] = String(row[i] == null ? '' : row[i]).trim(); } });
+    later.push([r, get('_parents'), get('_satisfy'), get('_funcs'), get('_verifyBy')]);
+  });
+  const byName = kinds => { const m = new Map(); Object.values(M.els).forEach(e => { if(kinds(e.kind) && e.name) m.set(e.name.toLocaleLowerCase('tr'), e); }); return m; };
+  const elN = byName(k => ELEM_KINDS.includes(k)), fnN = byName(k => FUNC_KINDS.has(k)), tcN = byName(k => k === 'TestCase');
+  later.forEach(([r, par, sat, fn, ver]) => {
+    splitList(par).forEach(pid => { const p = byId.get(pid); if(p){ if(addRel('DeriveReqt', r.id, p.id)) rels++; } else miss.add(pid); });
+    splitList(sat).forEach(n => { const e = elN.get(n.toLocaleLowerCase('tr')); if(e){ if(addRel('Satisfy', e.id, r.id)) rels++; } else miss.add(n); });
+    splitList(fn).forEach(n => { const e = fnN.get(n.toLocaleLowerCase('tr')); if(e){ if(addRel('Satisfy', e.id, r.id)) rels++; } else miss.add(n); });
+    splitList(ver).forEach(n => { let e = tcN.get(n.toLocaleLowerCase('tr')); if(!e){ e = mk('TestCase', nearestPkg(r.owner), {name:n}); tcN.set(n.toLocaleLowerCase('tr'), e); } if(addRel('Verify', e.id, r.id)) rels++; });
+  });
+  ST.exp.add(findOrMkPkg(M.rootId, 'Gereksinimler'));
+  if(!ST.open.includes('@reqtable')) ST.open.push('@reqtable');
+  ST.cur = '@reqtable';
+  afterChange();
+  toast(`${added} gereksinim eklendi, ${updated} güncellendi, ${rels} izlenebilirlik ilişkisi kuruldu` + (miss.size ? ` · Bulunamayan: ${[...miss].slice(0, 5).join(', ')}${miss.size > 5 ? '…' : ''}` : ''));
+}
+function reqMenuItems(){
+  return [{h:'Gereksinim yönetimi'},
+    {t:'Gereksinim tablosu', f:() => openD('@reqtable')},
+    {t:'İzlenebilirlik matrisi', f:() => openD('@matrix')},
+    {t:'Kapsama analizi', f:() => openD('@coverage')},
+    '-',
+    {t:'Excel\'den gereksinim aktar…', f:importReqs},
+    {t:'Şartnameden gereksinim çıkar… (Word / metin)', f:specImportDialog},
+    {t:'Excel\'e aktar… (sütun seçimiyle)', f:() => reqExportDialog('xlsx')},
+    {t:'Word\'e aktar… (gereksinim spesifikasyonu)', f:() => reqExportDialog('docx')},
+    {t:'Sütunlar ve özellikler…', f:columnManager},
+    '-',
+    {t:'Doğrulama matrisi (VCRM)', f:() => openD('@vcrm')},
+    {t:'Test kampanyası (zaman çizelgesi)', f:() => openD('@campaign')},
+    {t:'Test yürütme (prosedür adımları)', f:() => openD('@testrun')},
+    {t:'Test numuneleri', f:() => openD('@articles')},
+    {t:'Uygunsuzluk kaydı (NCR)', f:() => openD('@ncr')},
+    {t:'Test prosedürü / test raporu (Word)…', f:() => docDialog('tp')},
+    {t:'Excel\'e aktar (VCRM + test durumları)', f:exportVcrmXlsx},
+    {t:'Excel\'den test durumu / sonuç aktar…', f:importTests},
+    '-',
+    {t:'ReqIF olarak dışa aktar…', f:() => reqExportDialog('reqif')},
+    '-',
+    {t:'Kalite raporu', f:() => openD('@quality')},
+    {t:'Taban çizgileri ve karşılaştırma', f:() => openD('@baseline')},
+    {t:'Değişiklik geçmişi…', f:() => historyModal(null)},
+    {t:'Kullanıcı adım…', f:setUserName},
+    '-',
+    {t:'Yeni gereksinim diyagramı', f:() => { snap(); const d = newDiagramCore(findOrMkPkg(M.rootId, 'Gereksinimler'), 'req', 'Gereksinimler'); ST.exp.add(d.owner); openD(d.id); afterChange(); }}];
+}
+
+/* ================= PHASE 2: QUALITY, STATUS, BASELINES, HISTORY, IMPACT ================= */
+const REQ_STATUS = ['Taslak', 'İncelemede', 'Onaylı', 'Değişiklikte', 'İptal'];
+const STATUS_COL = {'Taslak':'#7f8c8d', 'İncelemede':'#d18a00', 'Onaylı':'#2e7d32', 'Değişiklikte':'#c0392b', 'İptal':'#95a5a6'};
+const reqStatus = r => REQ_STATUS.includes(r.status) ? r.status : 'Taslak';
+const activeReq = r => reqStatus(r) !== 'İptal';
+VIEWS['@quality'] = {tr:'Gereksinim Kalite Raporu', ic:'QA', note:'Gereksinim metinleri INCOSE yazım kurallarına göre denetlenir: cümlenin "-ecek / -acak / -ecektir / -acaktır" ile bitmesi (çubuktaki Yazım kuralı ile "-malıdır / -melidir" de seçilebilir), belirsiz kelimeler, birden fazla ister, birimsiz değerler, TBD, aşırı uzunluk ve çok benzer gereksinimler.<br><br>Satıra tıklayınca gereksinim Özellikler panelinde açılır.'};
+VIEWS['@baseline'] = {tr:'Taban Çizgileri', ic:'BL', note:'Gereksinim setinin adlandırılmış anlık kopyalarını oluşturun ve iki taban çizgisini (veya taban çizgisi ile güncel modeli) karşılaştırın.<br><br>Değişen metinler kelime düzeyinde renklendirilir.'};
+
+/* ---- kalite denetimi ---- */
+const VAGUE = ['uygun', 'yeterli', 'yeterince', 'mümkün', 'mümkünse', 'mümkün olduğunca', 'mümkün mertebe', 'gerektiğinde', 'gerekirse', 'gerekli görüldüğünde', 'kolay', 'kolayca', 'kolaylıkla', 'hızlı', 'hızlıca', 'çabuk', 'kullanıcı dostu', 'esnek', 'sağlam', 'optimum', 'optimal', 'maksimize', 'minimize', 'en iyi', 'en az düzeyde', 'vb.', 'vs.', 've/veya', 'yaklaşık', 'makul', 'etkin', 'verimli', 'kabul edilebilir', 'normal', 'genellikle', 'bazen', 'çoğunlukla', 'yüksek performans', 'gibi', 'benzeri', 'adequate', 'appropriate', 'etc.', 'and/or', 'user-friendly', 'as possible', 'easy', 'fast', 'approximately', 'sufficient', 'flexible', 'robust'];
+const UNITS = 'v|mv|kv|a|ma|w|kw|mw|hz|khz|mhz|ghz|s|sn|ms|µs|us|dk|min|saat|sa|h|gün|m|mm|cm|km|µm|nm|kg|g|mg|ton|n|kn|nm|pa|kpa|mpa|bar|mbar|psi|°c|°|c|k|db|dbm|db\\(a\\)|%|rpm|dev/dk|lux|lm|cd|l|ml|m2|m²|m3|m³|bit|byte|kb|mb|gb|tb|bps|kbps|mbps|gbps|grms|g²/hz|g2/hz|ohm|Ω|kΩ|f|µf|nf|pf|j|kj|wh|kwh|mah|ah|kn·m|n·m|nm|m/s|km/h|kt|knot|ft|in|lb|°f|mil|adet|kez|cycle|döngü|yıl|ay|hafta|saniye|dakika|metre|kilogram|volt|amper|watt|derece';
+const UNIT_RE = (() => { const u = UNITS.split('|'), lg = u.filter(x => x.replace(/\\/g, '').length >= 4), sh = u.filter(x => x.replace(/\\/g, '').length < 4); return new RegExp('^\\s*((' + lg.join('|') + ')|(' + sh.join('|') + ')(?![a-zçğıöşü]))', 'i'); })();
+function qTokens(t){ return new Set(asciiTr(t).replace(/[^a-z0-9 ]/g, ' ').split(' ').filter(w => w.length > 2)); }
+let qCache = {sig:'', sim:new Map()};
+function simIndex(){
+  const rs = allReqs().filter(r => r.text && activeReq(r));
+  const sig = rs.map(r => r.id + ':' + r.text).join('|');
+  if(sig === qCache.sig) return qCache.sim;
+  const tok = rs.map(r => [r, qTokens(r.text)]), sim = new Map();
+  for(let i = 0; i < tok.length; i++) for(let j = i + 1; j < tok.length; j++){
+    const A = tok[i][1], B = tok[j][1]; if(A.size < 3 || B.size < 3) continue;
+    let inter = 0; A.forEach(w => { if(B.has(w)) inter++; });
+    const jac = inter / (A.size + B.size - inter);
+    if(jac >= 0.72){ [[i, j], [j, i]].forEach(([a, b]) => { const k = tok[a][0].id; if(!sim.has(k)) sim.set(k, []); sim.get(k).push([tok[b][0], jac]); }); }
+  }
+  qCache = {sig, sim}; return sim;
+}
+/* Türkçe gereksinim yazım kuralı: cümle "-ecek / -acak / -ecektir / -acaktır" ile biter (varsayılan).
+   Kalite raporu çubuğundan "-malıdır / -melidir" ya da ikisi birden seçilebilir. */
+const RQ_STYLES = [['gelecek', '"-ecek / -acak / -ecektir / -acaktır" ile biter'], ['mali', '"-malıdır / -melidir" ile biter'], ['ikisi', 'İkisi de kabul edilir']];
+const reqStyle = () => (M && M.reqCfg && M.reqCfg.style) || 'gelecek';
+const FUT_W = /(?:acak|ecek)(?:t[ıi]r)?$/, MALI_W = /m[ae]l[ıi](?:d[ıi]r)?$/, OTHER_W = /^(?:zorundadır|zorunludur|shall|must|will)$/;
+const trWords = s => s.match(/[a-zçğıöşüâîû]+/g) || [];
+function reqSentences(t){
+  let x0 = String(t || '').replace(/\s+/g, ' '), z0; do { z0 = x0; x0 = x0.replace(/[\(\[][^()\[\]]*[\)\]]/g, ' '); } while(x0 !== z0); /* parantez içleri yok sayılır */
+  x0 = x0.replace(/(^|[^A-Za-zÇĞİÖŞÜçğıöşü])(bkz|vb|vs|vd|örn|ör|no|şek|tab|md|mad|ref|rev|min|maks|max|yakl|yön|std)\.(?=\s)/gi, '$1$2');
+  return x0.split(/(?<=[.;!?])\s+(?=[A-ZÇĞİÖŞÜ0-9(])/).map(x => {
+    let y = x.trim(), z; do { z = y; y = y.replace(/\s*[\(\[][^()\[\]]*[\)\]]\s*([.;:!?]*)\s*$/, '$1'); } while(y !== z); /* sondaki (bkz. …) açıklamaları atla */
+    return y.toLocaleLowerCase('tr');
+  }).filter(x => trWords(x).length);
+}
+function futSuggest(w){
+  let st = w.replace(MALI_W, ''); if(/et$|git$/.test(st)) st = st.slice(0, -1) + 'd';
+  const v = (st.match(/[aeıioöuü](?=[^aeıioöuü]*$)/) || ['e'])[0], back = /[aıou]/.test(v);
+  return st + (/[aeıioöuü]$/.test(st) ? 'y' : '') + (back ? 'acaktır' : 'ecektir');
+}
+function modalHits(low, st){ /* low parametresi özgün metindir; cümleler içeride küçültülür */
+  /* cümle sonundaki fiiller + "ve / veya / ," ile bağlanan ara fiiller */
+  const okW = w => (st !== 'mali' && FUT_W.test(w)) || (st !== 'gelecek' && MALI_W.test(w)) || OTHER_W.test(w);
+  let n = 0;
+  reqSentences(low).forEach(sn => { /* low: özgün metin */
+    const ws = trWords(sn); if(okW(ws[ws.length - 1])) n++;
+    const re = /([a-zçğıöşüâîû]+)(?=\s*(?:,|;)?\s+(?:ve|veya|ayrıca|hem de)\s)/g; let m;
+    while((m = re.exec(sn))){ const w = m[1]; if((st !== 'mali' && /(?:acak|ecek)(?:t[ıi]r)?$/.test(w) && w.length > 5) || (st !== 'gelecek' && MALI_W.test(w))) n++; }
+  });
+  return n;
+}
+function modalIssues(t, low){
+  const st = reqStyle(), out = [], sents = reqSentences(t);
+  if(/\b(shall|must)\b/.test(low)){ const n = (low.match(/\b(shall|must)\b/g) || []).length; if(n > 1) out.push(['uyarı', `Birden fazla ister içeriyor olabilir (${n} "shall") — bölmeyi düşünün`]); return out; }
+  const bad = sents.filter(sn => { const ws = trWords(sn), w = ws[ws.length - 1] || ''; return !((st !== 'mali' && FUT_W.test(w)) || (st !== 'gelecek' && MALI_W.test(w)) || OTHER_W.test(w)); });
+  if(bad.length){
+    const w = (trWords(bad[bad.length - 1]).pop() || '');
+    if(st === 'gelecek') out.push(['uyarı', MALI_W.test(w) ? `Cümle "${w}" ile bitiyor — kurala göre "-ecektir / -acaktır" kullanın (ör. "${futSuggest(w)}")` : `Cümle "-ecek / -acak / -ecektir / -acaktır" ekiyle bitmiyor (son kelime: "${w}")`]);
+    else if(st === 'mali') out.push(['uyarı', FUT_W.test(w) ? `Cümle "${w}" ile bitiyor — kurala göre "-malıdır / -melidir" kullanın` : 'Zorunluluk ifadesi yok ("-malıdır / -melidir")']);
+    else out.push(['uyarı', 'Cümle zorunluluk ifadesiyle bitmiyor ("-ecektir / -acaktır" veya "-malıdır / -melidir")']);
+  }
+  const n = modalHits(t, st);
+  if(n > 1) out.push(['uyarı', 'Birden fazla ister içeriyor olabilir (' + n + ' zorunluluk fiili) — bölmeyi düşünün']);
+  return out;
+}
+function reqQuality(r, sim){
+  const out = [], t = String(r.text || '').trim(), low = t.toLocaleLowerCase('tr');
+  if(!t){ out.push(['hata', 'Gereksinim metni boş']); return out; }
+  modalIssues(t, low).forEach(x => out.push(x));
+  const vg = VAGUE.filter(v => new RegExp('(^|[^a-zçğıöşü])' + v.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&') + '($|[^a-zçğıöşü])', 'i').test(low));
+  if(vg.length) out.push(['uyarı', 'Belirsiz / doğrulanamaz ifade: ' + vg.map(v => '"' + v + '"').join(', ')]);
+  if(/\b(tbd|tbr|tbc)\b|belirlenecek|daha sonra belirlenecek|ileride tanımlanacak|\?\?/i.test(t)) out.push(['uyarı', 'Belirlenmemiş değer (TBD / belirlenecek)']);
+  const nums = [];
+  t.replace(/(^|[^A-Za-z0-9\-\/.])(\d+(?:[.,]\d+)?)(?![\d.,]*[A-Za-z]*-)/g, (m, pre, n, off) => {
+    const rest = t.slice(off + m.length), before = t.slice(Math.max(0, off - 14), off + pre.length).toLocaleLowerCase('tr');
+    if(/^[\-\/]/.test(rest) || /^\.\d/.test(rest) || pre === '%' || /%\s*$/.test(before)) return m;
+    if(/(yöntem|method|madde|bölüm|kısım|rev|std|standart|no|sayı|sürüm|versiyon|tablo|şekil|ek|annex|para)\.?\s*$/.test(before)) return m;
+    if(!UNIT_RE.test(rest) && !/^\s*(x|×|\*)\s*\d/.test(rest)) nums.push(n);
+    return m;
+  });
+  const realNums = nums.filter(n => !/^(19|20)\d\d$/.test(n));
+  if(realNums.length) out.push(['bilgi', 'Birimsiz sayısal değer: ' + [...new Set(realNums)].slice(0, 4).join(', ')]);
+  const words = t.split(/\s+/).length;
+  if(words > 55) out.push(['bilgi', 'Çok uzun (' + words + ' kelime) — sadeleştirmeyi düşünün']);
+  if(/\b(o|bu|şu|it|they|this)\b\s/i.test(t.split(/[.;]/)[0]) && false) out.push(['bilgi', 'Belirsiz zamir']);
+  const dup = reqIdCount().get(r.reqId) > 1 ? [1] : [];
+  if(dup.length) out.push(['hata', 'Aynı ID başka bir gereksinimde de var: ' + r.reqId]);
+  (sim && sim.get(r.id) || []).slice(0, 3).forEach(([o, j]) => out.push(['uyarı', `${o.reqId || nm(o)} ile çok benzer (%${Math.round(j * 100)})`]));
+  REQ_Q_EXT.forEach(f => f(r, out));
+  return out;
+}
+function qualityBadge(iss){
+  if(!iss.length) return '<span class="qok" title="Sorun bulunmadı">✓</span>';
+  const sev = iss.some(x => x[0] === 'hata') ? 'qerr' : iss.some(x => x[0] === 'uyarı') ? 'qwarn' : 'qinfo';
+  return `<span class="${sev}" title="${esc(iss.map(x => '• ' + x[1]).join('\n'))}">⚠ ${iss.length}</span>`;
+}
+function qualityHTML(){
+  const sim = simIndex(), rs = allReqs().filter(activeReq);
+  if(!rs.length) return '<div class="vempty">Denetlenecek gereksinim yok.</div>';
+  const rows = rs.map(r => ({r, iss:reqQuality(r, sim)}));
+  const bad = rows.filter(x => x.iss.length), cnt = s => rows.reduce((n, x) => n + x.iss.filter(i => i[0] === s).length, 0);
+  let h = `<div class="cards"><div class="card"><div class="cv">${rs.length}</div><div class="ct">Denetlenen gereksinim</div></div>
+    <div class="card"><div class="cv" style="color:${bad.length ? '#c0392b' : '#2e9e6a'}">${bad.length}</div><div class="ct">Sorunlu gereksinim</div></div>
+    <div class="card"><div class="cv" style="color:#a52834">${cnt('hata')}</div><div class="ct">Hata</div></div>
+    <div class="card"><div class="cv" style="color:#d18a00">${cnt('uyarı')}</div><div class="ct">Uyarı</div></div>
+    <div class="card"><div class="cv" style="color:#2e86c1">${cnt('bilgi')}</div><div class="ct">Bilgi</div></div></div>`;
+  const list = CV.qall ? rows : bad;
+  h += `<table class="rt cvt"><thead><tr><th>ID</th><th>Gereksinim metni</th><th>Durum</th><th>Bulgular</th></tr></thead><tbody>`;
+  list.forEach(({r, iss}) => {
+    h += `<tr data-row="${r.id}" class="${ST.tsel === r.id ? 'sel' : ''}"><td style="white-space:nowrap"><a class="lnk" data-goto="${r.id}"><b>${esc(r.reqId || '')}</b></a></td><td class="cvtx" style="max-width:520px">${esc(r.text || '')}</td><td>${statusChip(r)}</td><td class="gapt">${iss.length ? iss.map(([s, m]) => `<span class="q-${s}">${s === 'hata' ? '✖' : s === 'uyarı' ? '⚠' : 'ℹ'} ${esc(m)}</span>`).join('<br>') : '<span class="qok">✓ Sorun yok</span>'}</td></tr>`;
+  });
+  return h + `</tbody></table>${!list.length ? '<div class="vempty">Tüm gereksinimler kurallara uygun 🎉</div>' : ''}`;
+}
+function statusChip(r){ const s = reqStatus(r); return `<span class="stc" style="background:${STATUS_COL[s]}">${esc(s)}</span>`; }
+
+/* ---- değişiklik geçmişi ---- */
+function userName(){ try { return localStorage.getItem('sysml-user') || 'Kullanıcı'; } catch(e){ return 'Kullanıcı'; } }
+function setUserName(){
+  const v = prompt('Değişiklik geçmişinde görünecek adınız:', userName());
+  if(v != null && v.trim()){ try { localStorage.setItem('sysml-user', v.trim()); } catch(e){} toast('Kullanıcı adı: ' + v.trim()); }
+}
+const TRACKED = [['reqId', 'ID'], ['name', 'Başlık'], ['text', 'Metin'], ['level', 'Seviye'], ['subsys', 'Alt sistem'], ['verif', 'Doğrulama'], ['status', 'Durum'], ['srcNo', 'Müşteri ister no'], ['srcText', 'Müşteri isteri']];
+const SUBST = new Set(['text', 'verif', 'level', 'subsys', 'name']);
+let REQ_CACHE = null;
+function reqSnap(r, idx){
+  const o = {};
+  TRACKED.forEach(([k]) => o[k] = k === 'status' ? reqStatus(r) : String(r[k] == null ? '' : r[k]));
+  Object.entries(r.attrs || {}).forEach(([k, v]) => o['attr:' + k] = String(v == null ? '' : v));
+  o._parents = (idx['DeriveReqt'] || []).filter(x => x.src === r.id).map(x => E(x.tgt)).filter(Boolean).map(x => x.reqId).sort().join(', ');
+  return o;
+}
+function rebuildReqCache(){ const idx = relIdx(); REQ_CACHE = new Map(allReqs().map(r => [r.id, reqSnap(r, idx)])); }
+function fieldLabel(k){ if(k === '_parents') return 'Üst gereksinim'; if(k.startsWith('attr:')){ const a = reqCfg().attrs.find(x => x.key === k.slice(5)); return a ? a.label : k.slice(5); } const t = TRACKED.find(x => x[0] === k); return t ? t[1] : k; }
+function trackReqChanges(){
+  if(!M) return;
+  if(!REQ_CACHE){ rebuildReqCache(); return; }
+  const idx = relIdx(), now = new Date().toISOString(), u = userName(), why = ST.reason || '';
+  const log = M.reqLog = M.reqLog || [];
+  const seen = new Set(), push = e => log.push(Object.assign({t:now, u, why}, e));
+  allReqs().forEach(r => {
+    seen.add(r.id);
+    let cur0 = reqSnap(r, idx); const old = REQ_CACHE.get(r.id);
+    if(!old){ push({id:r.id, rid:r.reqId, f:'Oluşturuldu', o:'', n:(r.text || r.name || '').slice(0, 200)}); return; }
+    const keys = new Set(Object.keys(old).concat(Object.keys(cur0)));
+    let subst = false;
+    keys.forEach(k => { const a = old[k] || '', b = cur0[k] || ''; if(a !== b){ push({id:r.id, rid:r.reqId, f:fieldLabel(k), o:a, n:b}); if(SUBST.has(k)) subst = true; } });
+    if(subst && old.status === 'Onaylı' && reqStatus(r) === 'Onaylı'){
+      r.status = 'Değişiklikte'; push({id:r.id, rid:r.reqId, f:'Durum', o:'Onaylı', n:'Değişiklikte', why:(why ? why + ' · ' : '') + 'onaylı gereksinim değiştiği için otomatik'});
+      toast(`${r.reqId}: onaylı gereksinim değişti → durum "Değişiklikte" yapıldı`);
+    }
+  });
+  REQ_CACHE.forEach((old, id) => { if(!seen.has(id)) push({id, rid:old.reqId, f:'Silindi', o:(old.text || '').slice(0, 200), n:''}); });
+  if(log.length > 5000) log.splice(0, log.length - 5000);
+  rebuildReqCache();
+}
+function historyModal(rid){
+  const box = $('#modalBox');
+  box.style.width = 'min(980px, 96vw)'; box.style.maxWidth = 'none';
+  const all = (M.reqLog || []).slice().reverse();
+  const draw = () => {
+    const q = asciiTr($('#hq') ? $('#hq').value : '');
+    const list = all.filter(e => (!rid || e.id === rid) && (!q || asciiTr([e.rid, e.f, e.o, e.n, e.u, e.why].join(' ')).includes(q))).slice(0, 600);
+    $('#hl').innerHTML = list.length ? `<table class="rt cvt"><thead><tr><th>Zaman</th><th>Kullanıcı</th><th>ID</th><th>Alan</th><th>Eski</th><th>Yeni</th><th>Gerekçe</th></tr></thead><tbody>${list.map(e => `<tr><td style="white-space:nowrap">${esc(new Date(e.t).toLocaleString('tr-TR'))}</td><td>${esc(e.u)}</td><td style="white-space:nowrap"><b>${esc(e.rid || '')}</b></td><td>${esc(e.f)}</td><td class="muted" style="max-width:260px">${esc(String(e.o).slice(0, 300))}</td><td style="max-width:260px">${e.f === 'Metin' ? wordDiff(e.o, e.n) : esc(String(e.n).slice(0, 300))}</td><td class="muted">${esc(e.why || '')}</td></tr>`).join('')}</tbody></table>` : '<div class="muted" style="padding:10px">Kayıt yok</div>';
+  };
+  box.innerHTML = `<h2>Değişiklik geçmişi${rid && E(rid) ? ' — ' + esc(nm(E(rid))) : ''}</h2>
+    <div class="icbar"><input id="hq" placeholder="Ara (ID, alan, değer, kullanıcı, gerekçe)"><button class="pbtn" id="hx">⤒ Excel'e aktar</button><button class="pbtn" id="hu">Kullanıcı adım…</button><button class="pbtn pri" id="hc">Kapat</button></div><div id="hl" style="max-height:62vh;overflow:auto"></div>`;
+  $('#modal').style.display = 'flex'; draw();
+  $('#hq').oninput = draw; $('#hq').onkeydown = ev => ev.stopPropagation();
+  box.onclick = ev => {
+    if(ev.target.id === 'hc'){ $('#modal').style.display = 'none'; box.onclick = null; box.style.width = ''; box.style.maxWidth = ''; }
+    if(ev.target.id === 'hu') setUserName();
+    if(ev.target.id === 'hx'){
+      const rows = [[{v:'Zaman', s:1}, {v:'Kullanıcı', s:1}, {v:'ID', s:1}, {v:'Alan', s:1}, {v:'Eski değer', s:1}, {v:'Yeni değer', s:1}, {v:'Gerekçe', s:1}]];
+      all.filter(e => !rid || e.id === rid).forEach(e => rows.push([new Date(e.t).toLocaleString('tr-TR'), e.u, {v:e.rid || '', s:6}, e.f, e.o, e.n, e.why || '']));
+      download(buildXlsx([{name:'Değişiklik Geçmişi', rows, widths:[20, 16, 12, 18, 50, 50, 30], header:true, freeze:[0, 1], filter:1}]), fileSafe(E(M.rootId).name) + ' - Değişiklik Geçmişi.xlsx');
+    }
+  };
+}
+/* kelime düzeyinde fark */
+function wordDiff(a, b){
+  const A = String(a || '').split(/(\s+)/), B = String(b || '').split(/(\s+)/);
+  if(A.length * B.length > 250000) return `<del>${esc(a)}</del> <ins>${esc(b)}</ins>`;
+  const n = A.length, m = B.length, L = Array.from({length:n + 1}, () => new Uint16Array(m + 1));
+  for(let i = n - 1; i >= 0; i--) for(let j = m - 1; j >= 0; j--) L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  let i = 0, j = 0, out = '';
+  while(i < n && j < m){
+    if(A[i] === B[j]){ out += esc(A[i]); i++; j++; }
+    else if(L[i + 1][j] >= L[i][j + 1]){ out += `<del>${esc(A[i])}</del>`; i++; }
+    else { out += `<ins>${esc(B[j])}</ins>`; j++; }
+  }
+  while(i < n){ out += `<del>${esc(A[i++])}</del>`; }
+  while(j < m){ out += `<ins>${esc(B[j++])}</ins>`; }
+  return out.replace(/<\/del><del>/g, '').replace(/<\/ins><ins>/g, '');
+}
+
+/* ---- taban çizgileri ---- */
+let BL = {a:'', b:'@current', onlyCh:true};
+function baselineSnapshot(){
+  const idx = relIdx(), out = {};
+  allReqs().forEach(r => { const t = trace(r, idx); out[r.id] = Object.assign(reqSnap(r, idx), {_satisfy:t.elems.map(x => x.name).sort().join(', '), _funcs:t.funcs.map(x => x.name).sort().join(', '), _tests:t.verifyBy.map(x => x.name).sort().join(', ')}); });
+  return out;
+}
+function createBaseline(){
+  const name = prompt('Taban çizgisi adı (ör. SRR öncesi, Rev-A):', 'Taban çizgisi ' + ((M.baselines || []).length + 1));
+  if(!name || !name.trim()) return;
+  snap();
+  M.baselines = M.baselines || [];
+  M.baselines.push({id:uid(), name:name.trim(), t:new Date().toISOString(), u:userName(), reqs:baselineSnapshot()});
+  BL.a = M.baselines[M.baselines.length - 1].id; BL.b = '@current';
+  afterChange(); toast(`"${name.trim()}" taban çizgisi oluşturuldu (${Object.keys(M.baselines[M.baselines.length - 1].reqs).length} gereksinim)`);
+}
+const blSet = id => id === '@current' ? baselineSnapshot() : ((M.baselines || []).find(b => b.id === id) || {}).reqs || {};
+const blName = id => id === '@current' ? 'Güncel model' : ((M.baselines || []).find(b => b.id === id) || {}).name || '?';
+function baselineDiff(aId, bId){
+  const A = blSet(aId), B = blSet(bId), rows = [];
+  const ids = new Set(Object.keys(A).concat(Object.keys(B)));
+  ids.forEach(id => {
+    const a = A[id], b = B[id];
+    if(!a){ rows.push({id, rid:b.reqId, st:'Eklendi', ch:[], a, b}); return; }
+    if(!b){ rows.push({id, rid:a.reqId, st:'Silindi', ch:[], a, b}); return; }
+    const ch = [...new Set(Object.keys(a).concat(Object.keys(b)))].filter(k => (a[k] || '') !== (b[k] || ''));
+    rows.push({id, rid:b.reqId || a.reqId, st:ch.length ? 'Değişti' : 'Aynı', ch, a, b});
+  });
+  return rows.sort((x, y) => String(x.rid).localeCompare(String(y.rid), 'tr', {numeric:true}));
+}
+const blField = k => k === '_satisfy' ? 'Karşılayan elemanlar' : k === '_funcs' ? 'Fonksiyonlar' : k === '_tests' ? 'Doğrulayan testler' : fieldLabel(k);
+function baselineHTML(){
+  const bls = M.baselines || [];
+  let h = `<div class="bll">${bls.length ? bls.map(b => `<div class="blc"><b>${esc(b.name)}</b><span class="muted">${esc(new Date(b.t).toLocaleString('tr-TR'))} · ${esc(b.u || '')} · ${Object.keys(b.reqs).length} gereksinim</span><button class="tdel" data-bldel="${b.id}" title="Sil">✕</button></div>`).join('') : '<div class="muted">Henüz taban çizgisi yok. "+ Taban çizgisi oluştur" ile mevcut gereksinim setinin anlık kopyasını alın.</div>'}</div>`;
+  if(!bls.length) return h;
+  if(!BL.a || !bls.some(b => b.id === BL.a)) BL.a = bls[bls.length - 1].id;
+  const rows = baselineDiff(BL.a, BL.b), sum = st => rows.filter(r => r.st === st).length;
+  h += `<div class="cards"><div class="card"><div class="cv" style="color:#2e7d32">${sum('Eklendi')}</div><div class="ct">Eklenen</div></div><div class="card"><div class="cv" style="color:#c0392b">${sum('Silindi')}</div><div class="ct">Silinen</div></div><div class="card"><div class="cv" style="color:#d18a00">${sum('Değişti')}</div><div class="ct">Değişen</div></div><div class="card"><div class="cv">${sum('Aynı')}</div><div class="ct">Değişmeyen</div></div></div>`;
+  const list = BL.onlyCh ? rows.filter(r => r.st !== 'Aynı') : rows;
+  h += `<table class="rt cvt"><thead><tr><th>ID</th><th>Durum</th><th>Alan</th><th>${esc(blName(BL.a))}</th><th>${esc(blName(BL.b))}</th></tr></thead><tbody>`;
+  list.forEach(r => {
+    const cls = {Eklendi:'d-add', Silindi:'d-del', 'Değişti':'d-chg', 'Aynı':''}[r.st];
+    if(r.st === 'Değişti'){
+      r.ch.forEach((k, i) => { h += `<tr class="${cls}">${i === 0 ? `<td rowspan="${r.ch.length}" style="white-space:nowrap"><a class="lnk" data-goto="${r.id}"><b>${esc(r.rid || '')}</b></a></td><td rowspan="${r.ch.length}"><span class="dchip ${cls}">${r.st}</span></td>` : ''}<td>${esc(blField(k))}</td><td class="muted" style="max-width:380px">${esc(r.a[k] || '')}</td><td style="max-width:380px">${wordDiff(r.a[k], r.b[k])}</td></tr>`; });
+    } else {
+      const x = r.b || r.a;
+      h += `<tr class="${cls}"><td style="white-space:nowrap">${E(r.id) ? `<a class="lnk" data-goto="${r.id}"><b>${esc(r.rid || '')}</b></a>` : `<b>${esc(r.rid || '')}</b>`}</td><td><span class="dchip ${cls}">${r.st}</span></td><td>Metin</td><td class="muted" style="max-width:380px">${r.a ? esc(r.a.text || '') : ''}</td><td style="max-width:380px">${r.b ? esc(r.b.text || '') : ''}</td></tr>`;
+    }
+  });
+  return h + `</tbody></table>${!list.length ? '<div class="vempty">İki küme arasında fark yok.</div>' : ''}`;
+}
+function exportBaselineDiff(){
+  const rows = baselineDiff(BL.a, BL.b).filter(r => r.st !== 'Aynı');
+  const out = [[{v:'ID', s:1}, {v:'Durum', s:1}, {v:'Alan', s:1}, {v:blName(BL.a), s:1}, {v:blName(BL.b), s:1}]];
+  rows.forEach(r => {
+    const st = {v:r.st, s:r.st === 'Eklendi' ? 3 : r.st === 'Silindi' ? 4 : 5};
+    if(r.st === 'Değişti') r.ch.forEach(k => out.push([{v:r.rid || '', s:6}, st, blField(k), r.a[k] || '', r.b[k] || '']));
+    else out.push([{v:r.rid || '', s:6}, st, 'Metin', r.a ? r.a.text || '' : '', r.b ? r.b.text || '' : '']);
+  });
+  download(buildXlsx([{name:'Fark Raporu', rows:out, widths:[12, 12, 20, 60, 60], header:true, freeze:[0, 1], filter:1}]), fileSafe(blName(BL.a) + ' - ' + blName(BL.b)) + ' Fark.xlsx');
+}
+
+/* ---- etki analizi ---- */
+function impactLinks(x){
+  const idx = relIdx(), out = [], g = k => idx[k] || [];
+  const e = E(x); if(!e) return out;
+  g('DeriveReqt').forEach(r => { if(r.tgt === x) out.push([r.src, 'türetilmiş alt gereksinim']); });
+  g('Satisfy').forEach(r => { if(r.tgt === x) out.push([r.src, FUNC_KINDS.has((E(r.src) || {}).kind) ? 'karşılayan fonksiyon' : 'karşılayan eleman']); if(r.src === x) out.push([r.tgt, 'karşıladığı gereksinim (yeniden doğrulanmalı)']); });
+  g('Verify').forEach(r => { if(r.tgt === x) out.push([r.src, 'doğrulayan test (tekrar edilmeli)']); if(r.src === x) out.push([r.tgt, 'doğruladığı gereksinim']); });
+  g('Refine').concat(g('Trace')).forEach(r => { if(r.tgt === x) out.push([r.src, r.kind.toLowerCase()]); else if(r.src === x) out.push([r.tgt, r.kind.toLowerCase()]); });
+  g('Allocate').forEach(r => { if(r.src === x) out.push([r.tgt, 'tahsis edildiği yapı']); if(r.tgt === x) out.push([r.src, 'tahsis edilen fonksiyon']); });
+  if(e.kind === 'Block' || e.kind === 'ConstraintBlock') Object.values(M.els).forEach(p => { if((p.kind === 'Part' || p.kind === 'ConstraintProp' || p.kind === 'Lifeline') && p.type === x){ const o = E(p.owner); out.push([p.id, 'bu tipte ' + KIND[p.kind].tr.toLowerCase()]); if(o && o.kind === 'Block') out.push([o.id, 'içeren blok']); } });
+  if(e.kind === 'Activity') Object.values(M.els).forEach(a => { if(a.kind === 'Action' && a.behavior === x) out.push([a.id, 'çağıran aksiyon']); });
+  if(e.kind === 'Part' && e.type) out.push([e.type, 'tip bloğu']);
+  return out.filter(([id]) => E(id) && id !== x);
+}
+function impactUp(x){
+  const idx = relIdx(), out = [], g = k => idx[k] || [];
+  g('DeriveReqt').forEach(r => { if(r.src === x) out.push([r.tgt, 'türetildiği üst gereksinim']); });
+  g('Satisfy').forEach(r => { if(r.src === x) out.push([r.tgt, 'karşıladığı gereksinim']); });
+  g('Verify').forEach(r => { if(r.src === x) out.push([r.tgt, 'doğruladığı gereksinim']); });
+  return out.filter(([id]) => E(id));
+}
+function impactTree(root, fn, maxD){
+  const seen = new Set([root]), lines = [];
+  const rec = (x, d) => { if(d > maxD) return; fn(x).forEach(([y, why]) => { const rep = seen.has(y); seen.add(y); lines.push({id:y, d, why, rep}); if(!rep) rec(y, d + 1); }); };
+  rec(root, 1);
+  return {lines, ids:seen};
+}
+function impactAnalysis(id){
+  const e = E(id); if(!e) return;
+  const box = $('#modalBox');
+  box.style.width = 'min(820px, 95vw)'; box.style.maxWidth = 'none';
+  const dn = impactTree(id, impactLinks, 5), up = impactTree(id, impactUp, 5);
+  const affected = [...dn.ids].filter(x => x !== id);
+  const diags = Object.values(M.els).filter(d => d.kind === 'Diagram' && d.shapes.some(s => s.el === id || affected.includes(s.el)));
+  const tl = lines => lines.length ? lines.map(l => `<div class="itl" style="padding-left:${(l.d - 1) * 20 + 6}px">${l.d > 1 ? '└ ' : ''}${icon(E(l.id))} <a class="lnk" data-igo="${l.id}">${esc(elDesc(E(l.id)))}</a> <span class="muted">— <span>${esc(l.why)}</span>${l.rep ? ' <span>(yukarıda)</span>' : ''}</span>${E(l.id).kind === 'Requirement' ? ' ' + statusChip(E(l.id)) : ''}</div>`).join('') : '<div class="muted" style="padding:6px">—</div>';
+  const kinds = {}; affected.forEach(x => { const k = KIND[E(x).kind].tr; kinds[k] = (kinds[k] || 0) + 1; });
+  box.innerHTML = `<h2>Etki analizi — ${esc(nm(e))}</h2>
+    <p class="muted" style="margin:0 0 8px">Bu eleman değişirse etkilenebilecek elemanlar (aşağı akış) ve bu elemanın dayandıkları (yukarı akış).</p>
+    <div class="cards" style="margin-bottom:10px"><div class="card"><div class="cv">${affected.length}</div><div class="ct">Etkilenen eleman</div></div>${Object.entries(kinds).map(([k, n]) => `<div class="card"><div class="cv">${n}</div><div class="ct">${esc(k)}</div></div>`).join('')}<div class="card"><div class="cv">${diags.length}</div><div class="ct">Etkilenen diyagram</div></div></div>
+    <h3 style="margin:6px 0">⬇ Etkilenenler (aşağı akış)</h3><div class="itree">${tl(dn.lines)}</div>
+    <h3 style="margin:12px 0 6px">⬆ Dayandıkları (yukarı akış)</h3><div class="itree">${tl(up.lines)}</div>
+    <h3 style="margin:12px 0 6px">Etkilenen diyagramlar</h3><div class="itree">${diags.map(d => `<div class="itl">${icon(d)} <a class="lnk" data-iod="${d.id}">${esc(d.name)}</a></div>`).join('') || '<div class="muted" style="padding:6px">—</div>'}</div>
+    <p style="text-align:right;margin:10px 0 0"><button class="pbtn pri" id="ic0">Kapat</button></p>`;
+  $('#modal').style.display = 'flex';
+  const close = () => { $('#modal').style.display = 'none'; box.onclick = null; box.style.width = ''; box.style.maxWidth = ''; };
+  box.onclick = ev => {
+    const g = ev.target.closest('[data-igo]'); if(g){ close(); ST.tsel = g.dataset.igo; revealInTree(g.dataset.igo); renderProps(); return; }
+    const o = ev.target.closest('[data-iod]'); if(o){ close(); openD(o.dataset.iod); const d = cur(); ST.sel = new Set(d.shapes.filter(s => s.el === id || affected.includes(s.el)).map(s => s.id)); renderDiagram(); return; }
+    if(ev.target.id === 'ic0') close();
+  };
+}
+
+/* ================= PHASE 3: VERIFICATION MANAGEMENT (TEST CASES, VCRM, CAMPAIGN) ================= */
+const TEST_LEVELS = ['Birim', 'Entegrasyon', 'Alt Sistem', 'Sistem', 'Kabul (FAT)', 'Saha (SAT)', 'Kalifikasyon'];
+const TEST_RESULT = ['Planlandı', 'Yapılmadı', 'Geçti', 'Kaldı', 'Koşullu'];
+const RES_COL = {'Planlandı':'#5d8fc9', 'Yapılmadı':'#95a5a6', 'Geçti':'#2e9e6a', 'Kaldı':'#c0392b', 'Koşullu':'#d18a00'};
+const VER_ST = ['Doğrulandı', 'Kısmen', 'Kaldı', 'Planlandı', 'Faaliyet yok'];
+const VST_COL = {'Doğrulandı':'#2e9e6a', 'Kısmen':'#d18a00', 'Kaldı':'#c0392b', 'Planlandı':'#5d8fc9', 'Faaliyet yok':'#95a5a6'};
+const TEST_FIELDS = [['name', 'Test adı'], ['procNo', 'Prosedür no'], ['tMethod', 'Yöntem'], ['tLevel', 'Doğrulama seviyesi'], ['testItem', 'Test edilen birim'], ['std', 'Standart / referans'], ['resp', 'Sorumlu'], ['pStart', 'Planlanan başlangıç'], ['pEnd', 'Planlanan bitiş'], ['result', 'Sonuç'], ['rDate', 'Sonuç tarihi'], ['reportNo', 'Rapor no']];
+VIEWS['@vcrm'] = {tr:'Doğrulama Matrisi (VCRM)', ic:'VCR', note:'Doğrulama Çapraz Referans Matrisi: her gereksinimin planlanan doğrulama yöntemi (T/A/M/G), doğrulama seviyesi, ilgili test/prosedürler, sonuçları ve rapor numaraları.<br><br><b>Doğrulama durumu</b> testlerin sonucundan hesaplanır: tüm testler <i>Geçti</i> → Doğrulandı; herhangi biri <i>Kaldı</i> → Kaldı.'};
+VIEWS['@campaign'] = {tr:'Test Kampanyası', ic:'TST', note:'Test durumlarını tablo halinde düzenleyin ve planlanan tarihlerini zaman çizelgesinde görün.<br><br>Çubuk renkleri test sonucunu gösterir; kırmızı çerçeve bitiş tarihi geçmiş ama sonuçlanmamış testleri işaretler.<br><br>Çubuğa veya satıra tıklayınca test Özellikler panelinde açılır.'};
+const allTests = () => Object.values(M.els).filter(e => e.kind === 'TestCase').sort((a, b) => String(a.pStart || '9999').localeCompare(String(b.pStart || '9999')) || String(a.procNo || '').localeCompare(String(b.procNo || ''), 'tr', {numeric:true}) || nm(a).localeCompare(nm(b), 'tr'));
+const testResult = tc => TEST_RESULT.includes(tc.result) ? tc.result : 'Planlandı';
+function testReqs(tc, idx){ return ((idx || relIdx())['Verify'] || []).filter(x => x.src === tc.id).map(x => E(x.tgt)).filter(e => e && e.kind === 'Requirement').sort(reqSort); }
+function verStatus(r, t){
+  const ts = (t || trace(r)).verifyBy;
+  if(!ts.length) return 'Faaliyet yok';
+  const res = ts.map(x => x.kind === 'TestCase' ? testResult(x) : 'Planlandı');
+  if(res.includes('Kaldı')) return 'Kaldı';
+  if(res.every(x => x === 'Geçti')) return 'Doğrulandı';
+  if(res.some(x => x === 'Geçti' || x === 'Koşullu')) return 'Kısmen';
+  return 'Planlandı';
+}
+const verChip = s => `<span class="stc" style="background:${VST_COL[s]}">${esc(s)}</span>`;
+const resChip = s => `<span class="stc" style="background:${RES_COL[s]}">${esc(s)}</span>`;
+const todayISO = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const fmtD = s => s ? s.split('-').reverse().join('.') : '';
+const overdue = tc => ['Planlandı', 'Yapılmadı'].includes(testResult(tc)) && tc.pEnd && tc.pEnd < todayISO();
+function testPkg(){ const t = allTests()[0]; return t && E(t.owner) ? t.owner : findOrMkPkg(M.rootId, 'Doğrulama'); }
+function newTest(extra){ return mk('TestCase', testPkg(), Object.assign({name:uniqName('Yeni test', testPkg()), result:'Planlandı', tMethod:'Test'}, extra || {})); }
+function pickReqsForTest(tid){
+  const tc = E(tid); if(!tc) return;
+  const cur = new Set(testReqs(tc).map(r => r.id)), cands = allReqs();
+  pickList('Doğruladığı gereksinimler — ' + nm(tc), cands, cur, ids => {
+    snap(); const want = new Set(ids);
+    cands.forEach(r => { if(want.has(r.id) && !cur.has(r.id)) addRel('Verify', tc.id, r.id); if(!want.has(r.id) && cur.has(r.id)) delRel('Verify', tc.id, r.id); });
+    afterChange();
+  });
+}
+function testFieldInput(tc, f, attr){
+  const v = tc[f] || '', a = attr || `data-f="${f}"`;
+  if(f === 'tMethod') return `<select ${a}><option value="">—</option>${VERIF.map(x => `<option${v === x[0] ? ' selected' : ''}>${x[0]}</option>`).join('')}</select>`;
+  if(f === 'tLevel') return `<select ${a}><option value="">—</option>${TEST_LEVELS.concat(v && !TEST_LEVELS.includes(v) ? [v] : []).map(x => `<option${v === x ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select>`;
+  if(f === 'result') return `<select ${a} style="color:${RES_COL[testResult(tc)]};font-weight:600">${TEST_RESULT.map(x => `<option${testResult(tc) === x ? ' selected' : ''}>${x}</option>`).join('')}</select>`;
+  if(f === 'pStart' || f === 'pEnd' || f === 'rDate') return `<input type="date" ${a} value="${esc(v)}">`;
+  if(f === 'testItem') return `<input ${a} list="tilist" value="${esc(v)}" placeholder="ör. Güç Birimi">`;
+  return `<input ${a} value="${esc(v)}">`;
+}
+const testItemList = () => `<datalist id="tilist">${[...new Set(Object.values(M.els).filter(e => e.kind === 'Block').map(b => b.name).concat(subsystems()))].sort((a, b) => a.localeCompare(b, 'tr')).map(n => `<option value="${esc(n)}">`).join('')}</datalist>`;
+function testPropsHTML(el, pf){
+  let h = '';
+  TEST_FIELDS.slice(1).forEach(([f, l]) => { h += pf(l, testFieldInput(el, f)); });
+  h += testItemList();
+  if(overdue(el)) h += `<div class="gaps" style="background:#fdf2f2;border-color:#f1c4c4;color:#8a2a2a">⚠ Planlanan bitiş tarihi geçti, sonuç girilmedi</div>`;
+  h += testExecProps(el) + testPlanProps(el);
+  const pfs = (el.profiles || []).map(E).filter(Boolean);
+  h += `<div class="sub"><span>Test profilleri (${pfs.length})</span><button data-tcpf="${el.id}">+ / −</button></div>` + (pfs.length ? pfs.map(p => `<div class="li"><a class="lnk" data-openpf="${p.id}">${esc(p.name)}</a> <span class="muted">${esc(pfShort(p))}</span></div>`).join('') : '<div class="muted" style="font-size:12px">Profil bağlı değil (PSD, sinüs, SRS, termal)</div>');
+  const rs = testReqs(el);
+  h += `<div class="sub"><span>Doğruladığı gereksinimler (${rs.length})</span><button data-tcreq="${el.id}">+ / −</button></div>`;
+  h += rs.length ? rs.map(r => `<div class="li"><a class="lnk" data-goto="${r.id}"><b>${esc(r.reqId || '')}</b> ${esc(r.name || '')}</a> ${verChip(verStatus(r))}</div>`).join('') : '<div class="muted" style="font-size:12px">Henüz bağlı gereksinim yok (Verify ilişkisi)</div>';
+  return h;
+}
+
+/* ---- VCRM ---- */
+let VC = {lvl:'all', vst:'all', meth:'all'};
+function vcrmRows(){
+  const idx = relIdx();
+  return allReqs().filter(activeReq).filter(r => lvlMatch(r, VC.lvl)).map(r => {
+    const t = trace(r, idx), tests = t.verifyBy.filter(x => x.kind === 'TestCase'), meth = new Set(String(r.verif || '').split(/[,;\/]+/).map(x => x.trim()).filter(Boolean));
+    return {r, t, tests, meth, vs:verStatus(r, t)};
+  }).filter(x => (VC.vst === 'all' || x.vs === VC.vst) && (VC.meth === 'all' || x.meth.has(VC.meth)));
+}
+function vcrmHTML(){
+  if(!allReqs().length) return `<div class="vempty">Henüz gereksinim yok.<br><br><button class="vb pri" data-va="table">Gereksinim tablosunu aç</button></div>`;
+  const rows = vcrmRows(), all = allReqs().filter(activeReq).map(r => verStatus(r));
+  let h = '<div class="cards">' + VER_ST.map(s => { const n = all.filter(x => x === s).length, p = all.length ? Math.round(n / all.length * 100) : 0; return `<div class="card"><div class="cv" style="color:${VST_COL[s]}">${n}</div><div class="ct">${s}</div><div class="cbar"><i style="width:${p}%;background:${VST_COL[s]}"></i></div><div class="cs">%${p}</div></div>`; }).join('') + '</div>';
+  h += `<table class="rt vcrm"><thead><tr><th class="rn">#</th><th>Gereksinim ID</th><th>Gereksinim</th><th>Seviye</th>${VERIF.map(([v, a]) => `<th class="vm" title="${v}">${a}</th>`).join('')}<th>Doğrulama Seviyesi</th><th>Test / Prosedür</th><th>Test Profili</th><th>Sonuç</th><th>Açık NCR</th><th>Rapor No</th><th>Doğrulama Durumu</th></tr></thead><tbody>`;
+  rows.forEach(({r, tests, meth, vs}, i) => {
+    const lv = [...new Set(tests.map(x => x.tLevel).filter(Boolean))].join(', ');
+    h += `<tr data-row="${r.id}" class="${ST.tsel === r.id ? 'sel' : ''} lv-${reqLevel(r) === 'Sistem' ? 's' : 'a'}"><td class="rn">${i + 1}</td><td style="white-space:nowrap"><a class="lnk" data-goto="${r.id}"><b>${esc(r.reqId || '')}</b></a></td>
+      <td class="cvtx">${esc(r.name || '')}${r.text ? `<div class="muted">${esc(r.text.slice(0, 160))}</div>` : ''}</td><td style="white-space:nowrap">${reqLevel(r) === 'Sistem' ? 'Sistem' : esc(r.subsys || 'Alt sistem')}</td>`;
+    VERIF.forEach(([v]) => {
+      const tm = tests.filter(x => x.tMethod === v), res = tm.map(testResult);
+      const col = !tm.length ? '' : res.includes('Kaldı') ? RES_COL['Kaldı'] : res.every(x => x === 'Geçti') ? RES_COL['Geçti'] : res.some(x => x === 'Geçti' || x === 'Koşullu') ? RES_COL['Koşullu'] : RES_COL['Planlandı'];
+      h += `<td class="vmc${meth.has(v) ? ' on' : ''}" data-verif="${v}" data-vr="${r.id}" title="${v}${tm.length ? ' — ' + tm.map(x => nm(x) + ': ' + testResult(x)).join(', ') : ''}">${meth.has(v) ? 'X' : ''}${col ? `<i style="background:${col}"></i>` : ''}</td>`;
+    });
+    h += `<td>${esc(lv) || '<span class="muted">—</span>'}</td>
+      <td><div class="tcell">${tests.map(x => `<span class="chip2"><a class="lnk" data-goto="${x.id}">${esc(nm(x))}${x.procNo ? ' · ' + esc(x.procNo) : ''}</a></span>`).join('')}<button class="tadd" data-trpick="test" data-rid="${r.id}" title="Test bağla / çıkar">+</button></div></td>
+      <td>${[...new Set(tests.flatMap(x => x.profiles || []))].map(E).filter(Boolean).map(p => `<span class="chip2" title="${esc(pfShort(p))}"><a class="lnk" data-openpf="${p.id}">∿ ${esc(p.name)}</a></span>`).join('') || '<span class="muted">—</span>'}</td>
+      <td>${tests.map(x => resChip(testResult(x))).join(' ') || '<span class="muted">—</span>'}</td><td><div class="tcell">${reqNcrCell(r, tests)}</div></td><td>${esc(tests.map(x => x.reportNo).filter(Boolean).join(', ')) || '<span class="muted">—</span>'}</td><td>${verChip(vs)}</td></tr>`;
+  });
+  h += '</tbody></table>';
+  const noMeth = rows.filter(x => !x.meth.size).length, noAct = rows.filter(x => x.meth.size && !x.tests.length).length;
+  return h + `<div class="vfoot">${rows.length} gereksinim · Yöntemi tanımsız: <b class="${noMeth ? 'bad' : ''}">${noMeth}</b> · Yöntemi var ama test/faaliyeti yok: <b class="${noAct ? 'bad' : ''}">${noAct}</b> · T/A/M/G hücresine tıklayarak planlanan yöntemi değiştirin; renkli işaret o yöntemdeki testlerin sonucudur.</div>`;
+}
+
+/* ---- test kampanyası ---- */
+let CP = {grp:'tLevel', res:'all', q:'', scale:'auto'};
+function campaignTests(){
+  const q = asciiTr(CP.q || '');
+  return allTests().filter(tc => (CP.res === 'all' || (CP.res === '@late' ? overdue(tc) : testResult(tc) === CP.res)) && (!q || asciiTr([tc.name, tc.procNo, tc.testItem, tc.std, tc.resp, tc.reportNo].join(' ')).includes(q)));
+}
+function campaignHTML(){
+  const all = allTests(), tests = campaignTests();
+  if(!all.length) return `<div class="vempty">Henüz test durumu yok.<br><br><button class="vb pri" data-xa="addTest">+ Test durumu ekle</button></div>`;
+  const cnt = r => all.filter(t => testResult(t) === r).length, late = all.filter(overdue).length;
+  let h = '<div class="cards">' + TEST_RESULT.map(r => `<div class="card"><div class="cv" style="color:${RES_COL[r]}">${cnt(r)}</div><div class="ct">${r}</div></div>`).join('') + `<div class="card"><div class="cv" style="color:${late ? '#c0392b' : '#2e9e6a'}">${late}</div><div class="ct">Gecikmiş (bitişi geçmiş, sonuçsuz)</div></div></div>`;
+  h += schedCards() + `<h3>Zaman çizelgesi</h3>` + ganttSVG(tests);
+  const idx = relIdx();
+  h += `<h3>Test durumları <span class="muted">(${tests.length} / ${all.length})</span></h3><table class="rt tct"><thead><tr><th class="rn">#</th>${TEST_FIELDS.map(([, l]) => `<th>${l}</th>`).join('')}<th class="th-tr">Doğruladığı Gereksinimler</th><th>Kaynaklar</th><th>Önce gelen testler</th><th></th></tr></thead><tbody>`;
+  tests.forEach((tc, i) => {
+    h += `<tr data-row="${tc.id}" class="${ST.tsel === tc.id ? 'sel' : ''}${overdue(tc) ? ' late' : ''}"><td class="rn">${i + 1}</td>`;
+    TEST_FIELDS.forEach(([f]) => { h += `<td>${testFieldInput(tc, f, `data-tc="${tc.id}" data-tf="${f}"`)}</td>`; });
+    const rs = testReqs(tc, idx);
+    h += `<td><div class="tcell">${rs.map(r => `<span class="chip2" title="${esc(r.name || '')}"><a class="lnk" data-goto="${r.id}">${esc(r.reqId || nm(r))}</a></span>`).join('')}<button class="tadd" data-tcreq="${tc.id}" title="Gereksinim bağla / çıkar">+</button></div></td><td><div class="tcell">${tcRes(tc).map(r => `<span class="chip2${(schedInfo().rconf.get(r.id) || new Set()).has(tc.id) ? ' ncrc op' : ''}"><a class="lnk noi18n" data-goto="${r.id}">${esc(r.name)}</a></span>`).join('')}<button class="tadd" data-cres="${tc.id}" title="Kaynak ata">+</button></div></td><td><div class="tcell">${tcDeps(tc).map(p => `<span class="chip2"><a class="lnk noi18n" data-goto="${p.id}">${esc(p.procNo || nm(p))}</a></span>`).join('')}<button class="tadd" data-cdep="${tc.id}" title="Önce gelen test seç">+</button></div></td><td class="ra" style="white-space:nowrap"><button class="tdel" data-cslip="${tc.id}" title="Kaydır (ardıllarla birlikte)">⇥</button><button class="tdel" data-tcdel="${tc.id}" title="Testi sil">✕</button></td></tr>`;
+  });
+  return h + `</tbody></table>${testItemList()}<div class="vfoot">Alanlar değiştirildiğinde kaydedilir. Gereksinim tarafındaki doğrulama durumu bu sonuçlardan hesaplanır.</div>`;
+}
+function vcrmBar(){
+  return `<select data-xf="vc.lvl">${lvlOptions()}</select>
+    <label>Durum <select data-xf="vc.vst"><option value="all">Tümü</option>${VER_ST.map(s => `<option${VC.vst === s ? ' selected' : ''}>${s}</option>`).join('')}</select></label>
+    <label>Yöntem <select data-xf="vc.meth"><option value="all">Tümü</option>${VERIF.map(([v]) => `<option${VC.meth === v ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+    <span class="vsep"></span><button class="vb" data-xa="campaign">Test kampanyasına git</button><button class="vb" data-xa="vxl">⤒ Excel'e aktar (VCRM + testler)</button>`;
+}
+function campaignBar(){
+  return `<button class="vb pri" data-xa="addTest">+ Test durumu</button><span class="vsep"></span>
+    <label>Grupla <select data-xf="cp.grp">${[['tLevel', 'Doğrulama seviyesi'], ['result', 'Sonuç'], ['tMethod', 'Yöntem'], ['testItem', 'Test edilen birim'], ['resp', 'Sorumlu'], ['none', 'Gruplama yok']].map(([k, t]) => `<option value="${k}"${CP.grp === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+    <label>Sonuç <select data-xf="cp.res"><option value="all">Tümü</option>${TEST_RESULT.map(s => `<option${CP.res === s ? ' selected' : ''}>${s}</option>`).join('')}<option value="@late"${CP.res === '@late' ? ' selected' : ''}>Gecikmiş</option></select></label>
+    <label>Ölçek <select data-xf="cp.scale">${[['auto', 'Otomatik'], ['gun', 'Gün'], ['hafta', 'Hafta'], ['ay', 'Ay']].map(([k, t]) => `<option value="${k}"${CP.scale === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+    <input data-xf="cp.q" placeholder="Ara (ad, prosedür, birim…)" value="${esc(CP.q)}">
+    <span class="vsep"></span><label>Satırlar <select data-cpx="mode"><option value="tests"${CP.mode !== 'res' ? ' selected' : ''}>Testler</option><option value="res"${CP.mode === 'res' ? ' selected' : ''}>Kaynaklar</option></select></label><label class="vchk"><input type="checkbox" data-cpx="deps"${CP.deps ? ' checked' : ''}> Bağımlılıklar</label><label class="vchk"><input type="checkbox" data-cpx="crit"${CP.crit ? ' checked' : ''}> Kritik yol</label><button class="vb" data-cpa="res">Test kaynakları</button><button class="vb" data-cpa="png">⤓ Takvim PNG</button><button class="vb" data-cpa="pxl">⤒ Plan Excel</button>
+    <span class="vsep"></span><button class="vb" data-xa="vcrm">VCRM'e git</button><button class="vb" data-xa="timp">⤓ Excel'den test aktar</button><button class="vb" data-xa="vxl">⤒ Excel'e aktar</button>`;
+}
+function vcrmSheets(){
+  const idx = relIdx(), rs = allReqs().filter(activeReq);
+  const V = [[{v:'Gereksinim ID', s:1}, {v:'Seviye', s:1}, {v:'Alt Sistem', s:1}, {v:'Gereksinim', s:1}].concat(VERIF.map(([v]) => ({v, s:1}))).concat(['Doğrulama Seviyesi', 'Test / Prosedür', 'Test Profili', 'Sonuç', 'Rapor No', 'Doğrulama Durumu', 'Açık NCR'].map(v => ({v, s:1})))];
+  rs.forEach(r => {
+    const t = trace(r, idx), tests = t.verifyBy.filter(x => x.kind === 'TestCase'), meth = new Set(String(r.verif || '').split(/[,;\/]+/).map(x => x.trim())), vs = verStatus(r, t);
+    V.push([{v:r.reqId || '', s:6}, reqLevel(r), reqLevel(r) === 'Sistem' ? '' : (r.subsys || ''), (r.name ? r.name + ': ' : '') + (r.text || '')].concat(VERIF.map(([v]) => meth.has(v) ? {v:'X', s:7} : '')).concat([[...new Set(tests.map(x => x.tLevel).filter(Boolean))].join(', '), tests.map(x => nm(x) + (x.procNo ? ' (' + x.procNo + ')' : '')).join('\n'), [...new Set(tests.flatMap(x => x.profiles || []))].map(E).filter(Boolean).map(p => p.name + ' — ' + pfShort(p)).join('\n'), tests.map(x => testResult(x)).join('\n'), tests.map(x => x.reportNo).filter(Boolean).join('\n'), {v:vs, s:vs === 'Doğrulandı' ? 3 : vs === 'Kaldı' || vs === 'Faaliyet yok' ? 4 : 5}, reqNcrTxt(r, tests)]));
+  });
+  const T0 = [TEST_FIELDS.map(([, l]) => ({v:l, s:1})).concat([{v:'Doğruladığı Gereksinimler', s:9}, {v:'Açıklama', s:1}])];
+  allTests().forEach(tc => T0.push(TEST_FIELDS.map(([f]) => f === 'result' ? {v:testResult(tc), s:tc.result === 'Geçti' ? 3 : tc.result === 'Kaldı' ? 4 : tc.result === 'Koşullu' ? 5 : 2} : (f === 'pStart' || f === 'pEnd' || f === 'rDate') ? fmtD(tc[f]) : (f === 'name' ? {v:nm(tc), s:6} : tc[f] || '')).concat([testReqs(tc, idx).map(r => r.reqId || nm(r)).join('\n'), tc.doc || ''])));
+  return [{name:'VCRM', rows:V, widths:[14, 11, 16, 60, 5, 5, 5, 5, 16, 30, 30, 12, 14, 16, 18], header:true, freeze:[1, 1], filter:1}, {name:'Test Durumları', rows:T0, widths:[28, 14, 10, 14, 18, 18, 14, 12, 12, 11, 12, 14, 22, 30], header:true, freeze:[1, 1], filter:1}];
+}
+function exportVcrmXlsx(){
+  if(!allReqs().length && !allTests().length) return toast('Dışa aktarılacak veri yok');
+  download(buildXlsx(vcrmSheets()), fileSafe(E(M.rootId).name) + ' - VCRM.xlsx');
+}
+/* ---- test durumlarını Excel'den aktarma (sonuç güncelleme) ---- */
+const TEST_SYN = {name:['test adi', 'test', 'test durumu', 'test name', 'ad'], procNo:['prosedur no', 'prosedur', 'procedure', 'test no', 'tp no'], tMethod:['yontem', 'method', 'dogrulama yontemi'], tLevel:['dogrulama seviyesi', 'seviye', 'level', 'test seviyesi'], testItem:['test edilen birim', 'birim', 'test item', 'urun'], std:['standart / referans', 'standart', 'referans', 'standard'], resp:['sorumlu', 'responsible', 'test sorumlusu'], pStart:['planlanan baslangic', 'baslangic', 'start', 'plan baslangic'], pEnd:['planlanan bitis', 'bitis', 'end', 'finish', 'plan bitis'], result:['sonuc', 'result', 'test sonucu'], rDate:['sonuc tarihi', 'test tarihi', 'result date', 'tarih'], reportNo:['rapor no', 'rapor', 'report', 'report no'], _reqs:['dogruladigi gereksinimler', 'gereksinimler', 'gereksinim id', 'requirements', 'verified requirements'], doc:['aciklama', 'not', 'notes', 'description']};
+function toISODate(v){
+  v = String(v || '').trim(); if(!v) return '';
+  if(/^\d{4,6}(\.\d+)?$/.test(v) && +v > 20000 && +v < 80000){ const d = new Date(Date.UTC(1899, 11, 30) + Math.floor(+v) * 864e5); return d.toISOString().slice(0, 10); }
+  let m = v.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/); if(m) return m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0');
+  m = v.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/); if(m) return (m[3].length === 2 ? '20' + m[3] : m[3]) + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+  return '';
+}
+function normResult(v){ const a = asciiTr(v); if(!a) return ''; if(/gect|pass|basarili|ok\b|uygun/.test(a)) return 'Geçti'; if(/kald|fail|basarisiz|red/.test(a)) return 'Kaldı'; if(/kosul|condition|sartli/.test(a)) return 'Koşullu'; if(/yapilmad|not run|iptal|ertel/.test(a)) return 'Yapılmadı'; if(/plan/.test(a)) return 'Planlandı'; return ''; }
+async function importTests(){
+  let file;
+  try { file = await pickBytes(); } catch(e){ return toast('Dosya açılamadı: ' + e.message); }
+  if(!file) return;
+  let sheets;
+  try { sheets = /\.xlsx$/i.test(file.name) || (file.u8[0] === 0x50 && file.u8[1] === 0x4b) ? await readXlsx(file.u8) : parseCSV(decodeText(file.u8)); } catch(e){ return toast('Okunamadı: ' + e.message); }
+  const mapHdr = row => { const m = {}; row.forEach((h, i) => { const n = asciiTr(h); if(!n) return; for(const k in TEST_SYN){ if(!(k in m) && TEST_SYN[k].includes(n)){ m[k] = i; return; } } }); return m; };
+  let best = null;
+  sheets.forEach(sh => { for(let ri = 0; ri < Math.min(10, sh.rows.length); ri++){ const m = mapHdr(sh.rows[ri] || []); if(('name' in m || 'procNo' in m) && (!best || Object.keys(m).length > Object.keys(best.m).length)) best = {sh, ri, m}; } });
+  if(!best) return toast('"Test adı" veya "Prosedür no" sütunu bulunamadı');
+  snap();
+  const byProc = new Map(), byName = new Map(); allTests().forEach(t => { if(t.procNo) byProc.set(asciiTr(t.procNo), t); byName.set(asciiTr(t.name), t); });
+  const reqById = new Map(allReqs().filter(r => r.reqId).map(r => [asciiTr(r.reqId), r]));
+  let add = 0, upd = 0, rels = 0; const miss = new Set();
+  best.sh.rows.slice(best.ri + 1).forEach(row => {
+    const g = k => k in best.m ? String(row[best.m[k]] == null ? '' : row[best.m[k]]).trim() : '';
+    const nmv = g('name'), pr = g('procNo'); if(!nmv && !pr) return;
+    let tc = (pr && byProc.get(asciiTr(pr))) || (nmv && byName.get(asciiTr(nmv)));
+    if(!tc){ tc = newTest({name:nmv || pr, tMethod:''}); add++; if(pr) byProc.set(asciiTr(pr), tc); byName.set(asciiTr(tc.name), tc); } else upd++;
+    if(nmv) tc.name = nmv;
+    ['procNo', 'tLevel', 'testItem', 'std', 'resp', 'reportNo', 'doc'].forEach(k => { const v = g(k); if(v) tc[k] = v; });
+    const mt = g('tMethod'); if(mt){ const vm = VERIF.find(([v, a0]) => asciiTr(v) === asciiTr(mt) || a0 === mt.toUpperCase()); tc.tMethod = vm ? vm[0] : mt; }
+    ['pStart', 'pEnd', 'rDate'].forEach(k => { const v = toISODate(g(k)); if(v) tc[k] = v; });
+    const rs = normResult(g('result')); if(rs) tc.result = rs;
+    g('_reqs').split(/[\n,;]+/).map(x => x.trim()).filter(Boolean).forEach(id => { const r = reqById.get(asciiTr(id)); if(!r){ miss.add(id); return; } if(addRel('Verify', tc.id, r.id)) rels++; });
+  });
+  if(!ST.open.includes('@campaign')) ST.open.push('@campaign');
+  ST.cur = '@campaign'; afterChange();
+  toast(`${add} test eklendi, ${upd} güncellendi, ${rels} Verify ilişkisi kuruldu` + (miss.size ? ` · Bulunamayan gereksinim: ${[...miss].slice(0, 5).join(', ')}` : ''));
+}
+(function(){
+  const V = $('#view');
+  V.addEventListener('click', ev => {
+    const t = ev.target;
+    const xa = t.closest('[data-xa]');
+    if(xa){
+      const a = xa.dataset.xa;
+      if(a === 'addTest'){ snap(); const tc = newTest(); ST.tsel = tc.id; ST.exp.add(tc.owner); CP.res = 'all'; CP.q = ''; afterChange(); renderViewBar(); setTimeout(() => { const i = document.querySelector(`#view [data-tc="${tc.id}"][data-tf="name"]`); if(i){ i.focus(); i.select(); i.scrollIntoView({block:'nearest'}); } }, 0); }
+      if(a === 'campaign') openD('@campaign');
+      if(a === 'vcrm') openD('@vcrm');
+      if(a === 'vxl') exportVcrmXlsx();
+      if(a === 'timp') importTests();
+      return;
+    }
+    const tr = t.closest('[data-tcreq]'); if(tr){ pickReqsForTest(tr.dataset.tcreq); return; }
+    const td = t.closest('[data-tcdel]'); if(td){ const tc = E(td.dataset.tcdel); if(tc && confirm(`"${nm(tc)}" testi silinsin mi? (Verify ilişkileri de silinir)`)){ snap(); delModel([tc.id]); afterChange(); } }
+  });
+  V.addEventListener('change', ev => {
+    const t = ev.target;
+    if(t.dataset.tc && t.dataset.tf){
+      const tc = E(t.dataset.tc); if(!tc) return;
+      let v = t.value; if(t.dataset.tf === 'name'){ v = v.trim(); if(!v) return renderView(); }
+      if((tc[t.dataset.tf] || '') === v) return;
+      snap(); tc[t.dataset.tf] = v;
+      if(t.dataset.tf === 'result' && ['Geçti', 'Kaldı', 'Koşullu'].includes(v) && !tc.rDate) tc.rDate = todayISO();
+      if(t.dataset.tf === 'pStart' && v && (!tc.pEnd || tc.pEnd < v)) tc.pEnd = v;
+      afterChange(); return;
+    }
+    if(t.dataset.xf){ const [o, k] = t.dataset.xf.split('.'); if(o === 'vc' || o === 'cp'){ (o === 'vc' ? VC : CP)[k] = t.value; renderView(); } }
+  });
+  V.addEventListener('input', ev => { const t = ev.target; if(t.dataset.xf === 'cp.q'){ CP.q = t.value; const b = V.querySelector('.vbody'); b.innerHTML = campaignHTML(); } });
+  V.addEventListener('keydown', ev => { const t = ev.target; if(t.dataset && (t.dataset.tc || t.dataset.xf)){ if(ev.key === 'Enter') t.blur(); ev.stopPropagation(); } });
+  $('#props').addEventListener('click', ev => { const b = ev.target.closest('[data-tcreq]'); if(b) pickReqsForTest(b.dataset.tcreq); const bp = ev.target.closest('[data-tcpf]'); if(bp) pickProfilesForTest(bp.dataset.tcpf); const op = ev.target.closest('[data-openpf]'); if(op){ PF.sel = op.dataset.openpf; PF.cmp = ''; openD('@profiles'); } const ov = ev.target.closest('[data-openview]'); if(ov) openD(ov.dataset.openview); });
+})();
+
+/* ================= PHASE 4: VALIDATION, REPORTS, MERGE, REQIF ================= */
+VIEWS['@validation'] = {tr:'Model Doğrulama', ic:'✔', note:'Model, SysML yazım ve tutarlılık kurallarına göre denetlenir: tipsiz part/port, isimsiz veya aynı adlı elemanlar, kopuk ilişkiler, başlangıç/bitiş düğümü eksik aktiviteler, ulaşılamayan durumlar, aktörü olmayan use case\'ler, döngüsel kompozisyon/kalıtım, yön uyumsuz port bağlantıları, gereksinim bağlanmamış testler.<br><br>Satıra tıklayınca eleman ağaçta ve diyagramda gösterilir.'};
+const SEV_COL = {'hata':'#c0392b', 'uyarı':'#d18a00', 'bilgi':'#5d8fc9'};
+const NAMED = new Set(['Package', 'Block', 'Part', 'Port', 'Value', 'Actor', 'UseCase', 'Activity', 'Action', 'State', 'StateMachine', 'Interaction', 'ConstraintBlock', 'TestCase', 'Partition', 'Subject', 'InterfaceBlock', 'ValueType', 'Enumeration', 'Signal', 'Stereotype', 'FlowProp', 'Pin', 'ActParam']);
+function validateModel(){
+  const out = [], add = (sev, rule, e, msg) => out.push({sev, rule, id:e ? e.id : null, msg});
+  const els = Object.values(M.els), idx = relIdx(), R = k => idx[k] || [];
+  const inDiag = new Set(); els.forEach(d => { if(d.kind === 'Diagram') d.shapes.forEach(s => inDiag.add(s.el)); });
+  // kopuk ilişkiler
+  els.forEach(e => { if(KIND[e.kind] && KIND[e.kind].rel && (!E(e.src) || !E(e.tgt))) add('hata', 'Kopuk ilişki', e, `${KIND[e.kind].tr} ilişkisinin ${!E(e.src) ? 'kaynağı' : 'hedefi'} modelde yok`); });
+  els.forEach(e => { if(e.owner && !E(e.owner)) add('hata', 'Sahipsiz eleman', e, 'Sahibi (owner) modelde bulunamadı'); });
+  // isimsiz ve aynı adlı
+  const sib = new Map();
+  els.forEach(e => {
+    if(!NAMED.has(e.kind)) return;
+    if(!String(e.name || '').trim()){ if(!(e.kind === 'Part' && e.type) && !(e.kind === 'Partition' && e.represents)) add('uyarı', 'İsimsiz eleman', e, KIND[e.kind].tr + ' adı boş'); return; }
+    const k = e.owner + '|' + e.kind + '|' + asciiTr(e.name); if(sib.has(k)){ if(sib.get(k) !== -1){ add('uyarı', 'Aynı adlı elemanlar', E(sib.get(k)), `"${e.name}" adında birden fazla ${KIND[e.kind].tr} aynı sahipte`); sib.set(k, -1); } } else sib.set(k, e.id);
+  });
+  // tip denetimleri
+  els.forEach(e => {
+    if(e.kind === 'Part' && !(e.type && E(e.type))) add('uyarı', 'Tipsiz part', e, 'Part bir bloğa tiplenmemiş');
+    if(e.kind === 'Port' && !(e.type && E(e.type))) add('bilgi', 'Tipsiz port', e, 'Port bir arayüz bloğuna tiplenmemiş');
+    if(e.kind === 'ConstraintProp' && !(e.type && E(e.type))) add('uyarı', 'Tipsiz kısıt özelliği', e, 'Kısıt bloğu seçilmemiş');
+    if(e.kind === 'Lifeline' && !(e.type && E(e.type))) add('bilgi', 'Tipsiz yaşam çizgisi', e, 'Blok veya aktöre bağlı değil');
+    if(e.kind === 'Value' && !e.vtype) add('bilgi', 'Tipsiz değer', e, 'Value property tipi (Real, Integer…) boş');
+    if(e.kind === 'ConstraintBlock' && !String(e.expr || '').trim()) add('uyarı', 'Boş kısıt', e, 'Kısıt ifadesi tanımlanmamış');
+    if(e.kind === 'Action' && e.behavior && !E(e.behavior)) add('hata', 'Kopuk çağrı', e, 'Çağrılan aktivite silinmiş');
+    if((e.kind === 'FlowProp' || e.kind === 'Pin' || e.kind === 'ActParam') && !(e.type && E(e.type)) && !e.vtype) add('bilgi', 'Tipsiz ' + KIND[e.kind].tr.toLocaleLowerCase('tr'), e, 'Tip seçilmemiş');
+    if(e.kind === 'Enumeration' && !enumLits(e).length) add('uyarı', 'Boş numaralandırma', e, 'Hiç değer (literal) tanımlanmamış');
+    if((e.kind === 'SendSignal' || e.kind === 'AcceptEvent') && !e.signal && !String(e.name || '').trim()) add('bilgi', 'Sinyalsiz aksiyon', e, 'Gönderilen/beklenen sinyal seçilmemiş');
+    if(e.kind === 'Fragment' && ['alt', 'par'].includes(e.op || 'alt') && fragOps(e).length < 2) add('bilgi', 'Tek operandlı fragment', e, (e.op || 'alt') + ' fragmentinde en az iki operand beklenir');
+    (e.st || []).forEach(sid => { const st = E(sid); if(st && !stApplicable(st, e)) add('uyarı', 'Uygunsuz stereotip', e, `«${st.name}» bu eleman türüne (${KIND[e.kind].tr}) uygulanamaz`); });
+  });
+  // aktiviteler
+  const flows = R('ControlFlow').concat(R('ObjectFlow'));
+  els.filter(e => e.kind === 'Activity').forEach(a => {
+    const nodes = kidsOf(a.id).filter(n => ['Action', 'SendSignal', 'AcceptEvent', 'AcceptTime', 'Initial', 'Final', 'FlowFinal', 'Decision', 'Merge', 'Fork', 'Join', 'Object'].includes(n.kind));
+    if(!nodes.some(n => n.kind === 'Action')) return;
+    if(!nodes.some(n => n.kind === 'Initial')) add('uyarı', 'Başlangıç düğümü yok', a, 'Aktivitede başlangıç düğümü yok');
+    if(!nodes.some(n => n.kind === 'Final' || n.kind === 'FlowFinal')) add('uyarı', 'Bitiş düğümü yok', a, 'Aktivitede aktivite/akış sonu düğümü yok');
+    nodes.forEach(n => {
+      const pins = new Set([n.id].concat(kidsOf(n.id).filter(c => c.kind === 'Pin').map(c => c.id)));
+      const inc = flows.filter(f => pins.has(f.tgt)), outg = flows.filter(f => pins.has(f.src));
+      if(n.kind === 'Action' || n.kind === 'SendSignal'){ if(!inc.length) add('uyarı', 'Gelen akış yok', n, `"${a.name}" içinde aksiyona gelen akış yok`); if(!outg.length) add('uyarı', 'Giden akış yok', n, `"${a.name}" içinde aksiyondan çıkan akış yok`); }
+      if(n.kind === 'Decision'){ if(outg.length < 2) add('uyarı', 'Eksik karar dalı', n, `Karar düğümünden ${outg.length} dal çıkıyor (en az 2 olmalı)`); else if(outg.some(f => !String(f.guard || f.name || '').trim())) add('bilgi', 'Koşulsuz karar dalı', n, 'Karar dallarından en az biri koşul [guard] içermiyor'); }
+      if(n.kind === 'Initial' && !outg.length) add('uyarı', 'Giden akış yok', n, 'Başlangıç düğümünden akış çıkmıyor');
+    });
+  });
+  // durum makineleri
+  const trs = R('Transition');
+  els.filter(e => e.kind === 'StateMachine').forEach(sm => {
+    const SK = ['State', 'Initial', 'Choice', 'Final', 'Junction', 'History'];
+    const nodes = [], walk = id => kidsOf(id).forEach(n => { if(SK.includes(n.kind)) nodes.push(n); if(n.kind === 'State' || n.kind === 'Region') walk(n.id); });
+    walk(sm.id);
+    if(!nodes.some(n => n.kind === 'State')) return;
+    const init = nodes.filter(n => n.kind === 'Initial' && n.owner === sm.id);
+    if(!init.length) add('uyarı', 'Başlangıç durumu yok', sm, 'Durum makinesinde başlangıç (initial) yok');
+    const seen = new Set(init.map(n => n.id)), st = [...seen];
+    const enter = id => { if(seen.has(id)) return; seen.add(id); st.push(id); };
+    while(st.length){
+      const x = st.pop();
+      trs.filter(t => t.src === x).forEach(t => enter(t.tgt));
+      const xe = E(x);
+      if(xe && (xe.kind === 'State' || xe.kind === 'Region')){ const sub = kidsOf(x); sub.filter(c => c.kind === 'Initial' || c.kind === 'History' || c.kind === 'Region').forEach(c => enter(c.id)); }
+      let o = xe && E(xe.owner); while(o && o.id !== sm.id){ if(o.kind === 'State') enter(o.id); o = E(o.owner); }
+    }
+    /* bileşik durumdan çıkan geçişler iç durumlardan da geçerlidir */
+    nodes.filter(n => isComposite(n) && seen.has(n.id)).forEach(c => trs.filter(t => t.src === c.id).forEach(t => { if(!seen.has(t.tgt)){ seen.add(t.tgt); const q = [t.tgt]; while(q.length){ const y = q.pop(); trs.filter(u => u.src === y).forEach(u => { if(!seen.has(u.tgt)){ seen.add(u.tgt); q.push(u.tgt); } }); } } }));
+    nodes.filter(n => n.kind === 'State').forEach(n => { if(init.length && !seen.has(n.id)) add('uyarı', 'Ulaşılamayan durum', n, `"${sm.name}" başlangıcından bu duruma ulaşılamıyor`); const ancOut = () => { let o = E(n.owner); while(o && o.id !== sm.id){ if(trs.some(t => t.src === o.id)) return true; o = E(o.owner); } return false; }; if(!trs.some(t => t.src === n.id) && nodes.length > 2 && !ancOut()) add('bilgi', 'Çıkışı olmayan durum', n, 'Durumdan çıkan geçiş yok (son durum mu?)'); });
+    nodes.filter(n => n.kind === 'Choice').forEach(n => { if(trs.filter(t => t.src === n.id).length < 2) add('uyarı', 'Eksik seçim dalı', n, 'Seçim düğümünden en az 2 geçiş çıkmalı'); });
+  });
+  // use case
+  els.filter(e => e.kind === 'UseCase').forEach(u => {
+    const act = R('Association').some(r => (r.src === u.id && E(r.tgt) && E(r.tgt).kind === 'Actor') || (r.tgt === u.id && E(r.src) && E(r.src).kind === 'Actor'));
+    const viaInc = R('Include').some(r => r.tgt === u.id) || R('Extend').some(r => r.src === u.id) || R('Generalization').some(r => r.src === u.id);
+    if(!act && !viaInc) add('uyarı', 'Aktörsüz use case', u, 'Hiçbir aktörle ilişkili değil (include/extend ile de bağlanmamış)');
+  });
+  // döngüler
+  const cyc = (edges, rule, msg) => {
+    const g = new Map(); edges.forEach(([a, b]) => { if(!g.has(a)) g.set(a, []); g.get(a).push(b); });
+    const col = new Map(), rep = new Set();
+    const dfs = (v, path) => { col.set(v, 1); (g.get(v) || []).forEach(w => { if(col.get(w) === 1){ const c = path.slice(path.indexOf(w)); const k = [...c].sort().join(); if(!rep.has(k)){ rep.add(k); add('hata', rule, E(w), msg + ': ' + c.map(x => nm(E(x))).concat(nm(E(w))).join(' → ')); } } else if(!col.get(w)) dfs(w, path.concat(w)); }); col.set(v, 2); };
+    [...g.keys()].forEach(v => { if(!col.get(v)) dfs(v, [v]); });
+  };
+  cyc(els.filter(p => p.kind === 'Part' && !p.shared && p.type && E(p.owner) && E(p.owner).kind === 'Block').map(p => [p.owner, p.type]), 'Döngüsel kompozisyon', 'Blok kendini (dolaylı) içeriyor');
+  cyc(R('Generalization').map(r => [r.src, r.tgt]), 'Döngüsel kalıtım', 'Generalization döngüsü');
+  // port yönleri
+  R('Connector').forEach(c => {
+    const a0 = E(c.src), b0 = E(c.tgt); if(!a0 || !b0 || a0.kind !== 'Port' || b0.kind !== 'Port') return;
+    const a = Object.assign({}, a0, {dir:portDir(a0)}), b = Object.assign({}, b0, {dir:portDir(b0)});
+    if(c.sp && c.tp && a.dir && b.dir && a.dir === b.dir && a.dir !== 'inout') add('uyarı', 'Port yön uyumsuzluğu', c, `${nm(a)} (${a.dir}) → ${nm(b)} (${b.dir}): iki part arasındaki bağlantıda yönler zıt olmalı`);
+    if(!c.sp !== !c.tp && a.dir && b.dir && a.dir !== b.dir && a.dir !== 'inout' && b.dir !== 'inout') add('uyarı', 'Port yön uyumsuzluğu', c, `Delegasyon bağlantısında (sınır portu ↔ part portu) yönler aynı olmalı: ${nm(a)} (${a.dir}), ${nm(b)} (${b.dir})`);
+    if(a.type && b.type && a.type !== b.type) add('bilgi', 'Port tipi farklı', c, `Bağlı portların tipleri farklı: ${nm(E(a.type) || {})} / ${nm(E(b.type) || {})}`);
+  });
+  // testler, kullanılmayanlar, boşlar
+  els.filter(e => e.kind === 'TestCase').forEach(t => { if(!R('Verify').some(r => r.src === t.id)) add('uyarı', 'Bağlantısız test', t, 'Hiçbir gereksinimi doğrulamıyor (Verify yok)'); });
+  const typeUse = new Set(els.map(e => e.type).filter(Boolean)), relUse = new Set(); els.forEach(e => { if(e.src){ relUse.add(e.src); relUse.add(e.tgt); } });
+  els.filter(e => e.kind === 'Block').forEach(b => { if(!inDiag.has(b.id) && !typeUse.has(b.id) && !relUse.has(b.id)) add('bilgi', 'Kullanılmayan blok', b, 'Hiçbir diyagramda yok, tip olarak kullanılmıyor ve ilişkisi yok'); });
+  els.filter(e => e.kind === 'Diagram' && !e.shapes.length).forEach(d => add('bilgi', 'Boş diyagram', d, 'Diyagramda hiç şekil yok'));
+  els.filter(e => e.kind === 'Package' && !kidsOf(e.id).length).forEach(p => add('bilgi', 'Boş paket', p, 'Paketin içi boş'));
+  VALIDATORS.forEach(f => { try { f(add, els, idx); } catch(err){ add('bilgi', 'Denetim hatası', null, String(err.message || err)); } });
+  const ord = {hata:0, 'uyarı':1, bilgi:2};
+  return out.sort((a, b) => ord[a.sev] - ord[b.sev] || a.rule.localeCompare(b.rule, 'tr'));
+}
+let VD = {sev:'all', rule:'all'};
+function showElement(id){
+  const e = E(id); if(!e) return;
+  ST.tsel = e.id; revealInTree(e.id);
+  const tgt = e.src && !e.shapes ? e : e;
+  const dd = e.kind === 'Diagram' ? e : diagramsShowing(e.id)[0] || (e.src ? Object.values(M.els).find(d => d.kind === 'Diagram' && d.edges.some(x => x.el === e.id)) : null);
+  if(!dd){ renderAll(); return; }
+  openD(dd.id); const d = cur(); if(!d || e.kind === 'Diagram'){ renderAll(); return; }
+  const sh = d.shapes.find(s => s.el === tgt.id), ed = d.edges.find(x => x.el === tgt.id);
+  ST.sel = new Set(sh ? d.shapes.filter(s => s.el === tgt.id).map(s => s.id) : ed ? [ed.id] : []);
+  const s0 = sh || (ed && shapeOf(d, ed.s));
+  if(s0){ const rr = svgEl.getBoundingClientRect(); d.vx = rr.width / 2 - (s0.x + s0.w / 2) * d.z; d.vy = rr.height / 2 - (s0.y + s0.h / 2) * d.z; }
+  ST.tsel = e.id; renderAll();
+}
+function validationHTML(){
+  const all = validateModel(), rules = [...new Set(all.map(x => x.rule))].sort((a, b) => a.localeCompare(b, 'tr'));
+  const list = all.filter(x => (VD.sev === 'all' || x.sev === VD.sev) && (VD.rule === 'all' || x.rule === VD.rule));
+  let h = '<div class="cards">' + ['hata', 'uyarı', 'bilgi'].map(s => `<div class="card"><div class="cv" style="color:${SEV_COL[s]}">${all.filter(x => x.sev === s).length}</div><div class="ct">${s === 'hata' ? 'Hata' : s === 'uyarı' ? 'Uyarı' : 'Bilgi'}</div></div>`).join('') + `<div class="card"><div class="cv">${Object.values(M.els).filter(e => !KIND[e.kind].rel).length}</div><div class="ct">Denetlenen eleman</div></div></div>`;
+  if(!all.length) return h + '<div class="vempty">Bulgu yok — model tüm kuralları geçti 🎉</div>';
+  h += `<table class="rt"><thead><tr><th class="rn">#</th><th>Önem</th><th>Kural</th><th>Eleman</th><th>Açıklama</th></tr></thead><tbody>` + list.map((x, i) => {
+    const e = E(x.id);
+    return `<tr data-vrow="${x.id || ''}" style="cursor:pointer"><td class="rn">${i + 1}</td><td><span class="stc" style="background:${SEV_COL[x.sev]}">${x.sev}</span></td><td style="white-space:nowrap">${esc(x.rule)}</td><td>${e ? `${icon(e)} <b>${esc(nm(e))}</b><div class="muted" style="font-size:11px">${esc(pathOf(e.owner))}</div>` : '—'}</td><td>${esc(x.msg)}</td></tr>`;
+  }).join('') + '</tbody></table>';
+  return h + `<div class="vfoot">${list.length} / ${all.length} bulgu</div>`;
+}
+function validationBar(){
+  const rules = [...new Set(validateModel().map(x => x.rule))].sort((a, b) => a.localeCompare(b, 'tr'));
+  return `<label>Önem <select data-xf="vd.sev"><option value="all">Tümü</option>${['hata', 'uyarı', 'bilgi'].map(s => `<option${VD.sev === s ? ' selected' : ''}>${s}</option>`).join('')}</select></label>
+    <label>Kural <select data-xf="vd.rule"><option value="all">Tümü</option>${rules.map(r => `<option${VD.rule === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
+    <span class="vsep"></span><button class="vb" data-xa="vrefresh">↻ Yeniden denetle</button><button class="vb" data-xa="vdxl">⤒ Excel'e aktar</button>`;
+}
+function exportValidationXlsx(){
+  const rows = [[{v:'Önem', s:1}, {v:'Kural', s:1}, {v:'Eleman', s:1}, {v:'Tür', s:1}, {v:'Konum', s:1}, {v:'Açıklama', s:1}]];
+  validateModel().forEach(x => { const e = E(x.id); rows.push([{v:x.sev, s:x.sev === 'hata' ? 4 : x.sev === 'uyarı' ? 5 : 2}, x.rule, e ? nm(e) : '', e ? KIND[e.kind].tr : '', e ? pathOf(e.owner) : '', x.msg]); });
+  download(buildXlsx([{name:'Model Doğrulama', rows, widths:[10, 26, 30, 16, 40, 70], header:true, freeze:[0, 1], filter:1}]), fileSafe(E(M.rootId).name) + ' - Model Doğrulama.xlsx');
+}
+
+/* ---- rapor (Word .docx / yazdırılabilir HTML) ---- */
+function diagramSVGStr(d){
+  const r = diagramSVG(d, true); if(!r.bbox) return null;
+  const pad = 12, x = r.bbox.x - pad, y = r.bbox.y - pad, w = Math.ceil(r.bbox.w + pad * 2), h = Math.ceil(r.bbox.h + pad * 2);
+  return {str:`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${x} ${y} ${w} ${h}"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff"/>${r.svg}</svg>`, w, h};
+}
+function svgToPng(r, scale){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => { const c = document.createElement('canvas'); c.width = Math.round(r.w * scale); c.height = Math.round(r.h * scale); const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height); c.toBlob(async b => res(new Uint8Array(await b.arrayBuffer())), 'image/png'); };
+    img.onerror = () => rej(new Error('görüntü'));
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
+  });
+}
+const RPT_SECTIONS = [['summary', 'Model özeti'], ['diagrams', 'Diyagramlar'], ['blocks', 'Yapı sözlüğü (bloklar, part, port, değerler)'], ['reqs', 'Gereksinimler'], ['trace', 'İzlenebilirlik ve kapsama analizi'], ['verif', 'Doğrulama (VCRM ve test durumları)'], ['quality', 'Gereksinim kalite bulguları'], ['validation', 'Model doğrulama bulguları']];
+function buildReport(o){
+  const B = [], H = (lv, t) => B.push({t:'h', lv, x:t}), Pp = (x, st) => B.push({t:'p', x, st}), TB = (head, rows, w) => B.push({t:'table', head, rows, w});
+  const root = E(M.rootId), idx = relIdx(); let sec = 0, fig = 0;
+  const cnt = k => Object.values(M.els).filter(e => e.kind === k).length;
+  if(o.summary){
+    H(1, `${++sec}. Model özeti`);
+    Pp(`Bu doküman "${root.name}" modelinden ${new Date().toLocaleDateString('tr-TR')} tarihinde SysML Modelleyici ile otomatik olarak üretilmiştir.`);
+    const kinds = ['Package', 'Block', 'InterfaceBlock', 'Part', 'Port', 'FlowProp', 'ValueType', 'Enumeration', 'Signal', 'Stereotype', 'Actor', 'UseCase', 'Activity', 'Action', 'StateMachine', 'State', 'Interaction', 'ConstraintBlock', 'Requirement', 'TestCase', 'Diagram'].filter(cnt);
+    TB(['Eleman türü', 'Adet'], kinds.map(k => [KIND[k].tr, String(cnt(k))]), [70, 30]);
+    const ds = Object.values(M.els).filter(e => e.kind === 'Diagram' && (o.dia || []).includes(e.id));
+    if(ds.length) TB(['Diyagram', 'Tür', 'Konum'], ds.map(d => [d.name, DT[d.dtype].tr, pathOf(d.owner)]), [35, 30, 35]);
+  }
+  if(o.diagrams){
+    H(1, `${++sec}. Diyagramlar`);
+    Object.values(M.els).filter(e => e.kind === 'Diagram').sort(sortEls).filter(d => (o.dia || []).includes(d.id)).forEach(d => {
+      H(2, d.name); if(d.doc) Pp(d.doc);
+      const r = diagramSVGStr(d); if(!r){ Pp('(Diyagram boş)', 'muted'); return; }
+      B.push({t:'img', d, r, cap:`Şekil ${++fig} – ${d.name} (${DT[d.dtype].tr})`});
+    });
+  }
+  if(o.blocks){
+    const bl = Object.values(M.els).filter(e => e.kind === 'Block').sort(sortEls);
+    if(bl.length){
+      H(1, `${++sec}. Yapı sözlüğü`);
+      bl.forEach(b => {
+        H(2, b.name); Pp(b.doc || 'Açıklama girilmemiş.', b.doc ? '' : 'muted');
+        const ch = kidsOf(b.id), parts = ch.filter(c => c.kind === 'Part'), vals = ch.filter(c => c.kind === 'Value'), ports = ch.filter(c => c.kind === 'Port');
+        if(parts.length) TB(['Part', 'Tip', 'Çokluk', 'Toplama'], parts.map(p => [p.name || '', p.type && E(p.type) ? E(p.type).name : '—', p.mult || '1', p.shared ? 'shared' : 'composite']), [30, 30, 15, 25]);
+        if(vals.length) TB(['Değer', 'Tip', 'Varsayılan', 'Birim'], vals.map(v => [v.name || '', v.vtype || '', v.def || '', v.unit || '']), [35, 25, 20, 20]);
+        if(ports.length) TB(['Port', 'Yön', 'Tip'], ports.map(p => [p.name || '', portDir(p) || '', p.type && E(p.type) ? (p.conj ? '~' : '') + E(p.type).name : '—']), [40, 20, 40]);
+        const fps = ch.filter(c => c.kind === 'FlowProp'); if(fps.length) TB(['Akış özelliği', 'Yön', 'Tip'], fps.map(f => [f.name || '', f.dir || 'inout', tName(f) || '—']), [40, 20, 40]);
+        if(stNames(b).length) Pp('Stereotipler: «' + stNames(b).join(', ') + '»' + (tagLines(b).length ? ' — ' + tagLines(b).join('; ') : ''));
+        const rs = (idx['Satisfy'] || []).filter(x => x.src === b.id).map(x => E(x.tgt)).filter(Boolean);
+        if(rs.length) Pp('Karşıladığı gereksinimler: ' + rs.map(r => r.reqId || nm(r)).join(', '));
+      });
+    }
+    const ibs = Object.values(M.els).filter(e => e.kind === 'InterfaceBlock').sort(sortEls), vts = Object.values(M.els).filter(e => e.kind === 'ValueType').sort(sortEls), ens = Object.values(M.els).filter(e => e.kind === 'Enumeration').sort(sortEls), sgs = Object.values(M.els).filter(e => e.kind === 'Signal').sort(sortEls);
+    if(ibs.length || vts.length || ens.length || sgs.length){
+      H(1, `${++sec}. Arayüzler ve tipler`);
+      if(ibs.length){ H(2, 'Arayüz blokları'); TB(['Arayüz bloğu', 'Akış özellikleri', 'Açıklama'], ibs.map(b => [b.name, kidsOf(b.id).filter(c => c.kind === 'FlowProp').map(flowLabel).join('\n') || '—', b.doc || '']), [25, 45, 30]); }
+      if(sgs.length){ H(2, 'Sinyaller'); TB(['Sinyal', 'Öznitelikler', 'Açıklama'], sgs.map(b => [b.name, kidsOf(b.id).filter(c => c.kind === 'Value').map(valLabel).join('\n') || '—', b.doc || '']), [25, 45, 30]); }
+      if(vts.length){ H(2, 'Değer tipleri'); TB(['Değer tipi', 'Temel tip', 'Birim', 'Büyüklük'], vts.map(v => [v.name, v.base || 'Real', v.unit || '', v.qk || '']), [35, 20, 20, 25]); }
+      if(ens.length){ H(2, 'Numaralandırmalar'); TB(['Numaralandırma', 'Değerler'], ens.map(v => [v.name, enumLits(v).join(', ')]), [35, 65]); }
+    }
+  }
+  if(o.reqs && allReqs().length){
+    H(1, `${++sec}. Gereksinimler`);
+    reqSpecBlocks().grp.forEach(g => { H(2, g.t); TB(g.head, g.rows, g.w); });
+    Pp('Sütunlar Gereksinimler ▾ → Word\'e aktar penceresindeki seçime göredir.', 'muted');
+  }
+  if(o.trace && allReqs().length){
+    H(1, `${++sec}. İzlenebilirlik ve kapsama analizi`);
+    const D = coverageData();
+    TB(['Gösterge', 'Değer'], D.cards.map(([t, v, s0, p]) => [t + (s0 ? ' (' + s0 + ')' : ''), p ? '%' + v : String(v)]), [75, 25]);
+    H(2, 'İzlenebilirlik tablosu');
+    TB(['ID', 'Üst / alt gereksinim', 'Karşılayan elemanlar', 'Fonksiyonlar', 'Kapsama'], D.sys.concat(D.sub).map(({r, t, c}) => [r.reqId || '', (reqLevel(r) === 'Sistem' ? t.children : t.parents).map(x => x.reqId || nm(x)).join(', ') || '—', t.elems.map(nm).join(', ') || '—', t.funcs.map(nm).join(', ') || '—', {x:c.st, c:c.st === 'Tam' ? 'D9F2DF' : c.st === 'Kısmi' ? 'FFF3CD' : 'F8D7DA'}]), [12, 20, 28, 25, 15]);
+    const gaps = D.sys.concat(D.sub).filter(x => x.c.gaps.length);
+    if(gaps.length){ H(2, 'Kapsama eksikleri'); TB(['ID', 'Eksikler'], gaps.map(({r, c}) => [r.reqId || '', c.gaps.join('; ')]), [15, 85]); }
+  }
+  if(o.verif && (allReqs().length || allTests().length)){
+    H(1, `${++sec}. Doğrulama`);
+    H(2, 'Doğrulama çapraz referans matrisi (VCRM)');
+    TB(['ID', 'T', 'A', 'M', 'G', 'Test / prosedür', 'Sonuç', 'Durum'], allReqs().filter(activeReq).map(r => { const t = trace(r, idx), ts = t.verifyBy.filter(x => x.kind === 'TestCase'), m = new Set(String(r.verif || '').split(/[,;\/]+/).map(x => x.trim())), vs = verStatus(r, t); return [r.reqId || ''].concat(VERIF.map(([v]) => m.has(v) ? 'X' : '')).concat([ts.map(x => nm(x) + (x.procNo ? ' (' + x.procNo + ')' : '')).join(', ') || '—', ts.map(testResult).join(', ') || '—', {x:vs, c:vs === 'Doğrulandı' ? 'D9F2DF' : vs === 'Kaldı' || vs === 'Faaliyet yok' ? 'F8D7DA' : 'FFF3CD'}]); }), [12, 5, 5, 5, 5, 36, 16, 16]);
+    if(allTests().length){ H(2, 'Test durumları'); TB(['Test', 'Prosedür', 'Seviye', 'Plan', 'Sonuç', 'Rapor', 'Gereksinimler'], allTests().map(t => [nm(t), t.procNo || '', t.tLevel || '', [fmtD(t.pStart), fmtD(t.pEnd)].filter(Boolean).join(' – '), testResult(t), t.reportNo || '', testReqs(t, idx).map(r => r.reqId || nm(r)).join(', ')]), [22, 12, 11, 17, 10, 10, 18]); }
+    const PFS = allProfiles();
+    if(PFS.length){
+      H(2, 'Test profilleri');
+      TB(['Profil', 'Tür', 'Seviye', 'Ana değer', 'Toplam süre', 'Kullanan testler'], PFS.map(p => { const m = pfMetrics(p); return [p.name, PT[p.ptype || 'psd'].tr, p.plevel || '', m.main || '', m.total != null ? fmtMin(m.total) : '—', pfTests(p).map(nm).join(', ') || '—']; }), [24, 17, 12, 17, 10, 20]);
+      PFS.forEach(p => {
+        const m = pfMetrics(p), t = p.ptype || 'psd', D = PT[t];
+        Pp(p.name + (p.std ? ' — ' + p.std : '') + ': ' + m.rows.map(r => r[0] + ' ' + r[1]).join(' · '));
+        if(m.ok){ const svg = pfChart([{p, tol:(t === 'psd' || t === 'srs') ? (numOf(p.tol) || (t === 'srs' ? 6 : 3)) : 0}], {w:760, h:380}); B.push({t:'img', r:{str:svg, w:760, h:380}, cap:`Şekil ${++fig} – ${p.name} (${D.tr})`}); }
+        TB([D.x, D.y, t === 'thermal' ? 'Değişim (°C/dk)' : 'Eğim (dB/oktav)'], pfPts(p).map((q, i) => [fmtNum(q[0]), String(q[1]), m.slopes[i] && m.slopes[i][2] != null ? fmtG(m.slopes[i][2]) : '']), [30, 35, 35]);
+      });
+    }
+  }
+  if(o.icd) sec = icdBlocks(H, Pp, TB, B, sec);
+  if(o.risk) sec = reportRiskBlocks(H, Pp, TB, B, sec, () => ++fig);
+  RPT_EXT.forEach(f => { sec = f(o, H, Pp, TB, B, sec, () => ++fig); });
+  if(o.quality && allReqs().length){
+    const SQ = simIndex(), rows = []; allReqs().filter(activeReq).forEach(r => reqQuality(r, SQ).forEach(([sv, m]) => rows.push([r.reqId || '', sv, m])));
+    H(1, `${++sec}. Gereksinim kalite bulguları`);
+    if(rows.length) TB(['ID', 'Önem', 'Bulgu'], rows, [14, 12, 74]); else Pp('Bulgu yok.');
+  }
+  if(o.validation){
+    const v = validateModel();
+    H(1, `${++sec}. Model doğrulama bulguları`);
+    if(v.length) TB(['Önem', 'Kural', 'Eleman', 'Açıklama'], v.map(x => [x.sev, x.rule, x.id && E(x.id) ? nm(E(x.id)) : '', x.msg]), [10, 22, 23, 45]); else Pp('Bulgu yok — model tüm kuralları geçti.');
+  }
+  return B;
+}
+const wx = s => xe(s);
+function docxRun(x, o){ o = o || {}; const lines = String(x == null ? '' : x).split('\n'); return `<w:r><w:rPr>${o.b ? '<w:b/>' : ''}${o.i ? '<w:i/>' : ''}${o.col ? `<w:color w:val="${o.col}"/>` : ''}${o.sz ? `<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>` : ''}</w:rPr>${lines.map((l, i) => (i ? '<w:br/>' : '') + `<w:t xml:space="preserve">${wx(l)}</w:t>`).join('')}</w:r>`; }
+function docxP(x, style, o){ o = o || {}; return `<w:p><w:pPr>${style ? `<w:pStyle w:val="${style}"/>` : ''}${o.jc ? `<w:jc w:val="${o.jc}"/>` : ''}${o.pb ? '<w:pageBreakBefore/>' : ''}${o.keep ? '<w:keepNext/>' : ''}</w:pPr>${docxRun(x, o)}</w:p>`; }
+async function buildDocx(B, o){
+  o = docTplApply(o);
+  const land = !!o.land, TW = land ? 14570 : 9638, maxW = (land ? 25.7 : 17) / 2.54 * 914400, maxH = (land ? 14.5 : 21) / 2.54 * 914400;
+  const media = []; let body = '', pic = 0;
+  body += docxP(o.title || E(M.rootId).name, 'Title') + docxP(E(M.rootId).name + ' — ' + (o.subtitle || 'SysML Model Raporu'), 'Subtitle');
+  const meta = [['Doküman no', o.docNo], ['Revizyon', o.rev], ['Proje', o.project], ['Kuruluş', o.org], ['Hazırlayan', o.author], ['Kontrol eden', o.checker], ['Onaylayan', o.approver], ['Tarih', new Date().toLocaleDateString('tr-TR')]].filter(x => x[1]);
+  if(meta.length) body += docxTable(['Alan', 'Değer'], meta, [30, 70], TW, true);
+  if(o.revs && o.revs.length) body += docxP('Revizyon geçmişi', 'Heading3') + docxTable(['Rev.', 'Tarih', 'Açıklama', 'Hazırlayan'], o.revs.map(r => [r.rev || '', r.date ? fmtD(r.date) : '', r.desc || '', r.by || '']), [10, 16, 54, 20], TW);
+  if(o.sign) body += docxP('Onay', 'Heading3') + docxTable(['Görev', 'Ad Soyad', 'Tarih', 'İmza'], [['Hazırlayan', o.author || '', '', ''], ['Kontrol eden', o.checker || '', '', ''], ['Onaylayan', o.approver || '', '', '']], [22, 34, 18, 26], TW);
+  body += `<w:p><w:pPr><w:pStyle w:val="TOCHeading"/><w:pageBreakBefore/></w:pPr>${docxRun('İçindekiler')}</w:p><w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve"> TOC \\o "1-2" \\h \\z \\u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>${docxRun('İçindekiler tablosunu güncellemek için tıklayıp F9 tuşuna basın.', {i:1, col:'777777'})}<w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>`;
+  let first = true;
+  for(const b of B){
+    if(b.t === 'h'){ body += docxP(b.x, 'Heading' + b.lv, {pb:b.lv === 1 && first}); if(b.lv === 1) first = false; }
+    else if(b.t === 'p') body += docxP(b.x, null, b.st === 'muted' ? {i:1, col:'777777'} : {});
+    else if(b.t === 'table') body += docxTable(b.head, b.rows, b.w, TW);
+    else if(b.t === 'img'){
+      const scale = Math.min(2, 4000 / Math.max(b.r.w, b.r.h)) || 1;
+      let png; try { png = await svgToPng(b.r, scale); } catch(e){ body += docxP('(Görüntü oluşturulamadı)', null, {i:1}); continue; }
+      pic++; media.push({name:`word/media/image${pic}.png`, data:png});
+      let cx = b.r.w * 9525, cy = b.r.h * 9525; const k = Math.min(1, maxW / cx, maxH / cy); cx = Math.round(cx * k); cy = Math.round(cy * k);
+      body += `<w:p><w:pPr><w:jc w:val="center"/><w:keepNext/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${pic}" name="Şekil ${pic}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${pic}" name="image${pic}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdImg${pic}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+      body += docxP(b.cap, 'Caption', {jc:'center'});
+    }
+  }
+  const sect = `<w:sectPr><w:footerReference w:type="default" r:id="rIdFtr"/><w:pgSz w:w="${land ? 16838 : 11906}" w:h="${land ? 11906 : 16838}"${land ? ' w:orient="landscape"' : ''}/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr>`;
+  const NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}${sect}</w:body></w:document>`;
+  const hs = (id, name, sz, col, before, extra) => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="${before}" w:after="120"/>${extra || ''}</w:pPr><w:rPr><w:b/><w:color w:val="${col}"/><w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr></w:style>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="tr-TR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="100" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
+<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
+<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:before="2400" w:after="200"/></w:pPr><w:rPr><w:b/><w:color w:val="26364B"/><w:sz w:val="56"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Subtitle"><w:name w:val="Subtitle"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="600"/></w:pPr><w:rPr><w:color w:val="6C3483"/><w:sz w:val="30"/></w:rPr></w:style>
+${hs('Heading1', 'heading 1', 32, '26364B', 360, '<w:outlineLvl w:val="0"/><w:pBdr><w:bottom w:val="single" w:sz="8" w:space="2" w:color="8E44AD"/></w:pBdr>')}${hs('Heading2', 'heading 2', 25, '3D5070', 240, '<w:outlineLvl w:val="1"/>')}${hs('Heading3', 'heading 3', 22, '3D5070', 200, '<w:outlineLvl w:val="2"/>')}${hs('TOCHeading', 'TOC Heading', 32, '26364B', 240, '')}
+<w:style w:type="paragraph" w:styleId="Caption"><w:name w:val="caption"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="240"/></w:pPr><w:rPr><w:i/><w:color w:val="555555"/><w:sz w:val="18"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="TOC1"><w:name w:val="toc 1"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="60"/></w:pPr><w:rPr><w:b/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="TOC2"><w:name w:val="toc 2"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="40"/><w:ind w:left="240"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Footer"><w:name w:val="footer"/><w:basedOn w:val="Normal"/><w:rPr><w:color w:val="777777"/><w:sz w:val="16"/></w:rPr></w:style>
+<w:style w:type="table" w:styleId="TableGrid"><w:name w:val="Table Grid"/><w:tblPr><w:tblBorders><w:top w:val="single" w:sz="4" w:color="BFC8D3"/><w:left w:val="single" w:sz="4" w:color="BFC8D3"/><w:bottom w:val="single" w:sz="4" w:color="BFC8D3"/><w:right w:val="single" w:sz="4" w:color="BFC8D3"/><w:insideH w:val="single" w:sz="4" w:color="BFC8D3"/><w:insideV w:val="single" w:sz="4" w:color="BFC8D3"/></w:tblBorders><w:tblCellMar><w:top w:w="30" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="30" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>`;
+  const footer = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:pPr><w:pStyle w:val="Footer"/><w:tabs><w:tab w:val="right" w:pos="${TW}"/></w:tabs></w:pPr><w:r><w:t xml:space="preserve">${wx((o.docNo ? o.docNo + '  ·  ' : '') + (o.title || E(M.rootId).name) + (o.rev ? '  ·  Rev. ' + o.rev : ''))}</w:t></w:r><w:r><w:tab/><w:t xml:space="preserve">Sayfa </w:t></w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>1</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r><w:r><w:t xml:space="preserve"> / </w:t></w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> NUMPAGES </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>1</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:ftr>`;
+  const settings = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:updateFields w:val="true"/><w:defaultTabStop w:val="708"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>`;
+  const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${wx(o.title || E(M.rootId).name)}</dc:title><dc:creator>${wx(o.author || userName())}</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified></cp:coreProperties>`;
+  const files = [
+    {name:'[Content_Types].xml', data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`},
+    {name:'_rels/.rels', data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`},
+    {name:'word/_rels/document.xml.rels', data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdSty" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdSet" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/><Relationship Id="rIdFtr" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>${media.map((m, i) => `<Relationship Id="rIdImg${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image${i + 1}.png"/>`).join('')}</Relationships>`},
+    {name:'word/document.xml', data:doc}, {name:'word/styles.xml', data:styles}, {name:'word/settings.xml', data:settings}, {name:'word/footer1.xml', data:footer}, {name:'docProps/core.xml', data:core}
+  ].concat(media);
+  const z = zipStore(files);
+  return new Blob([z], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+function docxTable(head, rows, w, TW, plain){
+  const tot = w.reduce((a, b) => a + b, 0), cw = w.map(x => Math.round(x / tot * TW));
+  const cell = (v, i, hd) => { const o = v && typeof v === 'object' ? v : {x:v}; const fill = hd ? '26364B' : o.c; return `<w:tc><w:tcPr><w:tcW w:w="${cw[i]}" w:type="dxa"/>${fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>` : ''}</w:tcPr><w:p><w:pPr><w:spacing w:after="0"/></w:pPr>${docxRun(o.x, hd ? {b:1, col:'FFFFFF', sz:17} : {sz:17})}</w:p></w:tc>`; };
+  return `<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:w="${TW}" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${cw.map(x => `<w:gridCol w:w="${x}"/>`).join('')}</w:tblGrid>` +
+    (plain ? '' : `<w:tr><w:trPr><w:tblHeader/><w:cantSplit/></w:trPr>${head.map((h, i) => cell(h, i, 1)).join('')}</w:tr>`) +
+    rows.map(r => `<w:tr><w:trPr><w:cantSplit/></w:trPr>${r.map((v, i) => cell(v, i, 0)).join('')}</w:tr>`).join('') + `</w:tbl><w:p><w:pPr><w:spacing w:after="60"/></w:pPr></w:p>`;
+}
+function buildReportHTML(B, o){
+  let toc = '', body = '', n = 0;
+  B.forEach(b => {
+    if(b.t === 'h'){ const id = 's' + (++n); if(b.lv <= 2) toc += `<li class="t${b.lv}"><a href="#${id}">${esc(b.x)}</a></li>`; body += `<h${b.lv + 1} id="${id}">${esc(b.x)}</h${b.lv + 1}>`; }
+    else if(b.t === 'p') body += `<p${b.st === 'muted' ? ' class="mut"' : ''}>${esc(b.x).replace(/\n/g, '<br>')}</p>`;
+    else if(b.t === 'table'){ const tot = b.w.reduce((a, c) => a + c, 0); body += `<table><colgroup>${b.w.map(x => `<col style="width:${(x / tot * 100).toFixed(1)}%">`).join('')}</colgroup><thead><tr>${b.head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${b.rows.map(r => `<tr>${r.map(v => { const q = v && typeof v === 'object' ? v : {x:v}; return `<td${q.c ? ` style="background:#${q.c}"` : ''}>${esc(q.x).replace(/\n/g, '<br>')}</td>`; }).join('')}</tr>`).join('')}</tbody></table>`; }
+    else if(b.t === 'img') body += `<figure>${b.r.str.replace('<svg ', '<svg style="max-width:100%;height:auto" ')}<figcaption>${esc(b.cap)}</figcaption></figure>`;
+  });
+  const meta = [['Doküman no', o.docNo], ['Revizyon', o.rev], ['Hazırlayan', o.author], ['Tarih', new Date().toLocaleDateString('tr-TR')]].filter(x => x[1]);
+  return `<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><title>${esc(o.title || E(M.rootId).name)}</title><style>
+@page{size:A4 ${o.land ? 'landscape' : 'portrait'};margin:16mm 14mm}
+body{font:10.5pt/1.45 "Segoe UI",Calibri,Arial,sans-serif;color:#222;max-width:${o.land ? 1100 : 820}px;margin:0 auto;padding:24px}
+.cover{min-height:60vh;display:flex;flex-direction:column;justify-content:center;border-bottom:3px solid #8e44ad;margin-bottom:24px}
+.cover h1{font-size:30pt;color:#26364b;margin:0 0 6px}.cover .sub{font-size:15pt;color:#6c3483;margin-bottom:30px}
+.meta td{border:none;padding:2px 14px 2px 0}.meta td:first-child{color:#667;font-weight:600}
+h2{font-size:17pt;color:#26364b;border-bottom:2px solid #8e44ad;padding-bottom:3px;margin:30px 0 10px;page-break-before:always}
+h3{font-size:13pt;color:#3d5070;margin:20px 0 8px;page-break-after:avoid}h4{font-size:11.5pt;color:#3d5070}
+table{width:100%;border-collapse:collapse;margin:6px 0 14px;font-size:9pt;table-layout:fixed}th{background:#26364b;color:#fff;text-align:left}
+th,td{border:1px solid #bfc8d3;padding:3px 6px;vertical-align:top;word-wrap:break-word}thead{display:table-header-group}tr{page-break-inside:avoid}
+figure{margin:10px 0 18px;text-align:center;page-break-inside:avoid}figcaption{font-style:italic;color:#555;font-size:9pt;margin-top:4px}
+.mut{color:#777;font-style:italic}.toc{columns:2;font-size:10pt}.toc li{list-style:none}.toc .t2{padding-left:16px;font-size:9.5pt}.toc a{color:#26364b;text-decoration:none}
+.pbar{position:sticky;top:0;background:#fff;padding:8px 0;border-bottom:1px solid #ddd;text-align:right}.pbar button{font:inherit;padding:6px 16px;background:#8e44ad;color:#fff;border:none;border-radius:4px;cursor:pointer}
+@media print{.pbar{display:none}body{padding:0;max-width:none}}
+</style></head><body><div class="pbar"><button onclick="print()">Yazdır / PDF olarak kaydet</button></div>
+<div class="cover"><h1>${esc(o.title || E(M.rootId).name)}</h1><div class="sub">${esc(E(M.rootId).name)} — SysML Model Raporu</div><table class="meta">${meta.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></div>
+<h3 style="margin-top:0">İçindekiler</h3><ul class="toc">${toc}</ul>${body}</body></html>`;
+}
+function reportDialog(){
+  const box = $('#modalBox'), dias = Object.values(M.els).filter(e => e.kind === 'Diagram').sort(sortEls);
+  box.style.width = 'min(720px, 96vw)'; box.style.maxWidth = 'none';
+  const L = (() => { try { return JSON.parse(localStorage.getItem('sysml-report') || '{}'); } catch(e){ return {}; } })();
+  box.innerHTML = `<h2>Rapor oluştur</h2>
+    <div class="rpgrid"><label>Başlık <input id="rpT" value="${esc(L.title || E(M.rootId).name + ' Sistem Tanım Dokümanı')}"></label><label>Doküman no <input id="rpN" value="${esc(L.docNo || '')}" placeholder="ör. STD-001"></label>
+    <label>Revizyon <input id="rpR" value="${esc(L.rev || 'A')}"></label><label>Hazırlayan <input id="rpA" value="${esc(L.author || userName())}"></label></div>
+    <div class="sub" style="margin-top:10px"><span>Bölümler</span></div><div class="rpsec">${RPT_SECTIONS.map(([k, t]) => `<label class="vchk"><input type="checkbox" data-rps="${k}"${L.sec && L.sec[k] === false ? '' : ' checked'}> ${t}</label>`).join('')}</div>
+    <div class="sub"><span>Diyagramlar (${dias.length})</span><span><button class="pbtn" id="rpall">Tümü</button> <button class="pbtn" id="rpnone">Hiçbiri</button></span></div>
+    <div class="plist" style="max-height:28vh">${dias.map(d => `<label class="pli"><input type="checkbox" data-rpd="${d.id}" checked> <span class="ti" style="background:${DT[d.dtype].col};color:#fff;border-radius:3px;padding:0 4px;font-size:10px">${d.dtype}</span> ${esc(d.name)} <em style="flex-basis:auto;padding:0;margin-left:auto">${esc(pathOf(d.owner))}</em></label>`).join('')}</div>
+    <div class="icbar" style="margin-top:8px"><label class="vchk"><input type="checkbox" id="rpL"${L.land ? ' checked' : ''}> Yatay sayfa</label></div>
+    <p style="text-align:right;margin:10px 0 0"><span class="muted" id="rpst"></span> &nbsp; <button class="pbtn" id="rpcancel">Vazgeç</button> <button class="pbtn" id="rphtml">Yazdırılabilir HTML</button> <button class="pbtn pri" id="rpdocx">Word (.docx)</button></p>`;
+  $('#modal').style.display = 'flex';
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null; };
+  const opts = () => { const o = {kind:'report', title:$('#rpT').value.trim(), docNo:$('#rpN').value.trim(), rev:$('#rpR').value.trim(), author:$('#rpA').value.trim(), land:$('#rpL').checked, sec:{}, dia:[...box.querySelectorAll('[data-rpd]:checked')].map(x => x.dataset.rpd)}; box.querySelectorAll('[data-rps]').forEach(c => { o[c.dataset.rps] = c.checked; o.sec[c.dataset.rps] = c.checked; }); try { localStorage.setItem('sysml-report', JSON.stringify({title:o.title, docNo:o.docNo, rev:o.rev, author:o.author, land:o.land, sec:o.sec})); } catch(e){} return o; };
+  box.onclick = async ev => {
+    const id = ev.target.id;
+    if(id === 'rpcancel') close();
+    if(id === 'rpall' || id === 'rpnone') box.querySelectorAll('[data-rpd]').forEach(c => c.checked = id === 'rpall');
+    if(id === 'rphtml' || id === 'rpdocx'){
+      const o = opts(); $('#rpst').textContent = 'Hazırlanıyor…'; ev.target.disabled = true;
+      try {
+        const B = buildReport(o), fn = fileSafe(o.title || E(M.rootId).name);
+        if(id === 'rphtml') download(new Blob([buildReportHTML(B, o)], {type:'text/html'}), fn + '.html');
+        else download(await buildDocx(B, o), fn + '.docx');
+        close(); toast('Rapor oluşturuldu');
+      } catch(e){ $('#rpst').textContent = 'Hata: ' + e.message; ev.target.disabled = false; }
+    }
+  };
+}
+
+/* ---- model birleştirme ---- */
+async function pickModelText(){
+  if(NATIVE){ const r = await nDialog('open', '', 'Model dosyaları (*.sysml;*.json;*.html)|*.sysml;*.json;*.html;*.htm|Tüm dosyalar (*.*)|*.*'); if(r.error) throw new Error(r.error); return r.path ? {name:r.path, text:r.text} : null; }
+  return new Promise(res => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.sysml,.json,.html,.htm'; inp.onchange = async () => { const f = inp.files[0]; if(!f) return res(null); res({name:f.name, text:await f.text()}); }; inp.click(); });
+}
+const REF_FIELDS = ['src', 'tgt', 'sp', 'tp', 'part', 'type', 'behavior', 'represents', 'link', 'signal'];
+async function mergeModelDialog(){
+  let f; try { f = await pickModelText(); } catch(e){ return toast('Açılamadı: ' + e.message); }
+  if(!f) return;
+  const O = parseModelText(f.text); if(!O) return toast('Geçerli bir model dosyası değil');
+  const OE = id => O.els[id], okids = id => Object.values(O.els).filter(e => e.owner === id && !(KIND[e.kind] && KIND[e.kind].rel));
+  const tops = okids(O.rootId);
+  const pkgs = Object.values(M.els).filter(e => e.kind === 'Model' || e.kind === 'Package').sort((a, b) => pathOf(a.id).localeCompare(pathOf(b.id), 'tr'));
+  const box = $('#modalBox'); box.style.width = 'min(720px, 96vw)'; box.style.maxWidth = 'none';
+  const same = Object.keys(O.els).filter(id => M.els[id]).length;
+  box.innerHTML = `<h2>Modeli birleştir <span class="muted" style="font-size:12px;font-weight:normal">${esc(baseName(f.name))} · ${esc(OE(O.rootId).name)}</span></h2>
+    <p class="muted" style="margin:0 0 8px">Aktarılacak üst elemanları seçin. Seçilenlerin tüm içeriği (diyagramlar ve ilişkiler dahil) aktarılır.</p>
+    <div class="plist" style="max-height:34vh">${tops.map(e => `<label class="pli"><input type="checkbox" data-mg="${e.id}" checked> ${icon(e)} <b>${esc(e.name || KIND[e.kind].tr)}</b> <span class="muted">${esc(KIND[e.kind].tr)}</span>${okids(e.id).filter(k => k.kind === 'Package').map(k => `<span style="flex-basis:100%;padding-left:28px"><label class="vchk"><input type="checkbox" data-mg="${k.id}" data-mgp="${e.id}"> ${esc(k.name)} (yalnız bu alt paket)</label></span>`).join('')}</label>`).join('') || '<div class="muted">Kaynak modelde aktarılacak eleman yok</div>'}</div>
+    <div class="icbar" style="margin-top:8px"><label>Hedef paket <select id="mgT">${pkgs.map(p => `<option value="${p.id}">${esc(pathOf(p.id))}</option>`).join('')}</select></label></div>
+    <div class="icbar"><label>Aynı kimlikli elemanlar <select id="mgM"><option value="update">Gelen sürümle güncelle</option><option value="skip">Mevcut kalsın (atla)</option><option value="copy">Yeni kimlikle kopya olarak ekle</option></select></label><span class="muted">${same} eleman iki modelde ortak kimliğe sahip</span></div>
+    <p style="text-align:right;margin:10px 0 0"><button class="pbtn" id="mgcancel">Vazgeç</button> <button class="pbtn pri" id="mgok">Birleştir</button></p>`;
+  $('#modal').style.display = 'flex';
+  const close = () => { $('#modal').style.display = 'none'; box.style.width = ''; box.style.maxWidth = ''; box.onclick = null; };
+  box.onclick = ev => {
+    const c = ev.target.closest('[data-mgp]'); if(c && c.checked){ const p = box.querySelector(`[data-mg="${c.dataset.mgp}"]:not([data-mgp])`); if(p) p.checked = false; }
+    const p0 = ev.target.closest('[data-mg]:not([data-mgp])'); if(p0 && p0.checked) box.querySelectorAll(`[data-mgp="${p0.dataset.mg}"]`).forEach(x => x.checked = false);
+    if(ev.target.id === 'mgcancel') close();
+    if(ev.target.id === 'mgok'){ const sel = [...box.querySelectorAll('[data-mg]:checked')].map(x => x.dataset.mg); if(!sel.length) return toast('En az bir eleman seçin'); const tg = $('#mgT').value, mode = $('#mgM').value; close(); mergeModel(O, sel, tg, mode); }
+  };
+}
+function mergeModel(O, sel, target, mode){
+  const S = new Set(), ch = new Map();
+  Object.values(O.els).forEach(e => { if(e.owner){ if(!ch.has(e.owner)) ch.set(e.owner, []); ch.get(e.owner).push(e.id); } });
+  const walk = id => { if(S.has(id)) return; S.add(id); (ch.get(id) || []).forEach(walk); };
+  sel.forEach(walk);
+  Object.values(O.els).forEach(e => { if(e.src && e.tgt && KIND[e.kind] && KIND[e.kind].rel && !S.has(e.id) && (S.has(e.src) || S.has(e.tgt))) S.add(e.id); });
+  [...S].forEach(id => { const e = O.els[id]; (e && e.st || []).forEach(sid => { if(O.els[sid] && !M.els[sid]) S.add(sid); }); });
+  const map = new Map(); S.forEach(id => map.set(id, mode === 'copy' && M.els[id] ? uid() : id));
+  const exists = id => map.has(id) || !!M.els[id];
+  const R = id => map.has(id) ? map.get(id) : id;
+  snap();
+  let added = 0, updated = 0, skipped = 0, dropped = 0;
+  const selSet = new Set(sel), dupReq = [];
+  const reqIds = new Map(Object.values(M.els).filter(e => e.kind === 'Requirement' && e.reqId).map(e => [e.reqId, e.id]));
+  [...S].forEach(oid => {
+    const e0 = O.els[oid]; if(!e0) return;
+    const nid = map.get(oid), had = !!M.els[nid];
+    if(had && mode === 'skip'){ skipped++; return; }
+    const e = JSON.parse(JSON.stringify(e0)); e.id = nid;
+    if(e.src && e.tgt && (!exists(e.src) || !exists(e.tgt))){ dropped++; return; }
+    e.owner = selSet.has(oid) || !e.owner ? target : (map.has(e.owner) ? R(e.owner) : (M.els[e.owner] ? e.owner : target));
+    REF_FIELDS.forEach(k => { if(e[k]){ if(exists(e[k])) e[k] = R(e[k]); else e[k] = (k === 'src' || k === 'tgt') ? e[k] : null; } });
+    if(e.st){ e.st = e.st.filter(exists).map(R); if(e.tv){ const tv = {}; Object.keys(e.tv).forEach(k => { const i = k.indexOf('.'), sid = k.slice(0, i); if(exists(sid)) tv[R(sid) + k.slice(i)] = e.tv[k]; }); e.tv = tv; } }
+    if(e.kind === 'Diagram'){ e.shapes = (e.shapes || []).filter(s => exists(s.el)).map(s => Object.assign(s, {el:R(s.el)})); const sids = new Set(e.shapes.map(s => s.id)); e.edges = (e.edges || []).filter(x => sids.has(x.s) && sids.has(x.t) && (!x.el || exists(x.el))).map(x => Object.assign(x, {el:x.el ? R(x.el) : null})); }
+    if(e.kind === 'Requirement' && e.reqId && reqIds.has(e.reqId) && reqIds.get(e.reqId) !== nid) dupReq.push(e.reqId);
+    if(had){ updated++; if(M.els[nid].owner && M.els[nid].owner !== e.owner && !selSet.has(oid)) e.owner = M.els[nid].owner; } else added++;
+    M.els[nid] = e; bump();
+  });
+  // ilişkilerin sonradan atlanan uçlarını temizle
+  Object.values(M.els).forEach(e => { if(e.src && KIND[e.kind] && KIND[e.kind].rel && (!M.els[e.src] || !M.els[e.tgt])){ delete M.els[e.id]; dropped++; } }); bump();
+  if(O.reqCfg){ const c = reqCfg(); (O.reqCfg.attrs || []).forEach(a => { if(!c.attrs.some(x => x.key === a.key)) c.attrs.push(a); }); }
+  ST.exp.add(target); sel.forEach(id => { const n = map.get(id); if(n) ST.exp.add(n); });
+  afterChange();
+  toast(`Birleştirildi: ${added} eklendi, ${updated} güncellendi${skipped ? ', ' + skipped + ' atlandı' : ''}${dropped ? ', ' + dropped + ' ucu eksik ilişki alınmadı' : ''}${dupReq.length ? ' · Çakışan gereksinim ID: ' + [...new Set(dupReq)].slice(0, 5).join(', ') : ''}`);
+  return {added, updated, skipped, dropped, dupReq};
+}
+
+/* ---- ReqIF ---- */
+function exportReqIF(){
+  const rs = expReqs(); if(!rs.length) return toast('Dışa aktarılacak gereksinim yok');
+  const SEL = new Set(expCols().map(c => c.key)), has = k => SEL.has(k), XC = expCols().filter(c => c.trace || EXTRA_COLS.includes(c)), ridx = relIdx(), rsim = simIndex();
+  const now = new Date().toISOString(), LC = `LAST-CHANGE="${now}"`, c = reqCfg();
+  const enumDT = (id, name, vals) => `<DATATYPE-DEFINITION-ENUMERATION IDENTIFIER="${id}" LONG-NAME="${xe(name)}" ${LC}><SPECIFIED-VALUES>${vals.map((v, i) => `<ENUM-VALUE IDENTIFIER="${id}-${i}" LONG-NAME="${xe(v)}" ${LC}><PROPERTIES><EMBEDDED-VALUE KEY="${i}" OTHER-CONTENT="${xe(v)}"/></PROPERTIES></ENUM-VALUE>`).join('')}</SPECIFIED-VALUES></DATATYPE-DEFINITION-ENUMERATION>`;
+  const LV = ['Sistem', 'Alt Sistem'], VM = VERIF.map(x => x[0]);
+  const sAD = (id, name) => `<ATTRIBUTE-DEFINITION-STRING IDENTIFIER="${id}" LONG-NAME="${xe(name)}" ${LC}><TYPE><DATATYPE-DEFINITION-STRING-REF>DT-STR</DATATYPE-DEFINITION-STRING-REF></TYPE></ATTRIBUTE-DEFINITION-STRING>`;
+  const eAD = (id, name, dt, multi) => `<ATTRIBUTE-DEFINITION-ENUMERATION IDENTIFIER="${id}" LONG-NAME="${xe(name)}" MULTI-VALUED="${multi ? 'true' : 'false'}" ${LC}><TYPE><DATATYPE-DEFINITION-ENUMERATION-REF>${dt}</DATATYPE-DEFINITION-ENUMERATION-REF></TYPE></ATTRIBUTE-DEFINITION-ENUMERATION>`;
+  const attrId = k => 'AD-X-' + String(k).replace(/[^A-Za-z0-9_-]/g, '_');
+  const sV = (ad, v) => v ? `<ATTRIBUTE-VALUE-STRING THE-VALUE="${xe(v)}"><DEFINITION><ATTRIBUTE-DEFINITION-STRING-REF>${ad}</ATTRIBUTE-DEFINITION-STRING-REF></DEFINITION></ATTRIBUTE-VALUE-STRING>` : '';
+  const eV = (ad, refs) => refs.length ? `<ATTRIBUTE-VALUE-ENUMERATION><DEFINITION><ATTRIBUTE-DEFINITION-ENUMERATION-REF>${ad}</ATTRIBUTE-DEFINITION-ENUMERATION-REF></DEFINITION><VALUES>${refs.map(r => `<ENUM-VALUE-REF>${r}</ENUM-VALUE-REF>`).join('')}</VALUES></ATTRIBUTE-VALUE-ENUMERATION>` : '';
+  const xV = (ad, t) => `<ATTRIBUTE-VALUE-XHTML><DEFINITION><ATTRIBUTE-DEFINITION-XHTML-REF>${ad}</ATTRIBUTE-DEFINITION-XHTML-REF></DEFINITION><THE-VALUE><xhtml:div>${String(t || '').split('\n').map(l => xe(l)).join('<xhtml:br/>')}</xhtml:div></THE-VALUE></ATTRIBUTE-VALUE-XHTML>`;
+  const objs = rs.map(r => { const vm = String(r.verif || '').split(/[,;\/]+/).map(x => x.trim()).map(x => VM.indexOf(x)).filter(i => i >= 0);
+    return `<SPEC-OBJECT IDENTIFIER="${r.id}" ${LC}><TYPE><SPEC-OBJECT-TYPE-REF>ST-REQ</SPEC-OBJECT-TYPE-REF></TYPE><VALUES>${sV('AD-ID', r.reqId)}${has('name') ? sV('AD-NAME', r.name) : ''}${xV('AD-TEXT', r.text)}${has('level') ? eV('AD-LEVEL', ['DT-LEVEL-' + LV.indexOf(reqLevel(r))]) : ''}${has('subsys') ? sV('AD-SUB', reqLevel(r) === 'Sistem' ? '' : r.subsys) : ''}${has('status') ? eV('AD-STATUS', ['DT-STATUS-' + REQ_STATUS.indexOf(reqStatus(r))]) : ''}${has('verif') ? eV('AD-VERIF', vm.map(i => 'DT-VERIF-' + i)) : ''}${has('srcNo') ? sV('AD-SRCNO', r.srcNo) : ''}${has('srcText') ? sV('AD-SRCTEXT', r.srcText) : ''}${c.attrs.filter(a => has('attr:' + a.key)).map(a => sV(attrId(a.key), (r.attrs || {})[a.key])).join('')}${XC.length ? (() => { const t = trace(r, ridx), cs = covStatus(r, t); return XC.map(col => sV(attrId(col.key), String(expVal(r, col, t, cs, rsim) || ''))).join(''); })() : ''}</VALUES></SPEC-OBJECT>`; });
+  const grp = [['H-SYS', 'Sistem Gereksinimleri', rs.filter(r => reqLevel(r) === 'Sistem')]].concat(subsystems().map((s, i) => ['H-SUB-' + i, 'Alt Sistem Gereksinimleri — ' + s, rs.filter(r => reqLevel(r) !== 'Sistem' && String(r.subsys || '').trim() === s)]));
+  const nn = rs.filter(r => reqLevel(r) !== 'Sistem' && !String(r.subsys || '').trim()); if(nn.length) grp.push(['H-SUB-X', 'Alt Sistem Gereksinimleri', nn]);
+  const heads = grp.filter(g => g[2].length).map(([id, t]) => `<SPEC-OBJECT IDENTIFIER="${id}" ${LC}><TYPE><SPEC-OBJECT-TYPE-REF>ST-HEAD</SPEC-OBJECT-TYPE-REF></TYPE><VALUES>${sV('AD-CHAPTER', t)}</VALUES></SPEC-OBJECT>`);
+  const relT = [['DeriveReqt', 'RT-DERIVE', 'deriveReqt'], ['Refine', 'RT-REFINE', 'refine'], ['Trace', 'RT-TRACE', 'trace']], rset = new Set(rs.map(r => r.id));
+  const rels = []; relT.forEach(([k, t]) => Object.values(M.els).filter(e => e.kind === k && rset.has(e.src) && rset.has(e.tgt)).forEach(e => rels.push(`<SPEC-RELATION IDENTIFIER="${e.id}" ${LC}><TYPE><SPEC-RELATION-TYPE-REF>${t}</SPEC-RELATION-TYPE-REF></TYPE><SOURCE><SPEC-OBJECT-REF>${e.src}</SPEC-OBJECT-REF></SOURCE><TARGET><SPEC-OBJECT-REF>${e.tgt}</SPEC-OBJECT-REF></TARGET></SPEC-RELATION>`)));
+  let hn = 0; const hier = grp.filter(g => g[2].length).map(([id, , list]) => `<SPEC-HIERARCHY IDENTIFIER="SH-${++hn}" ${LC}><OBJECT><SPEC-OBJECT-REF>${id}</SPEC-OBJECT-REF></OBJECT><CHILDREN>${list.map(r => `<SPEC-HIERARCHY IDENTIFIER="SH-${++hn}" ${LC}><OBJECT><SPEC-OBJECT-REF>${r.id}</SPEC-OBJECT-REF></OBJECT></SPEC-HIERARCHY>`).join('')}</CHILDREN></SPEC-HIERARCHY>`).join('');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<REQ-IF xmlns="http://www.omg.org/spec/ReqIF/20110401/reqif.xsd" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<THE-HEADER><REQ-IF-HEADER IDENTIFIER="HDR-${M.uid || 'm'}"><CREATION-TIME>${now}</CREATION-TIME><REQ-IF-TOOL-ID>SysML Modelleyici</REQ-IF-TOOL-ID><REQ-IF-VERSION>1.0</REQ-IF-VERSION><SOURCE-TOOL-ID>SysML Modelleyici</SOURCE-TOOL-ID><TITLE>${xe(E(M.rootId).name)}</TITLE></REQ-IF-HEADER></THE-HEADER>
+<CORE-CONTENT><REQ-IF-CONTENT>
+<DATATYPES><DATATYPE-DEFINITION-STRING IDENTIFIER="DT-STR" LONG-NAME="Metin" MAX-LENGTH="65535" ${LC}/><DATATYPE-DEFINITION-XHTML IDENTIFIER="DT-XHTML" LONG-NAME="Biçimli metin" ${LC}/>${enumDT('DT-LEVEL', 'Seviye', LV)}${enumDT('DT-STATUS', 'Durum', REQ_STATUS)}${enumDT('DT-VERIF', 'Doğrulama Yöntemi', VM)}</DATATYPES>
+<SPEC-TYPES><SPEC-OBJECT-TYPE IDENTIFIER="ST-REQ" LONG-NAME="Gereksinim" ${LC}><SPEC-ATTRIBUTES>${sAD('AD-ID', 'ReqIF.ForeignID')}${has('name') ? sAD('AD-NAME', 'ReqIF.Name') : ''}<ATTRIBUTE-DEFINITION-XHTML IDENTIFIER="AD-TEXT" LONG-NAME="ReqIF.Text" ${LC}><TYPE><DATATYPE-DEFINITION-XHTML-REF>DT-XHTML</DATATYPE-DEFINITION-XHTML-REF></TYPE></ATTRIBUTE-DEFINITION-XHTML>${has('level') ? eAD('AD-LEVEL', 'Seviye', 'DT-LEVEL') : ''}${has('subsys') ? sAD('AD-SUB', 'Alt Sistem') : ''}${has('status') ? eAD('AD-STATUS', 'Durum', 'DT-STATUS') : ''}${has('verif') ? eAD('AD-VERIF', 'Doğrulama Yöntemi', 'DT-VERIF', 1) : ''}${has('srcNo') ? sAD('AD-SRCNO', 'Müşteri İster No') : ''}${has('srcText') ? sAD('AD-SRCTEXT', 'Müşteri İsteri') : ''}${c.attrs.filter(a => has('attr:' + a.key)).map(a => sAD(attrId(a.key), a.label)).join('')}${XC.map(col => sAD(attrId(col.key), col.label)).join('')}</SPEC-ATTRIBUTES></SPEC-OBJECT-TYPE>
+<SPEC-OBJECT-TYPE IDENTIFIER="ST-HEAD" LONG-NAME="Başlık" ${LC}><SPEC-ATTRIBUTES>${sAD('AD-CHAPTER', 'ReqIF.ChapterName')}</SPEC-ATTRIBUTES></SPEC-OBJECT-TYPE>
+${relT.map(([, t, n]) => `<SPEC-RELATION-TYPE IDENTIFIER="${t}" LONG-NAME="${n}" ${LC}/>`).join('')}<SPECIFICATION-TYPE IDENTIFIER="SPT" LONG-NAME="Gereksinim Spesifikasyonu" ${LC}/></SPEC-TYPES>
+<SPEC-OBJECTS>${heads.join('')}${objs.join('\n')}</SPEC-OBJECTS>
+<SPEC-RELATIONS>${rels.join('')}</SPEC-RELATIONS>
+<SPECIFICATIONS><SPECIFICATION IDENTIFIER="SPEC-1" LONG-NAME="${xe(E(M.rootId).name)}" ${LC}><TYPE><SPECIFICATION-TYPE-REF>SPT</SPECIFICATION-TYPE-REF></TYPE><CHILDREN>${hier}</CHILDREN></SPECIFICATION></SPECIFICATIONS>
+</REQ-IF-CONTENT></CORE-CONTENT></REQ-IF>`;
+  download(new Blob([xml], {type:'application/xml'}), fileSafe(E(M.rootId).name) + '.reqif');
+  toast(`${rs.length} gereksinim ve ${rels.length} ilişki ReqIF olarak aktarıldı`);
+}
+function reqifToSheet(txt){
+  const doc = xmlDoc(txt); if(!tagsNS(doc, 'REQ-IF').length) return null;
+  const names = {}, enums = {};
+  ['ATTRIBUTE-DEFINITION-STRING', 'ATTRIBUTE-DEFINITION-XHTML', 'ATTRIBUTE-DEFINITION-ENUMERATION', 'ATTRIBUTE-DEFINITION-INTEGER', 'ATTRIBUTE-DEFINITION-REAL', 'ATTRIBUTE-DEFINITION-DATE', 'ATTRIBUTE-DEFINITION-BOOLEAN'].forEach(t => tagsNS(doc, t).forEach(a => names[a.getAttribute('IDENTIFIER')] = a.getAttribute('LONG-NAME') || a.getAttribute('IDENTIFIER')));
+  tagsNS(doc, 'ENUM-VALUE').forEach(v => enums[v.getAttribute('IDENTIFIER')] = v.getAttribute('LONG-NAME') || '');
+  const nice = n => ({'ReqIF.ForeignID':'Gereksinim ID', 'ReqIF.Name':'Başlık', 'ReqIF.Text':'Gereksinim Metni', 'ReqIF.ChapterName':'@chapter'})[n] || n;
+  const cols = [], ci = n => { let i = cols.indexOf(n); if(i < 0){ cols.push(n); i = cols.length - 1; } return i; };
+  const objs = new Map();
+  tagsNS(doc, 'SPEC-OBJECT').forEach(o => {
+    const row = [];
+    const vals = tagsNS(o, 'VALUES')[0]; if(!vals) return;
+    Array.from(vals.children).forEach(v => {
+      const def = v.querySelector('*|DEFINITION > *') || tagsNS(v, 'DEFINITION')[0]; const ref = def ? (def.firstElementChild ? def.firstElementChild.textContent : def.textContent).trim() : ''; const n = nice(names[ref] || ref); if(!n) return;
+      let val = v.getAttribute('THE-VALUE');
+      if(val == null){ const tv = tagsNS(v, 'THE-VALUE')[0]; if(tv) val = (tv.innerText !== undefined ? tv.textContent : tv.textContent); else val = tagsNS(v, 'ENUM-VALUE-REF').map(x => enums[x.textContent.trim()] || x.textContent.trim()).join(', '); }
+      row[ci(n)] = String(val || '').trim();
+    });
+    objs.set(o.getAttribute('IDENTIFIER'), row);
+  });
+  const chap = cols.indexOf('@chapter');
+  const pcol = ci('Üst gereksinim ID');
+  const idCol = cols.indexOf('Gereksinim ID');
+  tagsNS(doc, 'SPEC-RELATION').forEach(r => {
+    const s = (tagsNS(r, 'SOURCE')[0] || {}).textContent, t = (tagsNS(r, 'TARGET')[0] || {}).textContent; const so = objs.get((s || '').trim()), to = objs.get((t || '').trim());
+    if(so && to && idCol >= 0 && to[idCol]) so[pcol] = (so[pcol] ? so[pcol] + ', ' : '') + to[idCol];
+  });
+  const rows = [...objs.values()].filter(r => !(chap >= 0 && r[chap] && r.filter(Boolean).length === 1)).map(r => cols.map((_, i) => r[i] || ''));
+  const keep = cols.map((c0, i) => c0 !== '@chapter' && rows.some(r => r[i]));
+  return [{name:'ReqIF', rows:[cols.filter((_, i) => keep[i])].concat(rows.map(r => r.filter((_, i) => keep[i])))}];
+}
+function toolsMenuItems(){
+  return [{h:'Araçlar'},
+    {t:'Rapor oluştur (Word / HTML)…', f:reportDialog},
+    {t:'Doküman şablonları (kapak, imza, revizyon)…', f:docTemplatesDialog},
+    {t:'Model doğrulama', f:() => openD('@validation')},
+    '-',
+    {t:'Başka modeli birleştir…', f:mergeModelDialog},
+    {t:'Model karşılaştır… (fark ve seçerek uygulama)', f:() => { openD('@compare'); if(!CMP) cmpOpen(); }},
+    {t:'İnceleme notları', f:() => openD('@reviews')},
+    {t:'ReqIF olarak dışa aktar (DOORS, Polarion…)', f:() => reqExportDialog('reqif')},
+    {t:'ReqIF / Excel\'den gereksinim aktar…', f:importReqs},
+    {h:'Cameo / MagicDraw (XMI)'},
+    {t:'XMI olarak dışa aktar (UML 2.5 / SysML 1.6)', f:xmiExport},
+    {t:'XMI içe aktar…', f:xmiImportDialog},
+    {h:'Modelleme yardımcıları'},
+    {t:'Bul ve değiştir…', k:'Ctrl+H', f:findReplaceDialog},
+    {t:'BDD\'deki bloklar için IBD üret / güncelle', f:() => ibdsFromBDD()},
+    {t:'Açık IBD\'yi modelle eşitle (eksik part, port, bağlantı)', f:syncCurIBD},
+    {t:'Bağlam diyagramı üret…', f:contextDialog},
+    {t:'Yeni akıllı paket…', f:() => smartDialog(null, M.rootId)},
+    {h:'Ekip çalışması (modüller)'},
+    {t:'Modüller…', f:() => { openD('@modules'); modRefreshLocks(); }},
+    {t:'Modül ekle (salt okunur)…', f:() => importModule('')},
+    {t:'Seçili paketi modül olarak dışa aktar…', dis:!(E(ST.tsel) && E(ST.tsel).kind === 'Package' && !isRO(ST.tsel)), f:() => exportModule(ST.tsel, false)},
+    {h:'Kütüphaneler ve şablonlar'},
+    {t:'Şablon ekle (MIL-STD-810H, SMC-S-016, proje iskeleti)…', f:templateDialog},
+    {t:'Birim / değer tipi kütüphanesini ekle (SI)', f:addUnitLib}];
+}
+function addUnitLib(){
+  snap();
+  const pk = findOrMkPkg(M.rootId, 'Birimler');
+  const have = new Set(Object.values(M.els).filter(e => e.kind === 'ValueType').map(e => e.name));
+  let n = 0;
+  UNIT_LIB.forEach(([nm0, unit, qk]) => { if(have.has(nm0)) return; mk('ValueType', pk, {name:nm0, base:'Real', unit, qk}); n++; });
+  ST.exp.add(pk); afterChange(); revealInTree(pk);
+  toast(n ? n + ' değer tipi "Birimler" paketine eklendi — value property tipi olarak seçebilirsiniz' : 'Birim kütüphanesi zaten modelde');
+}
+(function(){
+  const V = $('#view');
+  V.addEventListener('click', ev => {
+    const xa = ev.target.closest('[data-xa]');
+    if(xa){ if(xa.dataset.xa === 'vrefresh'){ renderViewBar(); renderView(); toast('Model yeniden denetlendi'); } if(xa.dataset.xa === 'vdxl') exportValidationXlsx(); return; }
+    const vr = ev.target.closest('tr[data-vrow]'); if(vr && vr.dataset.vrow) showElement(vr.dataset.vrow);
+  });
+  V.addEventListener('change', ev => { const t = ev.target; if(t.dataset.xf && t.dataset.xf.startsWith('vd.')){ VD[t.dataset.xf.slice(3)] = t.value; renderView(); } });
+})();
+
+/* ================= MENU / TOAST / STATUS ================= */
+const ctx = $('#ctx');
+function menu(x, y, items){
+  ctx.innerHTML = items.map((it, i) => it === '-' ? '<div class="sep"></div>' : (it.h ? `<div class="mh">${esc(it.h)}</div>` : `<div class="mi${it.dis ? ' dis' : ''}" data-i="${i}"><span class="mil"><span class="mic">${it.ic || (typeof uiIc === 'function' ? uiIc(uiIconFor(it.t), 15) : '')}</span><span>${esc(it.t)}</span></span>${it.k ? `<span class="k">${it.k}</span>` : ''}</div>`)).join('');
+  ctx.style.display = 'block';
+  const r = ctx.getBoundingClientRect();
+  ctx.style.left = Math.min(x, innerWidth - r.width - 6) + 'px';
+  ctx.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 6)) + 'px';
+  ctx.onclick = ev => { const mi = ev.target.closest('.mi'); if(!mi) return; hideMenu(); items[+mi.dataset.i].f(); };
+}
+function hideMenu(){ ctx.style.display = 'none'; }
+window.addEventListener('mousedown', ev => { if(!ev.target.closest('#ctx')) hideMenu(); }, true);
+let toastT = null;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 2800); }
+function renderStatus(){
+  const d = cur();
+  if(isView(ST.cur) && VIEWS[ST.cur].status){ $('#stDiag').textContent = VIEWS[ST.cur].tr; $('#stCount').textContent = VIEWS[ST.cur].status(); $('#stHint').textContent = ''; return; }
+  if(isView(ST.cur)){ const rs = allReqs(); $('#stDiag').textContent = VIEWS[ST.cur].tr; $('#stCount').textContent = `${rs.filter(r => reqLevel(r) === 'Sistem').length} sistem · ${rs.filter(r => reqLevel(r) !== 'Sistem').length} alt sistem gereksinimi`; $('#stHint').textContent = 'Hücreye tıklayıp düzenleyin · Satır seçimi Özellikler panelinde açılır'; return; }
+  $('#stDiag').textContent = d ? DT[d.dtype].tr + ' — ' + d.name : 'Diyagram açık değil';
+  $('#stCount').textContent = d ? `${d.shapes.length} şekil · ${d.edges.length} bağlantı · %${Math.round(d.z * 100)}` : `${Object.keys(M.els).length} model elemanı`;
+  $('#stHint').textContent = ST.tool ? (ST.tool.type === 'rel' ? `${KIND[ST.tool.kind].tr}: kaynaktan hedefe sürükleyin · Esc iptal` : `${KIND[ST.tool.kind].tr}: tuvale tıklayın · Esc iptal`) :
+    'Ctrl+Tekerlek yakınlaş · Boşluk/Orta tuş+sürükle kaydır · Del modelden sil · Shift+Del diyagramdan kaldır';
+}
+function renderAll(){ bump(); renderSimBar(); renderTree(); renderTabs(); renderPalette(); renderDiagram(); renderProps(); renderStatus(); }
+
+/* ================= EXPORT ================= */
+function exportSVGString(){
+  const d = cur(); if(!d) return null;
+  const {svg, bbox} = diagramSVG(d, true);
+  if(!bbox){ toast('Diyagram boş'); return null; }
+  const pad = 12, x = bbox.x - pad, y = bbox.y - pad, w = Math.ceil(bbox.w + pad * 2), h = Math.ceil(bbox.h + pad * 2);
+  return {str:`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${x} ${y} ${w} ${h}"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff"/>${svg}</svg>`, w, h, name:fileSafe(d.name)};
+}
+function fileSafe(s){ return String(s || 'diyagram').replace(/[\\/:*?"<>|]+/g, '_').trim() || 'diyagram'; }
+function download(blob, name){
+  if(NATIVE){
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    const flt = {png:'PNG görüntü (*.png)|*.png', svg:'SVG görüntü (*.svg)|*.svg', html:'HTML (*.html)|*.html', json:'JSON (*.json)|*.json', xlsx:'Excel çalışma kitabı (*.xlsx)|*.xlsx', pdf:'PDF belgesi (*.pdf)|*.pdf', xmi:'XMI (*.xmi)|*.xmi', csv:'CSV (*.csv)|*.csv', docx:'Word belgesi (*.docx)|*.docx', reqif:'ReqIF (*.reqif)|*.reqif'}[ext] || 'Tüm dosyalar (*.*)|*.*';
+    const rd = new FileReader();
+    rd.onload = async () => {
+      const b64 = String(rd.result).split(',')[1] || '';
+      const r = await nDialog('save', name, flt, b64, true);
+      if(r.error) toast('Kaydedilemedi: ' + r.error); else if(r.path) toast('Kaydedildi: ' + r.path);
+    };
+    rd.readAsDataURL(blob); return;
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+function exportSVG(){ const r = exportSVGString(); if(r) download(new Blob([r.str], {type:'image/svg+xml'}), r.name + '.svg'); }
+function toPNG(cb){
+  const r = exportSVGString(); if(!r) return;
+  const scale = Math.min(3, Math.max(1, 6000 / Math.max(r.w, r.h) < 2 ? 1 : 2));
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas'); c.width = Math.round(r.w * scale); c.height = Math.round(r.h * scale);
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    c.toBlob(b => cb(b, r.name), 'image/png');
+  };
+  img.onerror = () => toast('Görüntü oluşturulamadı');
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str);
+}
+function exportPNG(){ toPNG((b, n) => download(b, n + '.png')); }
+function copyImage(){
+  toPNG(async b => {
+    try { await navigator.clipboard.write([new ClipboardItem({'image/png': b})]); toast('Diyagram panoya kopyalandı — Word/PowerPoint\'e yapıştırabilirsiniz'); }
+    catch(e){ toast('Panoya kopyalama bu tarayıcıda izinli değil; PNG indirin.'); }
+  });
+}
+
+/* ================= PERSIST / FILES ================= */
+function pack(){ M.ui = {open:ST.open, cur:ST.cur, exp:[...ST.exp].slice(0, 2000)}; M.savedAt = Date.now(); M.v = FMT_VER; M.app = APP_VER; return M; }
+function serialize(){ const s = JSON.stringify(pack()); return s; }
+/* ---- native (exe) bridge: present only when running inside SysMLModelleyici.exe ---- */
+const NATIVE = typeof window.nativeInfo === 'function';
+let curPath = '', dirty = false, nSeq = 0;
+const nWait = {};
+window.__ncb = (id, res) => { const f = nWait[id]; delete nWait[id]; if(f) f(res || {}); };
+function nDialog(kind, name, filter, data, b64){ return new Promise(res => { const id = ++nSeq; nWait[id] = res; window.nativeDialog(id, kind, name || '', filter || '', data || '', !!b64).catch(e => { delete nWait[id]; res({error:String(e)}); }); }); }
+const baseName = p => String(p || '').split(/[\\/]/).pop();
+function updTitle(){
+  if(!NATIVE) return;
+  const t = (dirty ? '* ' : '') + (curPath ? baseName(curPath) : (M ? E(M.rootId).name + ' (kaydedilmedi)' : '')) + ' — ' + tr('SysML Modelleyici');
+  try { window.nativeSetTitle(tr(t)); } catch(e){}
+  if(typeof lockSync === 'function') lockSync();
+}
+function markDirty(){ if(!dirty){ dirty = true; updTitle(); } }
+let aT = null;
+function persist(){
+  if(NATIVE){ clearTimeout(aT); aT = setTimeout(() => { try { window.nativeAutosave(JSON.stringify(pack(), clean), curPath, dirty); } catch(e){} }, 500); return; }
+  try { localStorage.setItem(LSK, JSON.stringify(pack(), clean)); } catch(e){}
+}
+let pT = null;
+function persistSoon(){ clearTimeout(pT); pT = setTimeout(persist, 400); }
+async function saveJSON(saveAs){
+  const txt = JSON.stringify(pack(), clean, 1);
+  if(!NATIVE){ download(new Blob([txt], {type:'application/json'}), fileSafe(E(M.rootId).name) + '.sysml.json'); toast('Model kaydedildi (JSON)'); return; }
+  try {
+    if(curPath && !saveAs){ if(typeof lockBeforeSave === 'function' && !(await lockBeforeSave())) return; await window.nativeWrite(curPath, txt); }
+    else {
+      const r = await nDialog('save', curPath ? baseName(curPath) : fileSafe(E(M.rootId).name) + '.sysml', 'SysML model (*.sysml)|*.sysml|JSON (*.json)|*.json', txt, false);
+      if(r.error) throw r.error; if(!r.path) return;
+      curPath = r.path;
+    }
+    dirty = false; updTitle(); persist(); toast('Kaydedildi: ' + baseName(curPath));
+  } catch(e){ toast('Kaydedilemedi: ' + e); }
+}
+function saveHTML(){
+  const json = JSON.stringify(pack(), clean).replace(/</g, '\\u003c');
+  const html = PRISTINE.replace(/(<script type="application\/json" id="embedded-model">)[\s\S]*?(<\/script>)/, (m, a, b) => a + json + b);
+  download(new Blob([html], {type:'text/html'}), fileSafe(E(M.rootId).name) + '.html');
+  toast('Model gömülü HTML kaydedildi — bu dosyayı açan kişi modeli hazır görür');
+}
+function validModel(m){ return m && m.els && m.rootId && m.els[m.rootId]; }
+/* ---- dosya biçimi sürümü ve onarım: eski/bozuk dosyalar yüklenirken düzeltilir ---- */
+const FMT_VER = 2;
+function migrateModel(m){
+  const notes = [], els = m.els, has = id => !!(id && els[id]);
+  let n;
+  const from = +m.v || 1;
+  if(from > FMT_VER) notes.push(`Dosya daha yeni bir sürümle (${m.app || 'v' + from}) kaydedilmiş; bu sürümün tanımadığı alanlar korunur ama kullanılamayabilir`);
+  /* bilinmeyen tür, kimlik uyuşmazlığı */
+  n = 0; let u = 0; for(const k in els){ const e = els[k]; if(!e || typeof e !== 'object'){ delete els[k]; n++; continue; } if(e.id !== k) e.id = k; if(!KIND[e.kind]){ e._unk = e._unk || e.kind; e.kind = 'Comment'; e.name = e.name || ''; e.doc = `[Tanınmayan eleman türü: ${e._unk}] ` + (e.doc || ''); u++; } }
+  if(n) notes.push(n + ' geçersiz kayıt atıldı');
+  if(u) notes.push(u + ' tanınmayan türdeki eleman not olarak korundu');
+  /* sahipsiz elemanlar kök modele */
+  n = 0; for(const k in els){ const e = els[k]; if(k === m.rootId) continue; if(!has(e.owner) || e.owner === k){ e.owner = m.rootId; n++; } }
+  /* sahiplik döngüsü */
+  for(const k in els){ const seen = new Set([k]); let o = els[k].owner; while(o && els[o]){ if(seen.has(o)){ els[k].owner = m.rootId; n++; break; } seen.add(o); o = els[o].owner; } }
+  if(n) notes.push(n + ' sahipsiz eleman köke taşındı');
+  /* ucu kopuk ilişkiler */
+  n = 0; for(const k in els){ const e = els[k]; if(KIND[e.kind] && KIND[e.kind].rel && (!has(e.src) || !has(e.tgt))){ delete els[k]; n++; } }
+  if(n) notes.push(n + ' ucu olmayan ilişki silindi');
+  /* diyagram tutarlılığı */
+  let ns = 0, ne = 0;
+  for(const k in els){ const d = els[k]; if(d.kind !== 'Diagram') continue;
+    d.shapes = Array.isArray(d.shapes) ? d.shapes : []; d.edges = Array.isArray(d.edges) ? d.edges : [];
+    const b0 = d.shapes.length; d.shapes = d.shapes.filter(sh => sh && sh.id && has(sh.el) && isFinite(sh.x) && isFinite(sh.y)); ns += b0 - d.shapes.length;
+    const ids = new Set(d.shapes.map(sh => sh.id)); d.shapes.forEach(sh => { if(sh.parent && !ids.has(sh.parent)) delete sh.parent; if(!(sh.w > 0)) sh.w = 120; if(!(sh.h > 0)) sh.h = 60; });
+    const e0 = d.edges.length; d.edges = d.edges.filter(ed => ed && ids.has(ed.s) && ids.has(ed.t) && (!ed.el || has(ed.el))); ne += e0 - d.edges.length;
+  }
+  if(ns || ne) notes.push(`diyagramlardan ${ns} geçersiz şekil, ${ne} geçersiz bağlantı kaldırıldı`);
+  /* gereksinim alanları (v1 dosyaları) */
+  for(const k in els){ const e = els[k]; if(e.kind === 'Requirement'){ if(!e.level) e.level = 'Sistem'; if(!e.status) e.status = 'Taslak'; if(e.text == null) e.text = ''; if(!e.attrs || typeof e.attrs !== 'object') e.attrs = {}; } }
+  if(from < FMT_VER) m.v = FMT_VER;
+  return notes;
+}
+function loadModel(m){
+  const notes = migrateModel(m); if(notes.length){ setTimeout(() => toast('Model onarıldı: ' + notes.join('; ')), 50); try { console.info('Model onarımı:', notes); } catch(e){} }
+  if(typeof SIM !== 'undefined' && SIM){ if(SIM.timer) clearInterval(SIM.timer); SIM = null; }
+  M = m;
+  Object.values(M.els).forEach(e => { if(e.kind === 'Diagram'){ e.shapes = e.shapes || []; e.edges = e.edges || []; if(!e.z) e.z = 1; if(e.vx == null){ e.vx = 60; e.vy = 70; } } });
+  const ui = M.ui || {};
+  ST.open = (ui.open || []).filter(id => isView(id) || E(id)); ST.cur = (isView(ui.cur) || E(ui.cur)) ? ui.cur : (ST.open[0] || null);
+  ST.exp = new Set(ui.exp || [M.rootId]); ST.sel.clear(); ST.tsel = null; ST.tool = null;
+  rebuildReqCache();
+  if(typeof modSnapAll === 'function') modSnapAll();
+}
+function parseModelText(txt){
+  let m = null;
+  try {
+    if(/^\s*</.test(txt)){ const mm = txt.match(/<script type="application\/json" id="embedded-model">([\s\S]*?)<\/script>/); if(mm && mm[1].trim()) m = JSON.parse(mm[1]); }
+    else m = JSON.parse(txt.replace(/^\uFEFF/, ''));
+  } catch(e){}
+  return validModel(m) ? m : null;
+}
+function openText(txt, path){
+  const m = parseModelText(txt);
+  if(!m){ toast('Geçerli bir model dosyası değil'); return false; }
+  snap(); loadModel(m); ST.back = []; ST.fwd = [];
+  curPath = path && /\.(sysml|json)$/i.test(path) ? path : '';
+  dirty = !curPath; afterLoad(); updTitle(); toast('Model açıldı: ' + E(M.rootId).name);
+  return true;
+}
+$('#fileIn').addEventListener('change', ev => {
+  const f = ev.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = () => openText(String(rd.result), '');
+  rd.readAsText(f, 'utf-8'); ev.target.value = '';
+});
+async function openFile(){
+  if(!NATIVE) return $('#fileIn').click();
+  if(dirty && !confirm('Kaydedilmemiş değişiklikler var. Yine de başka bir model açılsın mı?')) return;
+  const r = await nDialog('open', '', 'Model dosyaları (*.sysml;*.json;*.html)|*.sysml;*.json;*.html;*.htm|Tüm dosyalar (*.*)|*.*');
+  if(r.error) return toast('Açılamadı: ' + r.error);
+  if(r.path) openText(r.text, r.path);
+}
+function emptyModel(){ M = {uid:uid(), v:1, els:{}, rootId:null}; const r = mk('Model', null, {name:'Model'}); M.rootId = r.id; mk('Package', r.id, {name:'Paket1'}); return M; }
+
+/* ================= TOOLBAR / KEYS ================= */
+const ACT = {
+  new(){ if(NATIVE && dirty && !confirm('Kaydedilmemiş değişiklikler var. Devam edilsin mi?')) return; if(!NATIVE && !confirm('Yeni boş model oluşturulsun mu? (Mevcut model Geri Al ile geri getirilebilir; kalıcı yedek için önce Kaydet\'i kullanın.)')) return; snap(); const m = emptyModel(); m.ui = {open:[], cur:null, exp:[m.rootId]}; loadModel(m); curPath = ''; dirty = true; afterLoad(); updTitle(); },
+  navBack, navFwd,
+  reqMenu(){ const b = document.querySelector('[data-act="reqMenu"]').getBoundingClientRect(); setTimeout(() => menu(b.left, b.bottom + 4, reqMenuItems()), 0); },
+  analysisMenu(){ const b = document.querySelector('[data-act="analysisMenu"]').getBoundingClientRect(); setTimeout(() => menu(b.left, b.bottom + 4, analysisMenuItems()), 0); },
+  toolsMenu(){ const b = document.querySelector('[data-act="toolsMenu"]').getBoundingClientRect(); setTimeout(() => menu(b.left, b.bottom + 4, toolsMenuItems()), 0); },
+  layoutMenu(){ const b = document.querySelector('[data-act="layoutMenu"]').getBoundingClientRect(); setTimeout(() => menu(b.left, b.bottom + 4, layoutMenuItems()), 0); },
+  iconMenu(){
+    const d = cur(), ids = new Set();
+    if(d) d.shapes.forEach(s => { if(ST.sel.has(s.id)){ const e = E(s.el); if(e && ['Block','Part','Actor'].includes(e.kind)) ids.add(e.id); } });
+    if(!ids.size && ST.tsel && E(ST.tsel) && ['Block','Part','Actor'].includes(E(ST.tsel).kind)) ids.add(ST.tsel);
+    if(!ids.size) return toast('Önce bir blok, part veya aktör seçin');
+    iconPicker([...ids]);
+  },
+  open:openFile, save(){ saveJSON(false); }, saveAs(){ saveJSON(true); }, saveHtml:saveHTML, undo, redo,
+  png:exportPNG, svg:exportSVG, copy:copyImage,
+  zin(){ zoomBtn(1.2); }, zout(){ zoomBtn(1 / 1.2); }, fit,
+  grid(){ ST.grid = !ST.grid; renderDiagram(); },
+  mini(){ ST.mini = !ST.mini; try { localStorage.setItem('sysml-mini', ST.mini ? '1' : '0'); } catch(e){} renderDiagram(); toast(ST.mini ? 'Mini harita açık (diyagram ekrana sığmadığında görünür)' : 'Mini harita kapalı'); },
+  painter(){ fmtPainter(); },
+  pdf(){ pdfMenu(); },
+  exportMenu(){ pdfMenu(true); },
+  expandAll(){ Object.values(M.els).forEach(e => { if(!KIND[e.kind].rel) ST.exp.add(e.id); }); renderTree(); persistSoon(); },
+  collapseAll(){ ST.exp = new Set([M.rootId]); renderTree(); persistSoon(); },
+  help:showHelp
+};
+document.addEventListener('click', ev => { const b = ev.target.closest('[data-act]'); if(b && ACT[b.dataset.act]) ACT[b.dataset.act](); });
+document.addEventListener('keydown', ev => {
+  const tag = (ev.target.tagName || '').toLowerCase();
+  if(tag === 'input' || tag === 'textarea' || tag === 'select') return;
+  const k = ev.key, c = ev.ctrlKey || ev.metaKey;
+  if(k === ' '){ ST.space = true; ev.preventDefault(); return; }
+  if(ev.altKey && k === 'ArrowLeft'){ ev.preventDefault(); navBack(); return; }
+  if(ev.altKey && k === 'ArrowRight'){ ev.preventDefault(); navFwd(); return; }
+  if(c && (k === 'z' || k === 'Z') && !ev.shiftKey){ ev.preventDefault(); undo(); return; }
+  if(c && (k === 'y' || k === 'Y' || ((k === 'z' || k === 'Z') && ev.shiftKey))){ ev.preventDefault(); redo(); return; }
+  if(c && (k === 's' || k === 'S')){ ev.preventDefault(); saveJSON(ev.shiftKey); return; }
+  if(c && ev.shiftKey && (k === 'l' || k === 'L')){ ev.preventDefault(); const d0 = cur(); if(d0) runLayout(LAYOUTS[d0.dtype][0][0]); return; }
+  if(c && (k === 'o' || k === 'O')){ ev.preventDefault(); openFile(); return; }
+  if(k === 'Escape' && ST.painter){ fmtPainter(true); return; }
+  if(k === 'Escape'){ if($('#modal').style.display === 'flex'){ $('#modal').style.display = 'none'; return; } setTool(null); ST.sel.clear(); hideMenu(); renderDiagram(); renderProps(); return; }
+  const d = cur();
+  if(c && (k === 'f' || k === 'F')){ ev.preventDefault(); searchModel(); return; }
+  if(ST.focus === 'tree'){
+    if(k === 'Delete' && ST.tsel && ST.tsel !== M.rootId){ const ids = ST.tmulti.size > 1 ? [...ST.tmulti].filter(x => x !== M.rootId) : [ST.tsel]; if(ids.length > 1 && !confirm(ids.length + ' eleman modelden silinsin mi?')) return; snap(); delModel(ids); ST.tmulti = new Set(); afterChange(); }
+    if(k === 'F2' && ST.tsel){ ev.preventDefault(); treeRename(ST.tsel); }
+    if(k === 'Enter' && ST.tsel && E(ST.tsel) && E(ST.tsel).kind === 'Diagram') openD(ST.tsel);
+    return;
+  }
+  if(!d) return;
+  if(c && (k === 'a' || k === 'A')){ ev.preventDefault(); ST.sel = new Set(d.shapes.map(s => s.id)); renderDiagram(); renderProps(); return; }
+  if(c && (k === 'c' || k === 'C')){ if(copySel()) ev.preventDefault(); return; }
+  if(c && (k === 'v' || k === 'V')){ ev.preventDefault(); pasteClip(ev.shiftKey); return; }
+  if(c && (k === 'd' || k === 'D')){ ev.preventDefault(); duplicateSel(); return; }
+  if(k === 'Delete'){
+    if(!ST.sel.size) return; ev.preventDefault();
+    if(ev.shiftKey){ snap(); removeFromDiagram(d, [...ST.sel]); afterChange(); } else delSelectedModel();
+    return;
+  }
+  if(k === 'F2'){ ev.preventDefault(); const id = [...ST.sel][0]; const sh = id && shapeOf(d, id); if(sh) editShape(sh); else { const ed = d.edges.find(x => x.id === id); if(ed) editEdge(ed, 'name'); } return; }
+  if(k.startsWith('Arrow') && ST.sel.size){
+    ev.preventDefault();
+    const st = ev.shiftKey ? 1 : G, dx = k === 'ArrowLeft' ? -st : k === 'ArrowRight' ? st : 0, dy = k === 'ArrowUp' ? -st : k === 'ArrowDown' ? st : 0;
+    snap();
+    const set = new Set([...ST.sel]); d.shapes.forEach(s => { if(s.parent && set.has(s.parent)) set.add(s.id); });
+    d.shapes.forEach(s => { if(set.has(s.id) && !(s.parent && !ST.sel.has(s.parent) && ST.sel.has(s.id))){ s.x += dx; s.y += dy; } });
+    renderDiagram(); persistSoon(); return;
+  }
+  if(k === '+' || k === '='){ zoomBtn(1.2); } if(k === '-'){ zoomBtn(1 / 1.2); }
+});
+window.addEventListener('mouseup', ev => { if(ev.button === 3){ ev.preventDefault(); navBack(); } if(ev.button === 4){ ev.preventDefault(); navFwd(); } });
+document.addEventListener('keyup', ev => { if(ev.key === ' ') ST.space = false; });
+window.addEventListener('blur', () => { ST.space = false; });
+function showHelp(){
+  $('#modalBox').onclick = null; $('#modalBox').style.width = ''; $('#modalBox').style.maxWidth = '';
+  $('#modalBox').innerHTML = `<h2>SysML Modelleyici — Kullanım</h2>
+  <h3>Model ağacı</h3>
+  <table>
+  <tr><td>Sağ tık</td><td>Yeni eleman / yeni diyagram (BDD, IBD, Use Case, Aktivite), yeniden adlandır, sil</td></tr>
+  <tr><td>Çift tık</td><td>Diyagramı açar; diğer elemanları açar/kapatır</td></tr>
+  <tr><td>Sürükle → ağaç</td><td>Elemanı başka bir paket/blok altına taşır</td></tr>
+  <tr><td>Sürükle → diyagram</td><td>Mevcut elemanı diyagramda gösterir; ilişkileri otomatik çizilir.<br>IBD'ye Blok bırakmak o tipte yeni part oluşturur; bir part'ın üzerine bırakmak part'ın tipini değiştirir.<br>Aktivite diyagramına Aktivite bırakmak onu çağıran aksiyon oluşturur.</td></tr>
+  </table>
+  <h3>Diyagram</h3>
+  <table>
+  <tr><td>Palet</td><td>Elemanı sürükleyip bırakın veya tıklayıp tuvale tıklayın. İlişki aracını seçip kaynaktan hedefe sürükleyin. Çift tık aracı sabitler.</td></tr>
+  <tr><td>Çift tık</td><td>Elemanın alt diyagramı varsa onu açar (bloğun IBD'si, part'ın tip bloğunun IBD'si, aksiyonun çağırdığı aktivite, use case'in akışı, bağlı hiperlink diyagram). Birden fazlaysa seçim menüsü çıkar. Sağ alt köşedeki mavi simge alt diyagram olduğunu gösterir. Alt diyagramı yoksa ad düzenlemeye geçer; <kbd>Alt</kbd>+çift tık her zaman ad düzenler.</td></tr>
+  <tr><td>◀ ▶ / <kbd>Alt+←</kbd> <kbd>Alt+→</kbd></td><td>Önceki / sonraki diyagrama dön (farenin geri/ileri tuşları da çalışır)</td></tr>
+  <tr><td>Sağ tık → Yeni alt diyagram</td><td>Seçili eleman için IBD / aktivite diyagramı oluşturup bağlar; aksiyon için yeni aktivite oluşturup çağırır</td></tr>
+  <tr><td><b style="color:#2d7ff9">+</b> düğmesi</td><td>Seçili blok / arayüz bloğu / part'ın yanındaki mavi + (veya sağ tık → Ekle): part, reference, value, flow property, port ekler; yeni ya da var olan bloğa Composition, Aggregation, Association, Generalization, Dependency kurar. Blok büyürse altındaki şekiller kaydırılır.</td></tr>
+  <tr><td><kbd>F2</kbd></td><td>Ad düzenle (Not'larda <kbd>Ctrl+Enter</kbd> ile bitir). Akış çizgisinde koşul (guard) düzenler.</td></tr>
+  <tr><td><kbd>Del</kbd></td><td>Seçiliyi <b>modelden</b> siler (tüm diyagramlardan kalkar)</td></tr>
+  <tr><td><kbd>Shift+Del</kbd></td><td>Yalnızca bu <b>diyagramdan</b> kaldırır, model elemanı kalır</td></tr>
+  <tr><td><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd></td><td>Geri al / yinele</td></tr>
+  <tr><td><kbd>Ctrl+Tekerlek</kbd></td><td>Yakınlaş; tekerlek kaydırır; <kbd>Boşluk</kbd> veya orta tuş + sürükle tuvali kaydırır</td></tr>
+  <tr><td>Ok tuşları</td><td>Seçiliyi 10 px (Shift ile 1 px) taşır; <kbd>Alt</kbd>+sürükle ızgarasız taşır</td></tr>
+  <tr><td>Bağlantı orta tutamağı</td><td>Seçili dik açılı bağlantının orta parçasını sürükleyerek rota ayarlanır</td></tr>
+  <tr><td>Bükme noktası</td><td>Seçili bağlantıdaki turuncu yuvarlakları sürükleyerek bükme noktası ekleyin; kare noktaları taşıyın, çift tıkla silin. Düz çizgide eğik, dik açılıda basamaklı çizilir.</td></tr>
+  <tr><td>Etiket taşıma</td><td>Seçili bağlantının etiketini (ad, koşul, «stereotip») sürükleyin; sağ tık → Etiket konumunu sıfırla.</td></tr>
+  <tr><td>🖌 Biçim</td><td>Bir şekil/bağlantı seçip Biçim'e basın; tıkladığınız diğer elemanlara renk ve görünüm uygulanır. Esc ile çıkılır.</td></tr>
+  <tr><td>Harita</td><td>Diyagram ekrana sığmadığında sağ altta mini harita çıkar; tıklayarak/sürükleyerek gezinin.</td></tr>
+  <tr><td>Lejant</td><td>Paletteki Lejant renk açıklamalarını gösterir; Özellikler → "Diyagramdaki renklerden doldur".</td></tr>
+  </table>
+  <h3>Diyagram türleri</h3>
+  <table>
+  <tr><td>BDD, IBD, Use Case, Aktivite</td><td>Yapı, iç bağlantılar, kullanım senaryoları ve akışlar</td></tr>
+  <tr><td>Gereksinim (req)</td><td>Gereksinimler, bloklar, test durumları; Derive, Satisfy, Verify, Refine, Trace ilişkileri</td></tr>
+  <tr><td>Durum Makinesi (stm)</td><td>Durumlar (entry/do/exit), başlangıç/son, seçim; geçişlerde <i>tetik [koşul] / etki</i></td></tr>
+  <tr><td>Sıralama (sd)</td><td>Yaşam çizgileri ve senkron/asenkron/yanıt mesajları. Mesajı seçip mavi tutamakla yukarı/aşağı taşıyın; numaralar otomatik. Ağaçtan blok/aktör/part bırakmak yaşam çizgisi oluşturur.</td></tr>
+  <tr><td>Parametrik (par)</td><td>Kısıt bloğu (BDD paletinde, ifade + parametreler), kısıt özelliği, value'lar ve binding connector</td></tr>
+  <tr><td>Paket (pkg)</td><td>Paketler ve içerikleri, Dependency / Import</td></tr>
+  </table>
+  <h3>Arayüzler, tipler ve gelişmiş davranış</h3>
+  <table>
+  <tr><td>Arayüz bloğu</td><td>BDD paletinde. <i>Flow properties</i> (in/out/inout) içerir. Port'un tipi yapılınca port yönü akış özelliklerinden türetilir; <b>Eşlenik (~)</b> işaretlenirse yönler tersine döner.</td></tr>
+  <tr><td>Değer tipi / birim</td><td>BDD paletinde Değer Tipi (birim, büyüklük türü), Numaralandırma (her satır bir değer) ve Sinyal. <b>Araçlar ▾ → Birim kütüphanesi</b> SI tiplerini ekler; value property'nin tip listesinde görünür.</td></tr>
+  <tr><td>Pin / parametre</td><td>Pin'i aksiyonun üzerine bırakın (üst yarı = in, alt yarı = out). Aktiviteye <i>Aktivite Parametresi</i> eklerseniz onu çağıran aksiyonda pinler otomatik oluşur.</td></tr>
+  <tr><td>Sinyal / olay</td><td>Sinyal Gönder, Olay Kabul, Zaman Olayı (<i>after (5 s)</i>). Ağaçtan sinyali aktivite diyagramına bırakmak Sinyal Gönder aksiyonu oluşturur. Akışa <i>Kesme akışı</i> işareti ve Kesilebilir Bölge eklenebilir.</td></tr>
+  <tr><td>Fragment</td><td>Sıralama diyagramında alt/opt/loop/par/break/ref… Operand koşulları Özellikler'de her satıra bir tane; ayırıcılar mavi tutamakla taşınır. Fragment taşınınca içindeki mesajlar da taşınır. Yürütme çubukları otomatik çizilir.</td></tr>
+  <tr><td>Bileşik durum</td><td>Bir durumu büyütüp içine durum/başlangıç/geçmiş (H, H*) sürükleyin: model ağacında da o durumun altına taşınır. Bölge (region) ile paralel bölgeler oluşturulur.</td></tr>
+  <tr><td>Stereotip</td><td>Elemanın Özellikler panelinde <b>Stereotipler → + Yeni</b> veya listeden uygula. Stereotipin etiketleri (<i>ad : tip = varsayılan</i>) ve dolgu rengi tanımlanır; değerler elemanda doldurulur ve blokta <i>tags</i> bölmesinde görünür.</td></tr>
+  </table>
+  <h3>Analiz ▾</h3>
+  <table>
+  <tr><td>Parametrik hesap</td><td>Kısıt bloklarının denklemleri (ör. <i>P = V * I</i>; birden fazlası <i>;</i> ile) binding connector'larla bağlı value'lar üzerinden çözülür. Varsayılan değeri dolu value'lar girdi, boşlar çıktıdır; sonuç <i>= 98 ⚙</i> olarak gösterilir. Tek bilinmeyenli denklemler sayısal yöntemle de çözülür.</td></tr>
+  <tr><td>Bütçe analizi</td><td>Kütle, güç, maliyet gibi bir value property'yi composition ağacı boyunca çoklukları da hesaba katarak toplar; sınır ve tasarım payıyla kalan marjı gösterir, sonucu modele yazar, Excel'e aktarır.</td></tr>
+  <tr><td>Simülasyon</td><td>Aktivite diyagramında token akışı (fork/join, karar dalı seçimi), durum makinesinde aktif durumlar, olay düğmeleri, entry/exit/do günlüğü, bileşik durum ve geçmiş. Adım adım veya otomatik.</td></tr>
+  <tr><td>Tahsis matrisi</td><td>Aktivite/aksiyon × blok/part; hücreye tıklayınca «allocate» kurulur. Kulvardan gelen dolaylı tahsis ○ ile gösterilir.</td></tr>
+  <tr><td>Genel tablo</td><td>Seçilen türdeki elemanların düzenlenebilir tablosu (stereotip etiketleri sütun olarak); Excel'e aktarılır.</td></tr>
+  <tr><td>İlişki haritası</td><td>Seçili elemanın ilişkilerini katmanlı harita olarak gösterir; çift tık merkeze alır.</td></tr>
+  <tr><td>N² matrisi</td><td>Bağlam bloğunun part'ları (veya tüm modelde blok tipleri) köşegende; hücrede satırdan sütuna giden arayüzler (ID ve akış öğeleri). Tıklayınca bağlantı seçilir, çift tıklayınca IBD açılır.</td></tr>
+  <tr><td>ICD tablosu</td><td>Her connector bir arayüz: kaynak/hedef, yön, arayüz bloğu, akış öğeleri modelden; ID, tür, protokol, konnektör, özellikler tabloda. Uyum sütunu yön çelişkisi, eksik akış özelliği, tip ve birim uyumsuzluğunu gösterir. Excel ve Word ICD çıktısı.</td></tr>
+  <tr><td>FMEA / FMECA</td><td>Blok, part ve fonksiyonlar için arıza modları: neden, etkiler, Ş/O/T ve RPN, önlem ve artık RPN, FMECA mod kritikliği (Cm = β·α·λp·t). Önleyici gereksinim bağlanır, doğrulayan testler gösterilir. ⚑ ile riske aktarılır.</td></tr>
+  <tr><td>Risk kaydı</td><td>Olasılık × etki (1–5), seviye, strateji, önlem, sorumlu ve tarih; önlem öncesi/sonrası 5×5 matris (hücreye tıklayınca süzer). Excel ve raporda.</td></tr>
+  <tr><td>Durum geçiş tablosu</td><td>Durum makinesinin geçişleri liste veya durum × olay matrisi olarak; olay/koşul/etki hücrede düzenlenir; ulaşılamayan, çıkışı olmayan durumlar ve belirsiz geçişler sayılır.</td></tr>
+  <tr><td>Test profilleri</td><td>Rastgele titreşim (PSD), sinüs süpürme, şok tepki spektrumu (SRS) ve termal döngü. Kırılma noktalarından Grms, eğim (dB/oktav), yer değiştirme, süre ve tolerans bandı hesaplanır; Excel'den yapıştırılabilir. İki profil karşılaştırılır (marj, kapsama), birden çoğunun zarfı alınır, ± dB ölçeklenir. Test durumlarına bağlanır; VCRM ve raporda görünür. Gereksinim diyagramında kutu içinde grafikle gösterilir.</td></tr>
+  </table>
+  <h3>XMI ve şablonlar (Araçlar ▾)</h3>
+  <table>
+  <tr><td>XMI dışa aktar</td><td>UML 2.5 / SysML 1.6 XMI: paket, blok, arayüz, part/port/value/akış, gereksinim (id, metin), ilişkiler, aktivite ve durum makineleri. Cameo: <i>File → Import From → UML 2.x XMI</i>. Diyagram yerleşimi aktarılmaz.</td></tr>
+  <tr><td>XMI içe aktar</td><td>Cameo/MagicDraw, Papyrus, EA XMI dosyaları "XMI: …" paketine aktarılır; istenirse BDD, IBD, use case, aktivite, durum makinesi ve gereksinim diyagramları otomatik oluşturulur.</td></tr>
+  <tr><td>Şablon ekle</td><td>MIL-STD-810H (14 yöntem) ve SMC-S-016 kalifikasyon gereksinimleri + test durumları + Verify; proje paket iskeleti.</td></tr>
+  </table>
+  <h3>Gereksinim yönetimi (Gereksinimler ▾)</h3>
+  <table>
+  <tr><td>Gereksinim tablosu</td><td>Sistem ve alt sistem gereksinimlerini ekleyin (alt sistem eklerken alt sistem adı sorulur; filtrede alt sistemler adlarıyla listelenir), hücreye tıklayıp düzenleyin. Doğrulama yöntemi T/A/M/G (Test, Analiz, Muayene, Gösterim) düğmeleriyle. İzlenebilirlik sütunlarındaki <b>+</b> ile üst gereksinim, alt gereksinim, karşılayan model elemanı, fonksiyon ve test bağlanır.</td></tr>
+  <tr><td>Sütunlar / özellikler</td><td>Sütunları gizleyin/gösterin, özel özellik (attribute) ekleyin/silin/yeniden adlandırın, ID öneklerini ayarlayın.</td></tr>
+  <tr><td>Şartnameden çıkar</td><td>Word (.docx) / metin şartnameden zorunluluk ifadesiyle biten cümleler; bölüm numarası (Md. 3.2.1), madde başı ister numarası ([TŞ-014]) ve tablo satırları okunur. Önizlemede kalite rozeti ve mevcutlara benzerlik gösterilir; seçilenler Taslak olarak eklenir.</td></tr>
+  <tr><td>Dışa aktarma</td><td>Excel, Word (gereksinim spesifikasyonu) ve ReqIF çıktısından önce hangi attribute'ların hangi sırayla aktarılacağını, kapsamı (sistem / alt sistem) ve Excel'deki ek sayfaları seçersiniz. Seçim modelle kaydedilir.</td></tr>
+  <tr><td>İzlenebilirlik matrisi</td><td>Satır/sütun kümeleri: sistem, alt sistem, fonksiyonlar, bloklar, model elemanları, testler, use case'ler. Hücreye tıklayınca ilişki kurulur/kaldırılır. Kırmızı başlıklar ilişkisiz satır/sütunlardır.</td></tr>
+  <tr><td>Kapsama analizi</td><td>Karşılanmayan sistem gereksinimleri, yetim alt sistem gereksinimleri, doğrulama yöntemi olmayanlar, gereksinime izlenmeyen bloklar/fonksiyonlar; yüzde göstergeleri.</td></tr>
+  <tr><td>Excel / ReqIF</td><td>İçe aktarmada sütunlar otomatik eşleşir, isterseniz değiştirin; bilinmeyen sütunlar yeni özellik olur. Üst gereksinim ID'leri Derive ilişkisine dönüşür. ReqIF (.reqif) dosyaları da aynı pencereyle aktarılır. Dışa aktarma: gereksinimler + matrisler + kapsama + kalite + VCRM + test sayfaları; ayrıca ReqIF 1.2 (DOORS, Polarion vb.).</td></tr>
+  <tr><td>Durum ve geçmiş</td><td>Taslak → İncelemede → Onaylı → Değişiklikte → İptal. Onaylı gereksinimin metni/yöntemi/seviyesi değişirse otomatik "Değişiklikte" olur. Her değişiklik kim/ne zaman/eski→yeni ve gerekçeyle kaydedilir (Özellikler → Değişiklik geçmişi). Kullanıcı adı: Gereksinimler ▾ → Kullanıcı adım.</td></tr>
+  <tr><td>Kalite raporu</td><td>INCOSE kurallarıyla metin denetimi: cümle "-ecek / -acak / -ecektir / -acaktır" ile bitmeli (Yazım kuralı seçiminden "-malıdır / -melidir" de seçilebilir), belirsiz kelimeler, birden fazla ister, birimsiz sayı, TBD, aşırı uzunluk, yinelenen ID, çok benzer gereksinimler.</td></tr>
+  <tr><td>Taban çizgileri</td><td>Gereksinim setini adlandırarak dondurun (ör. SRR, PDR); iki taban çizgisini veya taban çizgisini güncel modelle karşılaştırın, farkı Excel'e alın.</td></tr>
+  <tr><td>Etki analizi</td><td>Sağ tık veya Özellikler → "Etki analizi": bir eleman değişirse etkilenen gereksinimler, elemanlar, testler ve diyagramlar.</td></tr>
+  </table>
+  <h3>Doğrulama ve test</h3>
+  <table>
+  <tr><td>Test durumu</td><td>Prosedür no, yöntem, doğrulama seviyesi, test edilen birim, standart, sorumlu, planlanan tarihler, sonuç (Planlandı / Yapılmadı / Geçti / Kaldı / Koşullu), sonuç tarihi, rapor no. Sonuç diyagramda rozet olarak görünür.</td></tr>
+  <tr><td>VCRM</td><td>Gereksinim × T/A/M/G, seviye, test/prosedür, sonuç, rapor no ve hesaplanan doğrulama durumu (Doğrulandı / Kısmen / Kaldı / Planlandı / Faaliyet yok).</td></tr>
+  <tr><td>Test kampanyası</td><td>Testlerin düzenlenebilir tablosu ve zaman çizelgesi (Gantt); seviyeye, sonuca, birime göre gruplama; gecikmiş testler kırmızı çerçeveli. Excel'den test sonuçları geri aktarılabilir (prosedür no veya ada göre eşleşir).</td></tr>
+  <tr><td>Test yürütme ve NCR</td><td>Test başına prosedür adımları (beklenen / ölçülen / sonuç); tüm adımlar sonuçlanınca test sonucu hesaplanır. Başarısız adımdan NCR açılır; NCR'da kök neden, düzeltici faaliyet, karar ve tekrar test izlenir. Test numuneleri seri no ve geçmişiyle tutulur.</td></tr>
+  <tr><td>Test kaynakları ve takvim</td><td>Testlere kaynak (sarsıcı, oda, cihaz…) ve önce gelen test atanır. Çizelgede bağımlılık okları, kritik yol, kaynak/numune çakışması ve kalibrasyon uyarısı gösterilir; ⇥ ile kayma etkisi önizlenir.</td></tr>
+  <tr><td>Test prosedürü ve raporu</td><td>Test yürütmede 📄 düğmeleriyle Word dokümanı üretilir; bölümler seçilip sıralanır, kapak, revizyon geçmişi ve imza tablosu eklenir. Ortak kapak bilgileri Araçlar ▾ → Doküman şablonları'ndadır.</td></tr>
+  <tr><td>Modelleme yardımcıları</td><td>Araçlar ▾: BDD'den IBD üret / eşitle, bağlam diyagramı. Çoklu seçimde Özellikler toplu düzenlemeye geçer. Lejantta "Renk kuralı" seçilince elemanlar özelliğe göre renklenir.</td></tr>
+  <tr><td>Modüller (ekip çalışması)</td><td>Araçlar ▾ → Modüller: paketi .sysmod olarak paylaşın, başkasınınkini salt okunur ekleyin, yeni sürümü karşılaştırarak alın. Masaüstü uygulamasında açık dosyalar için kilit gösterilir.</td></tr>
+  </table>
+  <h3>Araçlar ▾</h3>
+  <table>
+  <tr><td>Model karşılaştır</td><td>Başka bir .sysml dosyasıyla eleman bazında fark (eklenen / silinen / değişen, kelime düzeyinde metin farkı); farkları işaretleyip bu modele uygulama (Ctrl+Z ile geri alınır); Excel'e aktarma.</td></tr>
+  <tr><td>İnceleme notları</td><td>Seçili elemanın Özellikler panelinin altından not ekleyin, yanıtlayın, kapatın. Açık notlu elemanlar diyagramda sarı rozetle görünür; Araçlar ▾ → İnceleme notları tüm notları listeler.</td></tr>
+  <tr><td>Rapor oluştur</td><td>Seçilen bölümler ve diyagramlarla Word (.docx; içindekiler, sayfa numarası, şekil başlıkları) veya yazdırılabilir HTML rapor.</td></tr>
+  <tr><td>Model doğrulama</td><td>Tipsiz part, isimsiz/aynı adlı eleman, kopuk ilişki, başlangıç/bitişi olmayan aktivite, ulaşılamayan durum, aktörsüz use case, döngüsel kompozisyon/kalıtım, port yön uyumsuzluğu, bağlantısız test… Satıra tıklayınca eleman gösterilir.</td></tr>
+  <tr><td>Modeli birleştir</td><td>Başka bir .sysml dosyasından seçilen paketleri hedef pakete aktarır. Aynı kimlikli elemanlar güncellenir, atlanır veya kopya olarak eklenir.</td></tr>
+  </table>
+  <h3>Düzenleme kısayolları</h3>
+  <table>
+  <tr><td><kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd></td><td>Kopyala / yapıştır. Başka diyagrama yapıştırınca aynı elemanlar gösterilir; aynı diyagramda yeni eleman olarak kopyalanır. <kbd>Ctrl+Shift+V</kbd> her zaman yeni eleman, <kbd>Ctrl+D</kbd> çoğaltır.</td></tr>
+  <tr><td><kbd>Ctrl+K</kbd></td><td>Komut paleti: tüm komutlar, menü öğeleri, görünümler, diyagramlar ve elemanlar (ad, ID) tek kutudan; ↑↓ ile seçip Enter.</td></tr>
+  <tr><td><kbd>Ctrl+H</kbd></td><td>Bul ve değiştir: ad, metin, kimlik ve etiketlerde önizlemeli toplu değiştirme.</td></tr>
+  <tr><td><kbd>Enter</kbd></td><td>Seçili elemanın spesifikasyon penceresi: tüm özellikler, bölmeler, ilişkiler, etiketler, kullanıldığı yerler ve notlar.</td></tr>
+  <tr><td>EN / TR</td><td>Arayüz dili: menüler, paneller, pencereler ve mesajlar İngilizce / Türkçe. Model içeriği ve çıktılar değişmez.</td></tr>
+  <tr><td><kbd>Ctrl+F</kbd></td><td>Model içinde ara (ad, ID, metin, açıklama, özellik değerleri).</td></tr>
+  <tr><td>Ağaçta çoklu seçim</td><td><kbd>Ctrl</kbd>/<kbd>Shift</kbd> + tık; seçilenler diyagrama birlikte sürüklenir, aralarındaki ilişkiler çizilir.</td></tr>
+  <tr><td>Bağlantı ucu</td><td>Seçili bağlantının uç tutamacını başka elemana sürükleyerek yeniden bağlayın.</td></tr>
+  <tr><td>Görünüm</td><td>Özellikler → Görünüm: dolgu ve çizgi rengi, blok bölmelerini gizleme, diyagram yazı boyutu; aktivitede yatay kulvar.</td></tr>
+  </table>
+  <h3>Otomatik düzen ve hizalama</h3>
+  <table>
+  <tr><td>Düzen ▾ / <kbd>Ctrl+Shift+L</kbd></td><td>Diyagram türüne özel düzenler: BDD'de hiyerarşik (bütün üstte, parçalar altta; genelleme üst sınıf üstte), ızgara, dairesel. IBD'de bağlantı yönüne göre akış (out → in), portlar karşı tarafa bakacak şekilde yeniden dizilir. Use case'te aktörler solda ya da iki yanda, use case'ler sistem sınırı içinde, include/extend sağa doğru. Aktivitede akış sırası; kulvarlar varsa her düğüm kendi kulvarında kalır.</td></tr>
+  <tr><td>Toparla</td><td>Mevcut yerleşimi koruyup çakışmaları giderir ve ızgaraya oturtur.</td></tr>
+  <tr><td>Hizala / dağıt</td><td>Birden fazla şekil seçiliyken: sola/sağa/üste/alta hizala, ortala, eşit aralıkla dağıt, aynı boyut. Sağ tık menüsünde de vardır.</td></tr>
+  <tr><td>Geri alma</td><td>Her düzen tek adımda <kbd>Ctrl+Z</kbd> ile geri alınır.</td></tr>
+  </table>
+  <h3>İkonlar</h3>
+  <table>
+  <tr><td>İkon ata</td><td>Blok, part veya aktör seçip araç çubuğundaki <b>İkon</b> düğmesi, sağ tık → "İkon ata…" veya Özellikler panelinden. 10 kategoride 200'e yakın ikon, aramalı. Birden çok eleman seçiliyse hepsine birden atanır.</td></tr>
+  <tr><td>Gösterim</td><td>Blokta "köşede küçük" veya "başlıkta büyük"; renk kategoriden gelir, istenirse değiştirilir. Part'lar ve nesne düğümleri ikonu tip bloğundan otomatik alır; ağaçta da görünür.</td></tr>
+  </table>
+  <h3>Modelle senkron davranışlar</h3>
+  <table>
+  <tr><td>BDD Composition / Aggregation</td><td>Bütün blokta hedef blok tipinde otomatik <i>part</i> oluşturur; bloğun "parts" bölmesinde görünür.</td></tr>
+  <tr><td>IBD Port</td><td>Part'a bırakılan port, part'ın tip bloğuna eklenir; BDD'de bloğun "ports" bölmesinde görünür.</td></tr>
+  <tr><td>IBD oluşturma</td><td>Bloğun mevcut part'ları, portları ve connector'ları otomatik yerleştirilir.</td></tr>
+  <tr><td>Ad değişikliği</td><td>Ağaçta, tüm diyagramlarda ve özelliklerde anında güncellenir.</td></tr>
+  </table>
+  <h3>Kayıt</h3>
+  <table>
+  <tr><td>Otomatik</td><td>Model tarayıcının yerel deposunda otomatik saklanır (aynı bilgisayar/tarayıcı).</td></tr>
+  <tr><td>Kaydet</td><td>.sysml.json dosyası indirir; "Aç" ile geri yüklenir.</td></tr>
+  <tr><td>HTML olarak kaydet</td><td>Modeli içine gömülü uygulama dosyası üretir; paylaştığınız kişi açınca modeli hazır görür.</td></tr>
+  <tr><td>Dışa aktar ▾</td><td>PNG, SVG, panoya kopyalama; tek diyagram, açık sekmeler veya tüm diyagramlar için çok sayfalı <b>PDF</b> (A4/A3, yön otomatik); yazdırma. Diyagram özelliklerinden SysML çerçevesi gizlenebilir.</td></tr>
+  <tr><td>Eski / bozuk dosya</td><td>Önceki sürümlerin dosyaları açılırken otomatik yükseltilir; sahipsiz eleman, ucu kopuk ilişki, geçersiz diyagram şekli gibi tutarsızlıklar onarılır ve bildirilir.</td></tr>
+  <tr><td>Büyük modeller</td><td>Gereksinim tablosu ve kapsama analizi 250'şer satır gösterir; alttaki düğmelerle devamı açılır.</td></tr>
+  </table>
+  <p style="text-align:right;margin:12px 0 0"><button class="pbtn" onclick="document.getElementById('modal').style.display='none'">Kapat</button></p>`;
+  $('#modal').style.display = 'flex';
+}
+$('#modal').addEventListener('mousedown', ev => { if(ev.target.id === 'modal') $('#modal').style.display = 'none'; });
+
+/* splitters */
+(function(){
+  const vs = $('#vsplit'), hs = $('#hsplit'), left = $('#left'), tb = $('#treeBox'), pb = $('#propsBox');
+  vs.addEventListener('mousedown', ev => {
+    ev.preventDefault(); const sx = ev.clientX, w0 = left.offsetWidth;
+    const mv = e => { left.style.width = Math.max(180, Math.min(600, w0 + e.clientX - sx)) + 'px'; };
+    const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); };
+    addEventListener('mousemove', mv); addEventListener('mouseup', up);
+  });
+  hs.addEventListener('mousedown', ev => {
+    ev.preventDefault(); const sy = ev.clientY, h0 = tb.offsetHeight, tot = tb.offsetHeight + pb.offsetHeight;
+    const mv = e => { const h = Math.max(60, Math.min(tot - 60, h0 + e.clientY - sy)); tb.style.flex = 'none'; tb.style.height = h + 'px'; pb.style.flex = '1'; };
+    const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); };
+    addEventListener('mousemove', mv); addEventListener('mouseup', up);
+  });
+})();
+
+/* ================= DEMO ================= */
+function d0Front(d, sh){ d.shapes.splice(d.shapes.indexOf(sh), 1); d.shapes.unshift(sh); }
+function demo(){
+  M = {uid:uid(), v:1, els:{}, rootId:null};
+  const root = mk('Model', null, {name:'Örnek Model'}); M.rootId = root.id;
+  const pk = mk('Package', root.id, {name:'Yapı'});
+  const sys = mk('Block', pk.id, {name:'Araç Sistemi', doc:'Sistem bağlam bloğu'});
+  const gb = mk('Block', pk.id, {name:'Güç Birimi'}), kb = mk('Block', pk.id, {name:'Kontrol Birimi'}), sb = mk('Block', pk.id, {name:'Sensör Birimi'});
+  sys.icon = 'apc'; sys.iconMode = 'large'; gb.icon = 'battery'; kb.icon = 'cpu'; sb.icon = 'radar';
+  mk('Value', gb.id, {name:'gerilim', vtype:'Real', def:'28', unit:'V'});
+  mk('Value', sys.id, {name:'kütle', vtype:'Real', unit:'kg'});
+  const pGo = mk('Port', gb.id, {name:'güçÇıkış', dir:'out'});
+  const pKg = mk('Port', kb.id, {name:'güçGiriş', dir:'in'});
+  const pKv = mk('Port', kb.id, {name:'veriGiriş', dir:'in'});
+  const pSv = mk('Port', sb.id, {name:'veriÇıkış', dir:'out'});
+  const bdd = mk('Diagram', pk.id, {name:'Sistem Yapısı', dtype:'bdd', shapes:[], edges:[], vx:60, vy:80, z:1});
+  const s0 = addShape(bdd, sys.id, 270, 30, 180, 80), s1 = addShape(bdd, gb.id, 20, 230, 190, 80), s2 = addShape(bdd, kb.id, 270, 230, 190, 80), s3 = addShape(bdd, sb.id, 520, 230, 190, 80);
+  const e1 = connect(bdd, 'Composition', s0, s1), e2 = connect(bdd, 'Composition', s0, s2), e3 = connect(bdd, 'Composition', s0, s3);
+  const partG = E(E(e1.el).part).id, partK = E(E(e2.el).part).id, partS = E(E(e3.el).part).id;
+  const ibd = newDiagramCore(sys.id, 'ibd', 'Araç Sistemi İç Yapısı');
+  const ps = (part, port) => ibd.shapes.find(s => s.el === port && s.parent && shapeOf(ibd, s.parent).el === part);
+  const mv = (part, dx, dy) => { const P = ibd.shapes.find(s => s.el === part && !s.parent); ibd.shapes.forEach(s => { if(s === P || s.parent === P.id){ s.x += dx; s.y += dy; } }); };
+  mv(partS, -640, 180); ibd.shapes.filter(s => E(s.el).kind === 'Value').forEach(s => { s.x += 640; s.y -= 20; });
+  const c1 = connect(ibd, 'Connector', ps(partG, pGo.id), ps(partK, pKg.id)); E(c1.el).name = 'güçHattı';
+  const c2 = connect(ibd, 'Connector', ps(partS, pSv.id), ps(partK, pKv.id)); E(c2.el).name = 'veriYolu';
+  const pu = mk('Package', root.id, {name:'Kullanım Senaryoları'});
+  const op = mk('Actor', pu.id, {name:'Operatör'});
+  const subj = mk('Subject', pu.id, {name:'Araç Sistemi'});
+  const u1 = mk('UseCase', pu.id, {name:'Sistemi Başlat'}), u2 = mk('UseCase', pu.id, {name:'Görev Planla'}), u3 = mk('UseCase', pu.id, {name:'Durum İzle'}), u4 = mk('UseCase', pu.id, {name:'Kendi Kendine Test'});
+  const uc = mk('Diagram', pu.id, {name:'Operatör Senaryoları', dtype:'uc', shapes:[], edges:[], vx:60, vy:80, z:1});
+  const sS = addShape(uc, subj.id, 200, 0, 420, 400);
+  const sOp = addShape(uc, op.id, 40, 150), sU1 = addShape(uc, u1.id, 250, 60, 150, 64), sU2 = addShape(uc, u2.id, 250, 170, 150, 64), sU3 = addShape(uc, u3.id, 250, 280, 150, 64), sU4 = addShape(uc, u4.id, 440, 60, 150, 64);
+  connect(uc, 'Association', sOp, sU1); connect(uc, 'Association', sOp, sU2); connect(uc, 'Association', sOp, sU3); connect(uc, 'Include', sU1, sU4);
+  const pa = mk('Package', root.id, {name:'Davranış'});
+  const act = mk('Activity', pa.id, {name:'Sistemi Başlat'});
+  const ad = newDiagramCore(act.id, 'act', 'Sistemi Başlat Akışı');
+  const A = (k, n, x, y, w, h) => addShape(ad, mk(k, act.id, n != null ? {name:n} : {}).id, x, y, w, h);
+  const n0 = A('Initial', null, 228, 0), n1 = A('Action', 'Güç ver', 170, 60), n2 = A('Action', 'Kendi kendine test yap', 170, 150), n3 = A('Decision', null, 222, 240),
+    n4 = A('Action', 'Hazır durumunu bildir', 170, 320), n5 = A('Final', null, 227, 410), n6 = A('Action', 'Hata raporla', 400, 230), n7 = A('FlowFinal', null, 458, 320);
+  [[n0, n1], [n1, n2], [n2, n3], [n4, n5], [n6, n7]].forEach(([a, b]) => connect(ad, 'ControlFlow', a, b));
+  E(connect(ad, 'ControlFlow', n3, n4).el).guard = 'başarılı';
+  E(connect(ad, 'ControlFlow', n3, n6).el).guard = 'hata';
+  u1.link = ad.id;
+  const actT = mk('Activity', pa.id, {name:'Kendi Kendine Test'});
+  E(n2.el).behavior = actT.id;
+  const td = newDiagramCore(actT.id, 'act', 'Kendi Kendine Test Akışı');
+  const B = (k, n, x, y, w, h) => addShape(td, mk(k, actT.id, n != null ? {name:n} : {}).id, x, y, w, h);
+  const t0 = B('Initial', null, 98, 0), t1 = B('Fork', null, 40, 60, 140, 6), t2 = B('Action', 'Güç hattı kontrolü', -60, 110), t3 = B('Action', 'Sensör kontrolü', 180, 110), t4 = B('Join', null, 40, 210, 140, 6), t5 = B('Action', 'Test sonucunu kaydet', 40, 260), t6 = B('Final', null, 97, 350);
+  [[t0, t1], [t1, t2], [t1, t3], [t2, t4], [t3, t4], [t4, t5], [t5, t6]].forEach(([a, b]) => connect(td, 'ControlFlow', a, b));
+  const note = mk('Comment', act.id, {name:'Test süresi en fazla 30 sn olmalıdır.'});
+  const sn = addShape(ad, note.id, 410, 120, 170, 50); connect(ad, 'Anchor', sn, n2);
+  // --- gereksinimler ---
+  reqCfg().attrs.push({key:'oncelik', label:'Öncelik'});
+  const RQ = (lvl, id, name, text, verif, srcNo, srcText, pr) => mk('Requirement', reqPkgFor(lvl), {level:lvl, reqId:id, name, text, verif, srcNo:srcNo || '', srcText:srcText || '', attrs:{oncelik:pr || 'Orta'}});
+  const S1 = RQ('Sistem', 'SYS-001', 'Çalışma gerilimi', 'Sistem 28 V DC ± %10 besleme ile çalışacaktır.', 'Test', 'Mİ-012', 'Araç 28 V bara ile beslenecektir.', 'Yüksek');
+  const S2 = RQ('Sistem', 'SYS-002', 'Hazır olma süresi', 'Sistem enerji verildikten sonra en geç 30 s içinde hazır durumuna geçecektir.', 'Test', 'Mİ-018', 'Sistem kısa sürede göreve hazır olacaktır.', 'Yüksek');
+  const S3 = RQ('Sistem', 'SYS-003', 'Durum bildirimi', 'Sistem operatöre çalışma durumunu sürekli bildirecektir.', 'Gösterim', 'Mİ-021', 'Operatör sistemin durumunu görebilecektir.');
+  const S4 = RQ('Sistem', 'SYS-004', 'Kütle', 'Sistemin toplam kütlesi 45 kg\'ı aşmayacaktır.', 'Muayene', 'Mİ-030', 'Platform yük sınırı.', 'Orta');
+  const S5 = RQ('Sistem', 'SYS-005', 'Çevresel dayanım', 'Sistem MIL-STD-810H yöntem 514.8 titreşim koşullarında çalışmasını sürdürecektir.', '', 'Mİ-041', 'Sistem arazi koşullarına dayanıklı olacaktır.', 'Yüksek');
+  const A1 = RQ('Alt Sistem', 'SUB-001', 'Güç dönüşümü', 'Güç birimi 28 V girişten 5 V ve 12 V regüle çıkış üretecektir.', 'Test, Analiz', 'Mİ-012', '', 'Yüksek');
+  const A2 = RQ('Alt Sistem', 'SUB-002', 'Kendi kendine test', 'Kontrol birimi açılışta kendi kendine testi 20 s içinde tamamlayacaktır.', 'Test', 'Mİ-018', '');
+  const A3 = RQ('Alt Sistem', 'SUB-003', 'Sensör veri hızı', 'Sensör birimi veriyi en az 50 Hz ile kontrol birimine iletecektir.', 'Test', '', '');
+  const A4 = RQ('Alt Sistem', 'SUB-004', 'Durum mesajı', 'Kontrol birimi durum mesajını 1 Hz ile yayınlayacaktır.', '', '', '', 'Düşük');
+  const A5 = RQ('Alt Sistem', 'SUB-005', 'Bakım arayüzü', 'Kontrol birimi bakım için seri arayüz sağlayacaktır.', 'Muayene', '', '', 'Düşük');
+  [[A1, 'Güç Birimi'], [A2, 'Kontrol Birimi'], [A3, 'Sensör Birimi'], [A4, 'Kontrol Birimi'], [A5, 'Kontrol Birimi']].forEach(([r, n]) => { r.subsys = n; r.owner = reqPkgFor('Alt Sistem', n); bump(); });
+  [[A1, S1], [A2, S2], [A3, S2], [A4, S3]].forEach(([x, y]) => addRel('DeriveReqt', x.id, y.id));
+  [S1, S2, A1, A2].forEach(r => r.status = 'Onaylı'); [S3, A3].forEach(r => r.status = 'İncelemede');
+  M.baselines = [{id:uid(), name:'Rev-A (SRR)', t:new Date(Date.now() - 86400000 * 14).toISOString(), u:'Örnek', reqs:baselineSnapshot()}];
+  A3.text = 'Sensör birimi veriyi en az 100 Hz ile kontrol birimine iletecektir.'; A3.status = 'Değişiklikte';
+  S3.text = 'Sistem operatöre çalışma durumunu uygun şekilde ve hızlı bildirecektir.';
+  addRel('Satisfy', gb.id, A1.id); addRel('Satisfy', kb.id, A2.id); addRel('Satisfy', sb.id, A3.id); addRel('Satisfy', sys.id, S4.id);
+  addRel('Satisfy', act.id, S2.id); addRel('Satisfy', E(n2.el).id, A2.id); addRel('Satisfy', E(n4.el).id, A4.id);
+  const DD = n => { const d = new Date(Date.now() + n * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const tPkg = findOrMkPkg(M.rootId, 'Doğrulama');
+  const TC = (n, o, reqs) => { const tc = mk('TestCase', tPkg, Object.assign({name:n, tMethod:'Test'}, o)); reqs.forEach(r => addRel('Verify', tc.id, r.id)); return tc; };
+  const tc1 = TC('Açılış süresi testi', {procNo:'TP-SYS-001', tLevel:'Sistem', testItem:'Araç Sistemi', std:'Müşteri ATP', resp:'Test Ekibi', pStart:DD(-20), pEnd:DD(-16), result:'Geçti', rDate:DD(-16), reportNo:'TR-001'}, [S2]);
+  const tc2 = TC('Besleme gerilimi testi', {procNo:'TP-SYS-002', tLevel:'Sistem', testItem:'Güç Birimi', std:'MIL-STD-1275E', resp:'Test Ekibi', pStart:DD(-12), pEnd:DD(-9), result:'Kaldı', rDate:DD(-9), reportNo:'TR-002'}, [S1]);
+  TC('Güç birimi birim testi', {procNo:'TP-GB-001', tLevel:'Birim', testItem:'Güç Birimi', resp:'Donanım', pStart:DD(-30), pEnd:DD(-26), result:'Geçti', rDate:DD(-26), reportNo:'TR-GB-01'}, [A1]);
+  TC('Kontrol yazılımı açılış testi', {procNo:'TP-KB-001', tLevel:'Entegrasyon', testItem:'Kontrol Birimi', resp:'Yazılım', pStart:DD(-6), pEnd:DD(-2), result:'Planlandı'}, [A2]);
+  TC('Sensör veri hızı ölçümü', {procNo:'TP-SB-001', tLevel:'Alt Sistem', testItem:'Sensör Birimi', std:'IEEE 1451', resp:'Donanım', pStart:DD(3), pEnd:DD(7), result:'Planlandı'}, [A3]);
+  TC('Durum bildirimi analizi', {procNo:'AN-SYS-003', tMethod:'Analiz', tLevel:'Sistem', resp:'Sistem Müh.', pStart:DD(-4), pEnd:DD(5), result:'Koşullu', rDate:DD(-1), reportNo:'AR-003'}, [S3, A4]);
+  TC('EMC kalifikasyon testi', {procNo:'TP-QT-010', tLevel:'Kalifikasyon', testItem:'Araç Sistemi', std:'MIL-STD-461G', resp:'Kalifikasyon', pStart:DD(14), pEnd:DD(28), result:'Planlandı'}, []);
+  const rqPkg = findOrMkPkg(M.rootId, 'Gereksinimler');
+  const rd = newDiagramCore(rqPkg, 'req', 'Hazır Olma Gereksinimleri');
+  const rS2 = addShape(rd, S2.id, 220, 0, 250, 110), rA2 = addShape(rd, A2.id, 40, 230, 250, 110), rA3 = addShape(rd, A3.id, 360, 230, 250, 110);
+  addShape(rd, kb.id, 40, 450, 170, 80); addShape(rd, sb.id, 400, 450, 170, 80); addShape(rd, tc1.id, 560, 30, 170, 60); addShape(rd, act.id, 600, 160, 170, 60);
+  rd.shapes.slice().forEach(sh => autoEdges(rd, sh));
+  // --- durum makinesi ---
+  const sm = newDiagramCore(sys.id, 'stm', 'Araç Sistemi Durumları');
+  const SS = (k, n, x, y, extra) => addShape(sm, mk(k, sm.owner, Object.assign(n ? {name:n} : {}, extra || {})).id, x, y);
+  const q0 = SS('Initial', null, 95, 0), q1 = SS('State', 'Kapalı', 40, 70), q2 = SS('State', 'Kendi Kendine Test', 40, 200, {doAct:'BIT çalıştır'}), q3 = SS('Choice', null, 99, 330), q4 = SS('State', 'Hazır', 40, 420, {entry:'durum bildir'}), q5 = SS('State', 'Arıza', 300, 310, {entry:'hata kaydet'});
+  connect(sm, 'Transition', q0, q1); E(connect(sm, 'Transition', q1, q2).el).name = 'güçVer'; connect(sm, 'Transition', q2, q3);
+  E(connect(sm, 'Transition', q3, q4).el).guard = 'başarılı'; E(connect(sm, 'Transition', q3, q5).el).guard = 'hata'; E(connect(sm, 'Transition', q5, q1).el).name = 'sıfırla';
+  // --- sequence ---
+  const sq = newDiagramCore(u1.id, 'sd', 'Sistemi Başlat Sırası');
+  const L = (n, t, x) => addShape(sq, mk('Lifeline', sq.owner, {name:n, type:t}).id, x, 0, 150, 330);
+  const l1 = L('', op.id, 0), l2 = L('kontrol', kb.id, 220), l3 = L('güç', gb.id, 440), l4 = L('sensör', sb.id, 660);
+  const MSG = (k, a, b, n, y) => { const ed = connect(sq, k, a, b); E(ed.el).name = n; ed.y = y; };
+  MSG('MsgSync', l1, l2, 'başlat()', 80); MSG('MsgSync', l2, l3, 'güçVer()', 125); MSG('MsgAsync', l2, l4, 'kalibreEt()', 170); MSG('MsgReply', l4, l2, 'hazır', 215); MSG('MsgSync', l2, l2, 'BIT()', 250); MSG('MsgReply', l2, l1, 'durum = Hazır', 300);
+  // --- parametrik ---
+  const cb = mk('ConstraintBlock', pk.id, {name:'Güç Denklemi', expr:'P = V * I'});
+  ['P', 'V', 'I'].forEach(n => mk('Param', cb.id, {name:n, vtype:'Real'}));
+  const cpp = mk('ConstraintProp', gb.id, {name:'güçHesabı', type:cb.id});
+  mk('Value', gb.id, {name:'akım', vtype:'Real', unit:'A', def:'3.5'}); mk('Value', gb.id, {name:'güç', vtype:'Real', unit:'W'});
+  const pd = newDiagramCore(gb.id, 'par', 'Güç Birimi Parametrik');
+  const pv = n => pd.shapes.find(s => E(s.el).name === n), pp = n => pd.shapes.find(s => s.parent && E(s.el).name === n);
+  if(pv('gerilim') && pp('V')) connect(pd, 'Binding', pv('gerilim'), pp('V'));
+  if(pv('akım') && pp('I')) connect(pd, 'Binding', pv('akım'), pp('I'));
+  if(pv('güç') && pp('P')) connect(pd, 'Binding', pv('güç'), pp('P'));
+  // --- paket ---
+  const pgd = newDiagramCore(root.id, 'pkg', 'Model Yapısı');
+  [pk, pu, pa, E(rqPkg)].forEach((p, i) => addShape(pgd, p.id, 40 + (i % 2) * 300, 40 + Math.floor(i / 2) * 220, 220, 110));
+  mk('Dependency', root.id, {src:pa.id, tgt:pk.id, name:''}); mk('Import', root.id, {src:pu.id, tgt:pk.id, name:''});
+  pgd.shapes.slice().forEach(sh => autoEdges(pgd, sh));
+  // --- v1.7: arayüzler, değer tipleri, sinyal, stereotip ---
+  const pi = mk('Package', root.id, {name:'Arayüzler ve Tipler'});
+  const vtV = mk('ValueType', pi.id, {name:'Gerilim', base:'Real', unit:'V', qk:'electricPotential'});
+  const vtM = mk('ValueType', pi.id, {name:'Kütle', base:'Real', unit:'kg', qk:'mass'});
+  const enM = mk('Enumeration', pi.id, {name:'ÇalışmaModu', lits:'Kapalı\nTest\nHazır\nArıza'});
+  const sgD = mk('Signal', pi.id, {name:'SensörVerisi'}); mk('Value', sgD.id, {name:'zamanDamgası', vtype:'Real', unit:'s'}); mk('Value', sgD.id, {name:'ölçüm', vtype:'Real'});
+  const ibG = mk('InterfaceBlock', pi.id, {name:'GüçArayüzü'}); mk('FlowProp', ibG.id, {name:'güç', dir:'out', vtype:'Gerilim'});
+  const ibD = mk('InterfaceBlock', pi.id, {name:'VeriArayüzü'}); mk('FlowProp', ibD.id, {name:'veri', dir:'out', type:sgD.id});
+  pGo.type = ibG.id; pKg.type = ibG.id; pKg.conj = true; pSv.type = ibD.id; pKv.type = ibD.id; pKv.conj = true;
+  [pGo, pKg, pKv, pSv].forEach(q => q.dir = '');
+  E(Object.values(M.els).find(e => e.kind === 'Value' && e.name === 'gerilim').id).vtype = 'Gerilim';
+  E(Object.values(M.els).find(e => e.kind === 'Value' && e.name === 'kütle').id).vtype = 'Kütle';
+  mk('Value', kb.id, {name:'mod', vtype:'ÇalışmaModu', def:'Kapalı'});
+  const prof = mk('Package', root.id, {name:'Profil'});
+  const stL = mk('Stereotype', prof.id, {name:'LRU', meta:['Block'], tags:'parçaNo : String\ntedarikçi : String\nMTBF : Real', fill:'#fdf1d6'});
+  [[gb, 'GB-1001', 'ASELSAN', '12000'], [kb, 'KB-2002', 'TÜBİTAK', '20000'], [sb, 'SB-3003', 'ROKETSAN', '9000']].forEach(([b, pn, td0, mt]) => { b.st = [stL.id]; b.tv = {[stL.id + '.parçaNo']:pn, [stL.id + '.tedarikçi']:td0, [stL.id + '.MTBF']:mt}; });
+  const ifd = mk('Diagram', pi.id, {name:'Arayüzler ve Tipler', dtype:'bdd', shapes:[], edges:[], vx:60, vy:80, z:1});
+  addShape(ifd, ibG.id, 0, 0, 200, 90); addShape(ifd, ibD.id, 250, 0, 200, 90); addShape(ifd, sgD.id, 500, 0, 200, 90);
+  addShape(ifd, vtV.id, 0, 170, 200, 80); addShape(ifd, vtM.id, 250, 170, 200, 80); addShape(ifd, enM.id, 500, 170, 200, 110); addShape(ifd, stL.id, 750, 0, 200, 110);
+  // aktivite parametresi ve pinler
+  const apR = mk('ActParam', actT.id, {name:'sonuç', dir:'out', vtype:'Boolean'});
+  addShape(td, apR.id, 300, 270, 120, 36);
+  connect(td, 'ObjectFlow', t5, td.shapes.find(x => x.el === apR.id));
+  syncPins(E(n2.el), true); { const s2 = ad.shapes.find(x => x.el === n2.el); showPorts(ad, s2); }
+  // bileşik durum + geçmiş
+  const cmp = mk('State', sm.owner, {name:'Görevde', entry:'görev kaydı aç'});
+  const sCmp = addShape(sm, cmp.id, 300, 430, 340, 230);
+  const SI = (k, n, x0, y0, extra) => addShape(sm, mk(k, cmp.id, Object.assign(n ? {name:n} : {}, extra || {})).id, x0, y0);
+  const g0 = SI('Initial', null, 320, 500), g1 = SI('State', 'Arama', 380, 485), g2 = SI('State', 'Takip', 380, 585), g3 = SI('History', null, 590, 500);
+  connect(sm, 'Transition', g0, g1); E(connect(sm, 'Transition', g1, g2).el).name = 'hedefBulundu'; E(connect(sm, 'Transition', g2, g1).el).name = 'hedefKayıp';
+  E(connect(sm, 'Transition', q4, sCmp).el).name = 'görevBaşlat';
+  E(connect(sm, 'Transition', sCmp, q4).el).name = 'görevBitti';
+  // bütçe ve tahsis örnekleri
+  mk('Value', gb.id, {name:'kütle', vtype:'Kütle', def:'4.2'}); mk('Value', kb.id, {name:'kütle', vtype:'Kütle', def:'2.8'}); mk('Value', sb.id, {name:'kütle', vtype:'Kütle', def:'1.6'});
+  E(partS).mult = '2';
+  addRel('Allocate', E(n1.el).id, gb.id); addRel('Allocate', E(n2.el).id, kb.id); addRel('Allocate', E(n4.el).id, kb.id); addRel('Allocate', act.id, sys.id);
+  // sequence fragment
+  const fr = mk('Fragment', sq.owner, {op:'loop', guards:'1..3'});
+  const fsh = addShape(sq, fr.id, 210, 140, 620, 95); d0Front(sq, fsh);
+  const DX = {S5, tPkg, rqPkg, open:[]}; DEMO_EXT.forEach(f => f(DX));
+  M.ui = {open:[bdd.id, ibd.id, ifd.id, uc.id, ad.id, td.id, rd.id, sm.id, sq.id, pd.id, pgd.id].concat(DX.open, ['@reqtable', '@matrix', '@coverage']), cur:bdd.id, exp:[root.id, pk.id, pu.id, pa.id, act.id, sys.id, rqPkg, pi.id]};
+  return M;
+}
+

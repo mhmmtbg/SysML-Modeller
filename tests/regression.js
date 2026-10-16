@@ -636,6 +636,21 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Palet, «conform»/«expose» kuralları, view/viewpoint şekilleri, iç içe view, HTML doküman (şekil+tablo+içindekiler), özellikler, doğrulama', !vw.error && Object.values(vw).every(v => v === true), vw);
 
+  console.log('9a) Mimari: kanca kayıtları, genel özellik dağıtımı, hata yalıtımı');
+  const hk = await run(() => {
+    const o = {};
+    o.reg = HOOKS.props.length >= 6 && HOOKS.menu.tools.length >= 3 && HOOKS.menu.analysis.length >= 3 && HOOKS.menu.layout.length >= 1;
+    const bad = () => { throw new Error('deneme hatası'); }; HOOKS.props.unshift(bad); HOOKS.menu.tools.unshift(bad);
+    const n0 = (window.APP_ERRS || []).length;
+    const sp = Object.values(M.els).find(e => e.kind === 'SmartPackage'); ST.sel = new Set(); ST.tsel = sp.id; renderProps();
+    o.isolated = !!document.querySelector('#props [data-spedit]') && toolsMenuItems().some(x => x.t && /MagicGrid/.test(x.t)) && window.APP_ERRS.length >= n0 + 2;
+    HOOKS.props.shift(); HOOKS.menu.tools.shift();
+    o.generic = !!document.querySelector('#props [data-spedit]');
+    PROPS_EXT.__Deneme = (el, pf) => pf('X', 'genel-dağıtım'); KIND.__Deneme = {tr:'Deneme', ic:'D', col:'#999'}; const e = mk('__Deneme', M.rootId, {name:'d'}); ST.tsel = e.id; renderProps(); o.newKind = document.querySelector('#props').textContent.includes('genel-dağıtım'); delete M.els[e.id]; delete PROPS_EXT.__Deneme; delete KIND.__Deneme; ST.tsel = null; afterChange();
+    return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Kanca kayıtları dolu; hatalı kanca diğerlerini bozmaz ve günlüğe yazılır; yeni tür yalnız PROPS_EXT ile panelde görünür', !hk.error && Object.values(hk).every(v => v === true), hk);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);
