@@ -683,6 +683,21 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Rozet ve menü, SVG/XMI işaretleri, paket kapsamlı ve not temizlenmiş inceleme paketi (doküman no), anonim kopya, işaret kaldırma', !sc2.error && Object.values(sc2).every(v => v === true), sc2);
 
+  console.log('9d) Şüpheli bağlantılar, birim analizi, arayüz kuralları (arayüzde)');
+  const sl = await run(() => {
+    const o = {};
+    const r = allReqs().find(x => x.reqId === 'SYS-002'); snap(); r.text += ' (rev)'; afterChange();
+    o.menu = reqMenuItems().some(x => x.t && /Şüpheli bağlantılar \(\d+\)/.test(x.t));
+    openD('@suspect'); o.view = document.querySelectorAll('#view [data-susok]').length >= 3;
+    MX.rows = 'sys'; MX.cols = 'tests'; MX.ch = ''; openD('@matrix'); renderView(); o.matrix = document.querySelectorAll('#view td.mxd.sus').length >= 1;
+    const d = Object.values(M.els).find(e => e.kind === 'Diagram' && e.dtype === 'req' && e.edges.some(ed => ed.el && E(ed.el) && E(ed.el).suspect)); if(d){ openD(d.id); o.edge = document.querySelector('#svg').innerHTML.includes('⚠'); } else o.edge = true;
+    o.valid = validateModel().some(x => x.rule === 'Şüpheli bağlantı');
+    const rel = allSuspects()[0]; ST.sel = new Set(); ST.tsel = rel.id; renderProps(); o.props = !!document.querySelector('#props [data-susprop]');
+    snap(); suspectClear(allSuspects().map(x => x.id), 'test'); afterChange(); o.clear = allSuspects().length === 0;
+    return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Metin değişince şüpheli işaret; menü sayacı, görünüm, matris ve diyagram işaretleri, doğrulama, panel onayı', !sl.error && Object.values(sl).every(v => v === true), sl);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

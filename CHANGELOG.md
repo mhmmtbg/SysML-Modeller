@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.39.0 — 2026-10-16
+
+- **Şüpheli bağlantılar:** gereksinim değişince bağlı izlenebilirlik ilişkileri işaretlenir; görünüm, gözden geçirme onayı ve kaydı, matris/diyagram/panel işaretleri, doğrulama bulgusu, Excel
+- **Birim/boyut analizi (SI):** kısıt denklemleri, bağlamalar ve bağlantı akış özelliklerinde boyut uyumsuzluğu; ölçek farkı bilgisi
+- **Arayüz kuralları:** taşınan öğe ↔ akış özelliği, eşlenik port eksikliği, tahsisli nesne akışı ↔ connector; iki kural için otomatik onarım
+- Örnek modelde veri bağlantısının taşınan öğesi düzeltildi
+- Derleyici aynı adlı üst düzey tanımları (çakışma) yakalar
+- Birim testi 76, regresyon testi 41 adım
+
 ## v1.38.0 — 2026-10-16
 
 - **Gizlilik derecesi:** model düzeyinde derece ve ek ibare; Word/Excel üst-alt bilgi, diyagram ve grafik görüntülerinde bant, HTML çıktılarında şerit, XMI açıklaması; araç çubuğu rozeti

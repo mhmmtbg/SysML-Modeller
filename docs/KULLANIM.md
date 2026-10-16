@@ -1015,6 +1015,20 @@ SysML'in **View / Viewpoint** mekanizmasıyla paydaşa özel dokümanlar üretil
 - **Kapsamlı ve temizlenmiş dışa aktarma:** inceleme paketi, XMI ve **Kapsamlı / temizlenmiş kopya kaydet…** komutları önce bir pencere açar: dışa aktarılacak üst paketler seçilir (boş = tüm model); seçilenlerin dışındaki elemanlar, onlara giden ilişkiler, diyagram şekilleri ve dış referanslar çıkarılır. İsteğe bağlı olarak inceleme notları, kullanıcı adları, değişiklik günlüğü/onarım geçmişi/baseline'lar ve eleman açıklamaları temizlenir. Canlı model değişmez.
 - **Doküman kontrolü:** inceleme paketinde doküman no, revizyon ve dağıtım listesi girilir ve sayfanın üstünde gösterilir. Görünümün (View) Özellikler panelinde **Doküman no / Revizyon / Dağıtım** alanları vardır; View dokümanının başında doküman kontrol satırı olarak çıkar.
 
+## 5ae. Şüpheli bağlantılar, birim analizi ve arayüz tutarlılık kuralları
+
+**Şüpheli bağlantılar (suspect links):** bir gereksinimin metni, adı, seviyesi, alt sistemi veya doğrulama yöntemi değiştiğinde ona bağlı Satisfy, Verify, Derive, Refine, Trace ve Allocate ilişkileri otomatik olarak **şüpheli** işaretlenir. **Gereksinimler ▾ → Şüpheli bağlantılar** görünümü her bağlantıyı değişen alan ve eski → yeni metinle listeler; karşı taraf (tasarım, test, alt gereksinim) kontrol edilince **Gözden geçirildi** (tek tek veya seçilenler) ile onaylanır, onay kişi/zaman/gerekçeyle kaydedilir (**Gözden geçirme kaydı**, Excel). Şüpheli bağlantılar izlenebilirlik matrisinde turuncu ⚠ hücre, diyagramda bağlantı üzerinde ⚠, Özellikler panelinde uyarı ve model doğrulamada bulgu olarak görünür.
+
+**Birim / boyut analizi (SI):** birimler 7 SI temel boyutuna (ve para birimine) indirgenir (V, A, W, Ω, J, Wh, N, Pa, bar, Hz, m/s², kg·m²/s² …). Model doğrulamada **Birim uyumsuzluğu** kuralı şunları bulur:
+- kısıt bloğu denklemlerinde iki tarafın boyutu farklıysa (ör. `m = F * a`), toplama/çıkarmada farklı boyutlar, `sin/exp/log` içinde boyutlu değişken; parametre birimi parametrenin kendisinden veya bağlandığı value property'den alınır,
+- bağlamada (binding) iki ucun boyutu farklıysa; aynı boyut ama farklı ölçek (mm ↔ m) bilgi olarak bildirilir,
+- bağlantının iki ucundaki aynı adlı akış özelliklerinin boyutu farklıysa.
+
+**Arayüz tutarlılık kuralları:**
+- **Taşınan öğe arayüzde yok:** bağlantının taşıdığı öğe (item flow) uçlardaki arayüz bloklarında bir akış özelliğiyle karşılanmıyor.
+- **Eşlenik port eksik:** iki part'ın portları aynı karışık yönlü arayüzü aynı yönde kullanıyor; otomatik onarım hedef portu eşlenik (~) yapar.
+- **Tahsisli akışa bağlantı yok:** iki aksiyon arasındaki nesne akışı farklı bloklara/part'lara tahsis edilmiş (Allocate veya kulvar) ama yapıda bu ikisi arasında connector yok; otomatik onarım ortak bağlam bloğunda arayüz bloğu, eşlenik portlar ve connector oluşturur.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

@@ -211,7 +211,7 @@ if(typeof cItems === 'function'){
 /* örnek model */
 DEMO_EXT.push(X => {
   const B = n => Object.values(M.els).find(e => e.kind === 'Block' && e.name === n), sig = Object.values(M.els).find(e => e.kind === 'Signal');
-  const con = Object.values(M.els).find(r => r.kind === 'Connector' && E(r.src) && E(r.tgt)); if(con && sig){ con.conv = [sig.id]; con.fdir = 's>t'; }
+  const con = Object.values(M.els).find(r => r.kind === 'Connector' && E(r.src) && E(r.tgt) && /veri/i.test(E(r.src).name + E(r.tgt).name)) || Object.values(M.els).find(r => r.kind === 'Connector' && E(r.src) && E(r.tgt)); if(con && sig){ con.conv = [sig.id]; con.fdir = 's>t'; }
   const as = B('Araç Sistemi'); if(as){ const r = instantiate(as.id); if(r) r.root.name = 'araç1'; }
   const uc = Object.values(M.els).find(e => e.kind === 'UseCase' && e.name === 'Sistemi Başlat'); if(uc) uc.scn = 'Operatör: Sistemi başlatır\nSistem: Kendi kendine test yapar\nSistem → Operatör: Hazır durumunu bildirir';
   X.open.push('@instances');
