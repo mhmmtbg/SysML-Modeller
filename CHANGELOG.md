@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v1.46.0 — 2026-10-16
+
+- **Fonksiyon kuralı:** tahsisli aksiyonlardan fonksiyonel gereksinim; kullanım durumlarından paydaş gereksinimi
+- **Türkçe çekim:** eylem adlarının gelecek zamana çekimi (ünlü uyumu, kaynaştırma, "et" birleşikleri ve yumuşama, fiil sözlüğü); fiil değilse işlev kalıbı
+- **Mod ve geçiş kuralı:** olay, koruma koşulu, seçim düğümü, after() zamanlaması, başlangıç ve alt durum
+- **Performans kuralı:** kısıt eşitsizliklerinden bağlı değerin adı ve birimiyle sınır gereksinimi; tolerans aralığı
+- **Güvenilirlik kuralı:** FMEA önlemlerinden (RPN / şiddet eşiği) ve isteğe bağlı yüksek risklerden gereksinim; FMEA satırına bağlantı
+- Kaynağın varyant koşulu gereksinime aktarılır; kalite denetimi tırnak / köşeli parantez içini başvuru sayar
+- Performans: türetme önbellekleri (en üst blok, part tipleri, bağlamalar, ilişki indeksi); 6000+ elemanlı modelde < 1,5 sn
+- Birim testi 139, regresyon testi 48 adım
+
 ## v1.45.0 — 2026-10-16
 
 - **Çevresel profil kuralı:** PSD / sinüs / SRS / termal profillerden sayısal değerli çevresel gereksinim; seviyeye göre ifade (kalifikasyon / kabul / ESS / fonksiyonel), standart ve yöntem numarası

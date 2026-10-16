@@ -154,10 +154,12 @@ function unitIssues(){
 VALIDATORS.push(add => { unitIssues().forEach(x => add(x.sev || 'uyarı', 'Birim uyumsuzluğu', x.el, x.msg)); });
 /* ---------- arayüz tutarlılık kuralları ---------- */
 function structOf(id){ const e = E(id); if(!e) return null; if(e.kind === 'Part') return e.type || null; if(e.kind === 'Block') return e.id; return null; }
+let AD_C = null, AD_REV = -1, AD_M = null;
+const actDiagrams = () => { if(AD_REV !== REV || AD_M !== M){ AD_C = Object.values(M.els).filter(d => d.kind === 'Diagram' && d.dtype === 'act'); AD_REV = REV; AD_M = M; } return AD_C; };
 function allocTargets(nodeId){
   const out = new Set();
-  Object.values(M.els).forEach(r => { if(r.kind === 'Allocate' && r.src === nodeId){ const s = structOf(r.tgt); if(s) out.add(s); } });
-  Object.values(M.els).filter(d => d.kind === 'Diagram' && d.dtype === 'act').forEach(d => { const sh = d.shapes.find(s => s.el === nodeId); if(!sh) return; d.shapes.forEach(p => { const pe = E(p.el); if(pe && pe.kind === 'Partition' && pe.represents && sh.x >= p.x && sh.x + sh.w <= p.x + p.w + 1 && sh.y >= p.y && sh.y + sh.h <= p.y + p.h + 1){ const s = structOf(pe.represents); if(s) out.add(s); } }); });
+  (relIdx().Allocate || []).forEach(r => { if(r.src === nodeId){ const s = structOf(r.tgt); if(s) out.add(s); } });
+  actDiagrams().forEach(d => { const sh = d.shapes.find(s => s.el === nodeId); if(!sh) return; d.shapes.forEach(p => { const pe = E(p.el); if(pe && pe.kind === 'Partition' && pe.represents && sh.x >= p.x && sh.x + sh.w <= p.x + p.w + 1 && sh.y >= p.y && sh.y + sh.h <= p.y + p.h + 1){ const s = structOf(pe.represents); if(s) out.add(s); } }); });
   return out;
 }
 function connectedPairs(){

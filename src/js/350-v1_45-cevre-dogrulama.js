@@ -21,7 +21,9 @@ function envClause(p){
   const cyc = numOf(p.cycles) || 1; return `${trNum(m.tmin)} °C ile ${trNum(m.tmax)} °C arasında, en fazla ${trNum(m.rmax)} °C/dk değişim hızıyla ${trNum(cyc)} döngü uygulanan ${nm0} ${has(/termal|sıcaklık|thermal/i) ? '' : 'termal '}profiline maruz kaldığında`;
 }
 /* en üst sistem bloğu: part'ı olan ve kendisi hiçbir part'ın tipi olmayan blok */
-function topBlock(){ const used = new Set(Object.values(M.els).filter(p => p.kind === 'Part' && p.type).map(p => p.type)); return Object.values(M.els).filter(b => b.kind === 'Block' && !used.has(b.id) && kidsOf(b.id).some(k => k.kind === 'Part')).sort((a, b) => kidsOf(b.id).filter(k => k.kind === 'Part').length - kidsOf(a.id).filter(k => k.kind === 'Part').length || sortEls(a, b))[0] || null; }
+let TB_C = null, TB_REV = -1, TB_M = null;
+function topBlock(){ if(TB_REV === REV && TB_M === M) return TB_C; TB_REV = REV; TB_M = M; return TB_C = topBlock0(); }
+function topBlock0(){ const used = new Set(Object.values(M.els).filter(p => p.kind === 'Part' && p.type).map(p => p.type)); return Object.values(M.els).filter(b => b.kind === 'Block' && !used.has(b.id) && kidsOf(b.id).some(k => k.kind === 'Part')).sort((a, b) => kidsOf(b.id).filter(k => k.kind === 'Part').length - kidsOf(a.id).filter(k => k.kind === 'Part').length || sortEls(a, b))[0] || null; }
 /* ---------- kural: çevresel profil ---------- */
 DERIVE_RULES.push({id:'cevre', tr:'Çevresel profil', doc:'Her test profilinden (rastgele titreşim PSD, sinüs, SRS şok, termal döngü) profilin sayısal değerleriyle çevresel dayanım gereksinimi. İfade profilin seviyesine göre seçilir (kalifikasyon: bütünlük, kabul/ESS: işlevsel performans, fonksiyonel: çalışmayı sürdürme). Gereksinim profile Refine ile, profili kullanan testlere Verify ile bağlanır; profili inceleyen bir üst gereksinim varsa ondan türetilir.',
   opts:[['sub', 'Alt sistem seviyesinde (kök bloğun her part tipi için ayrı)', false], ['skipFn', 'Fonksiyonel / karakterizasyon profillerini atla (ör. rezonans arama)', true], ['mkTest', 'Profili kullanan test yoksa test durumu iskeleti oluştur', true]],

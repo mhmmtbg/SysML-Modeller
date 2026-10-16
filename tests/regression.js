@@ -808,6 +808,23 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Çevre kuralı (profil değerleri, seviye ifadesi, fonksiyonel atlama), kabulde doğrulama faaliyeti, doğrulama iskeleti sekmesi, geri al', !ev.error && Object.values(ev).every(v => v === true), ev);
 
+  console.log('9k) Davranış, kısıt ve FMEA kuralları; Türkçe çekim');
+  const bh = await run(async () => {
+    const o = {}; deriveOpen(); DV.tab = 'oner'; renderViewBar(); renderView(); const q = s => document.querySelector('#view ' + s), ch = (el, v) => { if(typeof v === 'boolean') el.checked = v; else el.value = v; el.dispatchEvent(new Event('change', { bubbles: true })); };
+    o.rules = ['fonk', 'durum', 'kisit', 'fmea'].every(r => !!q(`[data-dvr="${r}"]`));
+    ch(q('[data-dvrf]'), 'durum'); ch(q('[data-dvs]'), 'hepsi'); const tx = q('.dvt').textContent; o.stm = /durumuna geçecektir/.test(tx) && /30 s sonra/.test(tx);
+    ch(q('[data-dvrf]'), 'fonk'); o.fn = /güç verecektir/.test(q('.dvt').textContent);
+    ch(q('[data-dvo="fmea|risk"]'), true); o.risk = deriveList().some(s => s.riskLink); ch(q('[data-dvo="fmea|risk"]'), false);
+    ch(q('[data-dvrf]'), 'all'); ch(q('[data-dvs]'), 'acik');
+    const L = deriveList().filter(s => ['fonk', 'durum', 'kisit', 'fmea'].includes(s.rule) && s.state === 'yeni'); L.forEach(s => DV.sel.add(s.sig)); renderViewBar(); renderView();
+    const n0 = allReqs().length; q('.vbar [data-dvgo]').click(); o.applied = allReqs().length === n0 + L.length && !deriveList().some(s => ['fonk', 'durum', 'kisit', 'fmea'].includes(s.rule) && s.state === 'yeni') && allReqs().filter(r => r.derivedFrom && ['fonk', 'durum', 'kisit', 'fmea'].includes(r.derivedFrom.rule)).length >= 15;
+    o.fmLink = allFMs().some(f => (f.reqs || []).some(id => E(id) && E(id).derivedFrom && E(id).derivedFrom.rule === 'fmea'));
+    o.quality = allReqs().filter(r => r.derivedFrom && ['fonk', 'durum', 'kisit', 'fmea'].includes(r.derivedFrom.rule)).every(r => !reqQuality(r).some(x => x[0] !== 'bilgi'));
+    o.valid = !validateModel().some(x => x.sev === 'hata' && /türet|bütçe/i.test(x.rule));
+    return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Fonksiyon / mod-geçiş / performans / FMEA kuralları: öneriler, risk seçeneği, toplu kabul, FMEA bağlantısı, kalite ve doğrulama temiz', !bh.error && Object.values(bh).every(v => v === true), bh);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);
@@ -838,6 +855,8 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
       blocks.slice(0, 150).forEach((bb, i) => addShape(d, bb.id, (i % 15) * 230, Math.floor(i / 15) * 180));
       for (let i = 1; i < 150; i++) connect(d, 'Composition', d.shapes[Math.floor((i - 1) / 3)], d.shapes[i]);
       window.__big = d.id;
+      const act = mk('Activity', root, { name: 'Büyük aktivite' }); for (let i = 0; i < 200; i++) { const a = mk('Action', act.id, { name: 'Veri ' + i + ' işle' }); mk('Allocate', root, { src: a.id, tgt: blocks[i % blocks.length].id }); }
+      const sm = mk('StateMachine', blocks[0].id, { name: 'Büyük durum makinesi' }); let prev = null; for (let i = 0; i < 100; i++) { const st = mk('State', sm.id, { name: 'D' + i }); if (prev) mk('Transition', sm.id, { src: prev.id, tgt: st.id, name: 'ev' + i }); prev = st; }
     });
     T.eleman = Object.keys(M.els).length;
     tm('diyagramAç', () => openD(window.__big));

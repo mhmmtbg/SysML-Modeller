@@ -1,7 +1,7 @@
 'use strict';
 const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const LSK = 'sysml-modeler-v1';
-const APP_VER = '1.45.0';
+const APP_VER = '1.46.0';
 const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -4469,12 +4469,14 @@ function reqQuality(r, sim){
   const out = [], t = String(r.text || '').trim(), low = t.toLocaleLowerCase('tr');
   if(!t){ out.push(['hata', 'Gereksinim metni boş']); return out; }
   modalIssues(t, low).forEach(x => out.push(x));
-  const vg = VAGUE.filter(v => new RegExp('(^|[^a-zçğıöşü])' + v.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&') + '($|[^a-zçğıöşü])', 'i').test(low));
+  /* tırnak / köşeli parantez içi ad ve ifade başvurusudur: belirsizlik ve birimsiz sayı denetimine girmez */
+  const tq = t.replace(/"[^"]*"|“[^”]*”|«[^»]*»|\[[^\]]*\]/g, m => ' '.repeat(m.length)), lowq = tq.toLocaleLowerCase('tr');
+  const vg = VAGUE.filter(v => new RegExp('(^|[^a-zçğıöşü])' + v.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&') + '($|[^a-zçğıöşü])', 'i').test(lowq));
   if(vg.length) out.push(['uyarı', 'Belirsiz / doğrulanamaz ifade: ' + vg.map(v => '"' + v + '"').join(', ')]);
   if(/\b(tbd|tbr|tbc)\b|belirlenecek|daha sonra belirlenecek|ileride tanımlanacak|\?\?/i.test(t)) out.push(['uyarı', 'Belirlenmemiş değer (TBD / belirlenecek)']);
   const nums = [];
-  t.replace(/(^|[^A-Za-z0-9\-\/.])(\d+(?:[.,]\d+)?)(?![\d.,]*[A-Za-z]*-)/g, (m, pre, n, off) => {
-    const rest = t.slice(off + m.length), before = t.slice(Math.max(0, off - 14), off + pre.length).toLocaleLowerCase('tr');
+  tq.replace(/(^|[^A-Za-z0-9\-\/.])(\d+(?:[.,]\d+)?)(?![\d.,]*[A-Za-z]*-)/g, (m, pre, n, off) => {
+    const rest = tq.slice(off + m.length), before = tq.slice(Math.max(0, off - 14), off + pre.length).toLocaleLowerCase('tr');
     if(/^[\-\/]/.test(rest) || /^\.\d/.test(rest) || pre === '%' || /%\s*$/.test(before)) return m;
     if(/(yöntem|method|madde|bölüm|kısım|rev|std|standart|no|sayı|sürüm|versiyon|tablo|şekil|ek|annex|para)\.?\s*$/.test(before)) return m;
     if(!UNIT_RE.test(rest) && !/^\s*(x|×|\*)\s*\d/.test(rest)) nums.push(n);

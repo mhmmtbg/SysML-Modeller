@@ -1111,6 +1111,31 @@ Her öneri satırında metin düzenlenebilir ve INCOSE kalite denetimi anında g
 
 **Doğrulama iskeleti sekmesi:** Verify bağlantısı olmayan tüm gereksinimleri listeler. Yöntem boşsa metinden yöntem önerilir (kütle/boyut/etiket → Muayene, analiz/MTBF/ömür → Analiz, gösterge/operatör → Gösterim, diğer → Test). Seçilenler için doğrulama faaliyeti oluşturulur; VCRM, test kampanyası ve kapanış raporunda görünür.
 
+## 5al. Davranıştan, kısıttan ve FMEA'dan gereksinim türetme
+
+Türetme sihirbazına dört kural daha eklenmiştir; hepsi öneri → inceleme → kabul akışını, "yeni / güncelle / mevcut / kaynak yok" durumlarını ve izlenebilirliği kullanır.
+
+**Fonksiyon:** bir bloğa tahsis edilmiş (Allocate ilişkisi veya aktivite kulvarı) her aksiyon için o bloğa fonksiyonel gereksinim. Eylem adı Türkçe gelecek zamana çekilir:
+- "Güç ver" → "Güç Birimi güç verecektir.", "Test sonucunu kaydet" → "… test sonucunu kaydedecektir.", "Hedefi takip et" → "… hedefi takip edecektir."
+- Son sözcük fiil değilse (ör. "Güç hattı kontrolü") → '… "Güç hattı kontrolü" işlevini yerine getirecektir.'; aktiviteler de bu kalıpla yazılır.
+- Gereksinim eyleme Refine ile bağlanır; eylemin aktivitesi bir gereksinimi karşılıyorsa (ör. SYS-002) yeni gereksinim ondan türetilir. Zaten bir gereksinimi karşılayan eylemler varsayılan olarak atlanır.
+- Aktörlü kullanım durumlarından paydaş gereksinimi: 'Sistem, Operatör için "Sistemi Başlat" kullanım durumunu destekleyecektir.'
+
+**Mod ve geçiş:** durum makinesi geçişlerinden:
+- olay: 'Sistem, "Kapalı" durumundayken "güçVer" olayı alındığında "Kendi Kendine Test" durumuna geçecektir.'
+- seçim düğümü (gelen geçişle birleştirilir): '… işlemler tamamlandığında [bitSonuc == 1] koşulu sağlanıyorsa "Hazır" durumuna geçecektir.' / '… diğer koşullar sağlanmıyorsa "Arıza" …'
+- zaman: after(30 s) → '… "Hazır" durumuna girdikten 30 s sonra "Kapalı" durumuna geçecektir.'
+- başlangıç durumu ve alt durumlar: 'Sistem başlangıçta "Kapalı" durumunda olacaktır.', '"Görevde" durumuna girdiğinde "Arama" alt durumunda başlayacaktır.'
+- Konu, durum makinesinin sahibi olan bloktur (sistem bloğu ise "Sistem").
+
+**Performans (kısıt):** kısıt bloklarındaki eşitsizlikler, parametreye bağlanmış (binding) değer özelliğinin adı ve birimiyle yazılır: `P <= 120` → "Güç Birimi güç değeri en fazla 120 W olacaktır." (`>=` en az, `<` altında, `>` üzerinde; `120 >= P` gibi ters yazım da tanınır). Birden fazla değişkenli ifadeler '[gerilim * akım >= 50] kısıtını sağlayacaktır' biçiminde yazılır. Tolerans aralığı tanımlı değerlerden (Monte Carlo) aralık gereksinimi: "… akım değeri 3,2 A ile 3,8 A arasında olacaktır."
+
+**Güvenilirlik (FMEA):** kapanmamış, önerilen önlemi olan ve RPN ≥ 100 veya şiddeti 9–10 olan arıza kiplerinden: 'Güç Birimi, "Çıkış gerilimi yok" arıza kipine karşı "Yedekli DC-DC, sigorta yerine PTC" önlemini sağlayacaktır.' Gereksinim FMEA satırının gereksinim listesine eklenir (FMEA tablosunda görünür). Seçenek: teknik / emniyet / güvenlik / kalifikasyon kategorisinde "Yüksek" veya "Çok yüksek" risklerin azaltım önlemleri.
+
+**Varyant koşulu:** kaynağın (veya sahibinin) varyant koşulu öneriye ve oluşan gereksinime aktarılır.
+
+**Kalite denetimi:** tırnak içindeki adlar ve köşeli parantez içindeki ifadeler (ör. "Rev 2" profili, [bitSonuc == 1]) birimsiz sayı veya belirsiz sözcük denetimine girmez.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.
