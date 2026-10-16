@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v1.32.0 — 2026-10-16
+
+- **MagicGrid mimari panosu:** Kara Kutu / Beyaz Kutu / Çözüm / Doğrulama × Gereksinim / Davranış / Yapı / Parametre hücrelerinde kanıta dayalı tamamlanma yüzdeleri, öneriler, Excel
+- **MagicGrid paket iskeleti kur:** standart paket yapısı (mevcut paketler korunur)
+- **Otomatik onarım (Quick Fix):** bulgu başına Düzelt ve Tümünü otomatik düzelt — kopuk ilişki, tipsiz part/port/değer, eksik başlangıç/bitiş, port yönü, isimsiz/sahipsiz eleman, kopuk çağrı
+- Regresyon testi 34 adım
+
 ## v1.31.0 — 2026-10-16
 
 - **Etkileşimli inceleme paketi (tek HTML):** diyagram gezintisi, eleman özellikleri ve izlenebilirlik, Yorum/Onay/Ret notları, diyagram onayı, notları JSON olarak dışa aktarma

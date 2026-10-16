@@ -950,6 +950,21 @@ Zincirler modelle birlikte kaydedilir. Örnek modelde iki hazır zincir tanıml�
 - **Koordinatlı XMI:** XMI dışa aktarımı artık OMG UML DI (umldi/dc) ile her diyagramın şekil konum/boyutlarını, iç içe yerleşimi ve bağlantı noktalarını da yazar. Bu uygulamanın XMI içe aktarımı DI bilgisi varsa diyagramları aynı yerleşimle yeniden kurar (yoksa eskisi gibi otomatik diyagram üretir). Sequence diyagramları ve not şekilleri XMI'ye aktarılmaz.
 - **Genel tablodan Excel/CSV aktarma:** **Genel tablo** çubuğundaki **⤓ Excel/CSV'den aktar** seçili türdeki elemanları toplu ekler veya günceller. Başlıklar tablo sütun adlarıyla eşleştirilir; satırlar **Kimlik** sütunuyla (tablonun Excel çıktısında artık bulunur) ya da **Ad + Sahibi** ile mevcut elemanlara bağlanır. Önizlemede yeni / güncellenecek / değişmeyen / hatalı satırlar ve alan bazında eski → yeni değerler gösterilir; Uygula tek adımda geri alınabilir. Tip sütunu blok/değer tipi adıyla eşlenir.
 
+## 5y. MagicGrid mimari panosu ve otomatik onarım (Quick Fix)
+
+**MagicGrid mimari panosu** (**Analiz ▾** veya **Araçlar ▾ → MagicGrid mimari panosu**) modeli MagicGrid yönteminin ızgarasında değerlendirir: sütunlar **Kara Kutu** (problem alanı — sistem dışarıdan), **Beyaz Kutu** (problem alanı — sistem içeriden), **Çözüm Mimarisi** ve **Doğrulama**; satırlar **Gereksinimler, Davranış, Yapı, Parametreler**. Her hücre modeldeki kanıtlardan tamamlanma yüzdesi hesaplar:
+
+| | Kara Kutu | Beyaz Kutu | Çözüm | Doğrulama |
+|---|---|---|---|---|
+| Gereksinim | müşteri isterine bağlı sistem gereksinimleri | alt sisteme türetilmiş sistem gereksinimleri | karşılanmış alt sistem gereksinimleri | test ile doğrulanan gereksinimler |
+| Davranış | senaryolu kullanım senaryoları | tahsisli fonksiyonlar | davranışlı bileşenler | adımlı test prosedürleri |
+| Yapı | sistem bağlamı ve bağlı aktörler | arayüzlü alt sistem blokları | tipli port ve tanımlı bağlantılar | numune atanmış testler |
+| Parametre | sayısal MoE değerleri | bağlı kısıt özellikleri | çözülen denklemler | başarılı testler |
+
+Hücreye tıklamak ilgili görünümü açar (gereksinim tablosu, kapsama, tahsis, N², ICD, VCRM, test yürütme…); %80'in altındaki hücrelerde yapılacak iş önerilir. **MagicGrid paket iskeleti kur** standart paket yapısını (1 Problem Alanı → Kara/Beyaz Kutu alt paketleri, 2 Çözüm Alanı, 3 Doğrulama ve Geçerleme) oluşturur; var olan paketlere dokunmaz. Pano Excel'e aktarılabilir.
+
+**Aktif doğrulama ve otomatik onarım:** **Araçlar ▾ → Model doğrulama** görünümünde düzeltilebilir her bulgunun sağında **Düzelt** düğmesi, üst çubukta **Tümünü otomatik düzelt** komutu bulunur. Desteklenen onarımlar: kopuk ilişkiyi silme, sahipsiz elemanı köke taşıma, isimsiz elemana ad verme, kopuk çağrıyı kaldırma, tipsiz part için blok / tipsiz port için arayüz bloğu oluşturup tipleme, tipsiz değere varsayılan değerden tip atama (Real/Integer/Boolean/String), aktiviteye eksik başlangıç/bitiş düğümü (ve akışlarını; diyagram açıksa şekillerini) ekleme, durum makinesine başlangıç durumu ekleme, port yön uyumsuzluğunu eşlenik (~) veya yön değiştirerek giderme. Tüm onarımlar tek adımda geri alınabilir (Ctrl+Z).
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

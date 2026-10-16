@@ -543,6 +543,26 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('XMI diyagram yerleşimi gidiş-dönüş, inceleme HTML ve not geri alma, tablo içe aktarma (Kimlik / Ad+Sahibi eşleşmesi)', !rv.error && Object.values(rv).every(v => v === true), rv);
 
+  console.log('8w) MagicGrid panosu, paket iskeleti, otomatik onarım');
+  const mg = await run(() => {
+    const o = {};
+    const D = mgData(); o.cells = ['bb', 'wb', 'sol', 'ver'].every(c => ['req', 'beh', 'str', 'par'].every(r => D[c][r].pct >= 0 && D[c][r].pct <= 100)) && D.bb.req.pct > 0;
+    openD('@magicgrid'); o.view = document.querySelectorAll('#view td.mgc').length === 16;
+    const n = mgSkeleton(), n2 = mgSkeleton(); o.skel = n >= 15 && n2 === 0 && kidsOf(M.rootId).some(e => e.name === '1 Problem Alanı');
+    const pk = mk('Package', M.rootId, { name: 'QF' }), B = mk('Block', pk.id, { name: 'X' });
+    const pt = mk('Part', B.id, { name: 'motor' }), po = mk('Port', B.id, { name: 'güç' }), v = mk('Value', B.id, { name: 'n', def: '3' });
+    const a = mk('Activity', pk.id, { name: 'F' }), a1 = mk('Action', a.id, { name: 'a1' }), a2 = mk('Action', a.id, { name: 'a2' }); mk('ControlFlow', a.id, { src: a1.id, tgt: a2.id });
+    const br = mk('Satisfy', pk.id, { src: 'yok', tgt: B.id });
+    const C = mk('Block', pk.id, { name: 'C' }), p1 = mk('Port', B.id, { name: 'o1', dir: 'out' }), p2 = mk('Port', C.id, { name: 'o2', dir: 'out' }), q1 = mk('Part', pk.id, {}), cn = mk('Connector', pk.id, { src: p1.id, tgt: p2.id, sp: 'x', tp: 'y' });
+    afterChange();
+    o.fix = fixAll() >= 7 && E(pt.type) && E(pt.type).name === 'Motor' && E(po.type).kind === 'InterfaceBlock' && v.vtype === 'Integer' && !E(br.id) && kidsOf(a.id).some(k => k.kind === 'Initial') && kidsOf(a.id).some(k => k.kind === 'Final') && p2.dir === 'in';
+    o.clean = !validateModel().some(x => FIXERS[x.rule] && E(x.id) && (isAnc(pk.id, x.id)));
+    openD('@validation'); o.btn = !!document.querySelector('#view [data-qfixall]');
+    const qf = Object.values(M.els).find(e => e.name === 'QF'); if(qf) delModel([qf.id]); MG_SKEL.forEach(([n0]) => { const p = kidsOf(M.rootId).find(e => e.name === n0); if(p) delModel([p.id]); }); afterChange();
+    return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('16 hücreli pano, idempotent iskelet, kopuk/tipsiz/başlangıç-bitiş/port yönü otomatik onarım', !mg.error && Object.values(mg).every(v => v === true), mg);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);
