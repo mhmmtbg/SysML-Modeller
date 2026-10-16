@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v1.27.0 — 2026-10-16
+
+- **İfade motoru:** aritmetik, karşılaştırma, mantıksal işleçler ve fonksiyonlar (eval kullanmadan)
+- **Canlı değişkenler:** bağlam bloğunun ve part'larının value property'leri; panelde izleme ve değiştirme
+- **Guard ve efekt hesabı:** geçiş/karar koşulları otomatik değerlendirilir; entry/do/exit/effect ve aksiyon davranış kodu atamaları çalışır
+- **Simülasyon saati ve zaman olayları:** `after(…)` geçişleri, zaman olayı düğümü, aksiyon süresi
+- **Zaman serisi grafiği** ve değişken geçmişi Excel'i
+- **Yürütme izinden sequence diyagramı**
+- Regresyon testi 29 adım
+
 ## v1.26.0 — 2026-10-16
 
 - **Item flow:** Connector/Association/Object Flow üzerinde taşınan öğeler ve akış yönü üçgeni; N² ve ICD ile senkron

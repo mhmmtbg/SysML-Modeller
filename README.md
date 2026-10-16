@@ -30,6 +30,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 - **Modelleme yardımcıları:** BDD'den IBD üretme / eşitleme, bağlam diyagramı, bul ve değiştir (Ctrl+H), toplu düzenleme, kurala göre renklendiren lejant
 - **Cameo tarzı tarayıcı:** Hiyerarşi / Diyagramlar / Kalıtım / Akıllı sekmeleri, süzgeç, akıllı paketler, Spesifikasyon penceresi (Enter)
 - **SysML 1.6 ayrıntıları:** item flow, uç rol/çokluk/yönlülük, iç içe port, instance ve örneklem tablosu, durum değişmezi/süre kısıtı/found-lost/destroy, datastore/stream, Use Case'ten senaryo üretimi
+- **Çalıştırılabilir simülasyon:** ifade motoru, guard/efekt hesabı, canlı değişkenler, after() zaman olayları, zaman serisi grafiği, yürütme izinden sequence
 - **Hızlı modelleme:** şekilden şekle sürükleyerek ilişki, akıllı manipülatörler, hizalama kılavuzları; tüm seçeneklerde simgeler
 - **Ekip çalışması:** paketleri `.sysmod` modülü olarak paylaşma, salt okunur ekleme ve karşılaştırarak güncelleme, masaüstünde dosya kilidi
 - **İngilizce arayüz:** araç çubuğundaki EN / TR düğmesiyle menüler, paneller, pencereler ve mesajlar İngilizceye geçer; model içeriği ve çıktılar Türkçe kalır

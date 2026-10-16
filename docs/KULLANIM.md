@@ -893,6 +893,20 @@ Port seçilince **+ Alt port** ile port içinde port tanımlanır; alt portu ola
 
 Use Case'in Özellikler panelindeki **Ana senaryo** alanına her satıra bir adım yazılır: `Operatör: Sistemi başlatır`, `Sistem: Kendi kendine test yapar`, `Sistem → Operatör: Hazır durumunu bildirir`. **Aktivite senaryosu üret** başlangıç → adımlar → bitiş akışını, **Sequence senaryosu üret** katılımcılar için yaşam çizgilerini ve adımlar için mesajları oluşturur (Use Case'in altına kaydedilir). Senaryo boşsa genel üç adımlı bir taslak üretilir.
 
+## 5t. Çalıştırılabilir simülasyon (ifade motoru, canlı değişkenler, saat, grafik, yürütme izi)
+
+Simülasyon (**Analiz ▾ → Simülasyon başlat**, açık aktivite veya durum makinesi diyagramında) artık modeldeki ifadeleri hesaplar:
+
+- **Bağlam ve değişkenler:** davranışın sahibi olan blok (veya tahsis edildiği blok) bağlam olur; value property'leri ve part'larının değerleri (`güçBirimi.gerilim`) varsayılan değerleriyle değişken olarak yüklenir. Simülasyon panelinde bağlam değiştirilebilir, değerler canlı izlenir ve elle değiştirilebilir.
+- **İfadeler:** `+ - * / % ^`, karşılaştırmalar (`< <= > >= == !=`), mantıksal `&&  ||  !` (ayrıca `ve`, `veya`, `değil`), parantez ve `min, max, abs, sqrt, sin, cos, exp, log, round…` fonksiyonları.
+- **Guard'lar:** geçiş ve karar akışı koşulları (ör. `[V >= 24 && T < 70]`) hesaplanır; doğru olan dal otomatik seçilir, hiçbiri doğru değilse `[else]` dalı alınır. Hesaplanamayan metin koşullar (ör. `[başarılı]`) eskisi gibi kullanıcıya sorulur.
+- **Efektler:** durum `entry / do / exit`, geçiş `effect` ve aksiyonların **Davranış kodu** alanındaki atamalar çalışır: `durum = 1; P = V * I; sayaç += 1`. Atama olmayan deyimler (ör. `BIT çalıştır`) yalnız kayda yazılır.
+- **Simülasyon saati ve zaman olayları:** `after(10 s)`, `after(2 dk)` adlı geçişler durumda geçen süre dolunca tetiklenir ve saat ilerler; aktivitede Zaman Olayı düğümü (ör. `5 s`) ve aksiyonun **Süre** alanı saati ilerletir. Panelde `t = … s` gösterilir.
+- **Zaman serisi grafiği:** panelde işaretlenen değişkenlerin zamana (veya adıma) göre basamaklı grafiği canlı çizilir; **⤒ Excel** tüm değişken geçmişini kaydeder.
+- **Yürütme izi → Sequence:** **⤓ İz → Sequence** simülasyonda gerçekleşen olayları, efektleri ve durumları bir sequence diyagramına dönüştürür (çevre → bağlam mesajları, durum değişmezleri; aktivitede kulvarlara göre yaşam çizgileri).
+
+Örnek modelde "Araç Sistemi Durumları" diyagramı guard (`bitSonuc == 1`, `else`), `do` ataması ve `after(30 s)` geçişiyle bu özellikleri gösterir.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

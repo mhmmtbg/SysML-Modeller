@@ -413,6 +413,29 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Uç rol/çokluk/yön ve item flow çizimi, instance ağacı ve toplama, iç içe port, ICD, UC senaryoları, found/değişmez/destroy, datastore/stream', !sx.error && Object.values(sx).every(v => v === true), sx);
 
+  console.log('8r) Çalıştırılabilir simülasyon: ifade motoru, guard, zaman olayı, değişkenler, iz');
+  const sm1 = await run(() => {
+    const o = {};
+    o.expr = xExpr('(2 + 3) * 4 - 10 / 5', new Map()) === 18 && xExpr('V >= 24 ve T < 70', new Map([['V', 28], ['T', 80]])) === 0 && xExpr('max(1, abs(-7))', new Map()) === 7;
+    let bad = false; try { xExpr('2 +', new Map()); } catch (e) { bad = true; } o.err = bad;
+    const V = new Map([['V', 24], ['I', 2]]); const r = xRun('P = V * I; ışığı yak; n++', V); o.run = V.get('P') === 48 && V.get('n') === 1 && r.text.length === 1;
+    o.guard = xGuard('else', V) === 'else' && xGuard('P > 40', V) === true && xGuard('hazır', V) === null;
+    o.after = xAfter('after(2 dk)') === 120 && xAfter('5 s') === 5;
+    const pk = mk('Package', M.rootId, { name: 'Sim' }), B = mk('Block', pk.id, { name: 'Isıtıcı' }); mk('Value', B.id, { name: 'T', vtype: 'Real', def: '20' });
+    const smE = mk('StateMachine', B.id, { name: 'Isıtıcı SM' }), d = newDiagramCore(smE.id, 'stm', 'Isıtıcı SM');
+    const S = (k, n, x, y, ex) => addShape(d, mk(k, d.owner, Object.assign(n ? { name: n } : {}, ex || {})).id, x, y);
+    const i0 = S('Initial', null, 40, 20), on = S('State', 'Isıtıyor', 20, 80, { doAct: 'T = T + 10' }), off = S('State', 'Bekliyor', 260, 80);
+    connect(d, 'Transition', i0, on); const t1 = E(connect(d, 'Transition', on, off).el); t1.guard = 'T >= 40'; const t2 = E(connect(d, 'Transition', off, on).el); t2.name = 'after(5 s)'; t2.effect = 'T = T - 25';
+    const t3 = E(connect(d, 'Transition', on, on).el); t3.name = 'after(1 s)';
+    openD(d.id); simStart(); for (let i = 0; i < 6; i++) simStepNow(true);
+    o.ctx = SIM.ctx === B.id; o.vars = SIM.vars.get('T'); o.t = SIM.t; o.series = SIM.series.length >= 6; o.trace = SIM.trace.some(x => x.k === 'tr') && SIM.trace.some(x => x.k === 'st');
+    renderSimBar(); o.panel = !!document.querySelector('#simbar .simv') && !!document.querySelector('#simbar .simc svg');
+    const n0 = Object.values(M.els).filter(e => e.kind === 'Interaction').length; simTraceToSeq(); o.seq = Object.values(M.els).filter(e => e.kind === 'Interaction').length === n0 + 1 && cur().dtype === 'sd' && cur().edges.length >= 2;
+    simStop(); delModel([pk.id]); afterChange();
+    return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('İfade/deyim/guard/zaman ayrıştırma; bağlam değişkenleri, do ve efekt, after() ile saat; panel, grafik, yürütme izinden sequence', !sm1.error && sm1.expr && sm1.err && sm1.run && sm1.guard && sm1.after && sm1.ctx && typeof sm1.vars === 'number' && sm1.t > 0 && sm1.series && sm1.trace && sm1.panel && sm1.seq, sm1);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);
