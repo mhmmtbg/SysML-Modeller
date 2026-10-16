@@ -122,18 +122,18 @@ const lockMine = (lk, me) => lk && me && lk.host === me.host && (lk.winUser || '
 async function lockSync(){
   if(!hasNat('nativeLockSet') || curPath === LOCK.path) return;
   const old = LOCK.path; LOCK.path = curPath; LOCK.other = null;
-  try { if(old){ const me = await lockWho(), lk = await window.nativeLockGet(old); if(lockMine(lk, me)) await window.nativeLockClear(old); } } catch(e){}
+  try { if(old){ const me = await lockWho(), lk = await window.nativeLockGet(old); if(lockMine(lk, me)) await window.nativeLockClear(old); } } catch(e){ appErr('140:125', e); }
   if(!curPath) return updLockBadge();
   try {
     const me = await lockWho(), lk = await window.nativeLockGet(curPath);
     if(lk && !lockMine(lk, me)){ LOCK.other = lk; toast(`⚠ Bu dosya ${lk.user || lk.winUser || '?'} (${lk.host || '?'}) tarafından ${lk.time ? new Date(lk.time).toLocaleString('tr-TR') : ''} itibarıyla açık. Aynı anda kaydederseniz değişiklikler birbirinin üzerine yazılır.`); }
     else await window.nativeLockSet(curPath, userName(), 'model');
-  } catch(e){}
+  } catch(e){ appErr('140:131', e); }
   updLockBadge();
 }
 async function lockBeforeSave(){
   if(!hasNat('nativeLockGet') || !curPath) return true;
-  try { const me = await lockWho(), lk = await window.nativeLockGet(curPath); if(lk && !lockMine(lk, me)){ LOCK.other = lk; updLockBadge(); return confirm(`Bu dosya şu anda ${lk.user || lk.winUser || '?'} (${lk.host || '?'}) tarafından açık. Yine de kaydedilsin mi? (Onun değişiklikleri kaybolabilir)`); } if(!lk) await window.nativeLockSet(curPath, userName(), 'model'); } catch(e){}
+  try { const me = await lockWho(), lk = await window.nativeLockGet(curPath); if(lk && !lockMine(lk, me)){ LOCK.other = lk; updLockBadge(); return confirm(`Bu dosya şu anda ${lk.user || lk.winUser || '?'} (${lk.host || '?'}) tarafından açık. Yine de kaydedilsin mi? (Onun değişiklikleri kaybolabilir)`); } if(!lk) await window.nativeLockSet(curPath, userName(), 'model'); } catch(e){ appErr('140:136', e); }
   return true;
 }
 function updLockBadge(){ const b = document.getElementById('lockBadge'); if(!b) return; if(LOCK.other){ b.style.display = ''; b.textContent = '🔒 ' + (LOCK.other.user || LOCK.other.winUser || '?'); b.title = `Bu dosya ${LOCK.other.user || ''} (${LOCK.other.host || ''}) tarafından da açık`; } else b.style.display = 'none'; }
@@ -142,7 +142,7 @@ let MV = {locks:{}};
 async function modRefreshLocks(){
   if(!hasNat('nativeLockGet')) return;
   const L = {}, paths = Object.values(mods()).map(x => x.path).concat(Object.values(M.els).filter(e => e.modOut && e.modOut.path).map(e => e.modOut.path)).filter(Boolean);
-  for(const p of paths){ try { L[p] = await window.nativeLockGet(p); } catch(e){} }
+  for(const p of paths){ try { L[p] = await window.nativeLockGet(p); } catch(e){ appErr('140:145', e); } }
   MV.locks = L; if(ST.cur === '@modules') renderView();
 }
 function modulesHTML(){
@@ -172,7 +172,7 @@ VIEWS['@modules'] = {tr:'Modüller (ekip çalışması)', ic:'MD', note:'Paketle
     if(a === 'exp') return exportModule(id, false).then(modRefreshLocks);
     if(a === 'expas') return exportModule(id, true).then(modRefreshLocks);
     if(a === 'lock' && p && p.modOut){ try { const me = await lockWho(), lk = await window.nativeLockGet(p.modOut.path); if(lk && !lockMine(lk, me) && !confirm(`Modül ${lk.user || '?'} tarafından kilitli. Kilit devralınsın mı?`)) return; await window.nativeLockSet(p.modOut.path, userName(), 'module'); toast('Modül kilitlendi — diğer kullanıcılar sizin düzenlediğinizi görür'); } catch(e){ toast('Kilit yazılamadı: ' + e); } return modRefreshLocks(); }
-    if(a === 'unlock' && p && p.modOut){ try { await window.nativeLockClear(p.modOut.path); } catch(e){} return modRefreshLocks(); }
+    if(a === 'unlock' && p && p.modOut){ try { await window.nativeLockClear(p.modOut.path); } catch(e){ appErr('140:175', e); } return modRefreshLocks(); }
     if(a === 'cmp') return moduleUpdate(id, null, true);
     if(a === 'upd') return moduleUpdate(id, null, false);
     if(a === 'det') return moduleDetach(id);

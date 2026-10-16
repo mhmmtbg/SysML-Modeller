@@ -185,7 +185,7 @@ HOOKS.props.push(function(){
 DEMO_EXT.push(X => {
   const d = Object.values(M.els).find(e => e.kind === 'Diagram' && e.dtype === 'bdd' && e.name === 'Sistem Yapısı');
   if(d){
-    try { diagramSVG(d, true); } catch(e){}
+    try { diagramSVG(d, true); } catch(e){ appErr('210:188', e); }
     const hub = d.shapes.find(s => E(s.el) && E(s.el).name === 'Araç Sistemi');
     if(hub){ const leaves = d.edges.filter(ed => edgeKind(ed) === 'Composition' && ed.s === hub.id).map(ed => d.shapes.find(s => s.id === ed.t)).filter(Boolean); const y = snapv(hub.y + hub.h + 70); leaves.forEach(s => { if(s.y < y) s.y = y; }); }
     d.tree = true; }

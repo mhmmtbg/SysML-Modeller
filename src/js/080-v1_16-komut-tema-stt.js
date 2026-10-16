@@ -67,10 +67,10 @@ function paletteItems(){
   const it = [], A = (t, cat, f, k) => it.push({t, cat, f, k:k || ''});
   [['Yeni model', 'new'], ['Aç…', 'open', 'Ctrl+O'], ['Kaydet', 'save', 'Ctrl+S'], ['Farklı kaydet…', 'saveAs', 'Ctrl+Shift+S'], ['HTML olarak kaydet (paylaşım)', 'saveHtml'], ['Geri al', 'undo', 'Ctrl+Z'], ['Yinele', 'redo', 'Ctrl+Y'], ['Ekrana sığdır', 'fit'], ['Izgara aç/kapat', 'grid'], ['Mini harita aç/kapat', 'mini'], ['Biçim boyacısı', 'painter'], ['PNG olarak kaydet', 'png'], ['SVG olarak kaydet', 'svg'], ['Panoya resim kopyala', 'copy'], ['İkon ata…', 'iconMenu'], ['Tümünü aç (ağaç)', 'expandAll'], ['Tümünü kapat (ağaç)', 'collapseAll'], ['Yardım', 'help'], ['Karanlık / açık tema', 'theme']].forEach(([t, a, k]) => A(t, 'Komut', () => ACT[a](), k));
   const fromMenu = (items, cat) => { let h = cat; (items || []).forEach(x => { if(x && x.h) h = cat + ' › ' + x.h; else if(x && x.t && x.f && !x.dis) A(x.t.replace(/…$/, '…'), h, x.f, x.k); }); };
-  try { fromMenu(reqMenuItems(), 'Gereksinimler'); } catch(e){}
-  try { fromMenu(analysisMenuItems(), 'Analiz'); } catch(e){}
-  try { fromMenu(toolsMenuItems(), 'Araçlar'); } catch(e){}
-  try { if(cur()) fromMenu(layoutMenuItems(), 'Düzen'); } catch(e){}
+  try { fromMenu(reqMenuItems(), 'Gereksinimler'); } catch(e){ appErr('080:70', e); }
+  try { fromMenu(analysisMenuItems(), 'Analiz'); } catch(e){ appErr('080:71', e); }
+  try { fromMenu(toolsMenuItems(), 'Araçlar'); } catch(e){ appErr('080:72', e); }
+  try { if(cur()) fromMenu(layoutMenuItems(), 'Düzen'); } catch(e){ appErr('080:73', e); }
   Object.entries(VIEWS).forEach(([id, v]) => A(v.tr, 'Görünüm', () => openD(id)));
   Object.values(M.els).filter(e => e.kind === 'Diagram').sort(sortEls).forEach(d => A(d.name, 'Diyagram · ' + d.dtype, () => openD(d.id)));
   return it;

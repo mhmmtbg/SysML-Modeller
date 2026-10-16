@@ -1,7 +1,7 @@
 'use strict';
 const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const LSK = 'sysml-modeler-v1';
-const APP_VER = '1.36.0';
+const APP_VER = '1.37.0';
 const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -5549,13 +5549,13 @@ const baseName = p => String(p || '').split(/[\\/]/).pop();
 function updTitle(){
   if(!NATIVE) return;
   const t = (dirty ? '* ' : '') + (curPath ? baseName(curPath) : (M ? E(M.rootId).name + ' (kaydedilmedi)' : '')) + ' — ' + tr('SysML Modelleyici');
-  try { window.nativeSetTitle(tr(t)); } catch(e){}
+  try { window.nativeSetTitle(tr(t)); } catch(e){ appErr('000:5552', e); }
   if(typeof lockSync === 'function') lockSync();
 }
 function markDirty(){ if(!dirty){ dirty = true; updTitle(); } }
 let aT = null;
 function persist(){
-  if(NATIVE){ clearTimeout(aT); aT = setTimeout(() => { try { window.nativeAutosave(JSON.stringify(pack(), clean), curPath, dirty); } catch(e){} }, 500); return; }
+  if(NATIVE){ clearTimeout(aT); aT = setTimeout(() => { try { window.nativeAutosave(JSON.stringify(pack(), clean), curPath, dirty); } catch(e){ appErr('000:5558', e); } }, 500); return; }
   try { localStorage.setItem(LSK, JSON.stringify(pack(), clean)); } catch(e){}
 }
 let pT = null;
@@ -5614,7 +5614,7 @@ function migrateModel(m){
   return notes;
 }
 function loadModel(m){
-  const notes = migrateModel(m); if(notes.length){ setTimeout(() => toast('Model onarıldı: ' + notes.join('; ')), 50); try { console.info('Model onarımı:', notes); } catch(e){} }
+  const notes = migrateModel(m); if(notes.length){ setTimeout(() => toast('Model onarıldı: ' + notes.join('; ')), 50); try { console.info('Model onarımı:', notes); } catch(e){ appErr('000:5617', e); } }
   if(typeof SIM !== 'undefined' && SIM){ if(SIM.timer) clearInterval(SIM.timer); SIM = null; }
   M = m;
   Object.values(M.els).forEach(e => { if(e.kind === 'Diagram'){ e.shapes = e.shapes || []; e.edges = e.edges || []; if(!e.z) e.z = 1; if(e.vx == null){ e.vx = 60; e.vy = 70; } } });
@@ -5629,7 +5629,7 @@ function parseModelText(txt){
   try {
     if(/^\s*</.test(txt)){ const mm = txt.match(/<script type="application\/json" id="embedded-model">([\s\S]*?)<\/script>/); if(mm && mm[1].trim()) m = JSON.parse(mm[1]); }
     else m = JSON.parse(txt.replace(/^\uFEFF/, ''));
-  } catch(e){}
+  } catch(e){ appErr('000:5632', e); }
   return validModel(m) ? m : null;
 }
 function openText(txt, path){

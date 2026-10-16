@@ -4,7 +4,7 @@ const UMLDI_NS = 'http://www.omg.org/spec/UML/20131001/UMLDI', DC_NS = 'http://w
 function xmiDI(xid, X){
   const ds = Object.values(M.els).filter(e => e.kind === 'Diagram' && !isView(e.id)).sort(sortEls);
   return ds.map(d => {
-    try { diagramSVG(d, true); } catch(e){}
+    try { diagramSVG(d, true); } catch(e){ appErr('220:7', e); }
     const sh = d.shapes.filter(s => E(s.el)).map(s => `<ownedElement xmi:type="umldi:UMLShape" xmi:id="${xid(d.id)}_${xid(s.id)}" modelElement="${xid(s.el)}"${s.parent ? ` smParent="${xid(d.id)}_${xid(s.parent)}"` : ''}><bounds xmi:type="dc:Bounds" x="${Math.round(s.x)}" y="${Math.round(s.y)}" width="${Math.round(s.w)}" height="${Math.round(s.h)}"/></ownedElement>`).join('');
     const ids = new Set(d.shapes.map(s => s.id));
     const ed = d.edges.filter(e => ids.has(e.s) && ids.has(e.t)).map(e => `<ownedElement xmi:type="umldi:UMLEdge" xmi:id="${xid(d.id)}_${xid(e.id)}"${e.el && E(e.el) ? ` modelElement="${xid(e.el)}"` : ''} smKind="${X(edgeKind(e))}" source="${xid(d.id)}_${xid(e.s)}" target="${xid(d.id)}_${xid(e.t)}"${e.y != null ? ` smY="${Math.round(e.y)}"` : ''}>${(e._pts || []).map(p => `<waypoint xmi:type="dc:Point" x="${Math.round(p.x)}" y="${Math.round(p.y)}"/>`).join('')}</ownedElement>`).join('');

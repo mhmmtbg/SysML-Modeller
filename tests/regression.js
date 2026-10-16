@@ -651,6 +651,21 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Kanca kayıtları dolu; hatalı kanca diğerlerini bozmaz ve günlüğe yazılır; yeni tür yalnız PROPS_EXT ile panelde görünür', !hk.error && Object.values(hk).every(v => v === true), hk);
 
+  console.log('9b) Kalite: hata günlüğü, dosya denetimi, verimli geri al');
+  const ql = await run(async () => {
+    const o = {};
+    appErr('deneme', new Error('örnek hata')); errLogDialog(); o.log = document.querySelector('#modalBox').textContent.includes('örnek hata'); $('#modal').style.display = 'none';
+    const m = JSON.parse(JSON.stringify(pack(), clean)); const k = Object.keys(m.els).find(k => m.els[k].kind === 'Block'); m.els[k].name += ' (dış değişiklik)';
+    const keep = JSON.parse(JSON.stringify(pack(), clean));
+    loadModel(m); afterLoad(); await new Promise(r => setTimeout(r, 150));
+    o.dialog = $('#modal').style.display === 'flex' && /Dosya denetimi/.test($('#modalBox').textContent) && /Sağlama/.test($('#modalBox').textContent); $('#modal').style.display = 'none';
+    o.hist = (M.repairLog || []).length >= 1 && toolsMenuItems().some(x => x.t && /Dosya denetim geçmişi/.test(x.t));
+    loadModel(keep); afterLoad(); await new Promise(r => setTimeout(r, 150)); o.clean = $('#modal').style.display !== 'flex';
+    snap(); const b = mk('Block', M.rootId, { name: 'GeriAl' }); afterChange(); document.querySelector('[data-act="undo"]').click(); o.undoBtn = !E(b.id);
+    return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Hata günlüğü penceresi, dışarıda değiştirilmiş dosya uyarısı ve kalıcı denetim geçmişi, araç çubuğundan geri al', !ql.error && Object.values(ql).every(v => v === true), ql);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

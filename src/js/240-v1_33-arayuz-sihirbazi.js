@@ -10,7 +10,7 @@ function deepExpand(d, sh, depth){
   subs.forEach((sp, i) => {
     if(have.has(sp.id)) return;
     const c = addShape(d, sp.id, sh.x + 40 + (i % cols) * (W + G2), sh.y + 60 + Math.floor(i / cols) * (H + 60), W, H); c.parent = sh.id; c.deep = 1; n++;
-    try { showPorts(d, c); } catch(e){}
+    try { showPorts(d, c); } catch(e){ appErr('240:13', e); }
     if(depth > 1){ n += deepExpand(d, c, depth - 1); }
   });
   deepFit(d, sh);
@@ -103,7 +103,7 @@ function ifaceCreate(a, b, o){
     if(ctx){
       const qa = (a.part && a.part.owner === ctx.id) ? a.part : kidsOf(ctx.id).find(p => p.kind === 'Part' && p.type === a.block.id), qb = (b.part && b.part.owner === ctx.id) ? b.part : kidsOf(ctx.id).find(p => p.kind === 'Part' && p.type === b.block.id);
       conn = mk('Connector', ctx.id, {src:pA.id, tgt:pB.id, sp:qa.id, tp:qb.id, name:''});
-      ibdsOf(ctx).forEach(x => { try { syncIBD(x); } catch(e){} });
+      ibdsOf(ctx).forEach(x => { try { syncIBD(x); } catch(e){ appErr('240:106', e); } });
     }
   }
   if(conn) conn.conv = [ib.id];

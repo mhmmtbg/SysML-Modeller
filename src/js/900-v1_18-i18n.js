@@ -128,7 +128,7 @@ function setLang(l){
   document.documentElement.lang = l; applyBase(); I18N_CACHE.clear();
   if(l === 'en') i18nTree(document.body); else i18nRestore();
   const b = document.querySelector('[data-act="lang"]'); if(b) b.textContent = l === 'en' ? 'TR' : 'EN';
-  try { renderAll(); if(isView(ST.cur)){ const v = $('#view'); v.dataset.v = ''; renderView(); } } catch(e){}
+  try { renderAll(); if(isView(ST.cur)){ const v = $('#view'); v.dataset.v = ''; renderView(); } } catch(e){ appErr('900:131', e); }
   updTitle(); toast(l === 'en' ? 'Interface language: English' : 'Arayüz dili: Türkçe');
 }
 ACT.lang = () => setLang(LANG === 'en' ? 'tr' : 'en');
@@ -143,7 +143,7 @@ ACT.lang = () => setLang(LANG === 'en' ? 'tr' : 'en');
   if(NATIVE){
     document.querySelectorAll('.nat').forEach(b => b.style.display = 'inline-block');
     let info = {};
-    try { info = await window.nativeInfo() || {}; } catch(e){}
+    try { info = await window.nativeInfo() || {}; } catch(e){ appErr('900:146', e); }
     let m = null;
     if(info.argText) m = parseModelText(info.argText);
     if(m){ curPath = /\.(sysml|json)$/i.test(info.argPath || '') ? info.argPath : ''; dirty = !curPath; }
@@ -153,7 +153,7 @@ ACT.lang = () => setLang(LANG === 'en' ? 'tr' : 'en');
     return;
   }
   let emb = null, ls = null;
-  try { const t = $('#embedded-model').textContent.trim(); if(t) emb = JSON.parse(t); } catch(e){}
+  try { const t = $('#embedded-model').textContent.trim(); if(t) emb = JSON.parse(t); } catch(e){ appErr('900:156', e); }
   try { const t = localStorage.getItem(LSK); if(t) ls = JSON.parse(t); } catch(e){}
   let m;
   if(validModel(emb) && validModel(ls) && ls.uid === emb.uid && (ls.savedAt || 0) > (emb.savedAt || 0)) m = ls;

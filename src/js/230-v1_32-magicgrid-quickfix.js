@@ -25,7 +25,7 @@ function mgData(){
   const ports = K('Port'), portOk = ports.filter(p => p.type && E(p.type));
   const conns = R('Connector'), connOk = conns.filter(c => (c.conv && c.conv.length) || (E(c.src) && E(c.src).type) || c.name);
   const stms = K('StateMachine'), lru = logical, lruBeh = lru.filter(b => kidsOf(b.id).some(k => ['StateMachine', 'Activity', 'Interaction'].includes(k.kind)));
-  let parOk = 0, parN = 0; parContexts().forEach(b => { try { const r = parSolve(b); parN += r.eqs.length; parOk += r.eqs.filter(q => /çözüldü|sağlanıyor/.test(q.status || '')).length; } catch(e){} });
+  let parOk = 0, parN = 0; parContexts().forEach(b => { try { const r = parSolve(b); parN += r.eqs.length; parOk += r.eqs.filter(q => /çözüldü|sağlanıyor/.test(q.status || '')).length; } catch(e){ appErr('230:28', e); } });
   const tests = allTests ? allTests() : K('TestCase'), done = tests.filter(t => /Geçti|Başarılı|Kabul/i.test(testResult(t) || ''));
   const cell = (pct, info, go, hint) => ({pct:Math.max(0, Math.min(100, pct)), info, go, hint});
   return {

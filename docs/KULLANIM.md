@@ -1002,6 +1002,13 @@ SysML'in **View / Viewpoint** mekanizmasıyla paydaşa özel dokümanlar üretil
 
 Örnek modelde "Görünümler" paketinde **Müşteri Bakış Açısı** ve ona uyan **Müşteri İnceleme Görünümü** (Gereksinimler paketi ve Sistem Yapısı diyagramını sergiler) vardır.
 
+## 5ac. Hata günlüğü, dosya denetimi ve onarım geçmişi
+
+- **Hata günlüğü:** **Araçlar ▾ → Hata günlüğü…** bu oturumda yakalanan hataları (zaman, yer, ileti) listeler; **Panoya kopyala** ile sorun bildirirken iletilebilir. Model verisi içermez. Önceden sessizce geçilen hatalar artık buraya yazılır; bir eklentideki hata diğer menü/panel bölümlerini bozmaz.
+- **Sağlama toplamı:** model her kaydedildiğinde eleman sayısı ve sağlama toplamı dosyaya yazılır. Dosya sonradan elle düzenlenmiş, kesilmiş veya bozulmuşsa açılışta **Dosya denetimi** penceresi uyarır.
+- **Şema denetimi ve onarım raporu:** açılışta kök model, eleman yapısı, bilinmeyen türler, ucu eksik ilişkiler ve eksik elemana işaret eden şekiller denetlenir; yapılan onarımlar (sahipsiz elemanı köke taşıma, kopuk ilişkiyi silme vb.) pencerede listelenir ve modelin **Dosya denetim geçmişi**ne kalıcı olarak eklenir.
+- **Verimli geri al:** geri al geçmişinde değişmeyen elemanlar adımlar arasında paylaşılır; büyük modellerde bellek kullanımı tam kopyaya göre çok düşüktür (150 adım korunur).
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

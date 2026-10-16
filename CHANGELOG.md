@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.37.0 — 2026-10-16
+
+- **Birim testleri (tarayıcısız):** `node tests/unit.js` — ifade, parametrik, bütçe, metachain, trade study, Monte Carlo, dosya bütünlüğü, onarım, geri al, otomatik onarım, tablo içe aktarma, MagicGrid; olumsuz durumlar dahil 61 test
+- **Hata günlüğü:** yakalanmamış ve önceden sessizce yutulan hatalar kayda geçer; Araçlar ▾ → Hata günlüğü…
+- **Dosya bütünlüğü:** kayıtta sağlama toplamı, açılışta şema ve bütünlük denetimi, Dosya denetimi penceresi, kalıcı onarım geçmişi
+- **Verimli geri al:** değişmeyen elemanlar paylaşılır (bellek kullanımı büyük ölçüde azaldı)
+- Regresyon testi 39 adım
+
 ## v1.36.0 — 2026-10-16
 
 - **Kaynak düzeni:** tek dosya `src/` altında 29 modüle bölündü; `tools/build.py` ile birebir aynı tek HTML üretilir (kullanıcı tarafı değişmedi)
