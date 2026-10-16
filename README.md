@@ -39,12 +39,13 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 - **Arayüz modelleme:** hızlı arayüz sihirbazı (arayüz bloğu, akış özellikleri, eşlenik portlar, connector), IBD'de iç içe derin part'lar
 - **Doğrulayıcı simülasyon:** canlı kısıt denetimi, kayıtlı senaryoların birebir tekrarı, zaman diyagramı (durum + dalga biçimi)
 - **View & Viewpoint:** «conform» / «expose» ile paydaşa özel View dokümanı (HTML)
-- **Güvenilirlik:** hata günlüğü, kayıtta sağlama toplamı ve açılışta dosya denetimi, onarım geçmişi; 100 birim + 45 uçtan uca test, özellik ↔ test izlenebilirlik tablosu
+- **Güvenilirlik:** hata günlüğü, kayıtta sağlama toplamı ve açılışta dosya denetimi, onarım geçmişi; 111 birim + 46 uçtan uca test, özellik ↔ test izlenebilirlik tablosu
 - **Bilgi güvenliği:** gizlilik derecesi tüm çıktılarda, paket kapsamlı ve temizlenmiş dışa aktarma, doküman kontrol bilgileri
 - **Değişiklik ve tutarlılık:** şüpheli bağlantılar, SI birim/boyut analizi, arayüz tutarlılık kuralları
 - **Gelişmiş analiz:** bağlı denklem takımları (Newton), parametrik eşitsizlikler, der() ile sürekli zaman simülasyonu (RK4)
 - **Test kanıtı:** ölçülen PSD/SRS/sinüs/termal veriyi tolerans bandına göre değerlendirme, VCRM'e sonuç, doğrulama kapanış raporu
 - **Ürün ailesi ve SysML v2:** varyant/konfigürasyon yönetimi (koşullu elemanlar, konfigürasyona göre bütçe ve diyagram), SysML v2 metin dışa aktarma
+- **Gereksinim türetme:** modelden arayüz ve bütçe dağıtımı gereksinimleri; öneri, inceleme, kabul ve izlenebilirlik
 - **Kullanılabilirlik:** MBSE iş akışı merkezi, görev odaklı menüler, tanıtım turu, tam klavye erişimi ve yüksek kontrast
 - **Hızlı modelleme:** şekilden şekle sürükleyerek ilişki, akıllı manipülatörler, hizalama kılavuzları; tüm seçeneklerde simgeler
 - **Ekip çalışması:** paketleri `.sysmod` modülü olarak paylaşma, salt okunur ekleme ve karşılaştırarak güncelleme, masaüstünde dosya kilidi

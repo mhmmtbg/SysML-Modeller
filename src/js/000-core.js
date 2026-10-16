@@ -1,7 +1,7 @@
 'use strict';
 const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const LSK = 'sysml-modeler-v1';
-const APP_VER = '1.43.0';
+const APP_VER = '1.44.0';
 const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -4406,12 +4406,19 @@ function simIndex(){
   const sig = rs.map(r => r.id + ':' + r.text).join('|');
   if(sig === qCache.sig) return qCache.sim;
   const tok = rs.map(r => [r, qTokens(r.text)]), sim = new Map();
-  for(let i = 0; i < tok.length; i++) for(let j = i + 1; j < tok.length; j++){
-    const A = tok[i][1], B = tok[j][1]; if(A.size < 3 || B.size < 3) continue;
-    let inter = 0; A.forEach(w => { if(B.has(w)) inter++; });
-    const jac = inter / (A.size + B.size - inter);
-    if(jac >= 0.72){ [[i, j], [j, i]].forEach(([a, b]) => { const k = tok[a][0].id; if(!sim.has(k)) sim.set(k, []); sim.get(k).push([tok[b][0], jac]); }); }
+  /* ters indeks: yalnız ortak kelimesi olan çiftler sayılır (Jaccard >= 0.72, sonuç çift döngüyle aynı) */
+  const post = new Map(), n = tok.length, cnt = new Int32Array(n), hit = [];
+  tok.forEach(([, A], i) => { if(A.size < 3) return; A.forEach(w => { let l = post.get(w); if(!l) post.set(w, l = []); l.push(i); }); });
+  for(let i = 0; i < n; i++){
+    const A = tok[i][1]; if(A.size < 3) continue; hit.length = 0;
+    A.forEach(w => { const l = post.get(w); for(let k = l.length - 1; k >= 0 && l[k] > i; k--){ const j = l[k]; if(!cnt[j]) hit.push(j); cnt[j]++; } });
+    for(const j of hit){
+      const inter = cnt[j], B = tok[j][1]; cnt[j] = 0;
+      const jac = inter / (A.size + B.size - inter);
+      if(jac >= 0.72){ [[i, j], [j, i]].forEach(([a, b]) => { const k = tok[a][0].id; if(!sim.has(k)) sim.set(k, []); sim.get(k).push([tok[b][0], jac, b]); }); }
+    }
   }
+  sim.forEach(l => l.sort((x, y) => x[2] - y[2]));
   qCache = {sig, sim}; return sim;
 }
 /* Türkçe gereksinim yazım kuralı: cümle "-ecek / -acak / -ecektir / -acaktır" ile biter (varsayılan).

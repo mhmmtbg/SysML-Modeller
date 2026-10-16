@@ -768,6 +768,28 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   Object.assign(ux, await run(() => { applyContrast(true); const on = document.body.classList.contains('hc') && localStorage.getItem('sysml-hc') === '1' && getComputedStyle(document.querySelector('#toolbar')).backgroundColor === 'rgb(0, 0, 0)'; applyContrast(false); const aria = [...document.querySelectorAll('#toolbar button.ico')].every(b => b.getAttribute('aria-label')); return { hc: on && !document.body.classList.contains('hc'), aria }; }));
   ok('Görev odaklı menü grupları, iş akışı merkezi, pencere odak tuzağı, menüde klavye, tanıtım turu, ? kısayolları, yüksek kontrast, ARIA', Object.values(ux).every(v => v === true), ux);
 
+  console.log('9i) Gereksinim türetme sihirbazı (arayüz + bütçe dağıtımı)');
+  const dr = await run(async () => {
+    const o = {}; const dl0 = download; window.__dl = []; download = (blob, name) => window.__dl.push({ blob, name });
+    o.menu = reqMenuItems().some(x => x && x.t && /Gereksinim türetme sihirbazı/.test(x.t));
+    deriveOpen(); const q = s => document.querySelector('#view ' + s);
+    const nNew = () => deriveList().filter(s => s.state === 'yeni').length; const N = nNew(); o.view = N >= 9 && document.querySelectorAll('#view .dvt tbody tr').length === deriveList().filter(s => s.state !== 'mevcut').length && /SYS-004/.test(q('table').textContent);
+    q('[data-dbg]').value = '20'; q('[data-dbg]').dispatchEvent(new Event('change', { bubbles: true }));
+    o.margin = /36 kg/.test(document.querySelector('#view').textContent);
+    q('[data-dva="selnew"]').click(); const N2 = nNew(); o.sel = DV.sel.size === N2;
+    const ta = q('[data-dvtx^="bud:"]'); ta.value = 'Güç Birimi kütlesi en fazla 14 kg olacaktır.'; ta.dispatchEvent(new Event('input', { bubbles: true }));
+    const n0 = allReqs().length; q('.vbar [data-dvgo]').click();
+    o.applied = allReqs().length === n0 + N2 && allReqs().some(r => r.text === 'Güç Birimi kütlesi en fazla 14 kg olacaktır.' && r.derivedFrom);
+    o.after = DV.sel.size === 0 && nNew() === 0;
+    undo(); o.undo = allReqs().length === n0; redo(); o.redo = allReqs().length === n0 + N2;
+    q('[data-dvs]').value = 'mevcut'; q('[data-dvs]').dispatchEvent(new Event('change', { bubbles: true })); o.existing = document.querySelectorAll('#view .dvt tbody tr').length >= N2;
+    q('[data-dva="xl"]').click(); o.xlsx = /Gereksinim Türetme\.xlsx$/.test(window.__dl.pop().name);
+    q('[data-dvr="arayuz"]').click(); o.ruleOff = deriveList().every(s => s.rule !== 'arayuz'); q('[data-dvr="arayuz"]').click();
+    o.wf = WF_STEPS[0].a.some(a => /Türetme/.test(a[0]));
+    download = dl0; return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Türetme sihirbazı: öneriler, marj ayarı, düzenleyerek kabul, Satisfy/Derive, geri al/yinele, yinelenmeme, Excel, kural seçimi', !dr.error && Object.values(dr).every(v => v === true), dr);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);
@@ -807,9 +829,10 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
     tm('kapsama', () => openD('@coverage'));
     tm('doğrulama', () => validateModel());
     tm('kaydet', () => serialize());
+    tm('türetme', () => deriveOpen());
     return T;
   });
-  ok('~6000 elemanlı modelde işlemler 2 sn altında', ['diyagramAç', 'yenidenÇiz', 'ağaç', 'gereksinimTablosu', 'kapsama', 'doğrulama', 'kaydet'].every(k => perf[k] < 2000), perf);
+  ok('~6000 elemanlı modelde işlemler 2 sn altında', ['diyagramAç', 'yenidenÇiz', 'ağaç', 'gereksinimTablosu', 'kapsama', 'doğrulama', 'kaydet', 'türetme'].every(k => perf[k] < 2000), perf);
 
   ok('çalışma sırasında JavaScript hatası yok', !errs.length, errs.slice(0, 5));
   await browser.close();

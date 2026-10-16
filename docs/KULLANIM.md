@@ -1073,6 +1073,30 @@ SysML'in **View / Viewpoint** mekanizmasıyla paydaşa özel dokümanlar üretil
 - **Yüksek kontrast:** Araçlar ▾ → Görünüm ve erişilebilirlik → Yüksek kontrast (siyah/beyaz kenarlıklar, altı çizili bağlantılar, belirgin odak çerçevesi); tercih hatırlanır.
 - **Ekran okuyucu:** araç çubuğu, paneller, menü öğeleri ve pencereler ARIA rolleri ve etiketleriyle işaretlidir; yalnız simgeli düğmeler adlarını okutur, bildirimler canlı bölge olarak duyurulur.
 
+## 5aj. Gereksinim türetme sihirbazı (arayüz ve bütçe dağıtımı)
+
+**Gereksinimler ▾ → Gereksinim türetme sihirbazı (modelden)** — veya İş akışı → 1 Gereksinimleri topla → Türetme sihirbazı — modelin kendisinden gereksinim **önerileri** üretir. Öneriler modele kendiliğinden yazılmaz; işaretleyip **Seçilenleri uygula** ile kabul edilir.
+
+**Arayüz kuralı:** her bağlantı (connector) için ICD alanlarından (arayüz ID, akış öğeleri ve tipleri/birimleri, özellikler, protokol) üretilir:
+- sağlayan taraf: "Güç Birimi, IF-001 arayüzü üzerinden Kontrol Birimi için güç (Gerilim, V) çıkışını 28 V DC, en çok 10 A özellikleriyle sağlayacaktır."
+- alan taraf (isteğe bağlı): "Kontrol Birimi, Güç Birimi tarafından IF-001 arayüzü üzerinden sağlanan güç (Gerilim, V) girdisini kabul edecektir."
+- protokol / standart tanımlıysa (isteğe bağlı): "… IF-001 arayüzü MIL-STD-704F gerekliliklerini karşılayacaktır."
+- yönü belirsiz bağlantılarda iki taraf için "alışveriş" gereksinimi. Sınır (delegasyon) bağlantıları atlanır.
+
+**Bütçe dağıtımı (flow-down):** metninde bir bütçe özelliğinin birimiyle sayısal **üst sınır** geçen gereksinimler (ör. "toplam kütlesi 45 kg'ı aşmayacaktır", "en fazla 120 W") listelenir. Her biri için özellik, kök blok (varsayılan: gereksinimi karşılayan blok), yöntem (**mevcut değerlerle orantılı** veya **eşit**) ve **sistem marjı** seçilir. Marj düşüldükten sonra kalan değer kök bloğun part'larına paylaştırılır; pay 3 anlamlı basamağa aşağı yuvarlanır (toplam asla sınırı aşmaz), çokluklu part'larda "adet başına" yazılır. Her pay, üst gereksinimden türetilmiş (Derive) alt sistem gereksinimi olur ve bloğa Satisfy ile bağlanır. Etkin varyant konfigürasyonu dışındaki part'lar dağıtıma girmez.
+
+**Öneri durumları:**
+- **Yeni** — kabul edilince "Taslak" gereksinim, kendi alt sistem paketinde, otomatik kimlikle oluşur; Satisfy ve (varsa) Derive ilişkileri kurulur. "Yeni gereksinimlerin üst gereksinimi" seçilirse tüm yeni gereksinimler ondan türetilir.
+- **Güncelle** — kaynak model değişti (ör. ICD özelliği, bütçe sınırı); kabul edilince metin yenilenir, Onaylı gereksinim "Değişiklikte" olur ve bağlı ilişkiler şüpheli işaretlenir.
+- **Mevcut** — zaten oluşturulmuş ve güncel. Metni kabulden önce veya sonra **elle düzenlenmiş** gereksinimler korunur; kaynak değişmedikçe yeniden önerilmez.
+- **Kaynak yok** — üreten eleman silinmiş; kabul edilince gereksinim "İptal" durumuna alınır.
+
+Her öneri satırında metin düzenlenebilir ve INCOSE kalite denetimi anında gösterilir. **Excel** tüm önerileri dışa aktarır.
+
+**Doğrulama kuralları:** "Bütçe payı aşıldı" (bloğun güncel toplamı payını aşıyor), "Bütçe dağıtımı tutarsız" (alt paylar toplamı üst sınırı aşıyor), "Türetme kaynağı silinmiş".
+
+Örnek modelde 9 öneri çıkar: iki arayüz için 6 arayüz gereksinimi ve SYS-004 (45 kg, %10 marj → 40,5 kg) için 3 kütle payı.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

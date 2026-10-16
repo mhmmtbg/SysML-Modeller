@@ -39,6 +39,7 @@
   {"id": "F38", "ad": "Görev odaklı menüler ve iş akışı merkezi", "surum": "1.43", "unit": ["^menü düzeni", "^iş akışı"], "reg": ["Görev odaklı menü"]},
   {"id": "F39", "ad": "Tanıtım turu, klavye erişimi, yüksek kontrast, ARIA", "surum": "1.43", "reg": ["tanıtım turu"]},
   {"id": "F40", "ad": "İngilizce arayüz", "surum": "1.18", "reg": ["^EN:"]},
+  {"id": "F43", "ad": "Gereksinim türetme: sihirbaz, arayüz kuralı, bütçe dağıtımı", "surum": "1.44", "unit": ["^türetme", "^benzerlik indeksi", "^trNum"], "reg": ["Türetme sihirbazı"]},
   {"id": "F41", "ad": "Performans (~6000 eleman)", "surum": "1.17", "reg": ["6000 elemanlı"]},
   {"id": "F42", "ad": "Kararlılık: tüm senaryolarda JavaScript hatası yok", "surum": "tümü", "reg": ["JavaScript hatası yok"]}
 ]

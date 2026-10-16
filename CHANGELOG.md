@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.44.0 — 2026-10-16
+
+- **Gereksinim türetme sihirbazı:** modelden öneri → inceleme → kabul; yeni / güncelle / mevcut / kaynak yok durumları, tekrar çalıştırmada yinelenmez, elle düzenlenen metin korunur
+- **Arayüz kuralı:** bağlantı ve ICD alanlarından çıkış, giriş ve protokol uyum gereksinimleri
+- **Bütçe dağıtımı:** sayısal üst sınırın orantılı/eşit ve marjlı olarak alt sistemlere paylaştırılması, Derive/Satisfy ilişkileri
+- Doğrulama: bütçe payı aşımı, tutarsız dağıtım, silinmiş türetme kaynağı
+- Performans: benzer gereksinim tespiti ters indeksle (2000 gereksinimde ~3 kat hızlı); türetme büyük modelde < 1 sn
+- Birim testi 111, regresyon testi 46 adım
+
 ## v1.43.0 — 2026-10-16
 
 - **İş akışı merkezi:** MBSE adımlarına göre görevler ve modeldeki ilerleme

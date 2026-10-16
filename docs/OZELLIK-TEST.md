@@ -2,8 +2,8 @@
 
 _Bu dosya `node tools/ozellik-test.js` ile üretilir; elle düzenlemeyin._
 
-- Özellik: **42**, testle kapsanan: **42**
-- Birim testi adı: 76 (döngüyle üretilenler dahil olmayabilir), uçtan uca test: 45
+- Özellik: **43**, testle kapsanan: **43**
+- Birim testi adı: 87 (döngüyle üretilenler dahil olmayabilir), uçtan uca test: 46
 
 | No | Özellik | Sürüm | Birim testleri | Uçtan uca testler | Durum |
 |---|---|---|---|---|---|
@@ -47,5 +47,6 @@ _Bu dosya `node tools/ozellik-test.js` ile üretilir; elle düzenlemeyin._
 | F38 | Görev odaklı menüler ve iş akışı merkezi | 1.43 | 3: menü düzeni: bilinmeyen öğe "Diğer" altında, boş grup başlığı yok, öğe kaybolmaz; menü düzeni: gerçek menülerde "Diğer" grubu oluşmaz; iş akışı: her adımın düğmesi gerçek bir menü komutuna karşılık gelir | Görev odaklı menü grupları, iş akışı merkezi, pencere odak tuzağı, menüde klavye, tanıtım turu, ? kısayolları, yüksek kontrast, ARIA | ✓ |
 | F39 | Tanıtım turu, klavye erişimi, yüksek kontrast, ARIA | 1.43 | — | Görev odaklı menü grupları, iş akışı merkezi, pencere odak tuzağı, menüde klavye, tanıtım turu, ? kısayolları, yüksek kontrast, ARIA | ✓ |
 | F40 | İngilizce arayüz | 1.18 | — | EN: araç çubuğu/görünüm/yeni ad İngilizce, model içeriği değişmiyor, TR'ye dönüş | ✓ |
+| F43 | Gereksinim türetme: sihirbaz, arayüz kuralı, bütçe dağıtımı | 1.44 | 11: türetme: arayüz kuralı çıkış/giriş/standart önerir, metinler kalite denetiminden temiz geçer; türetme: bütçe dağıtımı marjı ayırır, paylar sınırı aşmaz, adet başına; türetme: eşit yöntem ve marj ayarı; türetme: uygula → ilişkiler kurulur, tekrar çalıştırınca yinelenmez; türetme: kaynak değişince "güncelle", onaylı gereksinim "Değişiklikte" olur; türetme: elle düzenlenen metin korunur (mevcut sayılır); türetme: kaynak silinince "kaynak yok" → iptal; doğrulama uyarısı; türetme: bütçe payı aşımı ve tutarsız dağıtım doğrulamada çıkar; türetme: kabulden önce düzenlenen metin sonraki çalıştırmada "mevcut" kalır; benzerlik indeksi: ters indeks sonucu kaba kuvvet çift döngüyle aynı; trNum / floorSig | Türetme sihirbazı: öneriler, marj ayarı, düzenleyerek kabul, Satisfy/Derive, geri al/yinele, yinelenmeme, Excel, kural seçimi | ✓ |
 | F41 | Performans (~6000 eleman) | 1.17 | — | ~6000 elemanlı modelde işlemler 2 sn altında | ✓ |
 | F42 | Kararlılık: tüm senaryolarda JavaScript hatası yok | tümü | — | çalışma sırasında JavaScript hatası yok | ✓ |
