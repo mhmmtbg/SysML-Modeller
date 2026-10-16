@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.28.0 — 2026-10-16
+
+- **Trade Study görünümü:** blok veya örnek alternatifleri ağırlıklı MOE/MOP kriterleriyle puanlama; değerler bütçe motoru, parametrik çözücü ve örnek slotlarından; eleme sınırı
+- **Radar ve Pareto grafikleri**, ağırlık duyarlılığı (kazananın korunduğu ağırlık aralığı)
+- **Duyarlılık süpürmesi:** girdi aralığı → çıktı eğrisi, eğim ve esneklik; **tornado** (±%)
+- **Monte Carlo:** min/maks toleranslı girdiler (düzgün, normal, üçgen), tekrarlanabilir tohum, histogram, yüzdelikler, sınır ihlal olasılığı, varyans katkısı
+- Excel/PNG çıktıları, rapor bölümü, doğrulama kuralları
+- Regresyon testi 30 adım
+
 ## v1.27.0 — 2026-10-16
 
 - **İfade motoru:** aritmetik, karşılaştırma, mantıksal işleçler ve fonksiyonlar (eval kullanmadan)

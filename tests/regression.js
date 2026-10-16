@@ -436,6 +436,33 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('İfade/deyim/guard/zaman ayrıştırma; bağlam değişkenleri, do ve efekt, after() ile saat; panel, grafik, yürütme izinden sequence', !sm1.error && sm1.expr && sm1.err && sm1.run && sm1.guard && sm1.after && sm1.ctx && typeof sm1.vars === 'number' && sm1.t > 0 && sm1.series && sm1.trace && sm1.panel && sm1.seq, sm1);
 
+  console.log('8s) Trade study, duyarlılık süpürmesi, tornado, Monte Carlo');
+  const tsx = await run(() => {
+    const o = {};
+    const pk = mk('Package', M.rootId, { name: 'TS' }), A = n => { const b = mk('Block', pk.id, { name: n }); return b; };
+    const a = A('A'), b = A('B'), c = A('C');
+    [[a, 10, 5], [b, 20, 3], [c, 15, 9]].forEach(([x, m, p]) => { mk('Value', x.id, { name: 'kütle', def: String(m) }); mk('Value', x.id, { name: 'perf', def: String(p) }); });
+    const ts = mk('TradeStudy', pk.id, { name: 'T1', alts: [a.id, b.id, c.id], crit: [{ name: 'Kütle', prop: 'kütle', w: 1, dir: 'min' }, { name: 'Perf', prop: 'perf', w: 1, dir: 'max' }] });
+    let R = tsEval(ts); o.rank = R.alts[R.order[0]] === c && Math.abs(R.score[0] - 66.6667) < 0.01 && R.score[1] === 0 && R.score[2] === 75;
+    ts.crit[0].w = 4; R = tsEval(ts); o.weight = R.alts[R.order[0]] === a;
+    ts.crit[0].lim = 12; R = tsEval(ts); o.elim = R.elim[2].length === 1 && R.alts[R.order[0]] === a;
+    ts.crit[0].lim = null; const pf = tsPareto(R, 0, 1); o.pareto = pf[0] && !pf[1] && pf[2];
+    o.ws = tsWeightSens(ts).length === 2;
+    o.radar = tsRadarSVG(R).str.includes('Radar') || tsRadarSVG(R).h === 60;
+    TSV.ts = ts.id; TSV.tab = 'ts'; openD('@tradestudy'); o.view = !!document.querySelector('#view .tschart svg') && document.querySelectorAll('#view tr.tswin').length === 1;
+    const out = tsOutputs().find(x => x.k.startsWith('par'));
+    const sw = out && tsSweep({ inp: tsInputs().find(v => tsTornado(out.k).rows.some(r => r.v.id === v.id)).id, from: 1, to: 5, n: 5, outs: [out.k] });
+    o.sweep = !!sw && sw.xs.length === 5 && sw.ys[0].every(y => y != null) && sw.ys[0][4] > sw.ys[0][0];
+    const defs = JSON.stringify(Object.values(M.els).filter(e => e.kind === 'Value').map(e => e.def));
+    const tor = tsTornado(out.k, 10); o.tor = tor.rows.length >= 2;
+    const v0 = tor.rows[0].v, n0 = numOf(v0.def); v0.tol = { lo: n0 * 0.9, hi: n0 * 1.1, dist: 'uni' };
+    const mc = tsMonteCarlo({ out: out.k, n: 500, seed: 7, lim: tor.base, limDir: 'max' }), mc2 = tsMonteCarlo({ out: out.k, n: 500, seed: 7 });
+    o.mc = mc.valid === 500 && mc.sd > 0 && mc.p5 < mc.p95 && mc.fail > 0.3 && mc.fail < 0.7 && mc.mean === mc2.mean && mc.bins.reduce((s, x) => s + x.n, 0) === 500;
+    o.restore = JSON.stringify(Object.values(M.els).filter(e => e.kind === 'Value').map(e => e.def)) === defs;
+    delete v0.tol; delModel([pk.id]); afterChange(); return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Ağırlıklı puan, eleme sınırı, Pareto, ağırlık duyarlılığı; görünüm; süpürme, tornado, tekrarlanabilir Monte Carlo; değerler geri yüklenir', !tsx.error && Object.values(tsx).every(v => v === true), tsx);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

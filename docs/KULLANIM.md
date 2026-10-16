@@ -907,6 +907,20 @@ Simülasyon (**Analiz ▾ → Simülasyon başlat**, açık aktivite veya durum 
 
 Örnek modelde "Araç Sistemi Durumları" diyagramı guard (`bitSonuc == 1`, `else`), `do` ataması ve `after(30 s)` geçişiyle bu özellikleri gösterir.
 
+## 5u. Trade study, duyarlılık süpürmesi, tornado ve Monte Carlo
+
+**Analiz ▾ → Trade study / Duyarlılık süpürmesi ve tornado / Monte Carlo tolerans analizi** aynı görünümü üç sekmeyle açar. Çalışmalar modelde **Trade Study** elemanı olarak saklanır (paketin altında, ağaçta görünür).
+
+- **Trade study:** alternatifler blok veya kök örnek (instance konfigürasyonu) olabilir. Her kriter (MOE/MOP) bir value property adına bağlanır; değer bloklarda bütçe motorundan (part ağacı toplamı, çokluklar dahil) veya parametrik çözücünün yazdığı sonuçtan, örneklerde slotlardan (Σ toplama) alınır. Kriterin **ağırlığı**, **yönü** (büyük iyi / küçük iyi) ve isteğe bağlı **eleme sınırı** vardır. Değerler alternatifler arasında min–maks normalleştirilir, ağırlıklı toplam 0–100 puan verir; sınırı sağlamayan alternatif elenir.
+- **Grafikler:** Radar (normalleştirilmiş fayda, en az 3 kriter) ve seçilen iki kriterde **Pareto** (cephedeki alternatifler dolu nokta ve kesikli çizgiyle).
+- **Ağırlık duyarlılığı:** her kriterin ağırlığı ×0…×3 taranır; kazananın değişmediği aralık ve değişirse öne geçen alternatif gösterilir.
+- **Duyarlılık süpürmesi:** sayısal varsayılan değeri olan bir value property'yi aralıkta tarar ve seçilen çıktıları (parametrik kısıt sonucu veya bütçe toplamı) eğri olarak çizer; nominal noktada eğim ve esneklik (%/%) hesaplanır.
+- **Tornado:** tüm girdiler ±% değiştirilerek çıktıyı en çok etkileyenler sıralanır.
+- **Monte Carlo:** çıktıyı etkileyen girdilere min/maks toleransı ve dağılım (düzgün, normal ±3σ, üçgen) girin (**±5%** kısayolu); örnek sayısı ve tohumla tekrarlanabilir koşu yapılır. Histogram, ortalama, σ, P5/medyan/P95, sınır ihlal olasılığı ve girdilerin varyansa katkısı (korelasyon) gösterilir.
+- **Çıktılar:** **Excel** (puanlar, süpürme, tornado, MC istatistikleri ve örnekler), **PNG** (açık sekmenin grafiği). Rapor sihirbazında "Trade study ve alternatif değerlendirmesi" bölümü tabloları ve radar grafiğini ekler. Model doğrulama eksik alternatif/kriter/değerleri uyarır.
+
+Örnek modelde "Güç Kaynağı Alternatifleri" paketindeki **Batarya seçimi** çalışması üç batarya bloğunu dört kriterle karşılaştırır; parametrik "Güç Birimi" bloğu süpürme ve Monte Carlo için kullanılabilir.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.
