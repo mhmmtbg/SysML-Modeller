@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.29.0 — 2026-10-16
+
+- **Metachain:** ilişki adımlarından (Satisfy/Verify/Derive/Refine/Trace/Allocate/Generalization, connector, kompozisyon, tip, kullanım, sahiplik) oluşan, tekrarlı (geçişli) adım destekli dolaylı ilişki zincirleri; hazır şablonlar ve önizlemeli düzenleyici
+- **Genel tabloda metachain sütunları** (ad listesi, sayı, sonuç/durum, Σ değer); arama ve Excel dahil
+- **İzlenebilirlik matrisinde dolaylı hücreler (◆)** ve yol ipucu; kapsama toplamları dolaylı bağlantıları sayar
+- "+ …" düğmelerinde artı simgesi
+- Regresyon testi 31 adım
+
 ## v1.28.0 — 2026-10-16
 
 - **Trade Study görünümü:** blok veya örnek alternatifleri ağırlıklı MOE/MOP kriterleriyle puanlama; değerler bütçe motoru, parametrik çözücü ve örnek slotlarından; eleme sınırı

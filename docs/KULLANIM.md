@@ -921,6 +921,18 @@ Simülasyon (**Analiz ▾ → Simülasyon başlat**, açık aktivite veya durum 
 
 Örnek modelde "Güç Kaynağı Alternatifleri" paketindeki **Batarya seçimi** çalışması üç batarya bloğunu dört kriterle karşılaştırır; parametrik "Güç Birimi" bloğu süpürme ve Monte Carlo için kullanılabilir.
 
+## 5v. Metachain — dolaylı ilişki zincirleri (genel tablo ve matris)
+
+Metachain, bir elemandan başlayıp ilişki adımlarını sırayla izleyerek **dolaylı bağlı** elemanları bulur (Cameo'daki "metachain navigation" karşılığı). Örnek: *sistem gereksinimi → türetilen alt gereksinimler (tüm seviyeler) → karşılayan part → tipi olan blok*.
+
+- **Adımlar:** Satisfy / Verify / Derive / Refine / Trace / Allocate / Generalization (iki yönde), connector ile bağlı elemanlar, herhangi bir ilişki, kompozisyon (part tipleri ↓, kullanıldığı bloklar ↑), tip, "tipi yoksa kendisi", "kendisi + bu tipteki kullanımlar", sahibi, sahip olduğu elemanlar. Her adım **kendisi + tüm seviyeler** seçeneğiyle tekrarlı (geçişli) izlenebilir.
+- **Sonuç türü süzgeci** ve **gösterim:** ad listesi, sayı, "ad = test sonucu / durum / doğrulama durumu" veya bir value property'nin toplamı (Σ).
+- **Hazır şablonlar:** karşılayan bloklar, alt gereksinimleri karşılayan bloklar, doğrulayan test sonuçları, tahsis edilen fonksiyonlar, karşıladığı gereksinimler (part kullanımları dahil), alt yapıdaki tüm bloklar, fonksiyon → yapı → gereksinim, test → gereksinim → karşılayan blok.
+- **Genel tablo:** **⛓ Metachain sütunu…** düğmesiyle başlangıç türü tablodaki türle aynı olan zincirler sütun olarak eklenir; sütun başlığındaki ✎ ile düzenlenir/silinir. Arama ve Excel aktarımı bu sütunları da kapsar.
+- **İzlenebilirlik matrisi:** çubuktaki **⛓ Dolaylı** seçimiyle satırlardan zincirle ulaşılan sütun elemanları **◆** ile işaretlenir; hücrenin ipucunda izlenen yol görünür. Doğrudan ilişkiler ↗ olarak kalır ve tıklayarak kurulur/kaldırılır. Toplamlar ve "kapsanmayan satır" sayısı dolaylı bağlantıları da hesaba katar.
+
+Zincirler modelle birlikte kaydedilir. Örnek modelde iki hazır zincir tanımlıdır.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

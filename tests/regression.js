@@ -463,6 +463,34 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Ağırlıklı puan, eleme sınırı, Pareto, ağırlık duyarlılığı; görünüm; süpürme, tornado, tekrarlanabilir Monte Carlo; değerler geri yüklenir', !tsx.error && Object.values(tsx).every(v => v === true), tsx);
 
+  console.log('8t) Metachain: dolaylı ilişki zinciri, genel tablo sütunu, matris');
+  const mcx = await run(() => {
+    const o = {};
+    const pk = mk('Package', M.rootId, { name: 'MC' });
+    const R1 = mk('Requirement', pk.id, { name: 'Üst', level: 'Sistem' }), R2 = mk('Requirement', pk.id, { name: 'Alt', level: 'Alt sistem', subsys: 'X' });
+    const A = mk('Block', pk.id, { name: 'A' }), B = mk('Block', pk.id, { name: 'B' }), C = mk('Block', pk.id, { name: 'C' });
+    const pB = mk('Part', A.id, { name: 'b', type: B.id }); mk('Part', B.id, { name: 'c', type: C.id });
+    mk('DeriveReqt', pk.id, { src: R2.id, tgt: R1.id }); mk('Satisfy', pk.id, { src: pB.id, tgt: R2.id });
+    const f1 = mk('Activity', pk.id, { name: 'F1' }); mk('Allocate', pk.id, { src: f1.id, tgt: pB.id });
+    afterChange();
+    const ch = { id: 'mcT', name: 'Bloklar', from: 'Requirement', steps: [{ s: 'rel:DeriveReqt:in', rep: true }, { s: 'rel:Satisfy:in' }, { s: 'tos' }], kind: 'Block', show: 'names' };
+    o.reach = mcValue(R1, ch) === 'B' && mcValue(R2, ch) === 'B';
+    const p = mcReach(R1.id, ch).get(B.id); o.path = /Üst → \S+ Alt → A\.b → B$/.test(mcPath(p)) || mcPath(p);
+    o.parts = mcValue(A, { steps: [{ s: 'parts', rep: true }], kind: 'Block', show: 'count' }) === '2';
+    o.alloc = mcValue(B, { steps: [{ s: 'usage' }, { s: 'rel:Allocate:in' }], show: 'names' }) === 'F1';
+    o.back = mcValue(f1, { steps: [{ s: 'rel:Allocate:out' }, { s: 'usage' }, { s: 'rel:Satisfy:out' }, { s: 'rel:DeriveReqt:out', rep: true }], kind: 'Requirement', show: 'count' }) === '2';
+    snap(); mcChains().push(ch); afterChange();
+    GT.kind = 'Requirement'; GT.scope = pk.id; openD('@table'); renderViewBar(); renderView();
+    const tx = document.querySelector('#view .vbody').textContent; o.col = /⛓/.test(tx) && !!document.querySelector('#view [data-mce="mcT"]') && !!document.querySelector('#view [data-mcadd]');
+    o.cell = [...document.querySelectorAll('#view tr[data-gtr]')].some(tr => tr.dataset.gtr === R1.id && tr.textContent.includes('B'));
+    MX.rows = 'all'; MX.cols = 'blocks'; MX.ch = 'mcT'; openD('@matrix'); renderViewBar(); renderView();
+    o.mx = !!document.querySelector('#view select[data-mch]') && document.querySelectorAll('#view td.mxd.ind').length >= 2;
+    const s0 = JSON.stringify(M); M = JSON.parse(s0); afterLoad(); o.persist = (M.mchains || []).some(c => c.id === 'mcT');
+    M.mchains = M.mchains.filter(c => c.id !== 'mcT'); MX.ch = ''; GT.scope = ''; GT.kind = 'Block'; delModel([E(pk.id) ? pk.id : Object.values(M.els).find(e => e.name === 'MC').id]); afterChange();
+    return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Zincir adımları (türetme, karşılama, tip, kompozisyon, tahsis), yol, tablo sütunu, matriste dolaylı hücre, kayıtta saklanır', !mcx.error && Object.values(mcx).every(v => v === true), mcx);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);
