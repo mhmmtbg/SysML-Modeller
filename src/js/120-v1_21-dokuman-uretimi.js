@@ -61,7 +61,7 @@ function testDocBlocks(kind, tc, o){
         const m = pfMetrics(p), t = p.ptype || 'psd', D = PT[t];
         H(2, p.name + ' (' + D.tr + ')');
         Pp((p.std ? p.std + ' · ' : '') + m.rows.map(r => r[0] + ' ' + r[1]).join(' · '));
-        if(m.ok){ const svg = pfChart([{p, tol:(t === 'psd' || t === 'srs') ? (numOf(p.tol) || (t === 'srs' ? 6 : 3)) : 0}], {w:760, h:380}); B.push({t:'img', r:{str:svg, w:760, h:380}, cap:`Şekil ${++fig} – ${p.name}`}); }
+        if(m.ok){ const svg = pfChart([{p, tol:(t === 'psd' || t === 'srs' || t === 'acoustic') ? (numOf(p.tol) || (t === 'srs' ? 6 : 3)) : 0}], {w:760, h:380}); B.push({t:'img', r:{str:svg, w:760, h:380}, cap:`Şekil ${++fig} – ${p.name}`}); }
         TB([D.x, D.y, t === 'thermal' ? 'Değişim (°C/dk)' : 'Eğim (dB/oktav)'], pfPts(p).map((q, i) => [fmtNum(q[0]), String(q[1]), m.slopes[i] && m.slopes[i][2] != null ? fmtG(m.slopes[i][2]) : '']), [30, 35, 35]);
       });
       break;

@@ -6,26 +6,28 @@ RANK.push('Measurement');
 const allMeas = () => Object.values(M.els).filter(e => e.kind === 'Measurement');
 const measOf = tid => kidsOf(tid).filter(e => e.kind === 'Measurement').sort(sortEls);
 const measPts = m => (m.pts || []).map(q => [+q[0], +q[1]]).filter(q => isFinite(q[0]) && isFinite(q[1])).sort((a, b) => a[0] - b[0]);
-function measTol(m, ref){ const t = (ref && ref.ptype) || 'psd'; const v = numOf(m.tol); if(v != null) return v; const r = numOf(ref && ref.tol); if(r != null) return r; return {psd:3, sine:1, srs:6, thermal:3}[t] || 3; }
+function measTol(m, ref){ const t = (ref && ref.ptype) || 'psd'; const v = numOf(m.tol); if(v != null) return v; const r = numOf(ref && ref.tol); if(r != null) return r; return {psd:3, sine:1, srs:6, thermal:3, acoustic:3}[t] || 3; }
 /* değerlendirme: ölçülen eğri referans profilin tolerans bandında mı */
 function measEval(m){
   const ref = E(m.ref); if(!ref || ref.kind !== 'TestProfile') return {err:'Referans profil seçilmemiş'};
   const t = ref.ptype || 'psd', D = PT[t], rp = pfPts(ref), mp = measPts(m);
   if(rp.length < 2) return {err:'Referans profilde en az iki nokta olmalı'};
   if(mp.length < 2) return {err:'Ölçümde en az iki nokta olmalı'};
-  const lin = t === 'thermal', tol = measTol(m, ref), allow = numOf(m.allowOut) != null ? numOf(m.allowOut) : 0;
+  const lin = t === 'thermal', add = pfIsAdd(t), im = lin ? true : add ? 'dB' : undefined, tol = measTol(m, ref), allow = numOf(m.allowOut) != null ? numOf(m.allowOut) : 0;
   const lo = Math.max(rp[0][0], mp[0][0]), hi = Math.min(rp[rp.length - 1][0], mp[mp.length - 1][0]);
   if(hi <= lo) return {err:'Ölçüm ile referansın ' + (lin ? 'zaman' : 'frekans') + ' aralıkları örtüşmüyor'};
   const span = lin ? rp[rp.length - 1][0] - rp[0][0] : Math.log(rp[rp.length - 1][0] / rp[0][0]), cov = (lin ? hi - lo : Math.log(hi / lo)) / (span || 1);
-  const pts = mp.filter(q => q[0] >= lo - 1e-9 && q[0] <= hi + 1e-9).map(q => { const r = pfAt(rp, q[0], lin); const dev = r == null ? null : lin ? q[1] - r : (q[1] > 0 && r > 0 ? D.db * Math.log10(q[1] / r) : null); return [q[0], q[1], r, dev, dev != null && Math.abs(dev) > tol + 1e-9]; }).filter(q => q[3] != null);
+  const pts = mp.filter(q => q[0] >= lo - 1e-9 && q[0] <= hi + 1e-9).map(q => { const r = pfAt(rp, q[0], im); const dev = r == null ? null : lin ? q[1] - r : pfDev(q[1], r, D); return [q[0], q[1], r, dev, dev != null && Math.abs(dev) > tol + 1e-9]; }).filter(q => q[3] != null);
   if(pts.length < 2) return {err:'Karşılaştırılabilir nokta yok'};
   let outW = 0, totW = 0;
   for(let i = 0; i < pts.length - 1; i++){ const w = lin ? pts[i + 1][0] - pts[i][0] : Math.log(pts[i + 1][0] / pts[i][0]); totW += w; if(pts[i][4] || pts[i + 1][4]) outW += w * ((pts[i][4] ? 0.5 : 0) + (pts[i + 1][4] ? 0.5 : 0)); }
   const outPct = totW ? 100 * outW / totW : 0, devs = pts.map(q => q[3]);
   const r = {t, tol, allow, pts, outPct, maxDev:Math.max(...devs), minDev:Math.min(...devs), cov:Math.min(1, cov), lo, hi, unit:lin ? '°C' : 'dB'};
+  if(t === 'acoustic'){ const om = pfMetrics({ptype:'acoustic', pts:mp.filter(q => q[0] >= lo && q[0] <= hi)}).oaspl, or = pfMetrics(Object.assign({}, ref, {pts:rp.filter(q => q[0] >= lo && q[0] <= hi).concat([[lo, pfAt(rp, lo, 'dB')], [hi, pfAt(rp, hi, 'dB')]]).filter(q => q[1] != null)})).oaspl; r.oaM = om; r.oaR = or; r.oaDev = om != null && or != null ? om - or : null; r.oaTol = numOf(m.oaTol) != null ? numOf(m.oaTol) : numOf(ref.oaTol) != null ? numOf(ref.oaTol) : 1.5; }
   if(t === 'psd'){ const gm = pfMetrics({ptype:'psd', pts:mp.filter(q => q[0] >= lo && q[0] <= hi)}).grms, gr = pfMetrics({ptype:'psd', pts:rp.filter(q => q[0] >= lo && q[0] <= hi).concat([[lo, pfAt(rp, lo)], [hi, pfAt(rp, hi)]]).filter(q => q[1] != null)}).grms; r.grmsM = gm; r.grmsR = gr; r.grmsDev = gr ? 100 * (gm - gr) / gr : null; r.grmsTol = numOf(m.grmsTol) != null ? numOf(m.grmsTol) : 10; }
   const fails = [];
   if(outPct > allow + 1e-9) fails.push(`tolerans dışı %${outPct.toFixed(1)} (izin %${fmtNum(allow)})`);
+  if(r.oaDev != null && Math.abs(r.oaDev) > r.oaTol + 1e-9) fails.push(`OASPL sapması ${r.oaDev >= 0 ? '+' : ''}${r.oaDev.toFixed(1)} dB (izin ±${fmtNum(r.oaTol)} dB)`);
   if(r.grmsDev != null && Math.abs(r.grmsDev) > r.grmsTol) fails.push(`Grms sapması %${r.grmsDev.toFixed(1)} (izin ±%${fmtNum(r.grmsTol)})`);
   if(r.cov < 0.9) fails.push(`kapsam %${(r.cov * 100).toFixed(0)} (< %90)`);
   r.ok = !fails.length; r.fails = fails;
@@ -90,6 +92,7 @@ function measureHTML(){
       <tr><th>Tolerans dışı bant</th><td class="${r.outPct > r.allow ? 'tsbad' : 'tsok'}">%${r.outPct.toFixed(1)}</td></tr>
       <tr><th>Kapsam</th><td>%${(r.cov * 100).toFixed(0)} (${fmtNum(r.lo)} – ${fmtNum(r.hi)})</td></tr>
       ${r.grmsM != null ? `<tr><th>Grms (ölçülen / referans)</th><td>${fmtG(r.grmsM)} / ${fmtG(r.grmsR)} · <span class="${Math.abs(r.grmsDev) > r.grmsTol ? 'tsbad' : 'tsok'}">%${r.grmsDev.toFixed(1)}</span> (izin ±%<input class="fmsel" data-megt="${m.id}" value="${esc(String(r.grmsTol))}" style="width:40px">)</td></tr>` : ''}
+      ${r.oaM != null ? `<tr><th>OASPL (ölçülen / referans)</th><td>${r.oaM.toFixed(1)} / ${r.oaR.toFixed(1)} dB · <span class="${Math.abs(r.oaDev) > r.oaTol ? 'tsbad' : 'tsok'}">${r.oaDev >= 0 ? '+' : ''}${r.oaDev.toFixed(1)} dB</span> (izin ±<input class="fmsel" data-meoa="${m.id}" value="${esc(String(r.oaTol))}" style="width:40px"> dB)</td></tr>` : ''}
       ${r.fails.length ? `<tr><th>Nedenler</th><td class="tsbad">${r.fails.map(esc).join('<br>')}</td></tr>` : ''}
       </tbody></table></div></div>`;
   });
@@ -130,7 +133,7 @@ async function closureReport(){
       measOf(tc.id).forEach(m => { const r = measEval(m), ref = E(m.ref); if(r.err){ Pp(m.name + ': ' + r.err); return; }
         const svg = pfChart([{p:ref, tol:r.tol, label:'Referans'}, {p:{ptype:ref.ptype, pts:measPts(m), name:m.name}, col:'#c0392b', label:'Ölçülen'}], {w:640, h:320});
         B.push({t:'img', r:{str:svg, w:640, h:320}, cap:`Şekil ${++fig} – ${tc.name} · ${m.name}`});
-        TB(['Ölçüt', 'Değer'], [['Referans', ref.name], ['Tolerans', '±' + r.tol + ' ' + r.unit], ['Sapma', r.minDev.toFixed(2) + ' / ' + r.maxDev.toFixed(2) + ' ' + r.unit], ['Tolerans dışı bant', '%' + r.outPct.toFixed(1) + ' (izin %' + r.allow + ')'], ['Kapsam', '%' + (r.cov * 100).toFixed(0)]].concat(r.grmsM != null ? [['Grms', fmtG(r.grmsM) + ' / ' + fmtG(r.grmsR) + ' (%' + r.grmsDev.toFixed(1) + ')']] : []).concat([['Karar', r.ok ? 'GEÇTİ' : 'KALDI — ' + r.fails.join('; ')]]), [35, 65]);
+        TB(['Ölçüt', 'Değer'], [['Referans', ref.name], ['Tolerans', '±' + r.tol + ' ' + r.unit], ['Sapma', r.minDev.toFixed(2) + ' / ' + r.maxDev.toFixed(2) + ' ' + r.unit], ['Tolerans dışı bant', '%' + r.outPct.toFixed(1) + ' (izin %' + r.allow + ')'], ['Kapsam', '%' + (r.cov * 100).toFixed(0)]].concat(r.grmsM != null ? [['Grms', fmtG(r.grmsM) + ' / ' + fmtG(r.grmsR) + ' (%' + r.grmsDev.toFixed(1) + ')']] : []).concat(r.oaM != null ? [['OASPL', r.oaM.toFixed(1) + ' / ' + r.oaR.toFixed(1) + ' dB (' + (r.oaDev >= 0 ? '+' : '') + r.oaDev.toFixed(1) + ' dB, izin ±' + r.oaTol + ' dB)']] : []).concat([['Karar', r.ok ? 'GEÇTİ' : 'KALDI — ' + r.fails.join('; ')]]), [35, 65]);
       });
     });
   }
@@ -151,7 +154,7 @@ async function closureReport(){
     if(ST.cur !== '@measure') return; const t = ev.target;
     if(t.dataset.mef === 'tc'){ MSV.tc = t.value; renderView(); return; }
     const set = (id, f, v) => { const m = E(id); if(!m) return; snap(); m[f] = v; afterChange(); };
-    if(t.dataset.metol) set(t.dataset.metol, 'tol', numOf(t.value)); if(t.dataset.meallow) set(t.dataset.meallow, 'allowOut', numOf(t.value) || 0); if(t.dataset.megt) set(t.dataset.megt, 'grmsTol', numOf(t.value)); if(t.dataset.meref) set(t.dataset.meref, 'ref', t.value);
+    if(t.dataset.metol) set(t.dataset.metol, 'tol', numOf(t.value)); if(t.dataset.meallow) set(t.dataset.meallow, 'allowOut', numOf(t.value) || 0); if(t.dataset.megt) set(t.dataset.megt, 'grmsTol', numOf(t.value)); if(t.dataset.meoa) set(t.dataset.meoa, 'oaTol', numOf(t.value)); if(t.dataset.meref) set(t.dataset.meref, 'ref', t.value);
   });
   V.addEventListener('keydown', ev => { if(ST.cur === '@measure' && ev.target.matches && ev.target.matches('input')){ ev.stopPropagation(); if(ev.key === 'Enter') ev.target.blur(); } });
 })();

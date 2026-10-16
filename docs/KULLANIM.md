@@ -1177,6 +1177,32 @@ Araç çubuğunun sağındaki **Temel / Uzman** düğmesi (veya Araçlar ▾ →
 
 **Her iki görünümde:** komut paleti (Ctrl+K) ve İş akışı merkezi tüm komutları bulur; menülerde yinelenen girişler kaldırılmıştır (ReqIF Gereksinimler menüsünde, MagicGrid panosu Araçlar menüsünde) ve sonradan eklenen komutlar doğru başlık altında görünür.
 
+## 5ap. Akustik profil, zaman verisinden SRS, AECTP-400 şablonu, test prosedürü taslağı
+
+**Akustik gürültü profili** (Test Profilleri → + Akustik): kırılma noktaları 1/3 oktav bant seviyeleri olarak girilir (Hz, dB ref 20 µPa). Ara değerler log-frekansta doğrusal dB olarak hesaplanır. Profil kartında:
+- **OASPL**: aralıktaki standart 1/3 oktav merkez frekanslarında (1000·10^(n/10)) ara değerlenen bant seviyelerinin enerji toplamı, 10·log10 Σ 10^(L/10)
+- bant toleransı (±dB, toplamsal), OASPL toleransı (±dB), süre
+- eğimler dB/oktav
+
+"± dB ölçekle" akustik profilde seviyeleri doğrudan kaydırır; karşılaştırma ve zarf dB farkıyla çalışır.
+
+**Akustik ölçüm:** Ölçüm Değerlendirme'de mikrofon ortalaması (ilk sütun frekans, ikinci sütun dB) aktarılır. Karar iki ölçütle verilir: bantların ±dB toleransı (izin verilen dışarıda kalma yüzdesiyle) ve OASPL sapması (varsayılan ±1,5 dB; profilde veya ölçümde değiştirilebilir). Toleranslar uygulamanın varsayılanıdır, standart değeri olarak alınmamalıdır; uyarlanmış şartnamedeki değerleri girin.
+
+**Zaman verisinden SRS** (Ölçüm Değerlendirme → Zaman verisinden SRS…): ilk sütun zaman (s veya ms), sonraki sütunlar ivme (g) olan CSV / Excel seçilir. Seçenekler: Q (varsayılan 10; ζ = 1/2Q), frekans aralığı, spektrum (maximax, pozitif, negatif) ve referans SRS profili. Hesap Smallwood ramp-invariant süzgeciyle mutlak ivme tepkisidir; 1/6 oktav merkez frekanslarında, artık tepki için kayda bir periyot sıfır eklenir. Örnekleme hızı en yüksek frekansın 10 katından düşükse uyarı verilir. Her sütun bir SRS ölçümü olarak eklenir ve referans profile ±dB toleransla karşılaştırılır.
+
+**STANAG 4370 / AECTP-400 şablonu** (Araçlar → Şablon ekle → STANAG 4370 / AECTP-400): titreşim, akustik gürültü ve şok için birer gereksinim, profil (gereksinime Refine) ve kalifikasyon testi oluşturulur; isteğe bağlı baskı / sürüm alanı standart adına eklenir.
+- Yöntem numaraları ve seviyeler **[TBD]** gelir; uygulama bunları bellekten yazmaz. Uyarlanmış standarttan (kullandığınız baskıya göre) doldurun.
+- Profil noktaları yalnız şekil yer tutucusudur ve profil **TASLAK** işaretlidir: profil ekranında uyarı, metriklerde "Durum" satırı ve doğrulamada "Taslak test profili (TBD)" uyarısı çıkar; çevre türetme kuralı taslak profilden gereksinim üretmez.
+- Seviyeleri girdikten sonra profil ekranındaki **Seviyeler girildi — taslak işaretini kaldır** düğmesine basın.
+- Gereksinim kalite raporu [TBD] içeren metinleri listeler.
+
+**Test prosedürü taslağı** (Gereksinimler ▾ → Çevresel gereksinimden test prosedürü taslağı…, ya da gereksinimin Özellikler panelindeki düğme): test profiliyle incelenen (Refine) gereksinim için doğrulayan test bulunur, yoksa oluşturulur. Boş alanlar doldurulur:
+- **Adımlar:** düzenek ve sensör yerleşimi (ivmeölçer / mikrofon / termokupl), test öncesi muayene ve fonksiyonel test, düşük seviyede denetim ayarı, eksen / yön başına uygulama (seviye, süre, tolerans beklentisi), eksen sonrası ara kontrol, son muayene ve fonksiyonel test, ölçüm verisinin değerlendirmeye aktarılması
+- **Hazırlık:** kalibrasyon, fikstür rezonans taraması, denetim stratejisi ([TBD])
+- **Kabul ölçütleri:** tolerans bandı, hasar olmaması, fonksiyonel test, ilgili gereksinim
+
+Dolu alanlar korunur. Ardından Word test prosedürü penceresi açılır (doküman şablonu, kapak ve revizyon tablosu ayarları geçerlidir). Taslak profilde seviye "[TBD] seviye" olarak yazılır.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

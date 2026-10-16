@@ -940,6 +940,25 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   });
   ok('Temel görünüm: düğmeyle geçiş ve hatırlama, kısa menüler (boş başlık ve yineleme yok), sade palet, Gelişmiş bölümü; Ctrl+K ve iş akışı tüm komutları bulur; Uzman\'a dönüş', Object.values(uim).every(v => v === true), uim);
 
+  console.log('9r) Akustik profil, zaman verisinden SRS, AECTP-400 şablonu, test prosedürü taslağı');
+  const ev51 = await run(async () => {
+    const o = {}, modal = () => document.querySelector('#modal').style.display === 'flex', close = () => { document.querySelector('#modal').style.display = 'none'; document.querySelector('#modalBox').onclick = null; };
+    snap(); const ap = newProfile('acoustic'); PF.sel = ap.id; openD('@profiles');
+    o.aco = !!document.querySelector('#view svg') && /OASPL/.test(document.querySelector('#view').textContent) && /SPL \(dB, ref 20 µPa\)/.test(document.querySelector('#view').innerHTML);
+    templateDialog(); const rd = document.querySelector('#modalBox input[name=tpl][value="aectp"]'); o.tplRadio = !!rd && !!document.querySelector('#tpEd');
+    rd.checked = true; document.querySelector('#tpEd').value = 'Ed. X'; const n0 = allReqs().length; document.querySelector('#tpO').click();
+    o.tplApplied = !modal() && allReqs().length === n0 + 3 && allReqs().some(r => /AECTP-400 Ed\. X Yöntem \[TBD\]/.test(r.text || ''));
+    const tp = allProfiles().find(p => p.tbd); PF.sel = tp.id; openD('@profiles'); o.banner = !!document.querySelector('#view .pfwarn');
+    document.querySelector('#view [data-pftbd]').click(); o.unTbd = !E(tp.id).tbd && !document.querySelector('#view .pfwarn');
+    o.menu = reqMenuItems().some(x => x && x.t && /test prosedürü taslağı/.test(x.t));
+    envTpDialog(); const b = document.querySelector('#modalBox [data-etp]'); o.tpList = !!b; const r = E(b.dataset.etp); b.click(); await new Promise(res => setTimeout(res, 50));
+    const tc = (relIdx().Verify || []).filter(v => v.tgt === r.id).map(v => E(v.src)).find(Boolean); o.tpDraft = !!tc && tcSteps(tc).length >= 4 && !!tc.accept && modal(); close();
+    ST.sel = new Set(); ST.tsel = r.id; renderProps(); o.props = !!document.querySelector('#props [data-envtp]');
+    MSV.tc = tc.id; openD('@measure'); o.srsBtn = !!document.querySelector('#vbar [data-mea="srs"], .vbar [data-mea="srs"], [data-mea="srs"]');
+    return o;
+  });
+  ok('Akustik profil (OASPL, dB ekseni); AECTP-400 şablonu (TBD, baskı), taslak uyarısı ve kaldırma; çevresel gereksinimden test prosedürü taslağı (liste, Özellikler düğmesi); ölçümde SRS düğmesi', Object.values(ev51).every(v => v === true), ev51);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

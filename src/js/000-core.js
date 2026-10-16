@@ -1,7 +1,7 @@
 'use strict';
 const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const LSK = 'sysml-modeler-v1';
-const APP_VER = '1.50.0';
+const APP_VER = '1.51.0';
 const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -5189,7 +5189,7 @@ function buildReport(o){
       PFS.forEach(p => {
         const m = pfMetrics(p), t = p.ptype || 'psd', D = PT[t];
         Pp(p.name + (p.std ? ' — ' + p.std : '') + ': ' + m.rows.map(r => r[0] + ' ' + r[1]).join(' · '));
-        if(m.ok){ const svg = pfChart([{p, tol:(t === 'psd' || t === 'srs') ? (numOf(p.tol) || (t === 'srs' ? 6 : 3)) : 0}], {w:760, h:380}); B.push({t:'img', r:{str:svg, w:760, h:380}, cap:`Şekil ${++fig} – ${p.name} (${D.tr})`}); }
+        if(m.ok){ const svg = pfChart([{p, tol:(t === 'psd' || t === 'srs' || t === 'acoustic') ? (numOf(p.tol) || (t === 'srs' ? 6 : 3)) : 0}], {w:760, h:380}); B.push({t:'img', r:{str:svg, w:760, h:380}, cap:`Şekil ${++fig} – ${p.name} (${D.tr})`}); }
         TB([D.x, D.y, t === 'thermal' ? 'Değişim (°C/dk)' : 'Eğim (dB/oktav)'], pfPts(p).map((q, i) => [fmtNum(q[0]), String(q[1]), m.slopes[i] && m.slopes[i][2] != null ? fmtG(m.slopes[i][2]) : '']), [30, 35, 35]);
       });
     }

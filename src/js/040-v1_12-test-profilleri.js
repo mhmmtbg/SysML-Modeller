@@ -16,13 +16,16 @@ const PT = {
   psd:{tr:'Rastgele titreşim (PSD)', sh:'PSD', x:'Frekans (Hz)', y:'ASD (g²/Hz)', xu:'Hz', yu:'g²/Hz', log:true, db:10, col:'#1f6fd1'},
   sine:{tr:'Sinüs süpürme', sh:'Sinüs', x:'Frekans (Hz)', y:'Genlik (g tepe)', xu:'Hz', yu:'g', log:true, db:20, col:'#7a4fbf'},
   srs:{tr:'Şok tepki spektrumu (SRS)', sh:'SRS', x:'Doğal frekans (Hz)', y:'Tepe ivme (g)', xu:'Hz', yu:'g', log:true, db:20, col:'#c0392b'},
-  thermal:{tr:'Termal döngü', sh:'Termal', x:'Zaman (dk)', y:'Sıcaklık (°C)', xu:'dk', yu:'°C', log:false, col:'#d35400'}
+  thermal:{tr:'Termal döngü', sh:'Termal', x:'Zaman (dk)', y:'Sıcaklık (°C)', xu:'dk', yu:'°C', log:false, col:'#d35400'},
+  /* akustik: değerler dB (ref 20 µPa); frekans log, seviye doğrusal; tolerans toplamsal ±dB (add) */
+  acoustic:{tr:'Akustik gürültü (1/3 oktav SPL)', sh:'Akustik', x:'Frekans (Hz)', y:'SPL (dB, ref 20 µPa)', xu:'Hz', yu:'dB', log:true, logy:false, add:true, db:1, col:'#2e8b57'}
 };
 const PF_DEF = {
   psd:{pts:[[20, 0.01], [80, 0.04], [350, 0.04], [2000, 0.007]], tol:3, dur:'60', axes:'X, Y, Z'},
   sine:{pts:[[5, 0.5], [50, 2], [500, 2]], rate:1, sweeps:2, axes:'X, Y, Z'},
   srs:{pts:[[100, 50], [2000, 2000], [10000, 2000]], q:10, tol:6, shocks:3, axes:'±X, ±Y, ±Z'},
-  thermal:{pts:[[0, 25], [30, -40], [90, -40], [150, 71], [210, 71], [240, 25]], cycles:10}
+  thermal:{pts:[[0, 25], [30, -40], [90, -40], [150, 71], [210, 71], [240, 25]], cycles:10},
+  acoustic:{pts:[[31.5, 125], [100, 132], [400, 138], [1000, 136], [4000, 128], [10000, 120]], tol:3, oaTol:1.5, dur:'30'}
 };
 Object.assign(KIND, {TestProfile:{tr:'Test Profili', en:'TestProfile', ic:'∿', col:'#0f8a8a', w:230, h:180}});
 FILL.TestProfile = '#f2fbfb';
@@ -42,6 +45,7 @@ function pfAt(pts, f, lin){
     const [f1, a1] = pts[i], [f2, a2] = pts[i + 1];
     if(f >= f1 - 1e-9 && f <= f2 + 1e-9){
       if(f2 === f1) return Math.max(a1, a2);
+      if(lin === 'dB' && f1 > 0 && f > 0) return a1 + (a2 - a1) * Math.log(f / f1) / Math.log(f2 / f1);
       if(lin || a1 <= 0 || a2 <= 0 || f1 <= 0) return a1 + (a2 - a1) * (f - f1) / (f2 - f1);
       return a1 * Math.pow(f / f1, Math.log(a2 / a1) / Math.log(f2 / f1));
     }
@@ -53,6 +57,13 @@ function psdArea(f1, a1, f2, a2){
   const n = Math.log(a2 / a1) / Math.log(f2 / f1);
   return Math.abs(n + 1) < 1e-9 ? a1 * f1 * Math.log(f2 / f1) : a1 * f1 / (n + 1) * (Math.pow(f2 / f1, n + 1) - 1);
 }
+/* dB değerli (toplamsal) türler için yardımcılar */
+const pfIsAdd = t => !!(PT[t] && PT[t].add);
+const pfTolHi = (v, tol, D) => D.add ? v + tol : v * Math.pow(10, tol / D.db), pfTolLo = (v, tol, D) => D.add ? v - tol : v / Math.pow(10, tol / D.db);
+const pfDev = (a, b, D) => a == null || b == null ? null : D.add ? a - b : (a > 0 && b > 0 ? D.db * Math.log10(a / b) : null);
+/* 1/3 oktav merkez frekansları (taban 10): 1000·10^(n/10) */
+const thirdOct = (f0, f1) => { const out = []; for(let n = -30; n <= 14; n++){ const f = 1000 * Math.pow(10, n / 10); if(f >= f0 * 0.999 && f <= f1 * 1.001) out.push(+f.toPrecision(4)); } return out; };
+const oaspl = levels => { const s = levels.reduce((t, L) => t + Math.pow(10, L / 10), 0); return s > 0 ? 10 * Math.log10(s) : null; };
 const slopeDb = (q1, q2, db) => (q1[1] > 0 && q2[1] > 0 && q2[0] > q1[0]) ? db * Math.log10(q2[1] / q1[1]) / Math.log2(q2[0] / q1[0]) : null;
 function logGrid(f0, f1, n){ const a = []; for(let i = 0; i <= n; i++) a.push(f0 * Math.pow(f1 / f0, i / n)); return a; }
 function pfMetrics(p){
@@ -86,6 +97,13 @@ function pfMetrics(p){
       ['Q (sönüm)', fmtNum(numOf(p.q) || 10) + ' (ζ = %' + fmtNum(+(50 / (numOf(p.q) || 10)).toFixed(2)) + ')'], ['Tolerans', '±' + fmtNum(numOf(p.tol) || 6) + ' dB'],
       ['Şok sayısı', fmtNum(numOf(p.shocks) || 3) + ' / yön' + (ax.length ? ' · ' + ax.join(', ') : '')], ['Toplam şok', fmtNum((numOf(p.shocks) || 3) * nax)]);
     for(let i = 0; i < pts.length - 1; i++) M0.slopes.push([pts[i][0], pts[i + 1][0], slopeDb(pts[i], pts[i + 1], 20), null]);
+  } else if(t === 'acoustic'){
+    const fc = thirdOct(pts[0][0], pts[pts.length - 1][0]), lv = fc.map(f => pfAt(pts, f, 'dB')).filter(v => v != null);
+    const oa = oaspl(lv.length ? lv : pts.map(q => q[1])), mxq = pts.reduce((m, q) => q[1] > m[1] ? q : m, pts[0]), dur = numOf(p.dur);
+    Object.assign(M0, {oaspl:oa, main:fmtNum(+oa.toFixed(1)) + ' dB OASPL', bands:fc.length, total:dur});
+    M0.rows.push(['Toplam seviye (OASPL)', fmtNum(+oa.toFixed(1)) + ' dB'], ['Frekans aralığı', fmtNum(pts[0][0]) + ' – ' + fmtNum(pts[pts.length - 1][0]) + ' Hz (' + fc.length + ' adet 1/3 oktav bandı)'], ['En yüksek bant', fmtNum(+mxq[1].toFixed(1)) + ' dB @ ' + fmtNum(mxq[0]) + ' Hz'],
+      ['Bant toleransı', '±' + fmtNum(numOf(p.tol) || 3) + ' dB'], ['OASPL toleransı', '±' + fmtNum(numOf(p.oaTol) || 1.5) + ' dB'], ['Toplam test süresi', dur != null ? fmtMin(dur) : '—']);
+    for(let i = 0; i < pts.length - 1; i++) M0.slopes.push([pts[i][0], pts[i + 1][0], pts[i + 1][0] > pts[i][0] ? (pts[i + 1][1] - pts[i][1]) / Math.log2(pts[i + 1][0] / pts[i][0]) : null, null]);
   } else {
     const T0 = pts.map(q => q[1]), dur = pts[pts.length - 1][0] - pts[0][0], cyc = numOf(p.cycles) || 1;
     let rmax = 0, dwH = 0, dwC = 0; const tmin = Math.min(...T0), tmax = Math.max(...T0);
@@ -106,33 +124,38 @@ function niceLin(a, b, n){ const span = b - a || 1, st0 = Math.pow(10, Math.floo
 function pfChart(list, o){
   o = o || {}; const W = o.w || 640, H = o.h || 360, mini = !!o.mini;
   const valid = list.filter(x => pfPts(x.p).length >= 2); if(!valid.length) return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="#fff"/><text x="${W / 2}" y="${H / 2}" text-anchor="middle" font-family="${FF}" font-size="12" fill="#889">Kırılma noktası yok</text></svg>`;
-  const t = valid[0].p.ptype || 'psd', D = PT[t], lg = D.log;
+  const t = valid[0].p.ptype || 'psd', D = PT[t], lg = D.log, lgy = D.logy == null ? D.log : D.logy;
   const L = mini ? 8 : 64, R = mini ? 6 : 16, Tp = mini ? 6 : 14, B = mini ? 8 : 44;
   let xs = [], ys = [];
-  valid.forEach(x => { const pts = pfPts(x.p); pts.forEach(q => { xs.push(q[0]); ys.push(q[1]); }); if(x.tol){ const k = Math.pow(10, x.tol / D.db); pts.forEach(q => { ys.push(q[1] * k, q[1] / k); }); } });
-  if(lg){ xs = xs.filter(v => v > 0); ys = ys.filter(v => v > 0); }
+  valid.forEach(x => { const pts = pfPts(x.p); pts.forEach(q => { xs.push(q[0]); ys.push(q[1]); }); if(x.tol){ pts.forEach(q => { ys.push(pfTolHi(q[1], x.tol, D), pfTolLo(q[1], x.tol, D)); }); } });
+  if(lg) xs = xs.filter(v => v > 0); if(lgy) ys = ys.filter(v => v > 0);
   let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
   let xt, yt;
-  if(lg){ x0 = Math.pow(10, Math.floor(Math.log10(x0) + 1e-9)); x1 = Math.pow(10, Math.ceil(Math.log10(x1) - 1e-9)); y0 = Math.pow(10, Math.floor(Math.log10(y0) + 1e-9)); y1 = Math.pow(10, Math.ceil(Math.log10(y1) - 1e-9)); if(y1 / y0 < 10) y1 = y0 * 10; if(x1 / x0 < 10) x1 = x0 * 10; }
-  else { const nx = niceLin(x0, x1, mini ? 3 : 8), ny = niceLin(Math.min(y0, 0), y1, mini ? 3 : 6); x0 = nx.lo; x1 = nx.hi; y0 = ny.lo; y1 = ny.hi; if(y1 - y0 < 1e-9) y1 = y0 + 1; xt = nx.ticks; yt = ny.ticks; }
+  if(lg){ x0 = Math.pow(10, Math.floor(Math.log10(x0) + 1e-9)); x1 = Math.pow(10, Math.ceil(Math.log10(x1) - 1e-9)); if(x1 / x0 < 10) x1 = x0 * 10; }
+  else { const nx = niceLin(x0, x1, mini ? 3 : 8); x0 = nx.lo; x1 = nx.hi; xt = nx.ticks; }
+  if(lgy){ y0 = Math.pow(10, Math.floor(Math.log10(y0) + 1e-9)); y1 = Math.pow(10, Math.ceil(Math.log10(y1) - 1e-9)); if(y1 / y0 < 10) y1 = y0 * 10; }
+  else { const ny = niceLin(D.add ? y0 - 2 : Math.min(y0, 0), D.add ? y1 + 2 : y1, mini ? 3 : 6); y0 = ny.lo; y1 = ny.hi; if(y1 - y0 < 1e-9) y1 = y0 + 1; yt = ny.ticks; }
   const PX = v => L + (lg ? Math.log10(v / x0) / Math.log10(x1 / x0) : (v - x0) / (x1 - x0)) * (W - L - R);
-  const PY = v => H - B - (lg ? Math.log10(v / y0) / Math.log10(y1 / y0) : (v - y0) / (y1 - y0)) * (H - Tp - B);
+  const PY = v => H - B - (lgy ? Math.log10(v / y0) / Math.log10(y1 / y0) : (v - y0) / (y1 - y0)) * (H - Tp - B);
   let g = `<rect width="${W}" height="${H}" fill="#fff"/>`;
   const fs = mini ? 8 : 11, txt = (x, y, s, a, extra) => `<text x="${x}" y="${y}" font-family="${FF}" font-size="${fs}" fill="#556" text-anchor="${a || 'middle'}"${extra || ''}>${esc(s)}</text>`;
   const lbl = v => v >= 1000 && v % 1000 === 0 ? (v / 1000) + 'k' : String(+v.toPrecision(6));
   if(lg){
     for(let d = x0; d < x1 * 1.0001; d *= 10){ for(let k = 1; k < 10; k++){ const v = d * k; if(v > x1 * 1.0001) break; const X = PX(v); g += `<line x1="${X}" y1="${Tp}" x2="${X}" y2="${H - B}" stroke="${k === 1 ? '#c9d2dc' : '#eef1f5'}" stroke-width="1"/>`; if(!mini && (k === 1 || (x1 / x0 <= 1000 && (k === 2 || k === 5)))) g += txt(X, H - B + 15, lbl(v)); } }
-    for(let d = y0; d < y1 * 1.0001; d *= 10){ for(let k = 1; k < 10; k++){ const v = d * k; if(v > y1 * 1.0001) break; const Y = PY(v); g += `<line x1="${L}" y1="${Y}" x2="${W - R}" y2="${Y}" stroke="${k === 1 ? '#c9d2dc' : '#eef1f5'}" stroke-width="1"/>`; if(!mini && k === 1) g += txt(L - 6, Y + 4, String(+v.toPrecision(4)), 'end'); } }
   } else {
     xt.forEach(v => { const X = PX(v); g += `<line x1="${X}" y1="${Tp}" x2="${X}" y2="${H - B}" stroke="#eef1f5"/>`; if(!mini) g += txt(X, H - B + 15, lbl(v)); });
+  }
+  if(lgy){
+    for(let d = y0; d < y1 * 1.0001; d *= 10){ for(let k = 1; k < 10; k++){ const v = d * k; if(v > y1 * 1.0001) break; const Y = PY(v); g += `<line x1="${L}" y1="${Y}" x2="${W - R}" y2="${Y}" stroke="${k === 1 ? '#c9d2dc' : '#eef1f5'}" stroke-width="1"/>`; if(!mini && k === 1) g += txt(L - 6, Y + 4, String(+v.toPrecision(4)), 'end'); } }
+  } else {
     yt.forEach(v => { const Y = PY(v); g += `<line x1="${L}" y1="${Y}" x2="${W - R}" y2="${Y}" stroke="${v === 0 ? '#9aa6b4' : '#eef1f5'}"/>`; if(!mini) g += txt(L - 6, Y + 4, lbl(v), 'end'); });
   }
   g += `<rect x="${L}" y="${Tp}" width="${W - L - R}" height="${H - Tp - B}" fill="none" stroke="#9aa6b4"/>`;
   if(!mini){ g += txt((L + W - R) / 2, H - 8, D.x); g += `<text transform="translate(14 ${(Tp + H - B) / 2}) rotate(-90)" font-family="${FF}" font-size="11" fill="#556" text-anchor="middle">${esc(D.y)}</text>`; }
   const path = pts => pts.map((q, i) => (i ? 'L' : 'M') + PX(q[0]).toFixed(1) + ' ' + PY(q[1]).toFixed(1)).join('');
   valid.forEach((x, i) => {
-    const pts = pfPts(x.p).filter(q => !lg || (q[0] > 0 && q[1] > 0)), col = x.col || D.col;
-    if(x.tol){ const k = Math.pow(10, x.tol / D.db); [k, 1 / k].forEach(m => { g += `<path d="${path(pts.map(q => [q[0], q[1] * m]))}" fill="none" stroke="${col}" stroke-width="1" stroke-dasharray="5 4" opacity=".7"/>`; }); }
+    const pts = pfPts(x.p).filter(q => (!lg || q[0] > 0) && (!lgy || q[1] > 0)), col = x.col || D.col;
+    if(x.tol){ [pfTolHi, pfTolLo].forEach(fn => { g += `<path d="${path(pts.map(q => [q[0], fn(q[1], x.tol, D)]))}" fill="none" stroke="${col}" stroke-width="1" stroke-dasharray="5 4" opacity=".7"/>`; }); }
     g += `<path d="${path(pts)}" fill="none" stroke="${col}" stroke-width="${mini ? 1.6 : 2.2}"${x.dash ? ' stroke-dasharray="7 4"' : ''}/>`;
     if(!mini) pts.forEach(q => { g += `<circle cx="${PX(q[0]).toFixed(1)}" cy="${PY(q[1]).toFixed(1)}" r="3" fill="#fff" stroke="${col}" stroke-width="1.5"/>`; });
   });
@@ -157,22 +180,24 @@ function pfCompare(A, B){
     return {thermal:true, rows, covers:rows.every(r => r[3])};
   }
   const xs = [...new Set(a.map(q => q[0]).concat(b.map(q => q[0])).filter(f => f >= lo && f <= hi).concat(logGrid(lo, hi, 120)))].sort((u, v) => u - v);
-  const pts = xs.map(f => { const va = pfAt(a, f), vb = pfAt(b, f); return [f, va, vb, va > 0 && vb > 0 ? D.db * Math.log10(va / vb) : null]; }).filter(q => q[3] != null);
+  const im = pfIsAdd(t) ? 'dB' : undefined;
+  const pts = xs.map(f => { const va = pfAt(a, f, im), vb = pfAt(b, f, im); return [f, va, vb, pfDev(va, vb, D)]; }).filter(q => q[3] != null);
   const mn = pts.reduce((m, q) => q[3] < m[3] ? q : m, pts[0]), mx = pts.reduce((m, q) => q[3] > m[3] ? q : m, pts[0]);
   const r = {pts, min:mn, max:mx, lo, hi, covers:mn[3] >= -1e-6, partial:lo > a[0][0] + 1e-9 || hi < a[a.length - 1][0] - 1e-9 || lo > b[0][0] + 1e-9 || hi < b[b.length - 1][0] - 1e-9};
   if(t === 'psd'){ r.ga = pfMetrics(A).grms; r.gb = pfMetrics(B).grms; }
-  r.table = [...new Set(a.map(q => q[0]).concat(b.map(q => q[0])))].sort((u, v) => u - v).filter(f => f >= lo && f <= hi).map(f => { const va = pfAt(a, f), vb = pfAt(b, f); return [f, va, vb, va > 0 && vb > 0 ? D.db * Math.log10(va / vb) : null]; });
+  r.table = [...new Set(a.map(q => q[0]).concat(b.map(q => q[0])))].sort((u, v) => u - v).filter(f => f >= lo && f <= hi).map(f => { const va = pfAt(a, f, im), vb = pfAt(b, f, im); return [f, va, vb, pfDev(va, vb, D)]; });
+  if(t === 'acoustic'){ r.oa = pfMetrics(A).oaspl; r.ob = pfMetrics(B).oaspl; }
   return r;
 }
 function pfEnvelope(list){
-  const t = list[0].ptype || 'psd', lin = t === 'thermal';
+  const t = list[0].ptype || 'psd', lin = t === 'thermal' ? true : pfIsAdd(t) ? 'dB' : false;
   const P = list.map(pfPts).filter(x => x.length >= 2); if(!P.length) return null;
   const lo = Math.min(...P.map(x => x[0][0])), hi = Math.max(...P.map(x => x[x.length - 1][0]));
   const xs = [...new Set(P.flatMap(x => x.map(q => q[0])).concat(lin ? [] : logGrid(lo, hi, 240)))].sort((u, v) => u - v);
   let pts = xs.map(f => [f, Math.max(...P.map(x => pfAt(x, f, lin)).filter(v => v != null))]).filter(q => isFinite(q[1]));
   /* log-log doğrusal ara noktaları sadeleştir (0,1 dB tolerans) */
   const db = PT[t].db || 10;
-  for(let i = pts.length - 2; i > 0; i--){ const p0 = pts[i - 1], p2 = pts[i + 1], p1 = pts[i]; const est = pfAt([p0, p2], p1[0], lin); if(est > 0 && p1[1] > 0 && Math.abs(db * Math.log10(p1[1] / est)) < 0.1) pts.splice(i, 1); }
+  for(let i = pts.length - 2; i > 0; i--){ const p0 = pts[i - 1], p2 = pts[i + 1], p1 = pts[i]; const est = pfAt([p0, p2], p1[0], lin), dv = pfDev(p1[1], est, PT[t]); if(dv != null && Math.abs(dv) < 0.1) pts.splice(i, 1); }
   return pts.map(q => [+q[0].toPrecision(5), +q[1].toPrecision(4)]);
 }
 /* ---- görünüm ---- */
@@ -199,11 +224,11 @@ function pfHTML(){
   const C = PF.cmp && E(PF.cmp) && cmpC.includes(E(PF.cmp)) ? E(PF.cmp) : null;
   h += `<div class="pfhead"><input class="pfname" data-pf="name" value="${esc(p.name)}"> <select data-pf="ptype">${Object.entries(PT).map(([k, v]) => `<option value="${k}"${k === t ? ' selected' : ''}>${esc(v.tr)}</option>`).join('')}</select>
     <label class="vchk">Karşılaştır: <select data-pfc="1"><option value="">(yok)</option>${cmpC.map(x => `<option value="${x.id}"${C && C.id === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label></div>`;
-  h += `<div class="pfgrid"><div class="pfchart">${pfChart([{p, tol:(t === 'psd' || t === 'srs') ? (numOf(p.tol) || (t === 'srs' ? 6 : 3)) : 0}].concat(C ? [{p:C, col:'#888', dash:1}] : []), {w:660, h:360})}</div>`;
+  h += `<div class="pfgrid"><div class="pfchart">${pfChart([{p, tol:(t === 'psd' || t === 'srs' || t === 'acoustic') ? (numOf(p.tol) || (t === 'srs' ? 6 : 3)) : 0}].concat(C ? [{p:C, col:'#888', dash:1}] : []), {w:660, h:360})}</div>`;
   h += `<div class="pfside"><div class="cards" style="grid-template-columns:1fr 1fr;margin-bottom:8px"><div class="card" style="grid-column:1/3"><div class="cv" style="font-size:22px;color:${D.col}">${esc(Mx.main || '—')}</div><div class="ct">${esc(D.tr)}</div></div></div>`;
   h += `<table class="rt pfkv">${Mx.rows.map(([k, v]) => `<tr><td>${esc(k)}</td><td><b>${esc(v)}</b></td></tr>`).join('')}</table></div></div>`;
   /* parametreler */
-  const prm = {psd:[['tol', 'Tolerans ±dB'], ['dur', 'Süre / eksen (dk)'], ['axes', 'Eksenler']], sine:[['rate', 'Süpürme hızı (oktav/dk)'], ['sweeps', 'Süpürme sayısı'], ['axes', 'Eksenler']], srs:[['q', 'Q'], ['tol', 'Tolerans ±dB'], ['shocks', 'Şok sayısı / yön'], ['axes', 'Yönler']], thermal:[['cycles', 'Döngü sayısı']]}[t];
+  const prm = {psd:[['tol', 'Tolerans ±dB'], ['dur', 'Süre / eksen (dk)'], ['axes', 'Eksenler']], sine:[['rate', 'Süpürme hızı (oktav/dk)'], ['sweeps', 'Süpürme sayısı'], ['axes', 'Eksenler']], srs:[['q', 'Q'], ['tol', 'Tolerans ±dB'], ['shocks', 'Şok sayısı / yön'], ['axes', 'Yönler']], acoustic:[['tol', 'Bant toleransı ±dB'], ['oaTol', 'OASPL toleransı ±dB'], ['dur', 'Süre (dk)']], thermal:[['cycles', 'Döngü sayısı']]}[t];
   h += `<h3>Parametreler</h3><div class="pfprm">${prm.map(([k, l]) => `<label>${esc(l)} <input data-pf="${k}" value="${esc(p[k] == null ? '' : p[k])}"></label>`).join('')}<label>Seviye / amaç <input data-pf="plevel" list="pflv" value="${esc(p.plevel || '')}" placeholder="Kalifikasyon, Kabul, ESS…"><datalist id="pflv"><option>Kalifikasyon</option><option>Kabul</option><option>ESS</option><option>Görev profili</option><option>Fonksiyonel</option><option>Dayanıklılık</option></datalist></label><label>Standart / kaynak <input data-pf="std" value="${esc(p.std || '')}" placeholder="ör. MIL-STD-810H 514.8 Kat. 24"></label></div>`;
   /* kırılma noktaları */
   h += `<h3>Kırılma noktaları <button class="vb" data-pfa="addpt">+ Nokta</button> <button class="vb" data-pfa="paste">Excel'den yapıştır…</button></h3><table class="rt pfpt"><thead><tr><th>#</th><th>${esc(D.x)}</th><th>${esc(D.y)}</th>${t === 'thermal' ? '<th>Değişim (°C/dk)</th>' : '<th>Eğim (dB/oktav)</th>'}${t === 'psd' ? '<th>Bölüm g²</th>' : ''}${t === 'sine' ? '<th>Yer değ. (mm, t-t)</th><th>Hız (mm/s)</th>' : ''}<th></th></tr></thead><tbody>`;
@@ -285,11 +310,11 @@ Object.assign(VIEWS, {'@profiles':{tr:'Test Profilleri', ic:'∿', note:'Rastgel
     const act = a.dataset.pfa, p = pfSel();
     if(act.startsWith('new:')){ snap(); const np = newProfile(act.slice(4)); PF.sel = np.id; ST.tsel = np.id; ST.exp.add(np.owner); afterChange(); return; }
     if(!p) return;
-    if(act === 'addpt'){ snap(); const q = p.pts || (p.pts = []), l = q[q.length - 1]; q.push(l ? [p.ptype === 'thermal' ? l[0] + 30 : +(l[0] * 2).toPrecision(4), l[1]] : [p.ptype === 'thermal' ? 0 : 20, p.ptype === 'thermal' ? 25 : 0.01]); afterChange(); }
+    if(act === 'addpt'){ snap(); const q = p.pts || (p.pts = []), l = q[q.length - 1]; q.push(l ? [p.ptype === 'thermal' ? l[0] + 30 : +(l[0] * 2).toPrecision(4), l[1]] : [p.ptype === 'thermal' ? 0 : 20, p.ptype === 'thermal' ? 25 : pfIsAdd(p.ptype) ? 120 : 0.01]); afterChange(); }
     if(act.startsWith('delpt:')){ snap(); p.pts.splice(+act.slice(6), 1); afterChange(); }
     if(act === 'paste') pfPaste(p);
     if(act === 'dup'){ snap(); const c = mk('TestProfile', p.owner, pfClone(p, uniqName(p.name + ' kopya', p.owner))); PF.sel = c.id; afterChange(); }
-    if(act === 'scale'){ const db = parseFloat(String(prompt('Seviye kaç dB değişsin? (ör. -3 kabul seviyesi, +6 marj)', '-3') || '').replace(',', '.')); if(!isFinite(db)) return; if(p.ptype === 'thermal') return toast('Termal profilde dB ölçekleme yok'); snap(); const k = Math.pow(10, db / PT[p.ptype || 'psd'].db); const c = mk('TestProfile', p.owner, pfClone(p, uniqName(p.name + ' (' + (db > 0 ? '+' : '') + db + ' dB)', p.owner))); c.pts = pfPts(p).map(q => [q[0], +(q[1] * k).toPrecision(4)]); PF.sel = c.id; PF.cmp = p.id; afterChange(); }
+    if(act === 'scale'){ const db = parseFloat(String(prompt('Seviye kaç dB değişsin? (ör. -3 kabul seviyesi, +6 marj)', '-3') || '').replace(',', '.')); if(!isFinite(db)) return; if(p.ptype === 'thermal') return toast('Termal profilde dB ölçekleme yok'); snap(); const k = Math.pow(10, db / PT[p.ptype || 'psd'].db); const c = mk('TestProfile', p.owner, pfClone(p, uniqName(p.name + ' (' + (db > 0 ? '+' : '') + db + ' dB)', p.owner))); c.pts = pfPts(p).map(q => [q[0], pfIsAdd(p.ptype) ? +(q[1] + db).toFixed(2) : +(q[1] * k).toPrecision(4)]); PF.sel = c.id; PF.cmp = p.id; afterChange(); }
     if(act === 'del'){ if(!confirm(`"${p.name}" profili silinsin mi?`)) return; snap(); allTests().forEach(x => { if(x.profiles) x.profiles = x.profiles.filter(id => id !== p.id); }); delModel([p.id]); PF.sel = null; PF.env.delete(p.id); afterChange(); }
     if(act === 'env'){
       const L0 = [...PF.env].map(E).filter(Boolean); if(L0.length < 2) return toast('Soldaki listede en az iki profili işaretleyin');
@@ -297,7 +322,7 @@ Object.assign(VIEWS, {'@profiles':{tr:'Test Profilleri', ic:'∿', note:'Rastgel
       const pts = pfEnvelope(L0); if(!pts) return; snap(); const np = newProfile(L0[0].ptype || 'psd', L0[0].owner, {name:uniqName('Zarf — ' + L0.map(x => x.name).join(' + ').slice(0, 60), L0[0].owner), pts, doc:'Zarf: ' + L0.map(x => x.name).join(', ')});
       ['tol', 'dur', 'axes', 'q', 'rate', 'sweeps', 'shocks', 'cycles'].forEach(k => { if(L0[0][k] != null) np[k] = L0[0][k]; }); PF.sel = np.id; PF.env.clear(); afterChange(); toast('Zarf profili oluşturuldu (' + pts.length + ' nokta)');
     }
-    if(act === 'png'){ const svg = pfChart([{p, tol:(p.ptype === 'psd' || p.ptype === 'srs') ? (numOf(p.tol) || (p.ptype === 'srs' ? 6 : 3)) : 0}].concat(PF.cmp && E(PF.cmp) ? [{p:E(PF.cmp), col:'#888', dash:1}] : []), {w:900, h:500}); svgToPng({str:svg, w:900, h:500}, 2).then(b => download(new Blob([b], {type:'image/png'}), fileSafe(p.name) + '.png')); }
+    if(act === 'png'){ const svg = pfChart([{p, tol:(p.ptype === 'psd' || p.ptype === 'srs' || p.ptype === 'acoustic') ? (numOf(p.tol) || (p.ptype === 'srs' ? 6 : 3)) : 0}].concat(PF.cmp && E(PF.cmp) ? [{p:E(PF.cmp), col:'#888', dash:1}] : []), {w:900, h:500}); svgToPng({str:svg, w:900, h:500}, 2).then(b => download(new Blob([b], {type:'image/png'}), fileSafe(p.name) + '.png')); }
     if(act === 'xl') pfXlsx();
     if(act === 'tests') pfPick('Profili kullanan test durumları — ' + p.name, allTests(), pfTests(p).map(x => x.id), ids => { snap(); allTests().forEach(x => { const has = (x.profiles || []).includes(p.id), want = ids.includes(x.id); if(has && !want) x.profiles = x.profiles.filter(i => i !== p.id); if(!has && want) x.profiles = (x.profiles || []).concat([p.id]); }); afterChange(); });
     if(act === 'reqs') pfPick('Profilin detaylandırdığı gereksinimler — ' + p.name, allReqs(), pfReqs(p).map(x => x.id), ids => { snap(); const cur0 = pfReqs(p).map(x => x.id); cur0.filter(i => !ids.includes(i)).forEach(i => delRel('Refine', p.id, i)); ids.filter(i => !cur0.includes(i)).forEach(i => addRel('Refine', p.id, i)); afterChange(); });

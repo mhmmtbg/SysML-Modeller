@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v1.51.0 — 2026-10-16
+
+- **Akustik gürültü profili:** 1/3 oktav SPL (dB, ref 20 µPa); frekans log / seviye doğrusal eksen, toplamsal ±dB bant toleransı, OASPL (standart 1/3 oktav bantlarının enerji toplamı) ve ±dB OASPL toleransı; karşılaştırma, zarf, ±dB ölçekleme, rapor ve test dokümanları
+- **Akustik ölçüm değerlendirmesi:** bant sapmasına ek olarak OASPL sapması karara, test sonucuna, VCRM'e ve kapanış raporuna yansır
+- **Zaman verisinden SRS** (Ölçüm Değerlendirme → "Zaman verisinden SRS…"): ivme–zaman CSV / Excel'den Smallwood ramp-invariant süzgeciyle mutlak ivme SRS'i; Q ayarlı, 1/6 oktav, maximax / pozitif / negatif; örnekleme hızı uyarısı; sonuç SRS profiline ±dB toleransla karşılaştırılır
+- **STANAG 4370 / AECTP-400 şablonu** (Araçlar → Şablon ekle): titreşim, akustik gürültü ve şok için gereksinim + taslak profil (Refine) + kalifikasyon testi. Yöntem numaraları ve seviyeler doğrulanmadığı için **[TBD]** gelir; profiller TASLAK işaretlidir (uyarı, doğrulama kuralı, çevre türetme kuralı taslağı atlar)
+- **Çevresel gereksinimden test prosedürü taslağı** (Gereksinimler ▾ veya gereksinimin Özellikler paneli): profil türüne göre düzenek, eksen / yön başına uygulama, ara ve son fonksiyonel kontrol adımları, hazırlık ve kabul ölçütleri doldurulur (dolu alanlar korunur) ve Word test prosedürü açılır
+- Çevre türetme kuralı akustik profilden OASPL'li gereksinim cümlesi üretir
+- Birim testi 157, regresyon testi 55 adım
+
 ## v1.50.0 — 2026-10-16
 
 - **Temel / Uzman görünüm** (araç çubuğu düğmesi, kullanıcı başına hatırlanır; yeni kullanıcı için Temel): kısa menüler (Araçlar 36 → 20, Analiz 18 → 10, Gereksinimler 29 → 20), sade palet, Özellikler panelinde "Gelişmiş" katlaması, sade araç çubuğu
