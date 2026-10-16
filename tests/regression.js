@@ -369,6 +369,29 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }, ic0);
   ok('Tutamaktan sürükleyip tür seçerek, manipülatörle doğrudan ilişki; kılavuz; menü/araç çubuğu/görünüm simgeleri', menuItems.some(x => /Association#/.test(x)) && icr.rels.includes('Association:SB') && icr.rels.includes('Generalization:SC') && icr.guide && icr.withIc && icr.tb && icr.vb, Object.assign({ menuItems }, icr));
 
+  console.log('8p) Model tarayıcı sekmeleri, süzgeç, akıllı paket, spesifikasyon penceresi');
+  const sp1 = await run(async () => {
+    const o = {}, pk = mk('Package', M.rootId, { name: 'Tarayıcı' }), g = mk('Block', pk.id, { name: 'Genel Blok' }), c1 = mk('Block', pk.id, { name: 'Özel Blok' }); mk('Generalization', pk.id, { src: c1.id, tgt: g.id, name: '' });
+    const d = newDiagramCore(pk.id, 'bdd', 'Tarayıcı BDD');
+    ST.ttab = 'dia'; renderTree(); o.dia = !!document.querySelector(`#tree [data-id="${d.id}"]`);
+    ST.ttab = 'inh'; renderTree(); const rows = [...document.querySelectorAll('#tree .tr[data-id]')].map(r => r.dataset.id); o.inh = rows.indexOf(g.id) >= 0 && rows.indexOf(c1.id) > rows.indexOf(g.id);
+    ST.ttab = 'tree'; ST.tq = 'Özel Blok'; renderTree(); o.q = document.querySelectorAll('#tree .tr.thit').length === 1 && !!document.querySelector(`#tree [data-id="${c1.id}"]`) && !document.querySelector(`#tree [data-id="${d.id}"]`); ST.tq = ''; renderTree();
+    const sp = mk('SmartPackage', pk.id, { name: 'Testsiz', rule: { kinds: ['Requirement'], conds: [{ t: 'rel', rk: 'Verify', dir: 'in', has: false }], any: false, st: '', scope: '' } });
+    const n0 = smartMembers(sp).length, rq = mk('Requirement', pk.id, { name: 'Yeni ist', text: 'Sistem çalışacaktır.' }); o.dyn = smartMembers(sp).length === n0 + 1;
+    const tc = newTest({ name: 'Ist testi' }); addRel('Verify', tc.id, rq.id); o.dyn2 = smartMembers(sp).length === n0;
+    sp.rule.conds = [{ f: 'name', op: 'has', v: 'yeni' }]; o.cond = smartMembers(sp).map(x => x.id).join() === rq.id;
+    ST.ttab = 'smart'; renderTree(); o.smartTab = !!document.querySelector(`#tree .tr.tvirt[data-id="${rq.id}"]`); ST.ttab = 'tree'; renderTree();
+    ST.tsel = c1.id; openD('@vcrm'); document.querySelector('#treeBox').focus(); document.querySelector('#treeBox').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    o.spec = $('#modalBox').classList.contains('specw') && SPEC.id === c1.id;
+    const inp = document.querySelector('#modalBox [data-spf="name"]'); inp.value = 'Özel Blok 2'; inp.dispatchEvent(new Event('change', { bubbles: true })); o.ren = E(c1.id).name === 'Özel Blok 2';
+    document.querySelector('#modalBox [data-sptab="kids"]').click(); document.querySelector('#spAddK').value = 'Value'; document.querySelector('#modalBox [data-spadd]').click(); o.kid = kidsOf(c1.id).some(x => x.kind === 'Value');
+    document.querySelector('#modalBox [data-sptab="rels"]').click(); o.rels = /Generalization|Genel Blok/.test(document.querySelector('#modalBox .specbody').textContent);
+    document.querySelector('#modalBox [data-sptab="used"]').click(); o.used = document.querySelector('#modalBox .specbody').textContent.length > 0;
+    specClose(); delModel([pk.id, tc.id]); afterChange();
+    return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Diyagram/kalıtım/akıllı sekmeleri, süzgeç, dinamik akıllı paket, Enter ile spesifikasyon, düzenleme', !sp1.error && Object.values(sp1).every(v => v === true), sp1);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

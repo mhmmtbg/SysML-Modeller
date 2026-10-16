@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.25.0 — 2026-10-16
+
+- **Model tarayıcısı sekmeleri:** Hiyerarşi, Diyagramlar, Kalıtım, Akıllı; anlık süzgeç ve vurgulama
+- **Akıllı paketler:** tür, kapsam, stereotip, özellik ve ilişki varlığı/yokluğu kurallarıyla kendiliğinden güncellenen içerik
+- **Spesifikasyon penceresi (Enter):** genel, özellikler, bölmeler, ilişkiler, stereotip/etiketler, kullanıldığı yerler, notlar
+- Büyük modelde akıllı paket hesabı önbellekli ve indeksli
+- Regresyon testi 27 adım
+
 ## v1.24.0 — 2026-10-16
 
 - **Sürükleyerek ilişki:** seçili şeklin ok tutamağından başka şekle sürükleyip bırakınca uygun ilişki türleri simgeli menüde listelenir

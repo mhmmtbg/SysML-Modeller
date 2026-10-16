@@ -826,6 +826,43 @@ Bir modeli birkaç kişi birlikte geliştirirken her kişi kendi modelinde çal�
 - **Hizalama kılavuzları:** şekil taşınırken sol/orta/sağ kenarı veya üst/orta/alt kenarı başka bir şekille hizalanınca pembe kesikli çizgi görünür ve şekil o hizaya yapışır. Alt tuşu basılıyken ızgara ve kılavuz devre dışı kalır.
 - **Simgeler:** araç çubuğundaki, menülerdeki, sağ tık menülerindeki, görünüm çubuklarındaki ve pencerelerdeki tüm seçeneklerde simge vardır. Geri al, yakınlaştır, ızgara gibi sık kullanılan düğmeler yalnız simgeyle gösterilir; adları üzerine gelince görünür.
 
+## 5r. Model tarayıcısı sekmeleri, akıllı paketler ve spesifikasyon penceresi
+
+### Model tarayıcısı
+
+Model ağacının üstündeki sekmeler:
+
+- **Hiyerarşi:** sahiplik ağacı (eskisi gibi).
+- **Diyagramlar:** tüm diyagramlar türlerine göre gruplanmış, yanında sahip paketin yolu.
+- **Kalıtım:** Generalization ilişkilerinden oluşan genel → özel ağaçları; kalıtımı olmayan sınıflandırıcılar ayrı grupta.
+- **Akıllı:** akıllı paketler ve anlık içerikleri.
+
+Sekmelerin altındaki **süzgeç kutusu** yazdıkça ağacı daraltır: ad veya kimliği (gereksinim, prosedür, risk, NCR, seri no) eşleşen elemanlar sarı vurgulanır, bulundukları yol açık gösterilir. Esc süzgeci temizler.
+
+### Akıllı paketler
+
+Akıllı paket, kurallara uyan elemanları kendiliğinden toplayan sanal bir pakettir; model değiştikçe içeriği güncellenir. Pakete sağ tık → **Yeni akıllı paket…**, Araçlar ▾ veya Akıllı sekmesindeki **+ Akıllı paket** ile oluşturulur. Kurallar:
+
+- **Eleman türleri** (boşsa tümü), **kapsam** (bir paket ve altı), **stereotip**;
+- **özellik koşulları:** ad, gereksinim ID/metni/durumu/seviyesi, doğrulama durumu (hesaplanan), test sonucu, sorumlu, eleman türü, stereotip, açık not sayısı, en yüksek RPN veya bir stereotip etiketi — *içerir, =, ≠, >, <, boş, dolu*;
+- **ilişki koşulları:** belirli bir türde ilişkisi *olan / olmayan* (giden, gelen, her yönde) — ör. "Verify ilişkisi gelmeyen gereksinimler";
+- koşullar **VE** ya da **VEYA** ile birleştirilir; pencerede içerik önizlenir.
+
+Akıllı paketin içeriği ağaçta italik görünür; tıklayınca gerçek eleman seçilir. Örnek modelde "Görünümler" paketinde üç örnek vardır.
+
+### Spesifikasyon penceresi (**Enter** veya sağ tık → Spesifikasyon…)
+
+Seçili elemanın tüm bilgileri tek pencerede, sekmeler hâlinde düzenlenir:
+
+- **Genel:** ad, tür, sahip, açıklama, kimlik (ilişkilerde kaynak/hedef).
+- **Özellikler:** elemanın tüm alanları; liste değerleri açılır kutu, tip/davranış gibi başvurular eleman seçimiyle.
+- **Bölmeler / içerik:** alt elemanlar türlerine göre (part, value, port, parametre…); yeniden adlandırma, silme, yeni ekleme.
+- **İlişkiler:** gelen ve giden tüm ilişkiler; adlandırma, silme, yeni ilişki (tür ve yön seçip eleman listesinden).
+- **Stereotip ve etiketler:** stereotip uygulama/kaldırma ve etiket değerleri.
+- **Kullanıldığı yerler** ve **Notlar.**
+
+Başka bir elemana tıklayınca onun spesifikasyonu açılır; **Geri** önceki elemana döner. Özellikler panelinin başlığındaki ⚙ düğmesi de pencereyi açar.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.
@@ -929,6 +966,7 @@ Seçili elemana göre alanlar değişir:
 | `Ctrl+Shift+V` / `Ctrl+D` | Yeni eleman olarak yapıştır / çoğalt |
 | `Ctrl+K` | Komut paleti (komutlar, görünümler, diyagramlar, elemanlar) |
 | `Ctrl+H` | Bul ve değiştir |
+| `Enter` | Seçili elemanın spesifikasyon penceresi |
 | `Ctrl+F` | Model içinde ara |
 | `Ctrl+Shift+L` | Diyagram türünün varsayılan otomatik düzeni |
 | `Del` / `Shift+Del` | Modelden sil / diyagramdan kaldır |
