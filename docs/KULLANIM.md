@@ -817,6 +817,15 @@ Bir modeli birkaç kişi birlikte geliştirirken her kişi kendi modelinde çal�
 - Modüller ekranında paylaşılan bir paket için **🔒 Düzenliyorum** modül dosyasını kilitler; o modülü kullananlar Modüller ekranında "🔒 kişi düzenliyor" bilgisini görür. **Kilidi bırak** kilidi kaldırır.
 - Tarayıcıda açılan HTML sürümü ağ klasörüne dosya yazamadığı için kilit kullanılamaz; modüller indirme / dosya seçme ile çalışır.
 
+## 5q. Sürükleyerek ilişki kurma, akıllı manipülatörler ve hizalama kılavuzları
+
+- Diyagramda bir şekil seçilince sağ kenarında **koyu ok tutamağı** ve altında diyagram türüne uygun **ilişki manipülatörleri** (ör. BDD'de Composition, Association, Generalization, Dependency) görünür.
+- **Ok tutamağını** sürükleyip başka bir şeklin üzerine bırakın: iki eleman arasında bu diyagramda kurulabilecek ilişki türleri simgeleriyle listelenir; yalnız bir tür uygunsa doğrudan oluşturulur. Sürüklerken hedef şekil yeşil çerçeveyle gösterilir.
+- **Bir manipülatörü** sürükleyip bırakmak o türde ilişkiyi doğrudan kurar.
+- Paletteki ilişki aracı da eskisi gibi çalışır (aracı seçip kaynaktan hedefe sürükleyin).
+- **Hizalama kılavuzları:** şekil taşınırken sol/orta/sağ kenarı veya üst/orta/alt kenarı başka bir şekille hizalanınca pembe kesikli çizgi görünür ve şekil o hizaya yapışır. Alt tuşu basılıyken ızgara ve kılavuz devre dışı kalır.
+- **Simgeler:** araç çubuğundaki, menülerdeki, sağ tık menülerindeki, görünüm çubuklarındaki ve pencerelerdeki tüm seçeneklerde simge vardır. Geri al, yakınlaştır, ızgara gibi sık kullanılan düğmeler yalnız simgeyle gösterilir; adları üzerine gelince görünür.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

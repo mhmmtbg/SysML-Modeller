@@ -28,6 +28,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 - **Test takvimi:** test kaynakları, bitiş→başlangıç bağımlılıkları, kritik yol ve bolluk, kaynak/numune çakışması, kalibrasyon uyarısı, kayma etkisi önizlemesi
 - **Doküman üretimi:** test prosedürü ve test raporu (Word), bölüm şablonları, kapakta revizyon geçmişi ve imza tablosu
 - **Modelleme yardımcıları:** BDD'den IBD üretme / eşitleme, bağlam diyagramı, bul ve değiştir (Ctrl+H), toplu düzenleme, kurala göre renklendiren lejant
+- **Hızlı modelleme:** şekilden şekle sürükleyerek ilişki, akıllı manipülatörler, hizalama kılavuzları; tüm seçeneklerde simgeler
 - **Ekip çalışması:** paketleri `.sysmod` modülü olarak paylaşma, salt okunur ekleme ve karşılaştırarak güncelleme, masaüstünde dosya kilidi
 - **İngilizce arayüz:** araç çubuğundaki EN / TR düğmesiyle menüler, paneller, pencereler ve mesajlar İngilizceye geçer; model içeriği ve çıktılar Türkçe kalır
 - **Kullanım kolaylığı:** `Ctrl+K` komut paleti, karanlık tema, durum geçiş tablosu ve durum × olay matrisi, seçili eleman için "kullanıldığı yerler"

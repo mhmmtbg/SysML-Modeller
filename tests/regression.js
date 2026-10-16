@@ -351,6 +351,24 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Modül dışa aktarma, salt okunur ekleme, koruma, not, karşılaştırarak ve doğrudan güncelleme, kopma', !md.error && md.n1 === 3 && md.rev2 === 2 && md.ro && md.link && md.guard && md.notes && md.cmp && md.after && md.keep && md.guard2 && md.undo && md.direct && md.view && md.props && md.detach, md);
 
+  console.log('8o) Simgeler, sürükleyerek ilişki, manipülatör, hizalama kılavuzu');
+  const ic0 = await run(() => { const pk = mk('Package', M.rootId, { name: 'Sürükle' }), a = mk('Block', pk.id, { name: 'SA' }), b = mk('Block', pk.id, { name: 'SB' }), c = mk('Block', pk.id, { name: 'SC' }); const d = newDiagramCore(pk.id, 'bdd', 'Sürükle BDD'); const A = addShape(d, a.id, 60, 60, 160, 80), B = addShape(d, b.id, 420, 60, 160, 80), C = addShape(d, c.id, 420, 300, 160, 80); openD(d.id); d.vx = 60; d.vy = 70; d.z = 1; ST.sel = new Set([A.id]); renderAll(); return { A: A.id, B: B.id, C: C.id, d: d.id, pk: pk.id }; });
+  const dragTo = async (sel, tgt) => { const h = await page.locator(sel).first().boundingBox(), t = await page.locator(`[data-sid="${tgt}"]`).first().boundingBox(); await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2); await page.mouse.down(); await page.mouse.move(t.x + t.width / 2, t.y + t.height / 2, { steps: 6 }); await page.mouse.up(); await page.waitForTimeout(150); };
+  await dragTo('[data-mani="*"]', ic0.B);
+  const menuItems = await run(() => [...document.querySelectorAll('#ctx .mi')].map(m => m.textContent.trim() + (m.querySelector('svg') ? '#' : '')));
+  await page.click('#ctx .mi:has-text("Association")'); await page.waitForTimeout(120);
+  await run(a => { ST.sel = new Set([a]); renderDiagram(); }, ic0.A);
+  await dragTo('[data-mani="Generalization"]', ic0.C);
+  const icr = await run(async o => {
+    const rels = Object.values(M.els).filter(r => KIND[r.kind] && KIND[r.kind].rel && (r.src === E(shapeOf(E(o.d), o.A).el).id)).map(r => r.kind + ':' + nm(E(r.tgt)));
+    const d = E(o.d), A = shapeOf(d, o.A), B = shapeOf(d, o.B); A.y = 63; const g = smartGuides(d, new Set([o.A]), 0, 0);
+    menu(10, 10, toolsMenuItems()); const withIc = [...document.querySelectorAll('#ctx .mi')].every(m => m.querySelector('svg')); hideMenu();
+    const tb = [...document.querySelectorAll('#toolbar button[data-act]')].filter(b => b.dataset.act !== 'lang').every(b => b.querySelector('svg.uic'));
+    openD('@vcrm'); await new Promise(r => setTimeout(r, 30)); const vb = [...document.querySelectorAll('#view .vbar button.vb')].every(b => b.querySelector('svg'));
+    delModel([o.pk]); return { rels, guide: g.dy === -3 && g.lines.length === 1, withIc, tb, vb };
+  }, ic0);
+  ok('Tutamaktan sürükleyip tür seçerek, manipülatörle doğrudan ilişki; kılavuz; menü/araç çubuğu/görünüm simgeleri', menuItems.some(x => /Association#/.test(x)) && icr.rels.includes('Association:SB') && icr.rels.includes('Generalization:SC') && icr.guide && icr.withIc && icr.tb && icr.vb, Object.assign({ menuItems }, icr));
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

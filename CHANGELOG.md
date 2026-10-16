@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.24.0 — 2026-10-16
+
+- **Sürükleyerek ilişki:** seçili şeklin ok tutamağından başka şekle sürükleyip bırakınca uygun ilişki türleri simgeli menüde listelenir
+- **Akıllı manipülatörler:** seçili şeklin yanında diyagram türüne göre ilişki simgeleri; sürükleyip bırakınca o tür doğrudan kurulur
+- **Hizalama kılavuzları:** taşırken kenar/merkez hizalama çizgileri ve yapışma
+- **Simgeler:** araç çubuğu, menüler, sağ tık menüleri, görünüm çubukları ve pencere düğmeleri; sık kullanılan araç çubuğu düğmeleri yalnız simge
+- Gölge efektleri kaldırıldı (menü, pencere, kartlar düz kenarlıklı)
+- Regresyon testi 26 adım
+
 ## v1.23.0 — 2026-10-05
 
 - **Modüller:** paketi `.sysmod` dosyası olarak dışa aktarma (revizyonlu); başka modellere **salt okunur** ekleme; modül elemanlarındaki değişikliklerin otomatik geri alınması
