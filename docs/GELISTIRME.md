@@ -29,7 +29,12 @@ VALIDATORS.push((add, els, idx) => { /* add(önem, kural, eleman, mesaj) */ });
 FIXERS['Kural adı'] = {t:'Düğme metni', f:e => true};   // otomatik onarım
 GO_EXT.YeniTür = e => openD('@görünüm');                // ağaçta çift tık
 DEMO_EXT.push(X => { /* örnek modele ekleme */ });
+DERIVE_RULES.push({id:'kural', tr:'Ad', doc:'Açıklama', opts:[['anahtar', 'Seçenek', true]],
+  gen(cfg){ return [{sig:'kararlı-imza', level:'Sistem', name:'Başlık', text:'… olacaktır', verif:'Test',
+                     src:[kaynakId], satisfyBy:blokId, parent:üstGereksinimId, refineBy:davranışId}]; }});
 ```
+
+**Gereksinim türetme kuralları** (`DERIVE_RULES`): `gen` modeli değiştirmez, öneri listesi döndürür. `sig` aynı kaynak için her çalıştırmada aynı olmalıdır; sihirbaz yinelenmeyi, "güncelle" ve "kaynak yok" durumlarını bu imzayla belirler. Kabulde gereksinim `derivedFrom = {rule, sig, gen, src}` taşır; `satisfyBy`, `parent`, `refineBy`, `verifyBy`, `mkTest`, `fmLink`, `riskLink`, `extra`, `vcond` alanları uygulama sırasında ilişkiye / alana çevrilir. Türkçe metin için `trConjugate(eylem)`, `trAct(konu, eylem)`, `trNum(sayı)` yardımcıları kullanılabilir. Öneri hesabı sırasında `relIdx()` tek seferlik önbelleklidir.
 
 Her kanca kendi `try/catch`'i içinde çalışır; hata `appErr()` ile günlüğe yazılır, diğer kancalar çalışmaya devam eder.
 

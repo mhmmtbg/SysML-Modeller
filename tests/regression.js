@@ -825,6 +825,29 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Fonksiyon / mod-geçiş / performans / FMEA kuralları: öneriler, risk seçeneği, toplu kabul, FMEA bağlantısı, kalite ve doğrulama temiz', !bh.error && Object.values(bh).every(v => v === true), bh);
 
+  console.log('9l) Kapsama haritası, ister bölme, ARES köprüsü, karşılaştırma raporu');
+  const ar = await run(async () => {
+    const o = {}; const dl0 = download; window.__dl = []; download = (blob, name) => window.__dl.push({ blob, name });
+    o.menu = ['Gereksinim kapsama haritası', 'Çoklu isterleri böl', 'ARES önerilerini içe aktar', 'Türetme karşılaştırma'].every(t => reqMenuItems().some(x => x && x.t && x.t.startsWith(t))) && toolsMenuItems().some(x => x && x.t && /ARES bağlam paketini/.test(x.t));
+    openD('@reqcover'); const gap = document.querySelector('#view td.gap'); o.view = !!gap && document.querySelectorAll('#view .rcv tbody tr').length >= 4;
+    const n0 = allReqs().length; gap.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 300, clientY: 300 }));
+    const mi = [...document.querySelectorAll('#ctx .mi')].find(x => /Şablon gereksinim/.test(x.textContent)); mi.click();
+    const nr = allReqs().find(r => !E(r.id).derivedFrom && /TBD/.test(r.text || '') && r.category); o.tpl = allReqs().length === n0 + 1 && !!nr && (relIdx().Satisfy || []).some(x => x.tgt === nr.id);
+    openD('@reqcover'); const g2 = document.querySelector('#view td.gap'); g2.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 300, clientY: 300 })); [...document.querySelectorAll('#ctx .mi')].find(x => /Uygulanamaz olarak/.test(x.textContent)).click(); o.na = !!document.querySelector('#view td.na');
+    document.querySelector('#view [data-rca="xl"]').click(); o.coverXl = /Kapsama Haritası\.xlsx$/.test(window.__dl.pop().name);
+    const r = allReqs().find(x => x.reqId === 'SUB-004'); r.text = 'Kontrol birimi durum mesajını 1 Hz ile yayınlayacak ve hata kodlarını kaydedecektir.'; afterChange();
+    splitDialog(r.id); o.dlg = document.querySelectorAll('#modalBox textarea[data-spx]').length === 2; const n1 = allReqs().length; document.querySelector('#spK').click(); o.split = allReqs().length === n1 + 1 && /yayınlayacaktır\.$/.test(r.text) && document.querySelector('#modal').style.display === 'none';
+    undo(); o.splitUndo = allReqs().length === n1;
+    const out = { schema: 'ares/suggestions', engine: 'ARES', suggestions: [{ level: 'Alt Sistem', subsystem: 'Sensör Birimi', title: 'Veri bütünlüğü', text: 'Sensör Birimi her veri paketine CRC-16 sağlama değeri ekleyecektir.', verification: 'Test', parent: 'SUB-003', category: 'ara', confidence: 0.9 }] };
+    const P = aresImportText(JSON.stringify(out), 'ares.json'); deriveRefresh(); DV.rule = 'ares'; DV.tab = 'oner'; openD('@derive');
+    o.aresRows = document.querySelectorAll('#view .dvt tbody tr').length === 1 && /CRC-16/.test(document.querySelector('#view .dvt').textContent) && !!document.querySelector('#view [data-dvr="ares"]');
+    document.querySelector('#view [data-dva="selnew"]').click(); document.querySelector('#view .vbar [data-dvgo]').click(); o.aresAcc = allReqs().some(x => x.derivedFrom && x.derivedFrom.rule === 'ares');
+    document.querySelector('#view [data-dva2="ares-out"]').click(); const f = window.__dl.pop(); const txt = await f.blob.text(); const j = JSON.parse(txt); o.ctx = /ARES bağlam paketi\.json$/.test(f.name) && j.schema === 'sysml-modeler/ares-context' && j.requirements.some(x => /CRC-16/.test(x.text));
+    document.querySelector('#view [data-dva2="cmp"]').click(); o.cmp = /Türetme Karşılaştırma\.xlsx$/.test(window.__dl.pop().name);
+    DV.rule = 'all'; download = dl0; return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Kapsama haritası (şablon, uygulanamaz, Excel), ister bölme (pencere, ilişki kopyası, geri al), ARES içe/dışa aktarma ve kabul, karşılaştırma raporu', !ar.error && Object.values(ar).every(v => v === true), ar);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);
@@ -867,9 +890,10 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
     tm('doğrulama', () => validateModel());
     tm('kaydet', () => serialize());
     tm('türetme', () => deriveOpen());
+    tm('kapsamaHaritası', () => openD('@reqcover'));
     return T;
   });
-  ok('~6000 elemanlı modelde işlemler 2 sn altında', ['diyagramAç', 'yenidenÇiz', 'ağaç', 'gereksinimTablosu', 'kapsama', 'doğrulama', 'kaydet', 'türetme'].every(k => perf[k] < 2000), perf);
+  ok('~6000 elemanlı modelde işlemler 2 sn altında', ['diyagramAç', 'yenidenÇiz', 'ağaç', 'gereksinimTablosu', 'kapsama', 'doğrulama', 'kaydet', 'türetme', 'kapsamaHaritası'].every(k => perf[k] < 2000), perf);
 
   ok('çalışma sırasında JavaScript hatası yok', !errs.length, errs.slice(0, 5));
   await browser.close();

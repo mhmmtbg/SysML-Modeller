@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.47.0 — 2026-10-16
+
+- **Gereksinim kapsama haritası:** blok × 9 kategori; boş hücreden şablon gereksinim veya "uygulanamaz"; Excel
+- **Çoklu ister bölme:** zorunluluk fiillerinden otomatik bölme önerisi, düzenlenebilir parçalar, ilişki kopyalama
+- **ARES köprüsü:** bağlam paketi dışa aktarma, ARES önerilerini içe aktarma (ayrı kural olarak), belgelenmiş JSON şeması ve örnek çıktı
+- **Türetme karşılaştırma raporu:** kurallı türetme ile ARES'in kabul oranı, kalite ve düzenleme ölçütleri (Excel)
+- Birim testi 146, regresyon testi 49 adım
+
 ## v1.46.0 — 2026-10-16
 
 - **Fonksiyon kuralı:** tahsisli aksiyonlardan fonksiyonel gereksinim; kullanım durumlarından paydaş gereksinimi

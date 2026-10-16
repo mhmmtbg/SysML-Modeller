@@ -1,0 +1,13 @@
+{
+ "schema": "ares/suggestions",
+ "version": 1,
+ "engine": "ARES (örnek çıktı)",
+ "generated": "2026-10-16T19:00:00Z",
+ "suggestions": [
+  {"id": "ares-0001", "level": "Sistem", "title": "Elektromanyetik uyumluluk", "text": "Sistem MIL-STD-461G CE102, CS101, RE102 ve RS103 gerekliliklerini karşılayacaktır.", "verification": "Test", "category": "emc", "parent": "SYS-001", "rationale": "Kapsama haritasında EMC hücresi boş", "confidence": 0.86},
+  {"id": "ares-0002", "level": "Alt Sistem", "subsystem": "Güç Birimi", "title": "Aşırı akım koruması", "text": "Güç Birimi çıkış akımını 12 A değerinde sınırlayacaktır.", "verification": "Test", "category": "emn", "parent": "SUB-001", "satisfiedBy": "Güç Birimi", "rationale": "FMEA: Çıkış gerilimi yok — koruma önlemi", "confidence": 0.81},
+  {"id": "ares-0003", "level": "Alt Sistem", "subsystem": "Kontrol Birimi", "title": "Kontrol birimi güvenilirliği", "text": "Kontrol Birimi MTBF değeri en az 20000 saat olacaktır.", "verification": "Analiz", "category": "guv", "satisfiedBy": "Kontrol Birimi", "rationale": "Mevcut MTBF etiketi 20000 saat", "confidence": 0.74},
+  {"id": "ares-0004", "level": "Alt Sistem", "subsystem": "Sensör Birimi", "title": "Veri bütünlüğü", "text": "Sensör Birimi her veri paketine CRC-16 sağlama değeri ekleyecektir.", "verification": "Test", "category": "ara", "parent": "SUB-003", "satisfiedBy": "Sensör Birimi", "rationale": "IF-002 RS-422 hattında veri bütünlüğü", "confidence": 0.69},
+  {"id": "ares-0005", "level": "Alt Sistem", "subsystem": "Güç Birimi", "title": "Saha değişimi", "text": "Güç Birimi sahada en fazla 15 dk içinde değiştirilebilecektir.", "verification": "Gösterim", "category": "bakim", "satisfiedBy": "Güç Birimi", "rationale": "LRU olarak tanımlı; bakım kolaylığı hücresi boş", "confidence": 0.77}
+ ]
+}

@@ -1136,6 +1136,22 @@ Türetme sihirbazına dört kural daha eklenmiştir; hepsi öneri → inceleme �
 
 **Kalite denetimi:** tırnak içindeki adlar ve köşeli parantez içindeki ifadeler (ör. "Rev 2" profili, [bitSonuc == 1]) birimsiz sayı veya belirsiz sözcük denetimine girmez.
 
+## 5am. Gereksinim kapsama haritası, ister bölme ve ARES köprüsü
+
+**Gereksinimler ▾ → Gereksinim kapsama haritası (eksik kategoriler):** en üst sistem bloğu ve part tipleri (satırlar) × dokuz kategori (fonksiyon, performans, arayüz, çevre, EMC, güvenilirlik, bakım kolaylığı, emniyet/güvenlik, fiziksel). Hücre, o bloğa bağlı (Satisfy, alt sistem adı veya sistem seviyesi) ve o kategorideki gereksinim sayısıdır; yoğunluk sayıyla artar. Kategori sırasıyla gereksinimin **Kategori** alanından, türetme kuralından veya metindeki anahtar sözcüklerden belirlenir (ör. "MIL-STD-461" → EMC, "MTBF" → güvenilirlik, "kütle" → fiziksel). **Boş hücreye tıklayınca:** "Şablon gereksinim oluştur" (TBD değerli, Taslak, bloğa Satisfy ile bağlı — ör. "Güç Birimi MTBF değeri en az TBD saat olacaktır.") veya "Uygulanamaz olarak işaretle" (u/d; modelde saklanır). Excel: harita ve ayrıntı.
+
+**Çoklu ister bölme:** kalite denetiminde "Birden fazla ister" uyarısı alan gereksinimler için Özellikler panelinde **İsteri böl…** düğmesi, ayrıca **Gereksinimler ▾ → Çoklu isterleri böl…** listesi. Metin zorunluluk fiillerinden ("yayınlayacak ve …", "çalışacak, … bildirecek ve …") ve cümle sonlarından bölünür; ara fiile ek eklenir ("yayınlayacak" → "yayınlayacaktır") ve sonraki parçalara özne eklenir:
+- "Kontrol birimi durum mesajını 1 Hz ile yayınlayacak ve hata kodlarını kaydedecektir." → "Kontrol birimi durum mesajını 1 Hz ile yayınlayacaktır." + "Kontrol birimi hata kodlarını kaydedecektir."
+- "5 V ve 12 V çıkış" gibi tek isterli cümleler bölünmez.
+
+Pencerede parçalar düzenlenebilir, eklenip silinebilir ve her parçanın kalite durumu görünür. İlk parça özgün gereksinimde kalır (Onaylı ise "Değişiklikte" olur); diğerleri aynı seviye, alt sistem ve doğrulama yöntemiyle yeni gereksinim olur ve (seçenek) karşılayan blok, doğrulayan test, üst gereksinim, Refine / Trace / Allocate ilişkileri kopyalanır.
+
+**ARES köprüsü (yerel LLM):**
+- **Araçlar ▾ → ARES bağlam paketini dışa aktar (JSON):** gereksinimler, bloklar (part / değer / port), arayüzler (ICD), fonksiyonlar ve tahsisleri, durum makineleri, çevre profilleri, FMEA, kapsama haritasındaki boşluklar, yazım konvansiyonu ve beklenen çıktı şeması.
+- **Gereksinimler ▾ → ARES önerilerini içe aktar (JSON):** ARES çıktısı (şema `ares/suggestions`) türetme sihirbazında **ARES (yerel LLM)** kuralı altında görünür; üst gereksinim kimlikle (SYS-001), blok adla eşlenir. Kurallı önerilerle aynı inceleme, kalite denetimi ve kabul akışı.
+- **Türetme karşılaştırma raporu (Excel):** kaynak başına görülen öneri, kabul oranı, kalite bulgusu / gereksinim, bulgusuz oranı, kabulden sonra düzenlenme oranı ve kapsanan kategori; kurallı toplam ile ARES yan yana.
+- Şema ayrıntısı: `docs/ARES-KOPRU.md`; örnek modelle denenebilecek örnek çıktı: `docs/ornek-ares-cikti.json`.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.
