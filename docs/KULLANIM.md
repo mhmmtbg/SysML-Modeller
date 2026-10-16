@@ -965,6 +965,16 @@ Hücreye tıklamak ilgili görünümü açar (gereksinim tablosu, kapsama, tahsi
 
 **Aktif doğrulama ve otomatik onarım:** **Araçlar ▾ → Model doğrulama** görünümünde düzeltilebilir her bulgunun sağında **Düzelt** düğmesi, üst çubukta **Tümünü otomatik düzelt** komutu bulunur. Desteklenen onarımlar: kopuk ilişkiyi silme, sahipsiz elemanı köke taşıma, isimsiz elemana ad verme, kopuk çağrıyı kaldırma, tipsiz part için blok / tipsiz port için arayüz bloğu oluşturup tipleme, tipsiz değere varsayılan değerden tip atama (Real/Integer/Boolean/String), aktiviteye eksik başlangıç/bitiş düğümü (ve akışlarını; diyagram açıksa şekillerini) ekleme, durum makinesine başlangıç durumu ekleme, port yön uyumsuzluğunu eşlenik (~) veya yön değiştirerek giderme. Tüm onarımlar tek adımda geri alınabilir (Ctrl+Z).
 
+## 5z. Hızlı arayüz sihirbazı ve IBD'de derin part'lar
+
+**Hızlı arayüz bağla (Cameo sihirbazı):** **Araçlar ▾ → Hızlı arayüz bağla (Cameo sihirbazı)…** (veya IBD'de bir part seçiliyken Özellikler → İç yapı (IBD) → **Hızlı arayüz bağla…**). A (sağlayan) ve B (kullanan) olarak iki blok veya açık IBD'deki iki part seçilir; IBD'de iki part seçiliyse otomatik gelir. Tek adımda:
+
+- adı verilen **InterfaceBlock** (aynı adlı varsa yeniden kullanılabilir) ve satır satır girilen **FlowProperty**'ler (`ad : tip : yön`, yön A'dan bakışla),
+- A bloğunda normal, B bloğunda **eşlenik (~)** proxy port (adlar otomatik veya elle),
+- aralarında **Connector**: IBD'de iki part seçildiyse diyagramda port şekilleriyle çizilir; bloklar seçildiyse her ikisini part olarak içeren bağlam bloğunda oluşturulur ve o bloğun IBD'leri eşitlenir. Bağlantıya arayüz bloğu taşınan öğe olarak eklenir, yönler doğrulamadan geçer.
+
+**IBD derin part'lar:** IBD'de bir part seçip Özellikler → **İç yapı (IBD)** → **Alt part'ları kutu içinde göster** işaretlenince part'ın tip bloğundaki alt part'lar (ve portları) part kutusunun içinde gösterilir; kutu içeriğe göre büyür, mevcut sınır portları kenarlarda kalır. 1–3 seviye seçilebilir; işaret kaldırılınca iç gösterim kaldırılır (model değişmez). İç part'ların portları arasında normal Connector aracıyla bağlantı kurulabilir.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

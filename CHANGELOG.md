@@ -1,5 +1,11 @@
 # Değişiklik Günlüğü
 
+## v1.33.0 — 2026-10-16
+
+- **Hızlı arayüz sihirbazı:** iki blok/part arasında InterfaceBlock + FlowProperty, normal ve eşlenik (~) proxy port, Connector (IBD'de çizili veya bağlam bloğunda) tek adımda
+- **IBD derin part'lar:** part kutusunun içinde alt part hiyerarşisi (1–3 seviye), portlarıyla
+- Regresyon testi 35 adım
+
 ## v1.32.0 — 2026-10-16
 
 - **MagicGrid mimari panosu:** Kara Kutu / Beyaz Kutu / Çözüm / Doğrulama × Gereksinim / Davranış / Yapı / Parametre hücrelerinde kanıta dayalı tamamlanma yüzdeleri, öneriler, Excel

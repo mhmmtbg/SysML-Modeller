@@ -563,6 +563,27 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('16 hücreli pano, idempotent iskelet, kopuk/tipsiz/başlangıç-bitiş/port yönü otomatik onarım', !mg.error && Object.values(mg).every(v => v === true), mg);
 
+  console.log('8x) Hızlı arayüz sihirbazı ve IBD derin part\'lar');
+  const iw = await run(() => {
+    const o = {};
+    const pk = mk('Package', M.rootId, { name: 'IW' }), Ctx = mk('Block', pk.id, { name: 'Ctx' }), A = mk('Block', pk.id, { name: 'A' }), B = mk('Block', pk.id, { name: 'B' }), S = mk('Block', pk.id, { name: 'S' });
+    const pa = mk('Part', Ctx.id, { name: 'a', type: A.id }), pb = mk('Part', Ctx.id, { name: 'b', type: B.id }); mk('Part', A.id, { name: 's1', type: S.id }); mk('Part', A.id, { name: 's2', type: S.id });
+    const d = newDiagramCore(Ctx.id, 'ibd', 'Ctx IBD'); syncIBD(d); openD(d.id);
+    const sa = d.shapes.find(s => s.el === pa.id), sb = d.shapes.find(s => s.el === pb.id);
+    const C = ifaceCandidates(), r = ifaceCreate(C.find(c => c.sh === sa), C.find(c => c.sh === sb), { name: 'AB', flows: 'x : Real : out\ny : Real : in', reuse: true });
+    o.iface = r.ib.kind === 'InterfaceBlock' && kidsOf(r.ib.id).filter(f => f.kind === 'FlowProp').length === 2 && r.pA.type === r.ib.id && r.pB.conj && !r.pA.conj && r.conn && r.conn.sp === pa.id && r.conn.tp === pb.id && (r.conn.conv || []).includes(r.ib.id);
+    o.drawn = d.edges.some(e => e.el === r.conn.id);
+    o.dirOk = !validateModel().some(x => x.rule === 'Port yön uyumsuzluğu' && x.id === r.conn.id);
+    const r2 = ifaceCreate({ k: 'block:' + A.id, block: A }, { k: 'block:' + B.id, block: B }, { name: 'AB', flows: 'x : Real : out', reuse: true });
+    o.reuse = r2.ib.id === r.ib.id && r2.flows === 0 && r2.conn && r2.conn.owner === Ctx.id;
+    const n = deepExpand(d, sa, 1), kids = d.shapes.filter(s => s.parent === sa.id && E(s.el).kind === 'Part');
+    o.deep = n >= 2 && kids.length === 2 && kids.every(k => k.x >= sa.x && k.y >= sa.y && k.x + k.w <= sa.x + sa.w && k.y + k.h <= sa.y + sa.h) && sa.deep === 1;
+    const n0 = d.shapes.length; o.collapse = deepCollapse(d, sa) >= 2 && d.shapes.length < n0 && !d.shapes.some(s => s.parent === sa.id && E(s.el).kind === 'Part') && d.shapes.some(s => s.parent === sa.id && E(s.el).kind === 'Port');
+    o.menu = toolsMenuItems().some(x => x.t && /Hızlı arayüz/.test(x.t));
+    delModel([pk.id]); afterChange(); return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Arayüz bloğu + akış özellikleri + eşlenik port + connector (IBD\'de ve bağlam bloğunda), yeniden kullanım, derin part aç/kapa', !iw.error && Object.values(iw).every(v => v === true), iw);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);
