@@ -863,6 +863,36 @@ Seçili elemanın tüm bilgileri tek pencerede, sekmeler hâlinde düzenlenir:
 
 Başka bir elemana tıklayınca onun spesifikasyonu açılır; **Geri** önceki elemana döner. Özellikler panelinin başlığındaki ⚙ düğmesi de pencereyi açar.
 
+## 5s. SysML 1.6 notasyon ayrıntıları
+
+### Taşınan öğeler (item flow)
+
+Connector, Association veya Object Flow seçilince Özellikler panelinde **Taşınan öğeler** bölümünden sinyal, blok, değer tipi, arayüz bloğu veya akış özelliği seçilir; **Akış yönü** (kaynak → hedef, hedef → kaynak, iki yönlü) belirlenir. Çizgi üzerinde dolu akış üçgeni ve «flow» etiketi görünür. Taşınan öğeler **N² matrisi** ve **ICD**'de arayüz akış öğeleri arasına katılır.
+
+### İlişki uçları
+
+Association, Composition ve Aggregation için uç **rolü**, **çokluğu** (1, 0..1, 0..*, 1..* …) ve Association'da **yönlülük** (hedefe / kaynağa / iki yönlü) girilir; uçlarda etiket ve açık ok olarak çizilir. Composition'da parça ucu zaten part adı ve çokluğuyla gösterilir; bütün ucu için rol ve çokluk eklenebilir.
+
+### İç içe portlar
+
+Port seçilince **+ Alt port** ile port içinde port tanımlanır; alt portu olan port çift kenarlı çizilir.
+
+### Örnek (instance) ve örneklem tablosu
+
+- Blok seçip Özellikler'de **Örnek ağacı üret (instantiate)** (veya sağ tık) bloğun part ağacından, çoklukları dikkate alarak (ör. `[2]` → iki örnek) bir **örnek ağacı** oluşturur. Her örnek, sınıflandırıcısının value property'leri için **slot** taşır; varsayılan değerler kopyalanır.
+- **Analiz ▾ → Örneklem tablosu**: kök örnek seçilir; satırlar örnek ağacı, sütunlar slotlardır. Değerler doğrudan yazılır; boş slotlar alt örneklerin **toplamını (Σ)** gösterir (ör. toplam kütle). Excel'e aktarılabilir.
+- Örnekler BDD'de "örnek : Blok" başlığı ve slot listesiyle çizilebilir (palette **Örnek (Instance)**).
+
+### Sequence ve aktivite notasyonu
+
+- Palette **Durum Değişmezi** ({koşul}), **Süre Kısıtı** (dikey aralık ve {d ≤ …}) ve **Zaman Kısıtı** ({t ≤ …}).
+- Yaşam çizgisine sağ tık: **Bulunan mesaj (found)**, **Kayıp mesaj (lost)** — uçta dolu daire — ve **Yok etme (destroy)** — çizginin sonunda ✕. Mesajın türü Özellikler'den de değiştirilebilir.
+- Nesne düğümü **«datastore»** veya **«centralBuffer»** olarak işaretlenir; pin, aktivite parametresi ve nesne düğümüne **{stream}** verilebilir.
+
+### Kullanım senaryosundan diyagram
+
+Use Case'in Özellikler panelindeki **Ana senaryo** alanına her satıra bir adım yazılır: `Operatör: Sistemi başlatır`, `Sistem: Kendi kendine test yapar`, `Sistem → Operatör: Hazır durumunu bildirir`. **Aktivite senaryosu üret** başlangıç → adımlar → bitiş akışını, **Sequence senaryosu üret** katılımcılar için yaşam çizgilerini ve adımlar için mesajları oluşturur (Use Case'in altına kaydedilir). Senaryo boşsa genel üç adımlı bir taslak üretilir.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

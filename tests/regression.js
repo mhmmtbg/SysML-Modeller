@@ -392,6 +392,27 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Diyagram/kalıtım/akıllı sekmeleri, süzgeç, dinamik akıllı paket, Enter ile spesifikasyon, düzenleme', !sp1.error && Object.values(sp1).every(v => v === true), sp1);
 
+  console.log('8q) SysML notasyonu: item flow, uç etiketleri, iç içe port, instance, sequence/aktivite notasyonu, UC senaryosu');
+  const sx = await run(() => {
+    const o = {}, pk = mk('Package', M.rootId, { name: 'Notasyon' }), A = mk('Block', pk.id, { name: 'NA' }), B = mk('Block', pk.id, { name: 'NB' }), sg = mk('Signal', pk.id, { name: 'Komut' });
+    mk('Value', B.id, { name: 'kütle', vtype: 'Real', def: '2' }); mk('Part', A.id, { name: 'nb', type: B.id, mult: '3' }); mk('Value', A.id, { name: 'kütle', vtype: 'Real' });
+    const d = newDiagramCore(pk.id, 'bdd', 'N BDD'), SA = addShape(d, A.id, 40, 40), SB = addShape(d, B.id, 400, 40);
+    const ed = connect(d, 'Association', SA, SB), r = E(ed.el); r.srcRole = 'yönetici'; r.tgtMult = '0..*'; r.nav = 'tgt'; r.conv = [sg.id]; r.fdir = 's>t';
+    openD(d.id); const svg = document.querySelector('#svg').innerHTML; o.adorn = svg.includes('yönetici') && svg.includes('[0..*]') && svg.includes('«flow» Komut');
+    const I = instantiate(A.id, pk.id); o.inst = I.n === 4 && kidsOf(I.root.id).filter(c => c.kind === 'Instance').length === 3 && instRollup(I.root, 'kütle') === 6;
+    IV2.root = I.root.id; openD('@instances'); o.table = document.querySelectorAll('#view tr[data-row]').length === 4;
+    const p1 = mk('Port', B.id, { name: 'dış' }); mk('Port', p1.id, { name: 'iç' }); o.nested = canOwn('Port', 'Port') && kidsOf(p1.id).length === 1;
+    const con = mk('Connector', pk.id, { src: A.id, tgt: B.id, name: '', conv: [sg.id] }); o.icd = cItems(con).some(x => x.name === 'Komut');
+    const uc = mk('UseCase', pk.id, { name: 'Ölç', scn: 'Operatör: Ölçümü başlatır\nSistem: Ölçer\nSistem → Operatör: Sonucu bildirir' }), act = mk('Actor', pk.id, { name: 'Operatör' }); mk('Association', pk.id, { src: act.id, tgt: uc.id, name: '' });
+    const ad = ucGenerate(uc, 'act'); o.ucAct = ad.shapes.filter(s => E(s.el).kind === 'Action').length === 3 && ad.edges.length === 4;
+    const sd = ucGenerate(uc, 'sd'); o.ucSd = sd.edges.length === 3 && sd.shapes.length === 2;
+    const L = sd.shapes[0], m1 = connect(sd, 'MsgAsync', L, L); E(m1.el).fl = 'found'; E(L.el).destroyed = true; addShape(sd, mk('StateInv', sd.owner, { name: 'hazır' }).id, 20, 200, 130, 30); openD(sd.id);
+    const s2 = document.querySelector('#svg').innerHTML; o.seq = s2.includes('{hazır}') && /<circle[^>]*r="5"/.test(s2);
+    const ob = mk('Object', pk.id, { name: 'kayıt', okind: 'datastore', stream: true }); const ad2 = newDiagramCore(pk.id, 'act', 'N ACT'); addShape(ad2, ob.id, 40, 40, 130, 44); openD(ad2.id); const s3 = document.querySelector('#svg').innerHTML; o.obj = s3.includes('«datastore»') && s3.includes('{stream}');
+    delModel([pk.id]); afterChange(); return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Uç rol/çokluk/yön ve item flow çizimi, instance ağacı ve toplama, iç içe port, ICD, UC senaryoları, found/değişmez/destroy, datastore/stream', !sx.error && Object.values(sx).every(v => v === true), sx);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v1.26.0 — 2026-10-16
+
+- **Item flow:** Connector/Association/Object Flow üzerinde taşınan öğeler ve akış yönü üçgeni; N² ve ICD ile senkron
+- **İlişki uçları:** rol adı, çokluk ve yönlülük gösterimi
+- **İç içe portlar**
+- **Instance specification:** bloktan tek tıkla örnek ağacı, slotlar, BDD'de örnek şekli; **Örneklem tablosu** (Σ toplama, Excel)
+- **Davranış notasyonu:** durum değişmezi, süre ve zaman kısıtı, found/lost mesaj, destroy; «datastore», «centralBuffer», {stream}
+- **Use Case senaryosu:** ana senaryo adımlarından aktivite ve sequence diyagramı üretimi
+- Regresyon testi 28 adım
+
 ## v1.25.0 — 2026-10-16
 
 - **Model tarayıcısı sekmeleri:** Hiyerarşi, Diyagramlar, Kalıtım, Akıllı; anlık süzgeç ve vurgulama
