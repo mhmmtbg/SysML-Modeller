@@ -120,5 +120,10 @@ T('varyant: geçersiz koşul doğrulamada hata verir', () => R(() => { const p =
 T('SysML v2: ASCII dışı adlar tırnaklanır, kaçış yapılır', () => R(() => v2Name('abc_1') === 'abc_1' && v2Name('güç') === "'güç'" && v2Name("a'b") === "'a\\'b'" && v2Name('1x') === "'1x'"));
 T('SysML v2: demo çıktısı temel yapıları içerir ve parantezler dengeli', () => R(() => { const t = sysmlV2Text(), o = (t.match(/\{/g) || []).length, c2 = (t.match(/\}/g) || []).length; const need = ["part def 'Araç Sistemi'", "port 'güçGiriş' : ~", 'requirement def <', 'verify ', 'satisfy ', 'allocate ', 'connect ', 'state def ', 'action def ', 'constraint def ', 'enum def ', 'accept after 30 [s]']; const miss = need.filter(x => !t.includes(x)); return o === c2 && !miss.length || {o, c2, miss}; }));
 
+/* ---------- v1.43 kullanılabilirlik ---------- */
+T('menü düzeni: bilinmeyen öğe "Diğer" altında, boş grup başlığı yok, öğe kaybolmaz', () => R(() => { const f = () => 0; const it = [{h:'Eski'}, {t:'Bütçe analizi', f}, '-', {t:'Yepyeni araç', f}, {t:'FMEA / FMECA', f}]; regroupMenu(it, MENU_GROUPS.analysis); const h = it.filter(x => x.h).map(x => x.h), t = it.filter(x => x.t).map(x => x.t); return JSON.stringify(h) === JSON.stringify(['Hesap ve bütçe', 'Güvenilirlik ve risk', 'Diğer']) && t.length === 3 && !it.includes('-') || {h, t}; }));
+T('menü düzeni: gerçek menülerde "Diğer" grubu oluşmaz', () => R(() => { const o = ['toolsMenuItems', 'analysisMenuItems', 'reqMenuItems'].map(n => eval(n)().filter(x => x && x.h === 'Diğer').length); return o.every(x => x === 0) || o; }));
+T('iş akışı: her adımın düğmesi gerçek bir menü komutuna karşılık gelir', () => R(() => { const miss = []; WF_STEPS.forEach(s => s.a.forEach(([l, re]) => { if(!menuFind(re)) miss.push(l); })); return !miss.length || miss; }));
+
 console.log(`Birim testleri: ${pass} geçti, ${fail} kaldı`);
 if(fails.length){ fails.forEach(f => console.log('  ✗ ' + f)); process.exit(1); }

@@ -1,5 +1,16 @@
 # Değişiklik Günlüğü
 
+## v1.43.0 — 2026-10-16
+
+- **İş akışı merkezi:** MBSE adımlarına göre görevler ve modeldeki ilerleme
+- **Görev odaklı menüler:** Araçlar / Analiz / Gereksinimler menüleri iş akışı başlıkları altında
+- **Tanıtım turu** (ilk açılışta önerilir), **klavye kısayolları** penceresi (?)
+- **Erişilebilirlik:** menülerde klavye gezinmesi, pencere odak tuzağı ve odak geri dönüşü, ARIA rolleri/etiketleri, yüksek kontrast teması
+- İngilizce arayüz taraması (`tools/en-tarama.js`) ve eksik çevirilerin tamamlanması
+- **Özellik ↔ test izlenebilirlik tablosu** (`docs/OZELLIK-TEST.md`, 42 özellik, tümü testli)
+- Örnek model: v1.37–v1.43 özellikleri için rehber notları, gizlilik işareti, şüpheli bağlantı; tasarım notu metni düzeltildi
+- Birim testi 100, regresyon testi 45 adım
+
 ## v1.42.0 — 2026-10-16
 
 - **Varyant / konfigürasyon yönetimi:** özellikler (feature), konfigürasyon matrisi, etkin konfigürasyon; elemanlarda varyant koşulu (kalıtımlı)

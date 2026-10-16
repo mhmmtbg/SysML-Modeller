@@ -74,7 +74,7 @@ function i18nText(n){
   if(LANG !== 'en') return;
   const p = n.parentElement; if(!p) return;
   const isTitle = p.tagName === 'title' && p.closest('svg');
-  if(!isTitle && p.closest(I18N_SKIP) && !(p.closest('.nm') && /^\(.+\)$/.test(n.data.trim()))) return;
+  if(!isTitle && p.closest(I18N_SKIP) && !p.closest('.i18nok') && !(p.closest('.nm') && /^\(.+\)$/.test(n.data.trim()))) return;
   if(I18N_ORIG.has(n) && n.data === tr(I18N_ORIG.get(n))) return;
   const de = p.getAttribute('data-en'), t = de != null && p.childNodes.length === 1 ? de : tr(n.data); if(t === n.data) return;
   I18N_ORIG.set(n, n.data);

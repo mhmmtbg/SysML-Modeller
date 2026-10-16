@@ -1064,6 +1064,15 @@ SysML'in **View / Viewpoint** mekanizmasıyla paydaşa özel dokümanlar üretil
 
 Örnek modelde **Temel** (Hafif) ve **Uzun Menzil** konfigürasyonları vardır; `sensörBirimi` part'ı `UzunMenzil || !Hafif` koşuluna bağlıdır, bu yüzden Araç Sistemi kütlesi Temel'de 7 kg, Uzun Menzil'de 10,2 kg çıkar.
 
+## 5ai. İş akışı, tanıtım turu ve erişilebilirlik
+
+- **İş akışı** (araç çubuğu): MBSE adımlarına göre görev merkezi — 1 Gereksinimleri topla, 2 Mimariyi tasarla, 3 Davranışı modelle, 4 Analiz et ve karar ver, 5 Doğrula, 6 Paylaş ve yönet. Her kartta modeldeki ilerleme (ör. "8 / 10 gereksinim doğrulamaya bağlı") ve o adımın araçları vardır.
+- **Görev odaklı menüler:** Araçlar, Analiz ve Gereksinimler menüleri başlıklar altında gruplanmıştır (ör. Modelleme yardımcıları, Model kalitesi, Rapor ve doküman, Değişim formatları; Mimari ve arayüzler, Hesap ve bütçe, Tasarım uzayı ve ürün ailesi; Gereksinimler, İçe / dışa aktarma, Doğrulama ve test, Konfigürasyon yönetimi).
+- **Tanıtım turu:** ilk açılışta durum çubuğunda önerilir; Yardım penceresinden, İş akışı'ndan veya Araçlar ▾ → Görünüm ve erişilebilirlik altından da başlatılır. ← / → ile ilerlenir, Esc ile kapanır.
+- **Klavye:** `?` tuşu kısayol listesini açar. Menüler klavyeyle açıldığında ilk öğe odaklanır; ↑ / ↓ / Home / End ile gezinilir, Enter veya Boşluk ile seçilir, Esc menüyü kapatıp açan düğmeye döner. Pencerelerde Tab odağı pencere içinde tutar; pencere açılınca ilk alan odaklanır, kapanınca önceki odak geri gelir.
+- **Yüksek kontrast:** Araçlar ▾ → Görünüm ve erişilebilirlik → Yüksek kontrast (siyah/beyaz kenarlıklar, altı çizili bağlantılar, belirgin odak çerçevesi); tercih hatırlanır.
+- **Ekran okuyucu:** araç çubuğu, paneller, menü öğeleri ve pencereler ARIA rolleri ve etiketleriyle işaretlidir; yalnız simgeli düğmeler adlarını okutur, bildirimler canlı bölge olarak duyurulur.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

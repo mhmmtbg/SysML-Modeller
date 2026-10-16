@@ -37,3 +37,5 @@ Her kanca kendi `try/catch`'i içinde çalışır; hata `appErr()` ile günlüğ
 
 - `node tests/regression.js` — tarayıcıda uçtan uca regresyon (Playwright).
 - `node tests/unit.js` — motorların birim testleri (tarayıcısız).
+- `node tools/ozellik-test.js --check` — özellik ↔ test izlenebilirlik tablosunu (`docs/OZELLIK-TEST.md`) `tests/ozellikler.json`'dan üretir; testi olmayan özellik varsa hata verir. Yeni özellik eklerken listeye bir satır ve en az bir test ekleyin.
+- `node tools/en-tarama.js` — İngilizce arayüzde tüm görünüm, menü ve pencereleri açıp çevrilmemiş Türkçe metinleri listeler (model içeriği hariç). Yeni metinler `src/i18n/dict.json`'a eklenir.

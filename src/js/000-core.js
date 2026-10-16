@@ -1,7 +1,7 @@
 'use strict';
 const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const LSK = 'sysml-modeler-v1';
-const APP_VER = '1.42.0';
+const APP_VER = '1.43.0';
 const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2110,7 +2110,7 @@ function renderTree(){
     struct.forEach(c => rec(c.id, depth + 1));
     if(rels.length){
       const gid = 'rel:' + id, go = ST.exp.has(gid);
-      h += `<div class="tr grp" style="padding-left:${(depth + 1) * 14 + 4}px"><span class="tw" data-tog="${gid}">${go ? '▾' : '▸'}</span><span class="ic" style="background:#a0a9b6">⇄</span><span class="nm">İlişkiler (${rels.length})</span></div>`;
+      h += `<div class="tr grp" style="padding-left:${(depth + 1) * 14 + 4}px"><span class="tw" data-tog="${gid}">${go ? '▾' : '▸'}</span><span class="ic" style="background:#a0a9b6">⇄</span><span class="nm i18nok">İlişkiler (${rels.length})</span></div>`;
       if(go) rels.forEach(r => row(r, depth + 2, false, false));
     }
   };

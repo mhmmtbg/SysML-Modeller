@@ -742,6 +742,32 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Varyant görünümü, etkin konfigürasyon (soluk/gizli), geri alma, Excel, özellik alanı; SysML v2 diyaloğu ve indirme', !vr.error && Object.values(vr).every(v => v === true), vr);
 
+  console.log('9h) Kullanılabilirlik: görev odaklı menüler, iş akışı, tur, klavye ve erişilebilirlik');
+  const ux = {};
+  Object.assign(ux, await run(() => { const h = r => r.filter(x => x && x.h).map(x => x.h); const t = h(toolsMenuItems()), a = h(analysisMenuItems()), q = h(reqMenuItems()); return { groups: t.includes('Modelleme yardımcıları') && t.includes('Değişim formatları (ReqIF, XMI, SysML v2)') && !t.includes('Diğer') && a.includes('Güvenilirlik ve risk') && !a.includes('Diğer') && q[0] === 'Gereksinimler' && q.includes('Doğrulama ve test') && !q.includes('Diğer'), same: toolsMenuItems().filter(x => x && x.t).length >= 34 }; }));
+  await page.click('[data-act="workflow"]'); await page.waitForTimeout(100);
+  Object.assign(ux, await run(() => ({ wf: document.querySelectorAll('#modalBox .wfcard').length === 6 && !document.querySelector('#modalBox [data-wf][disabled]'), focusIn: document.querySelector('#modalBox').contains(document.activeElement) })));
+  for (let i = 0; i < 30; i++) await page.keyboard.press('Tab');
+  ux.trap = await run(() => document.querySelector('#modalBox').contains(document.activeElement));
+  await page.click('#modalBox [data-wf="1|0"]'); await page.waitForTimeout(100);
+  ux.wfGo = await run(() => ST.cur === '@magicgrid' && document.querySelector('#modal').style.display === 'none');
+  await page.focus('[data-act="toolsMenu"]'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+  ux.menuFocus = await run(() => document.activeElement && document.activeElement.classList.contains('mi') && document.activeElement.getAttribute('role') === 'menuitem');
+  await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowUp'); await page.keyboard.press('End');
+  ux.menuEnd = await run(() => [...document.querySelectorAll('#ctx .mi:not(.dis)')].pop() === document.activeElement);
+  await page.keyboard.press('Escape'); await page.waitForTimeout(50);
+  ux.menuBack = await run(() => document.querySelector('#ctx').style.display === 'none' && document.activeElement === document.querySelector('[data-act="toolsMenu"]') && document.querySelector('[data-act="toolsMenu"]').getAttribute('aria-expanded') === 'false');
+  await run(() => tourStart(0)); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight');
+  ux.tour = await run(() => /3 \/ 10/.test(document.querySelector('#tourOv .tourCard').textContent) && !!document.querySelector('#tourOv .tourHl'));
+  await page.keyboard.press('Escape');
+  ux.tourEnd = await run(() => !document.querySelector('#tourOv') && !document.querySelector('#tourPrompt') && localStorage.getItem('sysml-tour') === '1');
+  await page.click('#svg', { position: { x: 5, y: 5 } }).catch(() => {}); await run(() => { document.activeElement && document.activeElement.blur && document.activeElement.blur(); });
+  await page.keyboard.press('?'); await page.waitForTimeout(50);
+  ux.keys = await run(() => /Klavye kısayolları/.test(document.querySelector('#modalBox h2').textContent) && document.querySelector('#modal').getAttribute('aria-labelledby') === document.querySelector('#modalBox h2').id);
+  await page.keyboard.press('Escape');
+  Object.assign(ux, await run(() => { applyContrast(true); const on = document.body.classList.contains('hc') && localStorage.getItem('sysml-hc') === '1' && getComputedStyle(document.querySelector('#toolbar')).backgroundColor === 'rgb(0, 0, 0)'; applyContrast(false); const aria = [...document.querySelectorAll('#toolbar button.ico')].every(b => b.getAttribute('aria-label')); return { hc: on && !document.body.classList.contains('hc'), aria }; }));
+  ok('Görev odaklı menü grupları, iş akışı merkezi, pencere odak tuzağı, menüde klavye, tanıtım turu, ? kısayolları, yüksek kontrast, ARIA', Object.values(ux).every(v => v === true), ux);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);
