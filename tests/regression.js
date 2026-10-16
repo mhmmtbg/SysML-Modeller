@@ -909,6 +909,16 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   })().catch(e => ({ error: e.message }));
   ok('Diyagram gezinirken depoya art arda yazma yok; değişiklikten hemen sonra yenilemede model korunur', !ps.error && Object.values(ps).every(v => v === true), ps);
 
+  console.log('9p) Durum çubuğu varyant rozeti ve tarayıcı deposu kota uyarısı');
+  const hs = await run(() => {
+    const o = {}, V = varM(); const c = V.configs[0]; V.active = c.id; afterChange(); o.on = (document.querySelector('#status .varst') || {}).textContent === '◆ ' + c.name;
+    V.active = ''; afterChange(); o.off = !document.querySelector('#status .varst');
+    const _s = localStorage.setItem.bind(localStorage), t0 = document.querySelector('#toast').textContent; localStorage.setItem = (k, v) => { if(k === LSK){ const e = new Error('quota'); e.name = 'QuotaExceededError'; throw e; } _s(k, v); };
+    PERSIST_WARNED = false; persistNow(); o.warn = /sığmıyor/.test(document.querySelector('#toast').textContent); persistNow(); o.once = PERSIST_WARNED === true;
+    localStorage.setItem = _s; persistNow(); o.reset = PERSIST_WARNED === false; return o;
+  });
+  ok('Varyant rozeti konfigürasyon kapanınca kalkar; depo kotası aşılınca bir kez uyarı, düzelince sıfırlanır', Object.values(hs).every(v => v === true), hs);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

@@ -4,6 +4,8 @@
    sig kararlı bir imzadır: aynı kaynak aynı imzayı üretir. Kabul edilen gereksinim e.derivedFrom = {rule, sig, gen, src, t} taşır;
    böylece sihirbaz tekrar çalıştığında yinelenmez, kaynak değiştiyse "güncelle", kaynak silindiyse "kaynak yok" önerir. */
 const DERIVE_RULES = [];
+/* türetme kancaları: run(öneriler) — hesap sonrası, apply(liste, seçenek, sonuç) — kabulde afterChange öncesi, list(öneriler) — liste yeniden hesaplandığında */
+const DERIVE_HOOKS = {run:[], apply:[], list:[]};
 const deriveCfg = () => (M.deriveCfg = M.deriveCfg || {rules:{}, budget:{}});
 /* ---------- metin yardımcıları ---------- */
 function trNum(v){ if(v == null || !isFinite(v)) return '—'; const a = Math.abs(v); return v.toLocaleString('tr-TR', {maximumFractionDigits:a >= 100 ? 0 : a >= 10 ? 1 : a >= 1 ? 2 : 3, useGrouping:a >= 10000}); }
@@ -30,9 +32,10 @@ function deriveRun(ruleIds){
     });
   });
   derivedReqs().filter(r => on.has(r.derivedFrom.rule) && !seen.has(r.derivedFrom.sig) && reqStatus(r) !== 'İptal').forEach(r => out.push({sig:r.derivedFrom.sig, rule:r.derivedFrom.rule, ruleTr:(DERIVE_RULES.find(x => x.id === r.derivedFrom.rule) || {}).tr || r.derivedFrom.rule, state:'kaynak yok', req:r, level:reqLevel(r), subsys:r.subsys, name:r.name, text:r.text, note:'Kaynağı modelde artık yok veya kural artık bu gereksinimi üretmiyor'}));
+  runHooks(DERIVE_HOOKS.run, 'deriveRun', [out]);
   return out;
 }
-function deriveApply(list, parentId){
+function deriveApply(list, parentId, opt){
   if(!list.length) return {n:0, u:0, x:0};
   snap(); let n = 0, u = 0, x = 0; const today = new Date().toISOString().slice(0, 10);
   list.forEach(s => {
@@ -50,7 +53,8 @@ function deriveApply(list, parentId){
       if(reqStatus(s.req) === 'Onaylı') s.req.status = 'Değişiklikte'; u++;
     } else if(s.state === 'kaynak yok' && s.req){ s.req.status = 'İptal'; x++; }
   });
-  afterChange(); return {n, u, x};
+  const res = {n, u, x, t:0}; runHooks(DERIVE_HOOKS.apply, 'deriveApply', [list, opt || {}, res]);
+  afterChange(); return res;
 }
 /* ---------- kural: arayüz gereksinimleri ---------- */
 function ifItemsText(c){
@@ -144,7 +148,7 @@ VALIDATORS.push(add => {
 });
 /* ---------- sihirbaz görünümü ---------- */
 let DV = {sel:new Set(), show:'acik', parent:'', list:null, edits:{}, rule:'all'};
-function deriveList(){ if(!DV.list || DV.rev !== REV || DV.m !== M){ DV.list = deriveRun(); DV.rev = REV; DV.m = M; const ok = new Set(DV.list.filter(x => x.state !== 'mevcut').map(x => x.sig)); DV.sel = new Set([...DV.sel].filter(x => ok.has(x))); } return DV.list; }
+function deriveList(){ if(!DV.list || DV.rev !== REV || DV.m !== M){ DV.list = deriveRun(); DV.rev = REV; DV.m = M; runHooks(DERIVE_HOOKS.list, 'deriveList', [DV.list]); const ok = new Set(DV.list.filter(x => x.state !== 'mevcut').map(x => x.sig)); DV.sel = new Set([...DV.sel].filter(x => ok.has(x))); } return DV.list; }
 function deriveRefresh(){ DV.list = null; DV.sel = new Set(); DV.edits = {}; }
 const DSTATE = {'yeni':['Yeni', '#2e7d32'], 'güncelle':['Güncelle', '#d18a00'], 'mevcut':['Mevcut', '#7f8c8d'], 'kaynak yok':['Kaynak yok', '#c0392b']};
 function deriveHTML(){

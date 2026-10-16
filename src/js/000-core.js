@@ -1,7 +1,7 @@
 'use strict';
 const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const LSK = 'sysml-modeler-v1';
-const APP_VER = '1.48.0';
+const APP_VER = '1.49.0';
 const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -3621,13 +3621,11 @@ function reqPropsHTML(el, pf){
   h += hist.length ? hist.map(x => `<div class="hli"><span class="muted">${esc(new Date(x.t).toLocaleString('tr-TR'))} · ${esc(x.u)}</span><br><b>${esc(x.f)}</b>: ${x.f === 'Metin' ? wordDiff(x.o, x.n) : esc(String(x.n).slice(0, 120))}${x.why ? ` <span class="muted">(${esc(x.why)})</span>` : ''}</div>`).join('') : '<div class="muted" style="font-size:12px">Henüz değişiklik kaydı yok</div>';
   return h;
 }
-function funcReqs(e, idx){ return (idx['Satisfy'] || []).filter(x => x.src === e.id).map(x => E(x.tgt)).filter(Boolean); }
 
 /* ---------- views ---------- */
 let RV = {lvl:'all', q:'', sortKey:null, sortDir:1, gaps:false};
 let MX = {rows:'sys', cols:'sub', rel:'auto', empty:false};
 let CV = {gaps:false};
-function openView(id){ openD(id); }
 function renderView(){
   const v = $('#view');
   if(v.dataset.v !== ST.cur){ v.dataset.v = ST.cur; v.innerHTML = `<div class="vbar"></div><div class="vbody"></div>`; renderViewBar(); }
@@ -5523,7 +5521,8 @@ function hideMenu(){ ctx.style.display = 'none'; }
 window.addEventListener('mousedown', ev => { if(!ev.target.closest('#ctx')) hideMenu(); }, true);
 let toastT = null;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', 2800); }
-function renderStatus(){
+function renderStatus(){ statusCore(); if(typeof runHooks === 'function') runHooks(STATUS_HOOKS, 'status', [$('#status')]); }
+function statusCore(){
   const d = cur();
   if(isView(ST.cur) && VIEWS[ST.cur].status){ $('#stDiag').textContent = VIEWS[ST.cur].tr; $('#stCount').textContent = VIEWS[ST.cur].status(); $('#stHint').textContent = ''; return; }
   if(isView(ST.cur)){ const rs = allReqs(); $('#stDiag').textContent = VIEWS[ST.cur].tr; $('#stCount').textContent = `${rs.filter(r => reqLevel(r) === 'Sistem').length} sistem · ${rs.filter(r => reqLevel(r) !== 'Sistem').length} alt sistem gereksinimi`; $('#stHint').textContent = 'Hücreye tıklayıp düzenleyin · Satır seçimi Özellikler panelinde açılır'; return; }
@@ -5600,7 +5599,10 @@ function persist(){
   /* tarayıcı: art arda değişiklikler tek yazmada birleşir (3 MB'lık modelde her yazma ~200 ms); sayfa kapanırken bekleyen yazma hemen yapılır */
   clearTimeout(aT); aT = setTimeout(persistNow, 500);
 }
-function persistNow(){ clearTimeout(aT); aT = null; if(NATIVE || !M) return; try { localStorage.setItem(LSK, JSON.stringify(pack(), clean)); } catch(e){} }
+let PERSIST_WARNED = false;
+function persistNow(){ clearTimeout(aT); aT = null; if(NATIVE || !M) return; let txt = '';
+  try { txt = JSON.stringify(pack(), clean); localStorage.setItem(LSK, txt); PERSIST_WARNED = false; }
+  catch(e){ appErr('persist', e); if(!PERSIST_WARNED){ PERSIST_WARNED = true; const mb = (txt.length * 2 / 1048576).toFixed(1); toast(/quota/i.test(e.name + ' ' + e.message) ? `Model (${mb} MB) tarayıcının yerel deposuna sığmıyor — değişiklikleri Kaydet ile dosyaya kaydedin` : 'Model tarayıcı deposuna yazılamadı — değişiklikleri Kaydet ile dosyaya kaydedin'); } } }
 addEventListener('pagehide', () => { if(aT) persistNow(); });
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden' && aT) persistNow(); });
 let pT = null;

@@ -39,7 +39,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 - **Arayüz modelleme:** hızlı arayüz sihirbazı (arayüz bloğu, akış özellikleri, eşlenik portlar, connector), IBD'de iç içe derin part'lar
 - **Doğrulayıcı simülasyon:** canlı kısıt denetimi, kayıtlı senaryoların birebir tekrarı, zaman diyagramı (durum + dalga biçimi)
 - **View & Viewpoint:** «conform» / «expose» ile paydaşa özel View dokümanı (HTML)
-- **Güvenilirlik:** hata günlüğü, kayıtta sağlama toplamı ve açılışta dosya denetimi, onarım geçmişi; 146 birim + 52 uçtan uca test + gerçek ölçek stres testi, özellik ↔ test izlenebilirlik tablosu
+- **Güvenilirlik:** hata günlüğü, kayıtta sağlama toplamı ve açılışta dosya denetimi, onarım geçmişi; 149 birim + 53 uçtan uca test, altın çıktı karşılaştırması ve gerçek ölçek stres testi (`node tests/hepsi.js`), özellik ↔ test izlenebilirlik tablosu
 - **Bilgi güvenliği:** gizlilik derecesi tüm çıktılarda, paket kapsamlı ve temizlenmiş dışa aktarma, doküman kontrol bilgileri
 - **Değişiklik ve tutarlılık:** şüpheli bağlantılar, SI birim/boyut analizi, arayüz tutarlılık kuralları
 - **Gelişmiş analiz:** bağlı denklem takımları (Newton), parametrik eşitsizlikler, der() ile sürekli zaman simülasyonu (RK4)

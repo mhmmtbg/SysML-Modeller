@@ -99,6 +99,6 @@ function recoverNote(msg, diskPath){
   };
 }
 {
-  const _rs4 = renderStatus; renderStatus = function(){ const n = $('#recNote'); const r = _rs4.apply(this, arguments); if(n && !$('#recNote')){ const st = $('#status'); if(st) st.insertAdjacentElement('afterbegin', n); } return r; };
+  /* durum çubuğu alt öğeleri metinle güncellenir; #recNote kendiliğinden korunur */
   const css = document.createElement('style'); css.textContent = '.recnote{background:#fff4d6;border:1px solid #e1b12c;border-radius:4px;padding:1px 8px;margin-right:10px;white-space:nowrap}body.dark .recnote{background:#3a3220;border-color:#8a6d1c}'; document.head.appendChild(css);
 }

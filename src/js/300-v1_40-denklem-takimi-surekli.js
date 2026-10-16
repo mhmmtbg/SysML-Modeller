@@ -82,10 +82,8 @@ function simAdvanceTo(t1){
 }
 function simDt(dt){ if(!SIM) return; dt = +dt || SIM.dtStep || 1; if(SIM.rec && !SIM.replaying) SIM.rec.push({k:'dt', dt}); simAdvanceTo((SIM.t || 0) + dt); simSample(); simLog(`⏱ t = ${fmtNum(SIM.t)} s (+${fmtNum(dt)} s, sürekli)`); renderSimBar(); renderDiagram(); }
 {
-  const _rsb3 = renderSimBar;
-  renderSimBar = function(){
-    _rsb3.apply(this, arguments);
-    const bar = $('#simbar'); if(!bar || !SIM || bar.style.display === 'none' || !SIM.vars) return;
+  SIMBAR_HOOKS.push(bar => {
+    if(!bar || !SIM || bar.style.display === 'none' || !SIM.vars) return;
     const odes = simOdes(), hd = bar.querySelector('.simv .simvh'); if(!hd) return;
     hd.insertAdjacentHTML('beforeend', `<span class="simode"><button class="vb" data-simdt="1" title="Zamanı Δt kadar ilerlet; der() denklemleri RK4 ile çözülür">⏱ +Δt</button><input data-simdtv="1" value="${esc(String(SIM.dtStep || 1))}" style="width:42px" title="Δt (s)"> s${odes.length ? ` <span class="muted noi18n" title="${esc(odes.map(o => 'der(' + o.v + ') = ' + o.e).join('\n'))}">∫ ${odes.length} der()</span>` : ''}</span>`);
     if(!bar._v4){ bar._v4 = 1;
@@ -93,7 +91,7 @@ function simDt(dt){ if(!SIM) return; dt = +dt || SIM.dtStep || 1; if(SIM.rec && 
       bar.addEventListener('change', ev => { const t = ev.target; if(t.dataset.simdtv != null && SIM){ const v = numOf(t.value); if(v > 0) SIM.dtStep = v; } }, true);
       bar.addEventListener('keydown', ev => { if(ev.target.dataset && ev.target.dataset.simdtv != null){ ev.stopPropagation(); if(ev.key === 'Enter') ev.target.blur(); } });
     }
-  };
+  });
 }
 /* senaryo tekrarında Δt adımları */
 {

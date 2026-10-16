@@ -151,10 +151,8 @@ function simVarsHTML(){
   return h + '</div>';
 }
 if(typeof renderSimBar === 'function'){
-  const _rsb = renderSimBar;
-  renderSimBar = function(){
-    _rsb.apply(this, arguments);
-    const bar = $('#simbar'); if(!bar || !SIM || bar.style.display === 'none') return;
+  SIMBAR_HOOKS.push(bar => {
+    if(!bar || !SIM || bar.style.display === 'none') return;
     const lg = bar.querySelector('.simlog'); if(lg) lg.insertAdjacentHTML('beforebegin', simVarsHTML());
     if(!bar._v2){ bar._v2 = 1;
       bar.addEventListener('change', ev => { const t = ev.target; if(!SIM) return;
@@ -164,7 +162,7 @@ if(typeof renderSimBar === 'function'){
       bar.addEventListener('keydown', ev => { if(ev.target.dataset && ev.target.dataset.simv != null){ ev.stopPropagation(); if(ev.key === 'Enter') ev.target.blur(); } });
       bar.addEventListener('click', ev => { const b = ev.target.closest('[data-sim]'); if(!b || !SIM) return; if(b.dataset.sim === 'trace') simTraceToSeq(); if(b.dataset.sim === 'csv') simSeriesXlsx(); }, true);
     }
-  };
+  });
 }
 /* durum makinesi yürütme izi: geçişler ve durumlar */
 if(typeof simTake === 'function'){

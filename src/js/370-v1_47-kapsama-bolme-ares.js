@@ -187,8 +187,8 @@ DERIVE_RULES.push({id:'ares', tr:'ARES (yerel LLM)', doc:'ARES\'ten (veya başka
   gen(){ const B = M.aresInbox; if(!B || !Array.isArray(B.items)) return []; return B.items.map(s => Object.assign({}, s, {sig:'ares:' + s.id, note:[s.rationale, s.confidence != null && s.confidence !== '' ? 'güven ' + s.confidence : '', B.file].filter(Boolean).join(' · '), extra:s.category ? {category:s.category} : null})); }
 });
 /* ---------- kural / ARES karşılaştırma raporu ---------- */
-function deriveSeen(L){ const S = M.deriveSeen = M.deriveSeen || {}; L.forEach(s => { if(s.state === 'kaynak yok') return; const a = S[s.rule] = S[s.rule] || []; if(!a.includes(s.sig) && a.length < 5000) a.push(s.sig); }); }
-{ const _dl = deriveList; deriveList = function(){ const L = _dl.apply(this, arguments); try { deriveSeen(L); } catch(e){ appErr('deriveSeen', e); } return L; }; }
+function deriveSeen(L){ const S = M.deriveSeen = M.deriveSeen || {}, sets = {}; L.forEach(s => { if(s.state === 'kaynak yok') return; const a = S[s.rule] = S[s.rule] || [], st = sets[s.rule] = sets[s.rule] || new Set(a); if(!st.has(s.sig) && a.length < 5000){ a.push(s.sig); st.add(s.sig); } }); }
+DERIVE_HOOKS.list.push(L => deriveSeen(L));
 function deriveStats(){
   const seen = M.deriveSeen || {}, D = derivedReqs(), rows = [];
   DERIVE_RULES.forEach(rule => {

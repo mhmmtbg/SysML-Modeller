@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## v1.49.0 — 2026-10-16
+
+- **Altın çıktı testi** (`tests/cikti.js`): 31 çıktı (13 diyagram SVG, XMI, ReqIF, SysML v2, 9 Excel içeriği, rapor, doğrulama, türetme, parametrik, bütçe, kapsama) deterministik karşılaştırılır; yeniden düzenleme sonrası 31/31 aynı
+- **Kanca listeleri:** durum çubuğu (`STATUS_HOOKS`), simülasyon çubuğu (`SIMBAR_HOOKS`) ve türetme (`DERIVE_HOOKS`) sarmalamaları kaldırıldı; türetme kabulü arayüzü 3 yerine 1 kez yeniden çizer
+- Düzeltme: varyant konfigürasyonu kapatılınca durum çubuğundaki "◆ konfigürasyon" rozeti kalıyordu
+- Düzeltme: tarayıcıda model yerel depoya sığmazsa kayıt sessizce başarısız oluyordu; artık bir kez uyarılır
+- Ölü kod temizliği; `tests/hepsi.js` ile tüm denetimler tek komutla
+- Ölçüm: açılış ~0,45 sn; derinliği 3 olan tek sarmalama kalmadı
+- Birim testi 149, regresyon testi 53 adım
+
 ## v1.48.0 — 2026-10-16
 
 - **Otomatik dönen yedekler:** masaüstünde dosyanın yanındaki `.yedek` klasörü (yazılamazsa yerel uygulama klasörü), tarayıcıda yerel veritabanı; son 10, içerik değişmediyse yinelenmez

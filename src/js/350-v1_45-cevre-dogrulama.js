@@ -65,20 +65,16 @@ function mkTestFor(r, spec, cache){
   t.derivedFrom = {rule:'iskelet', sig:'tc:' + (key || r.id), t:new Date().toISOString().slice(0, 10), src:[r.id]};
   addRel('Verify', t.id, r.id); if(key) cache.set(key, t); return t;
 }
-{
-  const _da = deriveApply;
-  deriveApply = function(list, parentId, opt){
-    const res = _da.apply(this, arguments), cache = new Map(), mk2 = opt && opt.mkTests; let nt = 0;
-    list.forEach(s => {
-      const r = s.req; if(!r || s.state !== 'yeni') return;
-      if(s.refineBy && E(s.refineBy)) addRel('Refine', s.refineBy, r.id);
-      const hasV = () => (relIdx().Verify || []).some(v => v.tgt === r.id);
-      if(!hasV() && (s.mkTest || mk2)){ mkTestFor(r, s.mkTest, cache); nt++; }
-    });
-    if(nt || list.some(s => s.refineBy)) afterChange();
-    res.t = nt; return res;
-  };
-}
+DERIVE_HOOKS.apply.push((list, opt, res) => {
+  const cache = new Map(); let nt = 0;
+  list.forEach(s => {
+    const r = s.req; if(!r || s.state !== 'yeni') return;
+    if(s.refineBy && E(s.refineBy)) addRel('Refine', s.refineBy, r.id);
+    const hasV = (relIdx().Verify || []).some(v => v.tgt === r.id);
+    if(!hasV && (s.mkTest || opt.mkTests)){ mkTestFor(r, s.mkTest, cache); nt++; }
+  });
+  res.t = nt;
+});
 /* ---------- doğrulama iskeleti: Verify'sız gereksinimler ---------- */
 function unverifiedReqs(){ const V = new Set((relIdx().Verify || []).map(v => v.tgt)); return allReqs().filter(r => activeReq(r) && reqStatus(r) !== 'İptal' && !V.has(r.id)); }
 let DVK = {sel:new Set()};

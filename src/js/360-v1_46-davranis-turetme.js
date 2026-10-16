@@ -166,16 +166,8 @@ DERIVE_RULES.push({id:'fmea', tr:'Güvenilirlik (FMEA)', doc:'Kapanmamış ve ö
   }
 });
 /* ---------- varyant koşulu kalıtımı ve FMEA / risk bağlantısı ---------- */
-{
-  const _dr = deriveRun;
-  deriveRun = function(){ /* öneri hesabı modeli değiştirmez: ilişki indeksi bir kez kurulur */ const _ri = relIdx; let ix = null; relIdx = () => ix || (ix = _ri()); let L; try { L = _dr.apply(this, arguments); } finally { relIdx = _ri; } L.forEach(s => { if(s.state !== 'kaynak yok' && !s.vcond && s.src) s.vcond = (s.src || []).map(vcondOf).find(Boolean) || ''; }); return L; };
-  const _da = deriveApply;
-  deriveApply = function(list){
-    const res = _da.apply(this, arguments); let ch = false;
-    list.forEach(s => { const r = s.req; if(!r || s.state !== 'yeni') return;
-      if(s.fmLink && E(s.fmLink)){ const f = E(s.fmLink); f.reqs = (f.reqs || []).concat(f.reqs && f.reqs.includes(r.id) ? [] : [r.id]); ch = true; }
-      if(s.riskLink && E(s.riskLink)){ const k = E(s.riskLink); k.links = (k.links || []).concat(k.links && k.links.includes(r.id) ? [] : [r.id]); ch = true; } });
-    if(ch) afterChange(); return res;
-  };
-}
+DERIVE_HOOKS.run.push(L => L.forEach(s => { if(s.state !== 'kaynak yok' && !s.vcond && s.src) s.vcond = (s.src || []).map(vcondOf).find(Boolean) || ''; }));
+DERIVE_HOOKS.apply.push(list => list.forEach(s => { const r = s.req; if(!r || s.state !== 'yeni') return;
+  if(s.fmLink && E(s.fmLink)){ const f = E(s.fmLink); f.reqs = (f.reqs || []).concat(f.reqs && f.reqs.includes(r.id) ? [] : [r.id]); }
+  if(s.riskLink && E(s.riskLink)){ const k = E(s.riskLink); k.links = (k.links || []).concat(k.links && k.links.includes(r.id) ? [] : [r.id]); } }));
 VIEWS['@derive'].note += '<br><br><b>Fonksiyon</b>, <b>Mod ve geçiş</b>, <b>Performans</b> ve <b>Güvenilirlik</b> kuralları tahsisli eylemlerden, durum makinelerinden, kısıt eşitsizliklerinden ve FMEA önlemlerinden gereksinim üretir. Eylem adları Türkçe gelecek zamana çekilir ("Güç ver" → "güç verecektir"). Kaynağın varyant koşulu gereksinime aktarılır.';

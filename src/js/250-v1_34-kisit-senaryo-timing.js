@@ -104,10 +104,8 @@ function simConsHTML(){
   return h;
 }
 {
-  const _rsb2 = renderSimBar;
-  renderSimBar = function(){
-    _rsb2.apply(this, arguments);
-    const bar = $('#simbar'); if(!bar || !SIM || bar.style.display === 'none') return;
+  SIMBAR_HOOKS.push(bar => {
+    if(!bar || !SIM || bar.style.display === 'none') return;
     const lg = bar.querySelector('.simlog'); if(lg) lg.insertAdjacentHTML('beforebegin', simConsHTML());
     if(!bar._v3){ bar._v3 = 1;
       bar.addEventListener('click', ev => {
@@ -125,7 +123,7 @@ function simConsHTML(){
       }, true);
       bar.addEventListener('keydown', ev => { if(ev.target.dataset && ev.target.dataset.simcon){ ev.stopPropagation(); if(ev.key === 'Enter') ev.target.blur(); } });
     }
-  };
+  });
 }
 /* gereksinim: simülasyon kısıtı alanı */
 HOOKS.props.push(function(){

@@ -89,7 +89,7 @@ HOOKS.props.push((t, P) => { const el = t.el; if(!el || !VAR_KINDS.has(el.kind) 
   const wu = P.querySelector('details.wu'); if(wu) wu.insertAdjacentHTML('beforebegin', html); else P.insertAdjacentHTML('beforeend', html);
 });
 VALIDATORS.push((add, els) => { els.filter(e => String(e.vcond || '').trim()).forEach(e => { const er = varCondCheck(e.vcond); if(er) add('hata', 'Geçersiz varyant koşulu', e, er); }); });
-{ const _rs = renderStatus; renderStatus = function(){ _rs.apply(this, arguments); try { const c = varActiveCfg(), st = $('#status'); if(c && st && !st.querySelector('.varst')) st.insertAdjacentHTML('beforeend', `<span class="varst noi18n" style="margin-left:12px;font-weight:600;color:#7a4fbf">◆ ${esc(c.name)}</span>`); } catch(e){ appErr('varStatus', e); } }; }
+STATUS_HOOKS.push(st => { if(!st) return; const c = varActiveCfg(); let b = st.querySelector('.varst'); if(!c){ if(b) b.remove(); return; } if(!b){ st.insertAdjacentHTML('beforeend', '<span class="varst noi18n" style="margin-left:12px;font-weight:600;color:#7a4fbf"></span>'); b = st.querySelector('.varst'); } b.textContent = '◆ ' + c.name; });
 /* ---------- SysML v2 metin dışa aktarma (alt küme) ---------- */
 function v2Name(s){ s = String(s == null ? '' : s); return /^[A-Za-z_][A-Za-z0-9_]*$/.test(s) ? s : "'" + s.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'"; }
 function v2Doc(e, ind){ return e.doc && String(e.doc).trim() ? ind + 'doc /* ' + String(e.doc).replace(/\*\//g, '* /').replace(/\n/g, '\n' + ind + ' * ') + ' */\n' : ''; }

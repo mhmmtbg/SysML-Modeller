@@ -107,7 +107,7 @@ function tourPromptShow(){
   st.insertAdjacentHTML('beforeend', '<span id="tourPrompt" style="margin-left:auto;white-space:nowrap">İlk kez mi kullanıyorsunuz? <a class="lnk" data-tp="go" tabindex="0">Tanıtım turu ▸</a> <a class="lnk" data-tp="x" tabindex="0" title="Bir daha gösterme">✕</a></span>');
   $('#tourPrompt').onclick = ev => { const a = ev.target.closest('[data-tp]'); if(!a) return; if(a.dataset.tp === 'go') tourStart(0); else tourEnd(); };
 }
-{ const _rs3 = renderStatus; renderStatus = function(){ _rs3.apply(this, arguments); try { tourPromptShow(); } catch(e){ appErr('tourPrompt', e); } }; }
+STATUS_HOOKS.push(() => tourPromptShow());
 /* Yardım penceresine tur ve kısayol düğmeleri */
 {
   const _sh = showHelp;

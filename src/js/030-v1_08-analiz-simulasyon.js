@@ -568,7 +568,8 @@ function simOverlay(d){
   if(SIM.kind === 'act'){ const en = new Set(simEnabled().map(n => n.id)); d.shapes.forEach(sh => { if(en.has(sh.el)) s += `<rect x="${sh.x - 4}" y="${sh.y - 4}" width="${sh.w + 8}" height="${sh.h + 8}" rx="14" fill="none" stroke="#27ae60" stroke-width="${2.5 / d.z}" stroke-dasharray="${6 / d.z} ${3 / d.z}" pointer-events="none"/>`; }); }
   return s;
 }
-function renderSimBar(){
+function renderSimBar(){ simBarCore(); if(typeof runHooks === 'function') runHooks(SIMBAR_HOOKS, 'simbar', [$('#simbar')]); }
+function simBarCore(){
   let bar = $('#simbar');
   if(!bar){ bar = document.createElement('div'); bar.id = 'simbar'; $('#canvasWrap').appendChild(bar); bar.addEventListener('click', ev => { const b = ev.target.closest('[data-sim]'); if(!b) return; const k = b.dataset.sim;
     if(k === 'step') simStepNow(false); else if(k === 'auto') simAuto(); else if(k === 'reset'){ simAutoOff(); simStart(); } else if(k === 'stop') simStop();

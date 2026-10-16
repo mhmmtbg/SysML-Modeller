@@ -19,7 +19,7 @@ Yeni modül, `900` öncesine sıradaki numarayla eklenir (ör. `270-v1_36-...js`
 
 ## Genişletme noktaları
 
-Modüller çekirdek fonksiyonları zincirleme sarmalamaz; kayıt olur:
+Modüller çekirdek fonksiyonları mümkün olduğunca zincirleme sarmalamaz; kanca listelerine kayıt olur (v1.49'da durum çubuğu, simülasyon çubuğu ve türetme sarmalamaları kancalara çevrildi; kalan sarmalamalar en fazla 2 katmandır):
 
 ```js
 HOOKS.props.push((target, panel) => { /* target.el, target.sh, target.ed */ });
@@ -30,6 +30,9 @@ FIXERS['Kural adı'] = {t:'Düğme metni', f:e => true};   // otomatik onarım
 GO_EXT.YeniTür = e => openD('@görünüm');                // ağaçta çift tık
 DEMO_EXT.push(X => { /* örnek modele ekleme */ });
 BOOT_HOOKS.push(info => { /* açılış tamamlandı: {native, argText, autosave, lastPath, dirty} */ });
+STATUS_HOOKS.push(statusEl => { /* durum çubuğu her çizildiğinde */ });
+SIMBAR_HOOKS.push(bar => { if(!bar || !SIM || bar.style.display === 'none') return; /* simülasyon çubuğuna bölüm ekle */ });
+DERIVE_HOOKS.apply.push((list, opt, res) => { /* kabul: afterChange öncesi, tek yeniden çizim */ });
 DERIVE_RULES.push({id:'kural', tr:'Ad', doc:'Açıklama', opts:[['anahtar', 'Seçenek', true]],
   gen(cfg){ return [{sig:'kararlı-imza', level:'Sistem', name:'Başlık', text:'… olacaktır', verif:'Test',
                      src:[kaynakId], satisfyBy:blokId, parent:üstGereksinimId, refineBy:davranışId}]; }});
@@ -43,6 +46,8 @@ Her kanca kendi `try/catch`'i içinde çalışır; hata `appErr()` ile günlüğ
 
 - `node tests/regression.js` — tarayıcıda uçtan uca regresyon (Playwright).
 - `node tests/unit.js` — motorların birim testleri (tarayıcısız).
+- `node tests/hepsi.js [--stres]` — tüm denetimler tek komutla: derleme tutarlılığı, birim, uçtan uca, altın çıktı, özellik ↔ test (ve isteğe bağlı stres). **Her değişiklikten sonra çalıştırın.**
+- `node tests/cikti.js [--guncelle]` — altın çıktı testi: deterministik örnek modelden diyagram SVG'leri, XMI, ReqIF, SysML v2, Excel içerikleri, rapor blokları, doğrulama, türetme, parametrik ve bütçe sonuçları `tests/altin/cikti.json` ile karşılaştırılır. Davranış değiştirmeyen yeniden düzenlemelerde fark olmamalı; bilerek değiştirilen çıktılar için `--guncelle`.
 - `node tests/stres.js` — gerçekçi ölçekte stres testi (~12 900 eleman, 3000 gereksinim, 60 diyagram): yükleme, kayıt, her diyagram ve görünüm, doğrulama, türetme, kapsama haritası ve tam Word raporu süre sınırlarıyla ölçülür. Performansı etkileyebilecek değişikliklerden sonra çalıştırın.
 - `node tools/ozellik-test.js --check` — özellik ↔ test izlenebilirlik tablosunu (`docs/OZELLIK-TEST.md`) `tests/ozellikler.json`'dan üretir; testi olmayan özellik varsa hata verir. Yeni özellik eklerken listeye bir satır ve en az bir test ekleyin.
 - `node tools/en-tarama.js` — İngilizce arayüzde tüm görünüm, menü ve pencereleri açıp çevrilmemiş Türkçe metinleri listeler (model içeriği hariç). Yeni metinler `src/i18n/dict.json`'a eklenir.
