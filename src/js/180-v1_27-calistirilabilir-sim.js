@@ -100,7 +100,7 @@ simStepStm = function(auto, tr){
   }
   if(!pick){
     const tt = simTimeTrans(av).filter(x => ok(x.t)).sort((a, b) => a.at - b.at);
-    if(tt.length && (auto || !av.some(t => t.name && xAfter(t.name) == null))){ const x = tt[0]; if(x.at > SIM.t){ simLog(`⏱ t = ${fmtNum(x.at)} s`); SIM.t = x.at; } pick = x.t; }
+    if(tt.length && (auto || !av.some(t => t.name && xAfter(t.name) == null))){ const x = tt[0]; if(x.at > SIM.t){ simLog(`⏱ t = ${fmtNum(x.at)} s`); simAdvanceTo(x.at); } pick = x.t; }
   }
   if(!pick && auto){ const ev = av.filter(t => t.name && xAfter(t.name) == null && ok(t)); pick = ev[Math.floor(Math.random() * ev.length)] || null; }
   if(!pick){ simLog(av.length ? 'Olay bekleniyor — aşağıdan bir tetik seçin' : '⏸ Etkin geçiş yok'); if(!av.length){ SIM.done = true; simAutoOff(); } SIM.step--; return; }
@@ -111,9 +111,9 @@ if(typeof simFireAct === 'function'){
   const _simFireAct = simFireAct;
   simFireAct = function(n, choice){
     if(SIM && SIM.vars && n.kind === 'Decision' && !choice){ const outs = simOut(n.id), g = outs.map(f => xGuard(f.guard, SIM.vars)), i = g.indexOf(true); choice = i >= 0 ? outs[i] : outs[g.indexOf('else')] || undefined; }
-    if(SIM && n.kind === 'AcceptTime'){ const dt = xAfter(n.name) || xAfter('after(' + (n.name || '1') + ')') || 1; SIM.t += dt; simLog(`⏱ t = ${fmtNum(SIM.t)} s (+${fmtNum(dt)} s)`); }
+    if(SIM && n.kind === 'AcceptTime'){ const dt = xAfter(n.name) || xAfter('after(' + (n.name || '1') + ')') || 1; simAdvanceTo(SIM.t + dt); simLog(`⏱ t = ${fmtNum(SIM.t)} s (+${fmtNum(dt)} s)`); }
     const r = _simFireAct(n, choice);
-    if(SIM && SIM.vars && n.kind === 'Action'){ if(n.dur){ const dt = xAfter(n.dur) || numOf(n.dur) || 0; if(dt){ SIM.t += dt; } } if(n.body) simExec(n.body); simTr({k:'act', name:n.name || '', lane:simLane(n.id)}); }
+    if(SIM && SIM.vars && n.kind === 'Action'){ if(n.dur){ const dt = xAfter(n.dur) || numOf(n.dur) || 0; if(dt){ simAdvanceTo(SIM.t + dt); } } if(n.body) simExec(n.body); simTr({k:'act', name:n.name || '', lane:simLane(n.id)}); }
     if(SIM && n.kind === 'Decision' && choice) simTr({k:'dec', name:choice.guard || ''});
     return r;
   };

@@ -1029,6 +1029,14 @@ SysML'in **View / Viewpoint** mekanizmasıyla paydaşa özel dokümanlar üretil
 - **Eşlenik port eksik:** iki part'ın portları aynı karışık yönlü arayüzü aynı yönde kullanıyor; otomatik onarım hedef portu eşlenik (~) yapar.
 - **Tahsisli akışa bağlantı yok:** iki aksiyon arasındaki nesne akışı farklı bloklara/part'lara tahsis edilmiş (Allocate veya kulvar) ama yapıda bu ikisi arasında connector yok; otomatik onarım ortak bağlam bloğunda arayüz bloğu, eşlenik portlar ve connector oluşturur.
 
+## 5af. Denklem takımı, parametrik eşitsizlikler ve sürekli zaman simülasyonu
+
+- **Denklem takımı (Newton):** parametrik çözücü önce tek bilinmeyenli denklemleri sırayla çözer; bilinmeyenleri birbirine bağlı kalan denklem grupları (ör. pompa eğrisi `H = H0 - k1*Q^2` ile hat eğrisi `H = k2*Q^2`) Gauss-Newton yöntemiyle **birlikte** çözülür (40 bilinmeyene kadar; birden çok başlangıç noktası, satır aramalı). Parametrik hesap penceresinde bu denklemler "çözüldü (denklem takımı)" olarak görünür. Eksik belirli takımlar "çözülemedi" kalır.
+- **Parametrik eşitsizlikler:** kısıt bloğu ifadesine `P <= 120`, `T > -40`, `x != 0` gibi satırlar yazılabilir; denklemler çözüldükten sonra denetlenir, pencerede "sağlanıyor / İHLAL" olarak listelenir ve model doğrulamada **Parametrik kısıt ihlali** bulgusu verir. (Simülasyonda da canlı kısıt olarak denetlenir.)
+- **Sürekli zaman (der):** bloğun Özellikler panelindeki **Sürekli dinamik** alanına veya bir durumun **do** alanına `der(sıcaklık) = (25 - sıcaklık) / 60` gibi diferansiyel denklemler yazılır. Simülasyonda zaman ilerlediğinde (after() zaman olayları, aksiyon süreleri, zaman olayı düğümü veya paneldeki **⏱ +Δt** düğmesi) bu denklemler RK4 yöntemiyle çözülür; ara noktalar grafiğe ve zaman diyagramına eklenir, kısıtlar ara noktalarda da denetlenir. Etkin durumun der() denklemi blok düzeyindekini geçersiz kılar; part tiplerindeki der() denklemleri `part.değer` adıyla dahil edilir. +Δt adımları senaryo kaydına girer.
+
+Örnek modelde Araç Sistemi'nin sıcaklığı ortam sıcaklığına soğur, **Görevde** durumunda ısınır; **Soğutma Döngüsü** bloğu denklem takımı örneğidir; Güç Denklemi'nde `P <= 120` eşitsizliği vardır.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

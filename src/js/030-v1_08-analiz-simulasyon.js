@@ -56,7 +56,7 @@ function exEval(n, env){
 }
 function exVars(n, out){ out = out || new Set(); if('v' in n){ if(!(n.v in EXC)) out.add(n.v); } else if(n.f) n.args.forEach(a => exVars(a, out)); else if(n.a){ exVars(n.a, out); if(n.b) exVars(n.b, out); } return out; }
 function parseEqs(expr){
-  return String(expr || '').split(/[;\n]+/).map(x => x.trim()).filter(Boolean).map(x => {
+  return String(expr || '').split(/[;\n]+/).map(x => x.trim()).filter(Boolean).filter(x => !isIneq(x)).map(x => {
     const k = x.split(/(?<![<>!=])=(?!=)/);
     if(k.length !== 2) throw new Error('Denklem "a = b" biçiminde olmalı: ' + x);
     return {src:x, l:exParse(k[0]), r:exParse(k[1])};
@@ -97,6 +97,7 @@ function parSolve(blockId){
     const cb = E(cp.type), params = kidsOf(cb.id).filter(p => p.kind === 'Param');
     let eqs; try { eqs = parseEqs(cb.expr); } catch(e){ out.errors.push(`${cp.name} (${cb.name}): ${e.message}`); return; }
     const vmap = new Map(params.map(p => [p.name, node('P:' + cp.id + ':' + p.id)]));
+    parseIneqs(cb.expr).forEach(src => (out.ineqs = out.ineqs || []).push({cp, src, vmap}));
     eqs.forEach(eq => { const vs = [...exVars(eq.l), ...exVars(eq.r)]; const miss = vs.filter(v => !vmap.has(v)); if(miss.length){ out.errors.push(`${cp.name}: "${miss.join(', ')}" kısıt bloğunun parametresi değil`); return; } out.eqs.push({cp, src:eq.src, eq, vmap}); });
   });
   const known = new Map(), given = new Set(), groups = new Map();
@@ -114,6 +115,7 @@ function parSolve(blockId){
       if(isFinite(x)){ known.set(find(q.vmap.get(U[0])), x); q.solved = U[0]; prog = true; }
       else q.fail = U[0];
     });
+    if(!prog && typeof parNewton === 'function' && parNewton(out.eqs, find, known)){ prog = true; out.newton = (out.newton || 0) + 1; }
   }
   out.eqs.forEach(q => {
     const env = new Map(); let all = true;
@@ -127,6 +129,7 @@ function parSolve(blockId){
     const ctx = k.split(':')[1];
     out.vals.push({v, ctx, given:given.has(g), val:known.has(g) ? known.get(g) : null});
   }));
+  out.checks = (out.ineqs || []).map(c => { const env = new Map(); c.vmap.forEach((k, name) => { const g = find(k); if(known.has(g)) env.set(name, known.get(g)); }); const r = typeof xGuard === 'function' ? xGuard(c.src, env) : null; return {cp:c.cp, src:c.src, ok:r === true ? true : r === false ? false : null, env:[...env].map(([k, v]) => k + '=' + fmtNum(v)).join(', ')}; });
   return out;
 }
 function parSolveAll(write){
@@ -151,7 +154,8 @@ function parDialog(){
       `<table class="rt" style="width:100%;margin-top:6px"><thead><tr><th>Değer</th><th>Bağlam</th><th>Durum</th><th style="text-align:right">Sonuç</th></tr></thead><tbody>` +
       r.vals.map(x => `<tr><td><b>${esc(x.v.name)}</b> <span class="muted">${esc(x.v.vtype || '')}</span></td><td class="muted">${esc(x.ctx && E(x.ctx) ? E(x.ctx).name : pathOf(x.v.owner))}</td><td>${x.given ? 'girdi' : x.val != null ? '<span style="color:#2e7d32;font-weight:600">hesaplandı</span>' : '<span style="color:#d18a00">bilinmiyor</span>'}</td><td style="text-align:right;font-variant-numeric:tabular-nums">${fmtNum(x.val)} ${esc(unitOf(x.v))}</td></tr>`).join('') + '</tbody></table>' +
       `<table class="rt" style="width:100%;margin-top:8px"><thead><tr><th>Kısıt</th><th>Denklem</th><th>Durum</th></tr></thead><tbody>` +
-      r.eqs.map(q => `<tr><td>${esc(q.cp.name)}</td><td><code>${esc(q.src)}</code></td><td style="color:${stc(q.status || '')};font-weight:600">${esc(q.status || '')}</td></tr>`).join('') + '</tbody></table>';
+      r.eqs.map(q => `<tr><td>${esc(q.cp.name)}</td><td><code>${esc(q.src)}</code></td><td style="color:${stc(q.status || '')};font-weight:600">${esc(q.status || '')}${q.newton ? ' <span class="muted">(denklem takımı)</span>' : ''}</td></tr>`).join('') + '</tbody></table>' +
+      ((r.checks || []).length ? `<table class="rt" style="width:100%;margin-top:8px"><thead><tr><th>Kısıt</th><th>Eşitsizlik</th><th>Değerler</th><th>Durum</th></tr></thead><tbody>${r.checks.map(c => `<tr><td>${esc(c.cp.name)}</td><td><code>${esc(c.src)}</code></td><td class="muted">${esc(c.env)}</td><td style="font-weight:600;color:${c.ok === true ? '#2e7d32' : c.ok === false ? '#c0392b' : '#d18a00'}">${c.ok === true ? 'sağlanıyor' : c.ok === false ? 'İHLAL' : 'hesaplanamadı'}</td></tr>`).join('')}</tbody></table>` : '');
   }).join('') + `</div><p class="muted" style="margin:8px 0 0">Varsayılan değeri dolu olan value property'ler <b>girdi</b>, boş olanlar <b>çıktı</b> kabul edilir. Sonuçlar diyagramlarda <i>= değer ⚙</i> olarak gösterilir. Fonksiyonlar: sqrt, abs, sin, cos, tan, exp, ln, log, min, max, pow, round; sabitler: pi, e, g0.</p>
   <p style="text-align:right;margin:8px 0 0"><button class="pbtn" id="pdclr">Sonuçları temizle</button> <button class="pbtn pri" id="pdok">Kapat</button></p>`;
   $('#modal').style.display = 'flex';

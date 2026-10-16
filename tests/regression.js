@@ -698,6 +698,18 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Metin değişince şüpheli işaret; menü sayacı, görünüm, matris ve diyagram işaretleri, doğrulama, panel onayı', !sl.error && Object.values(sl).every(v => v === true), sl);
 
+  console.log('9e) Denklem takımı, eşitsizlik denetimi, sürekli zaman simülasyonu');
+  const nw = await run(() => {
+    const o = {};
+    parDialog(); const t = document.querySelector('#modalBox').textContent; o.dialog = /denklem takımı/.test(t) && /P <= 120/.test(t) && /sağlanıyor/.test(t); $('#modal').style.display = 'none';
+    const d = Object.values(M.els).find(e => e.kind === 'Diagram' && e.dtype === 'stm'); openD(d.id); simStart(); renderSimBar();
+    o.btn = !!document.querySelector('#simbar [data-simdt]') && /der\(\)/.test(document.querySelector('#simbar').textContent);
+    SIM.vars.set('sıcaklık', 70); document.querySelector('#simbar [data-simdtv]').value = '30'; document.querySelector('#simbar [data-simdtv]').dispatchEvent(new Event('change', { bubbles: true }));
+    document.querySelector('#simbar [data-simdt]').click(); o.ode = SIM.t === 30 && SIM.vars.get('sıcaklık') < 70 && SIM.vars.get('sıcaklık') > 25;
+    simStop(); return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Parametrik pencerede denklem takımı ve eşitsizlik; simülasyonda +Δt ile der() entegrasyonu', !nw.error && Object.values(nw).every(v => v === true), nw);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

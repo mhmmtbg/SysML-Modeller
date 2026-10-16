@@ -116,8 +116,10 @@ function exDim(n, env, issues){
   const a = exDim(n.a, env, issues); if(n.o === 'neg') return a;
   const b = exDim(n.b, env, issues);
   if(n.o === '+' || n.o === '-'){ if(a && b && !dimEq(a, b)) issues.push(`toplama/çıkarmada [${dimStr(a)}] ile [${dimStr(b)}]`); return a || b; }
-  if(n.o === '*'){ if(!a && !b) return null; return (a || DZ()).map((x, i) => x + (b || DZ())[i]); }
-  if(n.o === '/'){ if(!a && !b) return null; return (a || DZ()).map((x, i) => x - (b || DZ())[i]); }
+  /* sayı sabiti çarpan olarak boyutsuzdur; birimsiz değişken ise bilinmeyen boyut (serbest) kabul edilir */
+  const lit = x => 'n' in x;
+  if(n.o === '*'){ if((!a && !lit(n.a)) || (!b && !lit(n.b))) return null; return (a || DZ()).map((x, i) => x + (b || DZ())[i]); }
+  if(n.o === '/'){ if((!a && !lit(n.a)) || (!b && !lit(n.b))) return null; return (a || DZ()).map((x, i) => x - (b || DZ())[i]); }
   if(n.o === '^'){ if(!a) return null; const p = 'n' in n.b ? n.b.n : null; return p == null ? a : a.map(x => x * p); }
   return null;
 }

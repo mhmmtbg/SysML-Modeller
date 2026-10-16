@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.40.0 — 2026-10-16
+
+- **Denklem takımı:** bağlı bilinmeyenli parametrik denklemler Gauss-Newton ile birlikte çözülür
+- **Parametrik eşitsizlikler:** kısıt bloklarında `<, <=, >, >=, !=` satırları denetim olarak; pencere ve doğrulama bulgusu
+- **Sürekli zaman simülasyonu:** `der(x) = …` denklemleri (blok ve durum düzeyinde) RK4 ile; +Δt düğmesi, ara örnekler, senaryo kaydında Δt
+- Birim analizinde birimsiz katsayılar yanlış alarm vermez
+- Birim testi 84, regresyon testi 42 adım
+
 ## v1.39.0 — 2026-10-16
 
 - **Şüpheli bağlantılar:** gereksinim değişince bağlı izlenebilirlik ilişkileri işaretlenir; görünüm, gözden geçirme onayı ve kaydı, matris/diyagram/panel işaretleri, doğrulama bulgusu, Excel
