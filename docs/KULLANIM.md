@@ -1037,6 +1037,18 @@ SysML'in **View / Viewpoint** mekanizmasıyla paydaşa özel dokümanlar üretil
 
 Örnek modelde Araç Sistemi'nin sıcaklığı ortam sıcaklığına soğur, **Görevde** durumunda ısınır; **Soğutma Döngüsü** bloğu denklem takımı örneğidir; Güç Denklemi'nde `P <= 120` eşitsizliği vardır.
 
+## 5ag. Ölçüm verisiyle test kanıtı ve doğrulama kapanış raporu
+
+**Gereksinimler ▾ → Ölçüm değerlendirme ve kapanış raporu** (veya test durumunun Özellikler panelindeki **Ölçüm değerlendirme**):
+
+- **Ölçüm aktar (CSV / Excel)…:** ilk sütun frekans (Hz) veya zaman (dk), sonraki sütunlar ölçülen değerler (ör. X, Y, Z eksenleri ASD g²/Hz). Başlık satırları atlanır, ondalık virgül tanınır. Her sütun test durumunun altına bir **Ölçüm** elemanı olarak eklenir; referans test profili seçilir (testin profilleri ★ ile önde).
+- **Değerlendirme:** ölçülen eğri, referans profilin tolerans bandıyla (profil toleransı veya ölçüm başına ±dB; termal profilde ±°C) karşılaştırılır: en küçük/en büyük sapma, **tolerans dışı bant yüzdesi** (logaritmik frekans genişliğiyle ağırlıklı) ve izin verilen yüzde, kapsam (≥ %90 gerekir), rastgele titreşimde **Grms sapması** (varsayılan ±%10). Grafikte referans, tolerans bandı ve ölçülen eğri üst üste çizilir.
+- **Sonucu teste yaz:** testin tüm ölçümleri tolerans içindeyse "Geçti", biri bile dışındaysa "Kaldı" test sonucuna yazılır (kaynak ve tarih notuyla); VCRM ve gereksinim doğrulama durumu buna göre güncellenir. Test sonucu ile ölçüm kararı çelişirse model doğrulama uyarır.
+- **Doğrulama kapanış raporu (Word):** tüm gereksinimler için doğrulama yöntemi, doğrulayan testler ve sonuçları, ölçüm kararları, açık NCR sayısı ve **KAPANDI / açık** durumu; ölçümlü testler için grafik ve ölçüt tabloları; açık kalan gereksinimler listesi. Doküman şablonu ayarları (kuruluş, hazırlayan, onay blokları) ve gizlilik derecesi uygulanır.
+- **Excel:** özet sayfası ve her ölçüm için nokta nokta sapma tablosu.
+
+Örnek modelde "Rastgele titreşim kalifikasyon testi"ne üç eksen ölçümü eklidir; Z ekseninde 400–520 Hz arasında tolerans aşımı vardır.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

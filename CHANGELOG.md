@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.41.0 — 2026-10-16
+
+- **Ölçüm verisi:** CSV/Excel'den çok eksenli ölçüm aktarma; test durumu altında Ölçüm elemanı
+- **Tolerans değerlendirmesi:** ±dB / ±°C bandı, tolerans dışı bant yüzdesi ve izin, kapsam, Grms sapması; grafik
+- **Sonucu teste yaz:** ölçüm kararı test sonucuna ve VCRM'e; çelişki doğrulama bulgusu
+- **Doğrulama kapanış raporu (Word)** ve ölçüm Excel'i
+- Birim testi 91, regresyon testi 43 adım
+
 ## v1.40.0 — 2026-10-16
 
 - **Denklem takımı:** bağlı bilinmeyenli parametrik denklemler Gauss-Newton ile birlikte çözülür

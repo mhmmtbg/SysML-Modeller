@@ -43,6 +43,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 - **Bilgi güvenliği:** gizlilik derecesi tüm çıktılarda, paket kapsamlı ve temizlenmiş dışa aktarma, doküman kontrol bilgileri
 - **Değişiklik ve tutarlılık:** şüpheli bağlantılar, SI birim/boyut analizi, arayüz tutarlılık kuralları
 - **Gelişmiş analiz:** bağlı denklem takımları (Newton), parametrik eşitsizlikler, der() ile sürekli zaman simülasyonu (RK4)
+- **Test kanıtı:** ölçülen PSD/SRS/sinüs/termal veriyi tolerans bandına göre değerlendirme, VCRM'e sonuç, doğrulama kapanış raporu
 - **Hızlı modelleme:** şekilden şekle sürükleyerek ilişki, akıllı manipülatörler, hizalama kılavuzları; tüm seçeneklerde simgeler
 - **Ekip çalışması:** paketleri `.sysmod` modülü olarak paylaşma, salt okunur ekleme ve karşılaştırarak güncelleme, masaüstünde dosya kilidi
 - **İngilizce arayüz:** araç çubuğundaki EN / TR düğmesiyle menüler, paneller, pencereler ve mesajlar İngilizceye geçer; model içeriği ve çıktılar Türkçe kalır

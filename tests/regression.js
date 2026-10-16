@@ -710,6 +710,21 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Parametrik pencerede denklem takımı ve eşitsizlik; simülasyonda +Δt ile der() entegrasyonu', !nw.error && Object.values(nw).every(v => v === true), nw);
 
+  console.log('9f) Ölçüm verisiyle test kanıtı ve kapanış raporu');
+  const ms = await run(async () => {
+    const o = {}; const dl0 = download; window.__dl = []; download = (blob, name) => window.__dl.push({ blob, name });
+    const tc = E(allMeas()[0].owner); MSV.tc = tc.id; openD('@measure');
+    o.view = document.querySelectorAll('#view .tschart svg').length === 3 && /Tolerans dışı/.test(document.querySelector('#view').textContent);
+    document.querySelector('#view [data-mea="apply"]').click(); o.apply = testResult(tc) === 'Kaldı';
+    openD('@vcrm'); o.vcrm = /Kaldı/.test(document.querySelector('#view').textContent);
+    openD('@measure'); const mz = measOf(tc.id).find(m => /Z/.test(m.name)); mz.allowOut = 10; afterChange(); o.allow = measEval(mz).ok;
+    const r = await closureReport(); const f = window.__dl.pop(); o.report = /Kapanış Raporu\.docx$/.test(f.name) && f.blob.size > 5000 && r.total >= 5;
+    measXlsx(); o.xlsx = /Ölçüm Değerlendirme\.xlsx$/.test(window.__dl.pop().name);
+    o.menu = reqMenuItems().some(x => x.t && /Ölçüm değerlendirme/.test(x.t));
+    download = dl0; return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Ölçüm görünümü (grafik + tolerans), sonucu teste yazma ve VCRM, izin yüzdesi, kapanış raporu ve Excel', !ms.error && Object.values(ms).every(v => v === true), ms);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);
