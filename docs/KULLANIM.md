@@ -1165,6 +1165,18 @@ Pencerede parçalar düzenlenebilir, eklenip silinebilir ve her parçanın kalit
 
 **Büyük modeller:** gereksinim tablosu 150 satırlık sayfalarla, büyük izlenebilirlik matrisleri 150 satır × 120 sütunluk sayfalarla (◀ ▶) çizilir; satır/sütun toplamları ve ilişkisiz sayıları her zaman tüm küme üzerindendir. Türetme sihirbazı ilk 200 öneriyi gösterir ("Daha fazla göster"); toplu seçim gizli satırları da kapsar. Tarayıcı sürümünde yerel kayıt 0,5 sn gecikmeyle birleştirilerek yazılır, sayfa kapanırken bekleyen kayıt hemen yapılır.
 
+## 5ao. Temel / Uzman görünüm
+
+Araç çubuğunun sağındaki **Temel / Uzman** düğmesi (veya Araçlar ▾ → Görünüm ve erişilebilirlik) iki görünüm arasında geçiş yapar; tercih kullanıcı başına hatırlanır, model dosyasına yazılmaz. Yeni kullanıcı için varsayılan **Temel** görünümdür.
+
+**Temel görünümde:**
+- **Menüler kısalır** (Araçlar 36 → 20, Analiz 18 → 10, Gereksinimler 29 → 20 öğe). Gizlenenler: trade study, duyarlılık, Monte Carlo, varyantlar, zaman diyagramı, genel / örneklem tablosu, ilişki haritası; SysML v2, ARES, modüller, inceleme paketi ve notları, View dokümanı, akıllı paket, MagicGrid, birim kütüphanesi, model birleştirme, hata günlüğü ve dosya denetim geçmişi; gereksinim sütun ayarı, kullanıcı adı, değişiklik geçmişi, türetme karşılaştırması ve görünüm çubuklarında zaten bulunan kısayollar (VCRM Excel'i, test sonucu içe aktarma, yeni gereksinim diyagramı, çoklu ister bölme).
+- **Palet sadeleşir:** Örnek (Instance), Bakış açısı / Görünüm, Conform / Expose, yatay kulvar, kesilebilir bölge, History / Junction, durum değişmezi ve süre / zaman kısıtları gizlenir.
+- **Özellikler paneli:** ikon, görünüm (dolgu, çizgi, bölmeler, konum / boyut), gösterildiği ve bağlı diyagramlar, tip olarak kullananlar, kullanıldığı yerler, bölme elemanları, sürekli dinamik, simülasyon kısıtı ve boş varyant koşulu **Gelişmiş** katlamasına alınır; kimlik, yapı (part / flow / değer / port), stereotip ve etiketler, açıklama, gereksinim alanları ve inceleme notları üstte kalır.
+- Araç çubuğunda biçim boyacısı, ikon ve mini harita düğmeleri gizlenir; gizlilik rozeti yalnız model işaretliyse görünür.
+
+**Her iki görünümde:** komut paleti (Ctrl+K) ve İş akışı merkezi tüm komutları bulur; menülerde yinelenen girişler kaldırılmıştır (ReqIF Gereksinimler menüsünde, MagicGrid panosu Araçlar menüsünde) ve sonradan eklenen komutlar doğru başlık altında görünür.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

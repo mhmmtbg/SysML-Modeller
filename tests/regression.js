@@ -32,6 +32,8 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   await page.waitForTimeout(600);
   // indirmeleri yakala
   await page.evaluate(() => { window.__dl = []; download = (blob, name) => { window.__dl.push({ name, size: blob.size, blob }); }; });
+  // testler tüm komutları kullanır: Uzman görünüm (Temel görünüm ayrıca 9q adımında test edilir)
+  await page.evaluate(() => { UI_MODE.set('uzman'); applyMode(); renderAll(); });
   const run = (fn, arg) => page.evaluate(fn, arg);
 
   console.log('1) Örnek model ve tüm görünümler');
@@ -758,7 +760,7 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   await page.keyboard.press('Escape'); await page.waitForTimeout(50);
   ux.menuBack = await run(() => document.querySelector('#ctx').style.display === 'none' && document.activeElement === document.querySelector('[data-act="toolsMenu"]') && document.querySelector('[data-act="toolsMenu"]').getAttribute('aria-expanded') === 'false');
   await run(() => tourStart(0)); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight');
-  ux.tour = await run(() => /3 \/ 10/.test(document.querySelector('#tourOv .tourCard').textContent) && !!document.querySelector('#tourOv .tourHl'));
+  ux.tour = await run(() => /3 \/ 11/.test(document.querySelector('#tourOv .tourCard').textContent) && !!document.querySelector('#tourOv .tourHl'));
   await page.keyboard.press('Escape');
   ux.tourEnd = await run(() => !document.querySelector('#tourOv') && !document.querySelector('#tourPrompt') && localStorage.getItem('sysml-tour') === '1');
   await page.click('#svg', { position: { x: 5, y: 5 } }).catch(() => {}); await run(() => { document.activeElement && document.activeElement.blur && document.activeElement.blur(); });
@@ -918,6 +920,25 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
     localStorage.setItem = _s; persistNow(); o.reset = PERSIST_WARNED === false; return o;
   });
   ok('Varyant rozeti konfigürasyon kapanınca kalkar; depo kotası aşılınca bir kez uyarı, düzelince sıfırlanır', Object.values(hs).every(v => v === true), hs);
+
+  console.log('9q) Temel / Uzman görünüm');
+  const uim = await run(async () => {
+    const o = {}, n = k => window[k]().filter(x => x && x.t).length;
+    const U = { t: n('toolsMenuItems'), a: n('analysisMenuItems'), r: n('reqMenuItems') };
+    document.querySelector('#toolbar [data-act="uimode"]').click(); o.toggled = isBasic() && localStorage.getItem('sysml-mod') === 'temel' && document.body.classList.contains('mode-temel') && /Temel/.test(document.querySelector('#toolbar [data-act="uimode"]').textContent);
+    const B = { t: n('toolsMenuItems'), a: n('analysisMenuItems'), r: n('reqMenuItems') };
+    o.shorter = B.t < U.t - 10 && B.a <= 10 && B.r < U.r && !analysisMenuItems().some(x => x && x.t && /Monte Carlo|Varyant/.test(x.t)) && !toolsMenuItems().some(x => x && x.t && /SysML v2|ARES/.test(x.t));
+    o.noEmptyHead = ['toolsMenuItems', 'analysisMenuItems', 'reqMenuItems'].every(k => { const r = window[k](); return r.every((x, i) => !x || !x.h || (r[i + 1] && r[i + 1].t)); });
+    o.noDup = !toolsMenuItems().some(x => x && x.t && /^ReqIF olarak dışa aktar/.test(x.t)) && !analysisMenuItems().some(x => x && x.t && /^MagicGrid/.test(x.t));
+    o.palette = paletteItems().some(x => /Monte Carlo/.test(x.t)) && paletteItems().some(x => /SysML v2/.test(x.t));
+    const d = Object.values(M.els).find(e => e.kind === 'Diagram' && e.dtype === 'bdd'); openD(d.id); o.pal = !document.querySelector('#palette [data-pk="View"]') && !!document.querySelector('#palette [data-pk="Block"]');
+    const sh = d.shapes.find(s => E(s.el) && E(s.el).kind === 'Block'); ST.sel = new Set([sh.id]); renderDiagram(); renderProps();
+    const adv = document.querySelector('#props details.advp'); o.adv = !!adv && !adv.open && /Konum\/Boyut/.test(adv.textContent) && !!document.querySelector('#props > .pf input');
+    workflowHub(); o.wf = !document.querySelector('#modalBox [data-wf][disabled]'); document.querySelector('#modal').style.display = 'none';
+    toggleMode(); o.back = !isBasic() && n('toolsMenuItems') === U.t && !!(openD(d.id), document.querySelector('#palette [data-pk="View"]'));
+    return o;
+  });
+  ok('Temel görünüm: düğmeyle geçiş ve hatırlama, kısa menüler (boş başlık ve yineleme yok), sade palet, Gelişmiş bölümü; Ctrl+K ve iş akışı tüm komutları bulur; Uzman\'a dönüş', Object.values(uim).every(v => v === true), uim);
 
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });

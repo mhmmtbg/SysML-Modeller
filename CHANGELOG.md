@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.50.0 — 2026-10-16
+
+- **Temel / Uzman görünüm** (araç çubuğu düğmesi, kullanıcı başına hatırlanır; yeni kullanıcı için Temel): kısa menüler (Araçlar 36 → 20, Analiz 18 → 10, Gereksinimler 29 → 20), sade palet, Özellikler panelinde "Gelişmiş" katlaması, sade araç çubuğu
+- Komut paleti ve İş akışı merkezi her iki görünümde tüm komutları bulur
+- **Menü denetimi:** yinelenen girişler kaldırıldı; düzeltme: v1.44 sonrası eklenen komutlar (yedekten geri yükleme, ARES, kapsama haritası, ister bölme, karşılaştırma raporu) yanlış başlık altında görünüyordu
+- Tanıtım turuna görünüm adımı
+- Birim testi 149, regresyon testi 54 adım
+
 ## v1.49.0 — 2026-10-16
 
 - **Altın çıktı testi** (`tests/cikti.js`): 31 çıktı (13 diyagram SVG, XMI, ReqIF, SysML v2, 9 Excel içeriği, rapor, doğrulama, türetme, parametrik, bütçe, kapsama) deterministik karşılaştırılır; yeniden düzenleme sonrası 31/31 aynı

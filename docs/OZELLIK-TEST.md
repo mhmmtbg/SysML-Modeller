@@ -2,8 +2,8 @@
 
 _Bu dosya `node tools/ozellik-test.js` ile üretilir; elle düzenlemeyin._
 
-- Özellik: **49**, testle kapsanan: **49**
-- Birim testi adı: 113 (döngüyle üretilenler dahil olmayabilir), uçtan uca test: 53
+- Özellik: **50**, testle kapsanan: **50**
+- Birim testi adı: 113 (döngüyle üretilenler dahil olmayabilir), uçtan uca test: 54
 
 | No | Özellik | Sürüm | Birim testleri | Uçtan uca testler | Durum |
 |---|---|---|---|---|---|
@@ -17,7 +17,7 @@ _Bu dosya `node tools/ozellik-test.js` ile üretilir; elle düzenlemeyin._
 | F08 | Test profilleri (PSD, sinüs, SRS, termal) ve MIL-STD-810H | 1.13 | — | Grms, karşılaştırma, zarf, sinüs, termal hesapları ve diyagram şekli doğru; MIL-STD-810H şablonu eklenebiliyor | ✓ |
 | F09 | FMEA / FMECA ve risk kaydı | 1.14 | — | RPN, Cm, şiddet sınıfı, risk skoru/seviyesi, matris, Excel, rapor, doğrulama | ✓ |
 | F10 | N² matrisi ve ICD | 1.15 | — | N² hücreleri, yön, birim uyumsuzluğu, yön çelişkisi, ICD Excel/Word | ✓ |
-| F11 | Komut paleti, durum geçiş tablosu, tema | 1.16 | — | Ctrl+K ile görünüm açılıyor, geçiş tablosu ve matris, kullanıldığı yerler, tema geçişi | ✓ |
+| F11 | Komut paleti, durum geçiş tablosu, tema | 1.16 | — | Ctrl+K ile görünüm açılıyor, geçiş tablosu ve matris, kullanıldığı yerler, tema geçişi; Temel görünüm: düğmeyle geçiş ve hatırlama, kısa menüler (boş başlık ve yineleme yok), sade palet, Gelişmiş bölümü; Ctrl+K ve iş akışı tüm komutları bulur; Uzman'a dönüş | ✓ |
 | F12 | Test yürütme, NCR, VCRM | 1.19 | — | Adımlar düzenleniyor, sonuç adımlardan, NCR adımdan açılıyor, VCRM/kalite, tekrar test, Excel, rapor | ✓ |
 | F13 | Test kampanyası ve kaynak planlama | 1.20 | — | Kaynak/bağımlılık çakışması, bolluk, döngü engeli, kayma, kaynak satırları, Excel, PNG | ✓ |
 | F14 | Doküman şablonları (TP/TR, kapak) | 1.21 | — | Bölüm sırası/seçimi şablondan, TP/TR blokları, kapak bilgisi birleşimi, Word, pencere | ✓ |
@@ -54,5 +54,6 @@ _Bu dosya `node tools/ozellik-test.js` ile üretilir; elle düzenlemeyin._
 | F47 | Otomatik yedek, geri yükleme ve kurtarma | 1.48 | — | Tarayıcı yedekleri: ilk yedek, aynı içerik yinelenmez, fark özeti, geri yükleme (önce yedek), geri al, tutulacak sayı; Masaüstü taklidi: kurtarma bildirimi, kayıtta .yedek, diskteki sürüme dönüş (önce yedek), yedek listesi, başka dosya açılışında yedek, temiz açılış; Diyagram gezinirken depoya art arda yazma yok; değişiklikten hemen sonra yenilemede model korunur | ✓ |
 | F48 | Büyük model performansı (sayfalı matris, önbellekli indeksler) | 1.48 | 1: benzerlik indeksi: ters indeks sonucu kaba kuvvet çift döngüyle aynı | ~6000 elemanlı modelde işlemler 2 sn altında | ✓ |
 | F49 | Kod sağlığı: kanca listeleri, ilişki önbelleği, durum çubuğu ve depo uyarısı | 1.49 | 3: kancalar: durum, simülasyon çubuğu ve türetme kanca listeleri dolu; sarmalama yok; türetme kabulü arayüzü bir kez yeniden çizer (afterChange tek çağrı); relIdx önbelleği: ekleme/silmeden sonra güncel, aynı revizyonda aynı nesne | Varyant rozeti konfigürasyon kapanınca kalkar; depo kotası aşılınca bir kez uyarı, düzelince sıfırlanır | ✓ |
+| F50 | Temel / Uzman görünüm ve menü denetimi | 1.50 | 3: iş akışı: her adımın düğmesi gerçek bir menü komutuna karşılık gelir; menü düzeni: bilinmeyen öğe "Diğer" altında, boş grup başlığı yok, öğe kaybolmaz; menü düzeni: gerçek menülerde "Diğer" grubu oluşmaz | Temel görünüm: düğmeyle geçiş ve hatırlama, kısa menüler (boş başlık ve yineleme yok), sade palet, Gelişmiş bölümü; Ctrl+K ve iş akışı tüm komutları bulur; Uzman'a dönüş | ✓ |
 | F41 | Performans (~6000 eleman) | 1.17 | — | ~6000 elemanlı modelde işlemler 2 sn altında | ✓ |
 | F42 | Kararlılık: tüm senaryolarda JavaScript hatası yok | tümü | — | çalışma sırasında JavaScript hatası yok | ✓ |

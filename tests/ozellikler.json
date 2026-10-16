@@ -46,6 +46,7 @@
   {"id": "F47", "ad": "Otomatik yedek, geri yükleme ve kurtarma", "surum": "1.48", "reg": ["Tarayıcı yedekleri", "Masaüstü taklidi", "Diyagram gezinirken depoya"]},
   {"id": "F48", "ad": "Büyük model performansı (sayfalı matris, önbellekli indeksler)", "surum": "1.48", "unit": ["^benzerlik indeksi"], "reg": ["6000 elemanlı"]},
   {"id": "F49", "ad": "Kod sağlığı: kanca listeleri, ilişki önbelleği, durum çubuğu ve depo uyarısı", "surum": "1.49", "unit": ["^kancalar", "^türetme kabulü arayüzü", "^relIdx önbelleği"], "reg": ["Varyant rozeti"]},
+  {"id": "F50", "ad": "Temel / Uzman görünüm ve menü denetimi", "surum": "1.50", "unit": ["^iş akışı", "^menü düzeni"], "reg": ["Temel görünüm"]},
   {"id": "F41", "ad": "Performans (~6000 eleman)", "surum": "1.17", "reg": ["6000 elemanlı"]},
   {"id": "F42", "ad": "Kararlılık: tüm senaryolarda JavaScript hatası yok", "surum": "tümü", "reg": ["JavaScript hatası yok"]}
 ]
