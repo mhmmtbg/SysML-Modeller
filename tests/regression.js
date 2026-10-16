@@ -584,6 +584,35 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Arayüz bloğu + akış özellikleri + eşlenik port + connector (IBD\'de ve bağlam bloğunda), yeniden kullanım, derin part aç/kapa', !iw.error && Object.values(iw).every(v => v === true), iw);
 
+  console.log('8y) Canlı kısıt denetimi, senaryo kaydı/koşturma, zaman diyagramı');
+  const sc = await run(() => {
+    const o = {};
+    const pk = mk('Package', M.rootId, { name: 'SC' }), B = mk('Block', pk.id, { name: 'Fırın' }), Tv = mk('Value', B.id, { name: 'T', vtype: 'Real', def: '20' }); Tv.tol = { lo: 0, hi: 55 };
+    const rq = mk('Requirement', pk.id, { name: 'Süre', simExpr: 't <= 3' });
+    const smE = mk('StateMachine', B.id, { name: 'Fırın SM' }), d = newDiagramCore(smE.id, 'stm', 'Fırın SM');
+    const S = (k, n, x, y, ex) => addShape(d, mk(k, d.owner, Object.assign(n ? { name: n } : {}, ex || {})).id, x, y);
+    const i0 = S('Initial', null, 40, 20), on = S('State', 'Isıt', 20, 80, { doAct: 'T = T + 10' }), off = S('State', 'Soğut', 260, 80);
+    connect(d, 'Transition', i0, on); E(connect(d, 'Transition', on, off).el).name = 'dur'; E(connect(d, 'Transition', off, on).el).name = 'başla'; E(connect(d, 'Transition', on, on).el).name = 'after(1 s)';
+    d.simCons = ['T < 1000'];
+    openD(d.id); simStart();
+    o.cons = SIM.cons.length >= 3 && SIM.cons.some(c => c.src === 'Diyagram') && SIM.cons.some(c => c.src === 'Tolerans') && SIM.cons.some(c => c.src === 'Gereksinim');
+    simRecStart(); for (let i = 0; i < 9; i++) simStepNow(true);
+    const T1 = SIM.vars.get('T'), t1 = SIM.t, v1 = SIM.viol.map(v => v.label).join('|'), tr1 = SIM.trace.filter(x => x.k === 'tr').map(x => x.to).join('>');
+    o.viol = SIM.viol.length >= 1 && /t <= 3|T ∈/.test(v1);
+    const _p = window.prompt; window.prompt = () => 'K1'; simRecStop(); window.prompt = _p;
+    o.saved = (d.scenarios || []).length === 1 && d.scenarios[0].steps.length === 9 && d.scenarios[0].seed != null;
+    simStepNow(true); simStepNow(true);
+    const r = simReplay(d.scenarios[0].id, { quiet: true });
+    o.replay = SIM.vars.get('T') === T1 && SIM.t === t1 && SIM.trace.filter(x => x.k === 'tr').map(x => x.to).join('>') === tr1 && r.viol === SIM.viol.length;
+    const all = simReplayAll(); o.all = all.length === 1 && d.scenarios[0].last && d.scenarios[0].last.viol >= 1;
+    renderSimBar(); o.panel = !!document.querySelector('#simbar .simk') && !!document.querySelector('#simbar [data-simsc="timing"]');
+    timingFromSim(); o.timing = ST.cur === '@timing' && !!document.querySelector('#view .tschart svg') && /⚠/.test(document.querySelector('#view .tschart').innerHTML);
+    const sv = timingSVG(TIMING, 900); o.lanes = (sv.str.match(/<path /g) || []).length >= 2;
+    openD(d.id); simStop(); delModel([pk.id]); afterChange(); TIMING = null;
+    return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Gereksinim/tolerans/diyagram kısıtları canlı denetlenir, senaryo tohumla aynen tekrarlanır, toplu koşu, zaman diyagramı', !sc.error && Object.values(sc).every(v => v === true), sc);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

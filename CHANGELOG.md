@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v1.34.0 — 2026-10-16
+
+- **Canlı kısıt denetimi:** gereksinim "Simülasyon kısıtı", eşitsizlikli kısıt blokları, durum değişmezleri, toleranslı değerler ve diyagram kısıtları her simülasyon adımında denetlenir
+- **Senaryolar:** kayıt, tohumlu birebir tekrar, tümünü koşturma ve sonuç özeti
+- **Zaman diyagramı (@timing):** durum/aksiyon geçişleri ve değişken dalga biçimleri, ihlal işaretleri, PNG/Excel
+- Regresyon testi 36 adım
+
 ## v1.33.0 — 2026-10-16
 
 - **Hızlı arayüz sihirbazı:** iki blok/part arasında InterfaceBlock + FlowProperty, normal ve eşlenik (~) proxy port, Connector (IBD'de çizili veya bağlam bloğunda) tek adımda

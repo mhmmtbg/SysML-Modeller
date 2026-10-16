@@ -975,6 +975,22 @@ Hücreye tıklamak ilgili görünümü açar (gereksinim tablosu, kapsama, tahsi
 
 **IBD derin part'lar:** IBD'de bir part seçip Özellikler → **İç yapı (IBD)** → **Alt part'ları kutu içinde göster** işaretlenince part'ın tip bloğundaki alt part'lar (ve portları) part kutusunun içinde gösterilir; kutu içeriğe göre büyür, mevcut sınır portları kenarlarda kalır. 1–3 seviye seçilebilir; işaret kaldırılınca iç gösterim kaldırılır (model değişmez). İç part'ların portları arasında normal Connector aracıyla bağlantı kurulabilir.
 
+## 5aa. Canlı kısıt denetimi, senaryolar ve zaman diyagramı (@timing)
+
+Aktivite veya durum makinesi diyagramında simülasyon başlatıldığında panelde **Kısıtlar** bölümü görünür ve her adımda şu kısıtlar canlı denetlenir (✓ sağlanıyor / ✗ ihlal, ihlal sayısı; ihlal anında kayda "⚠ Kısıt ihlali" yazılır):
+
+- gereksinimin Özellikler panelindeki **Simülasyon kısıtı** alanı (ör. `t <= 30`; `t` simülasyon saatidir),
+- ifadesinde eşitsizlik bulunan **kısıt blokları** (değişken adları bağlam değişkenleriyle eşleşiyorsa),
+- **durum değişmezleri** (`{T < 70}`),
+- bağlam bloğu ve part'larındaki **toleranslı değerler** (Monte Carlo sekmesinde girilen min/maks),
+- paneldeki **+ kısıt** kutusuna yazılan diyagrama özel ifadeler.
+
+**Senaryolar:** **● Kaydet** simülasyonu baştan başlatıp adımları (adım/otomatik, olay tetikleri, karar seçimleri, elle değer değişiklikleri) kaydeder; **■ Kaydı bitir** senaryoyu adıyla diyagrama kaydeder. Rastgele seçimler tohumla kaydedildiği için **▶ Koştur** aynı yolu birebir tekrarlar; **Tümünü koştur** kayıtlı tüm senaryoları çalıştırıp ihlalsiz olanları raporlar (regresyon testi gibi).
+
+**Zaman diyagramı (@timing):** paneldeki **Zaman diyagramı** düğmesi (veya **Analiz ▾ → Zaman diyagramı**) son koşuyu ortak eksende gösterir: üstte durum (aktivitede aksiyon) geçişleri, altta seçilen değişkenlerin dalga biçimleri (waveform), kırmızı kesikli çizgiler kısıt ihlalleri. Eksen otomatik (aynı anda birden çok geçiş varsa adım), zaman veya adım seçilebilir; PNG ve Excel (değerler ve ihlaller) olarak dışa aktarılır.
+
+Örnek modelde SYS-002 gereksinimine `t <= 30` simülasyon kısıtı ve durum makinesi diyagramına `sıcaklık < 70` kısıtı eklidir.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.
