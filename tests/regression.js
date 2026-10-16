@@ -666,6 +666,23 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Hata günlüğü penceresi, dışarıda değiştirilmiş dosya uyarısı ve kalıcı denetim geçmişi, araç çubuğundan geri al', !ql.error && Object.values(ql).every(v => v === true), ql);
 
+  console.log('9c) Bilgi güvenliği: gizlilik derecesi, kapsamlı/temizlenmiş dışa aktarma, doküman kontrolü');
+  const sc2 = await run(async () => {
+    const o = {}; window.__dl = []; const dl0 = download; download = (blob, name) => window.__dl.push({ blob, name });
+    M.sec = { level: 'GİZLİ' }; afterChange();
+    o.badge = /GİZLİ/.test(document.getElementById('secBadge').textContent);
+    o.menu = toolsMenuItems().some(x => x.t && /Gizlilik derecesi/.test(x.t)) && toolsMenuItems().some(x => x.t && /Kapsamlı \/ temizlenmiş/.test(x.t));
+    const d = Object.values(M.els).find(e => e.kind === 'Diagram'); openD(d.id); const ex = exportSVGString(); o.svg = ex.str.includes('data-sec="1"');
+    xmiExport(); o.xmi = /GİZLİLİK DERECESİ: GİZLİ/.test(await window.__dl.pop().blob.text());
+    const rp = Object.values(M.els).find(e => e.kind === 'Package' && e.name === 'Gereksinimler');
+    reviewExportScoped(); document.querySelector(`#modalBox [data-scp="${rp.id}"]`).checked = true; document.querySelector('#modalBox #scNN').checked = true; document.querySelector('#modalBox [data-scx="docNo"]').value = 'İNC-7'; document.querySelector('#modalBox #scOk').click();
+    const f = window.__dl.pop(); const h = await f.blob.text(); o.review = /İNC-7/.test(f.name) && h.includes('İNC-7') && h.includes('data-sec-band') && !h.includes('Araç Sistemi İç Yapısı');
+    scopedSave(); document.querySelector('#modalBox #scAN').checked = true; document.querySelector('#modalBox #scOk').click(); const cp = JSON.parse(await window.__dl.pop().blob.text()); o.copy = cp.sec && cp.sec.level === 'GİZLİ' && Object.values(cp.els).every(e => !(e.notes || []).some(n => n.u && n.u !== 'İnceleyen'));
+    delete M.sec; afterChange(); o.off = !/GİZLİ/.test(document.getElementById('secBadge').textContent) && !exportSVGString().str.includes('data-sec');
+    download = dl0; return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Rozet ve menü, SVG/XMI işaretleri, paket kapsamlı ve not temizlenmiş inceleme paketi (doküman no), anonim kopya, işaret kaldırma', !sc2.error && Object.values(sc2).every(v => v === true), sc2);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

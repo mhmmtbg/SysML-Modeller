@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## v1.38.0 — 2026-10-16
+
+- **Gizlilik derecesi:** model düzeyinde derece ve ek ibare; Word/Excel üst-alt bilgi, diyagram ve grafik görüntülerinde bant, HTML çıktılarında şerit, XMI açıklaması; araç çubuğu rozeti
+- **Kapsamlı ve temizlenmiş dışa aktarma:** inceleme paketi, XMI ve model kopyası için paket kapsamı; notları, kullanıcı adlarını, günlükleri ve açıklamaları temizleme
+- **Doküman kontrolü:** inceleme paketi ve View dokümanında doküman no, revizyon, dağıtım
+- Birim testi 67, regresyon testi 40 adım
+
 ## v1.37.0 — 2026-10-16
 
 - **Birim testleri (tarayıcısız):** `node tests/unit.js` — ifade, parametrik, bütçe, metachain, trade study, Monte Carlo, dosya bütünlüğü, onarım, geri al, otomatik onarım, tablo içe aktarma, MagicGrid; olumsuz durumlar dahil 61 test

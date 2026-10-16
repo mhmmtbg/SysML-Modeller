@@ -1009,6 +1009,12 @@ SysML'in **View / Viewpoint** mekanizmasıyla paydaşa özel dokümanlar üretil
 - **Şema denetimi ve onarım raporu:** açılışta kök model, eleman yapısı, bilinmeyen türler, ucu eksik ilişkiler ve eksik elemana işaret eden şekiller denetlenir; yapılan onarımlar (sahipsiz elemanı köke taşıma, kopuk ilişkiyi silme vb.) pencerede listelenir ve modelin **Dosya denetim geçmişi**ne kalıcı olarak eklenir.
 - **Verimli geri al:** geri al geçmişinde değişmeyen elemanlar adımlar arasında paylaşılır; büyük modellerde bellek kullanımı tam kopyaya göre çok düşüktür (150 adım korunur).
 
+## 5ad. Bilgi güvenliği: gizlilik derecesi, kapsamlı ve temizlenmiş dışa aktarma
+
+- **Gizlilik derecesi:** **Araçlar ▾ → Gizlilik derecesi…** (veya araç çubuğundaki rozet) ile TASNİF DIŞI, HİZMETE ÖZEL, ÖZEL, GİZLİ, ÇOK GİZLİ seçilir; isteğe bağlı ek ibare (ör. "Yalnız proje ekibi") ve sahibi birim girilir. Derece modelle kaydedilir ve **tüm çıktılara** işlenir: Word raporlarında üst ve alt bilgi, Excel dosyalarında üst/alt bilgi (yazdırmada görünür), diyagram PNG/SVG/PDF ve rapor şekillerinde üst/alt bant, HTML raporlar, inceleme paketi ve View dokümanında üst/alt şerit, XMI dosyasında açıklama satırı.
+- **Kapsamlı ve temizlenmiş dışa aktarma:** inceleme paketi, XMI ve **Kapsamlı / temizlenmiş kopya kaydet…** komutları önce bir pencere açar: dışa aktarılacak üst paketler seçilir (boş = tüm model); seçilenlerin dışındaki elemanlar, onlara giden ilişkiler, diyagram şekilleri ve dış referanslar çıkarılır. İsteğe bağlı olarak inceleme notları, kullanıcı adları, değişiklik günlüğü/onarım geçmişi/baseline'lar ve eleman açıklamaları temizlenir. Canlı model değişmez.
+- **Doküman kontrolü:** inceleme paketinde doküman no, revizyon ve dağıtım listesi girilir ve sayfanın üstünde gösterilir. Görünümün (View) Özellikler panelinde **Doküman no / Revizyon / Dağıtım** alanları vardır; View dokümanının başında doküman kontrol satırı olarak çıkar.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

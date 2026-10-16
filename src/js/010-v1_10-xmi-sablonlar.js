@@ -100,7 +100,7 @@ function xmiExport(){
   });
   assocs.forEach(({aid, p, owner}) => { body += `<packagedElement xmi:type="uml:Association" xmi:id="${aid}" memberEnd="${xid(p.id)} ${aid}_o"><ownedEnd xmi:type="uml:Property" xmi:id="${aid}_o" type="${xid(owner.id)}" association="${aid}"/></packagedElement>`; });
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<xmi:XMI xmi:version="2.5" xmlns:xmi="${XNS.xmi}" xmlns:uml="${XNS.uml}" xmlns:sysml="${XNS.sysml}" xmlns:MD_Customization_for_SysML__additional_stereotypes="http://www.magicdraw.com/spec/Customization/180/SysML" xmlns:umldi="${UMLDI_NS}" xmlns:dc="${DC_NS}">
+${typeof secLabel === 'function' && secLabel() ? '<!-- GİZLİLİK DERECESİ: ' + secLabel().replace(/--/g, '-') + ' -->\n' : ''}<xmi:XMI xmi:version="2.5" xmlns:xmi="${XNS.xmi}" xmlns:uml="${XNS.uml}" xmlns:sysml="${XNS.sysml}" xmlns:MD_Customization_for_SysML__additional_stereotypes="http://www.magicdraw.com/spec/Customization/180/SysML" xmlns:umldi="${UMLDI_NS}" xmlns:dc="${DC_NS}">
 <xmi:Documentation><xmi:exporter>SysML Modelleyici</xmi:exporter><xmi:exporterVersion>${APP_VER}</xmi:exporterVersion></xmi:Documentation>
 <uml:Model xmi:type="uml:Model" xmi:id="${xid(root.id)}" name="${X(root.name)}">${body}</uml:Model>
 ${st.join('\n')}

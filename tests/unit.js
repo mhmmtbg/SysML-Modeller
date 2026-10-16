@@ -69,5 +69,14 @@ T('tablo içe aktarma: Ad sütunu yoksa hata', () => R(() => { try { gtPlan([['B
 T('MagicGrid: 16 hücre 0–100 aralığında', () => R(() => { const D = mgData(); let n = 0; ['bb', 'wb', 'sol', 'ver'].forEach(cc => ['req', 'beh', 'str', 'par'].forEach(r => { if(D[cc][r].pct >= 0 && D[cc][r].pct <= 100) n++; })); return n === 16; }));
 T('MagicGrid: boş modelde çökmez', () => R(() => { const keep = M; M = {uid:'x', v:2, els:{}, rootId:null}; const root = mk('Model', null, {name:'Boş'}); M.rootId = root.id; let ok; try { const D = mgData(); ok = D.bb.req.pct === 0; } finally { M = keep; } return ok; }));
 
+/* ---------- bilgi güvenliği ---------- */
+fresh();
+T('gizlilik: işaretsiz modelde çıktı değişmez', () => R(() => { delete M.sec; const r = {str:'<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"></svg>', w:10, h:10}; return secSvg(r) === r && secHtml('<body>x</body>') === '<body>x</body>'; }));
+T('gizlilik: SVG bandı bir kez eklenir, yükseklik artar', () => R(() => { M.sec = {level:'GİZLİ'}; const r = {str:'<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"></svg>', w:10, h:10}; const a = secSvg(r), b = secSvg(a); delete M.sec; return a.h === 54 && b === a && (a.str.match(/GİZLİ/g) || []).length === 2; }));
+T('gizlilik: HTML üst ve alt şerit', () => R(() => { M.sec = {level:'ÖZEL', caveat:'X'}; const h = secHtml('<html><body class="a">i</body></html>'); delete M.sec; return (h.match(/data-sec-band/g) || []).length === 2 && h.includes('ÖZEL · X'); }));
+T('kapsamlı kopya: yalnız seçili paket, dış referans ve notlar temizlenir', () => R(() => { const rp = Object.values(M.els).find(e => e.kind === 'Package' && e.name === 'Yapı'); const {m, rep} = scopedModel({pkgs:[rp.id], noNotes:true, anon:true, noLog:true}); const ok1 = Object.values(m.els).every(e => e.id === m.rootId || e.id === rp.id || isAnc(rp.id, e.id) || (KIND[e.kind].rel && m.els[e.src] && m.els[e.tgt])); const ok2 = !Object.values(m.els).some(e => e.notes) && !m.reqLog && rep.removed > 0; const ok3 = Object.values(m.els).every(e => !e.type || m.els[e.type]); const ok4 = Object.values(m.els).filter(e => e.kind === 'Diagram').every(d => d.shapes.every(s => m.els[s.el])); return ok1 && ok2 && ok3 && ok4 && Object.keys(M.els).length > Object.keys(m.els).length; }));
+T('kapsamlı kopya: canlı model değişmez', () => R(() => { const n = JSON.stringify(M.els).length; scopedModel({pkgs:[], noNotes:true, anon:true, noDoc:true}); return JSON.stringify(M.els).length === n; }));
+T('withModel: geçici model sonrası geri yüklenir', () => R(() => { const keep = M, {m} = scopedModel({}); const n = withModel(m, () => Object.keys(M.els).length); return M === keep && n === Object.keys(m.els).length; }));
+
 console.log(`Birim testleri: ${pass} geçti, ${fail} kaldı`);
 if(fails.length){ fails.forEach(f => console.log('  ✗ ' + f)); process.exit(1); }
