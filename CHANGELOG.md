@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.35.0 — 2026-10-16
+
+- **View & Viewpoint:** pkg/bdd paletinde Görünüm ve Bakış Açısı; paydaş, kaygı, amaç, dil, yöntem alanları
+- **«conform» ve «expose» ilişkileri:** diyagramda çizim veya Özellikler panelinden paket/diyagram sergileme
+- **View dokümanı (HTML):** yalnız sergilenen paket ve diyagramlarla paydaş raporu, iç içe görünümler bölüm olarak
+- Trade study özellik paneli artık Özellikler'de görünür
+- Regresyon testi 37 adım
+
 ## v1.34.0 — 2026-10-16
 
 - **Canlı kısıt denetimi:** gereksinim "Simülasyon kısıtı", eşitsizlikli kısıt blokları, durum değişmezleri, toleranslı değerler ve diyagram kısıtları her simülasyon adımında denetlenir

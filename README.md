@@ -38,6 +38,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 - **MagicGrid ve aktif doğrulama:** MagicGrid mimari panosu ve paket iskeleti, doğrulama bulgularında tek tıkla / toplu otomatik onarım
 - **Arayüz modelleme:** hızlı arayüz sihirbazı (arayüz bloğu, akış özellikleri, eşlenik portlar, connector), IBD'de iç içe derin part'lar
 - **Doğrulayıcı simülasyon:** canlı kısıt denetimi, kayıtlı senaryoların birebir tekrarı, zaman diyagramı (durum + dalga biçimi)
+- **View & Viewpoint:** «conform» / «expose» ile paydaşa özel View dokümanı (HTML)
 - **Hızlı modelleme:** şekilden şekle sürükleyerek ilişki, akıllı manipülatörler, hizalama kılavuzları; tüm seçeneklerde simgeler
 - **Ekip çalışması:** paketleri `.sysmod` modülü olarak paylaşma, salt okunur ekleme ve karşılaştırarak güncelleme, masaüstünde dosya kilidi
 - **İngilizce arayüz:** araç çubuğundaki EN / TR düğmesiyle menüler, paneller, pencereler ve mesajlar İngilizceye geçer; model içeriği ve çıktılar Türkçe kalır

@@ -991,6 +991,17 @@ Aktivite veya durum makinesi diyagramında simülasyon başlatıldığında pane
 
 Örnek modelde SYS-002 gereksinimine `t <= 30` simülasyon kısıtı ve durum makinesi diyagramına `sıcaklık < 70` kısıtı eklidir.
 
+## 5ab. View & Viewpoint ve paydaş dokümanı üretimi
+
+SysML'in **View / Viewpoint** mekanizmasıyla paydaşa özel dokümanlar üretilir.
+
+- **Elemanlar:** **pkg** veya **bdd** paletinden **Bakış Açısı (Viewpoint)** ve **Görünüm (View)** eklenir. Bakış açısının Özellikler panelinde **Paydaşlar, Kaygılar (concerns), Amaç, Diller, Yöntem** alanları doldurulur; bunlar şeklin bölmesinde görünür. Görünüm, paket benzeri «view» şekliyle sergilediği öğeleri listeler.
+- **İlişkiler:** **Conform** (View → Viewpoint, «conform») ve **Expose** (View → paket/diyagram/eleman, «expose»). Diyagramlar şekil olarak çizilemediği için Görünümün Özellikler panelindeki **+ Paket / diyagram sergile…** listesiyle de sergilenir; bakış açısı da aynı panelden seçilebilir. Görünümün altına başka görünümler eklenerek bölümlü doküman kurulur.
+- **View dokümanı üret (HTML):** Görünümün Özellikler panelindeki düğme (veya **Araçlar ▾ → View dokümanı: …**) yalnızca sergilenen paket ve diyagramları içeren paydaş raporunu üretir: başlık, bakış açısı kutusu (paydaşlar, kaygılar, amaç, yöntem), içindekiler, her sergilenen diyagram için şekil, paketler için içerdikleri diyagramlar ile gereksinim / blok / test tabloları; alt görünümler alt bölüm olur. Dosya tarayıcıda açılır ve yazdırılabilir.
+- **Doğrulama:** bakış açısız ve boş görünümler, paydaş/kaygı alanı boş bakış açıları raporlanır.
+
+Örnek modelde "Görünümler" paketinde **Müşteri Bakış Açısı** ve ona uyan **Müşteri İnceleme Görünümü** (Gereksinimler paketi ve Sistem Yapısı diyagramını sergiler) vardır.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

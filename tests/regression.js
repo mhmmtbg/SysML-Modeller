@@ -613,6 +613,29 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Gereksinim/tolerans/diyagram kısıtları canlı denetlenir, senaryo tohumla aynen tekrarlanır, toplu koşu, zaman diyagramı', !sc.error && Object.values(sc).every(v => v === true), sc);
 
+  console.log('8z) View & Viewpoint, conform/expose, View dokümanı');
+  const vw = await run(() => {
+    const o = {};
+    const pk = mk('Package', M.rootId, { name: 'VW' }), d = newDiagramCore(pk.id, 'pkg', 'VW');
+    o.pal = DT.pkg.shapes.includes('View') && DT.pkg.shapes.includes('Viewpoint') && DT.pkg.rels.includes('Conform') && DT.pkg.rels.includes('Expose') && DT.bdd.shapes.includes('View');
+    const vp = mk('Viewpoint', pk.id, { name: 'VP', stakeholders: 'Müşteri', concerns: 'Kütle' }), v = mk('View', pk.id, { name: 'V1' }), sub = mk('View', v.id, { name: 'V1.1' });
+    const a = addShape(d, vp.id, 0, 0, 200, 100), b = addShape(d, v.id, 300, 0, 180, 90);
+    o.valid = validate('Conform', v, vp) === '' && validate('Conform', vp, v) !== '' && validate('Expose', v, E(M.rootId)) === '' && validate('Satisfy', v, vp) !== '';
+    connect(d, 'Conform', b, a);
+    const sd = Object.values(M.els).find(e => e.kind === 'Diagram' && e.name === 'Sistem Yapısı'), rp = Object.values(M.els).find(e => e.kind === 'Package' && e.name === 'Gereksinimler');
+    mk('Expose', pk.id, { src: v.id, tgt: sd.id }); mk('Expose', pk.id, { src: v.id, tgt: rp.id }); mk('Expose', pk.id, { src: sub.id, tgt: sd.id });
+    openD(d.id); const svg = document.querySelector('#svg').innerHTML;
+    o.shapes = svg.includes('«view»') && svg.includes('«viewpoint»') && svg.includes('«conform»') && svg.includes('Paydaşlar');
+    o.rel = viewConform(v)[0] === vp && viewExposed(v).length === 2;
+    const h = viewDocHTML(v.id);
+    o.doc = /<h1>V1<\/h1>/.test(h) && h.includes('Bakış açısı: VP') && (h.match(/<figure>/g) || []).length >= 2 && h.includes('<table>') && h.includes('V1.1') && h.includes('İçindekiler');
+    ST.sel = new Set([b.id]); ST.tsel = v.id; renderProps(); o.props = !!document.querySelector('#props [data-vwdoc]') && !!document.querySelector('#props [data-vwadd]');
+    const ts = allTS()[0]; if(ts){ ST.sel = new Set(); ST.tsel = ts.id; renderProps(); o.tsProps = /Önde|Leading/.test(document.querySelector('#props').textContent); }
+    const empty = mk('View', pk.id, { name: 'Boş' }); o.validator = validateModel().some(x => x.rule === 'Boş görünüm' && x.id === empty.id);
+    delModel([pk.id]); afterChange(); return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Palet, «conform»/«expose» kuralları, view/viewpoint şekilleri, iç içe view, HTML doküman (şekil+tablo+içindekiler), özellikler, doğrulama', !vw.error && Object.values(vw).every(v => v === true), vw);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);
