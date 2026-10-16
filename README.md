@@ -34,6 +34,7 @@ Kapalı ağdaki, yönetici yetkisi olmayan bilgisayarlarda çalışmak üzere ta
 - **Trade study ve belirsizlik analizi:** ağırlıklı alternatif karşılaştırma (Radar, Pareto, ağırlık duyarlılığı), parametrik süpürme, tornado, Monte Carlo tolerans analizi
 - **Metachain:** dolaylı ilişki zincirleri; genel tabloda hesaplanan sütunlar, izlenebilirlik matrisinde dolaylı hücreler
 - **Diyagram okunurluğu:** çizgi atlamaları, ağaç stili genelleme/kompozisyon, katmanlar, seçmeli bölme elemanları
+- **Paydaş incelemesi ve veri alışverişi:** tek dosyalık etkileşimli inceleme paketi (notlar modele geri alınır), diyagram yerleşimli XMI, genel tablodan Excel/CSV toplu aktarma
 - **Hızlı modelleme:** şekilden şekle sürükleyerek ilişki, akıllı manipülatörler, hizalama kılavuzları; tüm seçeneklerde simgeler
 - **Ekip çalışması:** paketleri `.sysmod` modülü olarak paylaşma, salt okunur ekleme ve karşılaştırarak güncelleme, masaüstünde dosya kilidi
 - **İngilizce arayüz:** araç çubuğundaki EN / TR düğmesiyle menüler, paneller, pencereler ve mesajlar İngilizceye geçer; model içeriği ve çıktılar Türkçe kalır

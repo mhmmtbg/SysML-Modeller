@@ -516,6 +516,33 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Kesişimde köprü (aç/kapa), genelleme ağacı ortak gövde, gizli katman ekranda ve dışa aktarımda yok, bölmede seçili elemanlar', !lj.error && Object.values(lj).every(v => v === true), lj);
 
+  console.log('8v) İnceleme paketi, koordinatlı XMI, genel tablodan Excel/CSV aktarma');
+  const rv = await run(() => {
+    const o = {};
+    const dl = download; download = () => {}; const xml = xmiExport(); download = dl;
+    o.diOut = /umldi:UMLDiagram /.test(xml) && /dc:Bounds/.test(xml);
+    const src = Object.values(M.els).find(e => e.kind === 'Diagram' && e.name === 'Sistem Yapısı');
+    const res = xmiImport(xml, 'rt', { diagrams: true });
+    const cp = Object.values(M.els).find(e => e.kind === 'Diagram' && e.name === 'Sistem Yapısı' && isAnc(res.pkg, e.id));
+    o.diIn = res.dias >= 8 && !!cp && cp.shapes.length === src.shapes.length && cp.edges.length === src.edges.length && cp.shapes.every((s, i) => s.x === Math.round(src.shapes[i].x) && s.y === Math.round(src.shapes[i].y));
+    delModel([res.pkg]); afterChange();
+    const h = reviewHTML(); o.html = h.length > 10000 && h.includes('Notları dışa aktar') && h.includes('"dias"');
+    const b = Object.values(M.els).find(e => e.kind === 'Block');
+    const r1 = reviewImportNotes({ notes: [{ id: 'rv1', el: b.id, txt: 'kontrol', v: 'Ret', u: 'A', t: new Date().toISOString() }, { id: 'rv2', el: 'yok', txt: 'x', v: 'Yorum' }] });
+    const r2 = reviewImportNotes({ notes: [{ id: 'rv1', el: b.id, txt: 'kontrol', v: 'Ret' }] });
+    o.notes = r1.n === 1 && r1.miss === 1 && r2.dup === 1 && b.notes.some(n => n.txt === '[Ret] kontrol' && n.st === 'Açık');
+    b.notes = b.notes.filter(n => n.id !== 'rv1'); if(!b.notes.length) delete b.notes;
+    const pk = mk('Package', M.rootId, { name: 'İçeAktar' }); GT.kind = 'Block'; GT.scope = pk.id;
+    const x1 = mk('Block', pk.id, { name: 'Mevcut', doc: 'eski' });
+    const P = gtPlan([['Ad', 'Sahibi', 'Açıklama', 'Kimlik'], ['Mevcut', pathOf(pk.id), 'yeni açıklama', x1.id], ['Yeni Blok', pathOf(pk.id), 'd', ''], ['Hatalı', 'Yok ▸ Böyle', '', '']], 'Block');
+    o.plan = P.plan.map(p => p.op).join(',') === 'upd,new,new';
+    const A = gtApply(P, 'Block'); o.apply = A.n === 2 && A.u === 1 && x1.doc === 'yeni açıklama' && kidsOf(pk.id).some(e => e.name === 'Yeni Blok');
+    GT.scope = ''; delModel([pk.id]); afterChange();
+    o.bar = gtBar().includes('data-gtimp');
+    return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('XMI diyagram yerleşimi gidiş-dönüş, inceleme HTML ve not geri alma, tablo içe aktarma (Kimlik / Ad+Sahibi eşleşmesi)', !rv.error && Object.values(rv).every(v => v === true), rv);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

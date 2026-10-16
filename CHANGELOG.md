@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.31.0 — 2026-10-16
+
+- **Etkileşimli inceleme paketi (tek HTML):** diyagram gezintisi, eleman özellikleri ve izlenebilirlik, Yorum/Onay/Ret notları, diyagram onayı, notları JSON olarak dışa aktarma
+- **İnceleme notlarını içe aktarma:** JSON notlar modeldeki elemanlara inceleme notu olarak eklenir
+- **Koordinatlı XMI:** UML DI ile diyagram yerleşimi dışa aktarılır ve içe aktarımda yeniden kurulur
+- **Genel tablodan Excel/CSV toplu aktarma:** Kimlik veya Ad+Sahibi eşleşmesi, önizlemeli ekleme/güncelleme; tablo Excel'ine Kimlik sütunu
+- Regresyon testi 33 adım
+
 ## v1.30.0 — 2026-10-16
 
 - **Çizgi atlamaları:** kesişen bağlantılarda köprü (diyagram bazında aç/kapa; dışa aktarımda da)

@@ -943,6 +943,13 @@ Zincirler modelle birlikte kaydedilir. Örnek modelde iki hazır zincir tanıml�
 
 **Seçmeli bölme elemanları:** blok seçiliyken Özellikler → Görünüm → **Bölme elemanları → Elemanları seç…** ile o diyagramdaki şekilde hangi part, reference, value, port ve flow property'lerin görüneceği tek tek işaretlenir (Cameo'daki "Edit Compartment"). Bölmenin tamamını gizlemek için mevcut "Bölmeler" onay kutuları kullanılır.
 
+## 5x. Etkileşimli inceleme paketi, koordinatlı XMI ve genel tablodan toplu aktarma
+
+- **Etkileşimli inceleme paketi (HTML):** **Araçlar ▾ → Etkileşimli inceleme paketi (HTML) dışa aktar** tek bir HTML dosyası üretir; kurulum gerektirmez, herhangi bir tarayıcıda açılır. Solda diyagram listesi ve arama, ortada diyagram, sağda tıklanan elemanın özellikleri, izlenebilirlik ilişkileri (tıklayarak ilgili elemana/diyagrama gidilir) ve modeldeki notlar bulunur. İnceleyen adını yazıp elemanlara **Yorum / Onay / Ret** notu ekler, diyagramı **onaylar / reddeder**; notlar tarayıcıda saklanır ve **Notları dışa aktar (JSON)** ile dosyaya alınır.
+- **Notları modele geri alma:** **Araçlar ▾ → İnceleme notlarını içe aktar (JSON)…** notları ilgili elemanlara inceleme notu olarak ekler (Onay kapalı, Yorum/Ret açık not; aynı not iki kez eklenmez). İnceleme notları görünümünde izlenir.
+- **Koordinatlı XMI:** XMI dışa aktarımı artık OMG UML DI (umldi/dc) ile her diyagramın şekil konum/boyutlarını, iç içe yerleşimi ve bağlantı noktalarını da yazar. Bu uygulamanın XMI içe aktarımı DI bilgisi varsa diyagramları aynı yerleşimle yeniden kurar (yoksa eskisi gibi otomatik diyagram üretir). Sequence diyagramları ve not şekilleri XMI'ye aktarılmaz.
+- **Genel tablodan Excel/CSV aktarma:** **Genel tablo** çubuğundaki **⤓ Excel/CSV'den aktar** seçili türdeki elemanları toplu ekler veya günceller. Başlıklar tablo sütun adlarıyla eşleştirilir; satırlar **Kimlik** sütunuyla (tablonun Excel çıktısında artık bulunur) ya da **Ad + Sahibi** ile mevcut elemanlara bağlanır. Önizlemede yeni / güncellenecek / değişmeyen / hatalı satırlar ve alan bazında eski → yeni değerler gösterilir; Uygula tek adımda geri alınabilir. Tip sütunu blok/değer tipi adıyla eşlenir.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.
