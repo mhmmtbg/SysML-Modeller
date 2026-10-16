@@ -491,6 +491,31 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
   ok('Zincir adımları (türetme, karşılama, tip, kompozisyon, tahsis), yol, tablo sütunu, matriste dolaylı hücre, kayıtta saklanır', !mcx.error && Object.values(mcx).every(v => v === true), mcx);
 
+  console.log('8u) Çizgi atlamaları, ağaç stili, katmanlar, seçmeli bölme elemanları');
+  const lj = await run(() => {
+    const o = {};
+    const pk = mk('Package', M.rootId, { name: 'LJ' }), d = newDiagramCore(pk.id, 'bdd', 'LJ');
+    const B = (n, x, y) => addShape(d, mk('Block', pk.id, { name: n }).id, x, y, 160, 80);
+    const a = B('A', 0, 0), b = B('B', 400, 0), c = B('C', 0, 300), dd = B('D', 400, 300);
+    connect(d, 'Association', a, dd); connect(d, 'Association', b, c);
+    openD(d.id); const svg = () => document.querySelector('#svg').innerHTML;
+    o.jump = / A5,5 0 0 [01] /.test(svg());
+    d.jumps = false; renderDiagram(); o.nojump = !/ A5,5 /.test(svg()); d.jumps = true;
+    const g = B('Genel', 200, 600), s1 = B('Özel1', 0, 850), s2 = B('Özel2', 400, 850);
+    const e1 = connect(d, 'Generalization', s1, g), e2 = connect(d, 'Generalization', s2, g);
+    d.tree = true; renderDiagram();
+    o.tree = e1._pts.length === 4 && e2._pts.length === 4 && e1._pts[1].y === e2._pts[1].y && e1._pts[3].x === e2._pts[3].x && e1._pts[3].y === g.y + g.h;
+    d.layers = [{ id: 'L1', name: 'Gizli', vis: true }]; c.layer = 'L1'; renderDiagram(); const n0 = (svg().match(/>C</g) || []).length;
+    d.layers[0].vis = false; renderDiagram(); o.layer = n0 > 0 && !(svg().match(/>C</g) || []).length && d.shapes.includes(c) && d.edges.length === 4;
+    const ex = diagramSVGStr(d); o.layerExp = !/>C</.test(ex.str);
+    const be = E(a.el); const v1 = mk('Value', be.id, { name: 'görünür', def: '1' }), v2 = mk('Value', be.id, { name: 'saklı', def: '2' });
+    renderDiagram(); const t1 = svg(); a.hideEls = [v2.id]; renderDiagram(); const t2 = svg();
+    o.comp = t1.includes('saklı') && !t2.includes('saklı') && t2.includes('görünür') && kidsOf(be.id).length === 2;
+    o.menu = layoutMenuItems().some(x => x.t && /Katmanlar/.test(x.t)) && layoutMenuItems().some(x => x.t && /Ağaç stili/.test(x.t));
+    delModel([pk.id]); afterChange(); return o;
+  }).catch(e => ({ error: e.message + ' ' + (e.stack || '').split('\n')[1] }));
+  ok('Kesişimde köprü (aç/kapa), genelleme ağacı ortak gövde, gizli katman ekranda ve dışa aktarımda yok, bölmede seçili elemanlar', !lj.error && Object.values(lj).every(v => v === true), lj);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

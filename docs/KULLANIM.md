@@ -933,6 +933,16 @@ Metachain, bir elemandan başlayıp ilişki adımlarını sırayla izleyerek **d
 
 Zincirler modelle birlikte kaydedilir. Örnek modelde iki hazır zincir tanımlıdır.
 
+## 5w. Çizgi atlamaları, ağaç stili, katmanlar ve seçmeli bölme elemanları
+
+**Düzen ▾ → Çizim** bölümü açık diyagram için:
+
+- **Çizgi atlamaları (kesişimde köprü):** kesişen bağlantılarda sonra çizilen çizgi küçük bir yay ile diğerinin üzerinden geçer; okunurluğu artırır. Varsayılan açıktır (sequence diyagramı hariç); diyagram bazında kapatılabilir. PNG/SVG/PDF çıktılarında da görünür.
+- **Ağaç stili:** aynı genel tipe giden **Generalization** bağlantıları ve aynı bütünden çıkan **Composition/Aggregation** bağlantıları ortak bir gövdede birleşir (tek ok/elmas başı, yatay dağıtım hattı). Alt elemanlar üst elemanın tamamen altında (veya üstünde) olmalıdır; elle ara nokta verilmiş bağlantılar kendi yolunu korur. Örnek modelin "Sistem Yapısı" diyagramında açıktır.
+- **Katmanlar…:** şekil ve bağlantıları adlandırılmış katmanlara ayırın; **Seçilileri buraya taşı**, katmandaki elemanları **Seç**, görünürlüğü aç/kapat. Gizli katmandaki şekiller (ve içindekiler, bağlı bağlantılar) ekranda ve dışa aktarımda görünmez; model değişmez. Katmanı silmek elemanları varsayılan katmana döndürür. Tek şekil seçiliyken Özellikler → Görünüm → **Katman** listesinden de atanır.
+
+**Seçmeli bölme elemanları:** blok seçiliyken Özellikler → Görünüm → **Bölme elemanları → Elemanları seç…** ile o diyagramdaki şekilde hangi part, reference, value, port ve flow property'lerin görüneceği tek tek işaretlenir (Cameo'daki "Edit Compartment"). Bölmenin tamamını gizlemek için mevcut "Bölmeler" onay kutuları kullanılır.
+
 ## 6. Otomatik düzen ve hizalama
 
 **Düzen ▾** menüsü (`Ctrl+Shift+L` ilk düzeni uygular) veya boş alana sağ tık → *Otomatik düzen*.

@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## v1.30.0 — 2026-10-16
+
+- **Çizgi atlamaları:** kesişen bağlantılarda köprü (diyagram bazında aç/kapa; dışa aktarımda da)
+- **Ağaç stili yönlendirme:** genelleme ve kompozisyon/aggregation bağlantıları ortak gövdede birleşir
+- **Diyagram katmanları:** adlandırılmış katmanlar, görünürlük, seçimi taşıma; gizli katmanlar dışa aktarılmaz
+- **Seçmeli bölme elemanları:** blok şeklinde gösterilecek part/value/port/flow property'leri tek tek seçme
+- Örnek modeldeki "Sistem Yapısı" diyagramında üst üste binen bloklar düzeltildi
+- Regresyon testi 32 adım
+
 ## v1.29.0 — 2026-10-16
 
 - **Metachain:** ilişki adımlarından (Satisfy/Verify/Derive/Refine/Trace/Allocate/Generalization, connector, kompozisyon, tip, kullanım, sahiplik) oluşan, tekrarlı (geçişli) adım destekli dolaylı ilişki zincirleri; hazır şablonlar ve önizlemeli düzenleyici
