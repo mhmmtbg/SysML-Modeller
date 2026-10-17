@@ -66,8 +66,7 @@ $('#props').addEventListener('click', ev => { const b = ev.target.closest('[data
 {
   const _mx = matrixHTML;
   matrixHTML = function(){ let h = _mx.apply(this, arguments); allSuspects().forEach(r => [r.src + '|' + r.tgt, r.tgt + '|' + r.src].forEach(k => { h = h.split(`class="mxd on" data-mx="${k}"`).join(`class="mxd on sus" data-mx="${k}"`); })); return h; };
-  const _de2 = drawEdge;
-  drawEdge = function(d, ed, SM, pts, exp){ let s = _de2.apply(this, arguments); const r = ed.el ? E(ed.el) : null; if(r && r.suspect && pts && pts.length > 1){ const i = Math.floor((pts.length - 1) / 2), a = pts[i], b = pts[i + 1]; s = s.replace(/<\/g>$/, `<text x="${(a.x + b.x) / 2 + 8}" y="${(a.y + b.y) / 2 + 16}" font-size="13" fill="#d18a00" font-family="Segoe UI,Arial">⚠</text></g>`); } return s; };
+  DRAW.edge.push((s, d, ed, SM, pts, exp) => { const r = ed.el ? E(ed.el) : null; if(r && r.suspect && pts && pts.length > 1){ const i = Math.floor((pts.length - 1) / 2), a = pts[i], b = pts[i + 1]; s = s.replace(/<\/g>$/, `<text x="${(a.x + b.x) / 2 + 8}" y="${(a.y + b.y) / 2 + 16}" font-size="13" fill="#d18a00" font-family="Segoe UI,Arial">⚠</text></g>`); } return s; });
 }
 /* ---------- birim ve boyut analizi (SI) ---------- */
 const DIM_N = 8; /* m kg s A K mol cd para */

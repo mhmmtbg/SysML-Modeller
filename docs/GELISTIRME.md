@@ -19,7 +19,7 @@ Yeni modül, `900` öncesine sıradaki numarayla eklenir (ör. `270-v1_36-...js`
 
 ## Genişletme noktaları
 
-Modüller çekirdek fonksiyonları mümkün olduğunca zincirleme sarmalamaz; kanca listelerine kayıt olur (v1.49'da durum çubuğu, simülasyon çubuğu ve türetme sarmalamaları kancalara çevrildi; kalan sarmalamalar en fazla 2 katmandır):
+Modüller çekirdek fonksiyonları mümkün olduğunca zincirleme sarmalamaz; kanca listelerine kayıt olur (v1.49'da durum çubuğu, simülasyon çubuğu ve türetme, v1.52'de diyagram çizimi sarmalamaları kancalara çevrildi; kalan sarmalamalar en fazla 2 katmandır):
 
 ```js
 HOOKS.props.push((target, panel) => { /* target.el, target.sh, target.ed */ });
@@ -32,6 +32,10 @@ DEMO_EXT.push(X => { /* örnek modele ekleme */ });
 BOOT_HOOKS.push(info => { /* açılış tamamlandı: {native, argText, autosave, lastPath, dirty} */ });
 STATUS_HOOKS.push(statusEl => { /* durum çubuğu her çizildiğinde */ });
 SIMBAR_HOOKS.push(bar => { if(!bar || !SIM || bar.style.display === 'none') return; /* simülasyon çubuğuna bölüm ekle */ });
+DRAW.diagram.push((d, exp) => ({shape:s => true, edge:ed => true, done:() => {}}));   // diyagram çizimi: gizleme süzgeci + bağlam
+DRAW.shapeCtx.push((sh, e, d, SM, exp) => () => { /* geçici bağlamı geri al */ });       // şekil çizilmeden önce
+DRAW.shape.push((str, sh, e, d, SM, exp) => str);                                      // şekil çıktısını dönüştür
+DRAW.edge.push((str, d, ed, SM, pts, exp) => str);                                     // kenar çıktısını dönüştür
 DERIVE_HOOKS.apply.push((list, opt, res) => { /* kabul: afterChange öncesi, tek yeniden çizim */ });
 DERIVE_RULES.push({id:'kural', tr:'Ad', doc:'Açıklama', opts:[['anahtar', 'Seçenek', true]],
   gen(cfg){ return [{sig:'kararlı-imza', level:'Sistem', name:'Başlık', text:'… olacaktır', verif:'Test',
@@ -39,6 +43,10 @@ DERIVE_RULES.push({id:'kural', tr:'Ad', doc:'Açıklama', opts:[['anahtar', 'Se�
 ```
 
 **Gereksinim türetme kuralları** (`DERIVE_RULES`): `gen` modeli değiştirmez, öneri listesi döndürür. `sig` aynı kaynak için her çalıştırmada aynı olmalıdır; sihirbaz yinelenmeyi, "güncelle" ve "kaynak yok" durumlarını bu imzayla belirler. Kabulde gereksinim `derivedFrom = {rule, sig, gen, src}` taşır; `satisfyBy`, `parent`, `refineBy`, `verifyBy`, `mkTest`, `fmLink`, `riskLink`, `extra`, `vcond` alanları uygulama sırasında ilişkiye / alana çevrilir. Türkçe metin için `trConjugate(eylem)`, `trAct(konu, eylem)`, `trNum(sayı)` yardımcıları kullanılabilir. Öneri hesabı sırasında `relIdx()` tek seferlik önbelleklidir.
+
+**Çizim boru hattı** (`DRAW`, 001-hooks): `diagramSVG0`, `drawShape` ve `drawEdge` artık boru hattı fonksiyonlarıdır; çekirdek çizim `diagramSVG0Core`, `drawShapeCore`, `drawEdgeCore` içindedir. Katman / varyant gizleme `DRAW.diagram` süzgeçleriyle (gizlenen şeklin kenarları kendiliğinden çizilmez), bölme elemanı gizleme `DRAW.shapeCtx` ile, varyant soluklaştırma `DRAW.shape`, atlama çizgileri ve şüpheli bağlantı işareti `DRAW.edge` ile yapılır. Bu fonksiyonları yeniden atamayın; kanca ekleyin.
+
+**Sürüklemede kısmi çizim** (`dragFast`, 000-core): 25 ve daha fazla şekilli diyagramda (sequence hariç) taşıma / boyutlandırma sırasında yalnız konumu değişen şekillerin `<g data-sk>` grupları, onlara bağlı kenarlar (`[data-eid]`, kaba rota araması `rctx.quick`, önbelleğe yazılmaz) ve seçim katmanı (`#selL`) yenilenir; çerçeve, mini harita, atlama çizgileri ve diğer rotalar bırakınca tam çizimde güncellenir. Varsayım: bir şeklin çıktısı yalnız kendi konum / boyutuna ve modele bağlıdır — başka şekillerin konumuna bağlı çizim (ör. sequence yaşam çizgisi uzunluğu) eklenirse o diyagram türü `dragFast` dışında tutulmalıdır.
 
 Her kanca kendi `try/catch`'i içinde çalışır; hata `appErr()` ile günlüğe yazılır, diğer kancalar çalışmaya devam eder.
 

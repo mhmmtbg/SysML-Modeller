@@ -110,7 +110,6 @@ function aectpApply(target, o){
 {
   const _pm = pfMetrics;
   pfMetrics = function(p){ const m = _pm.apply(this, arguments); if(p && p.tbd && m && m.rows && !m.rows.some(r => r[0] === 'Durum')) m.rows.unshift(['Durum', 'TASLAK — seviyeler [TBD], uyarlanmış standarttan girilmeli']); return m; };
-  const _ec = envClause; envClause = function(p){ return p && p.tbd ? null : _ec.apply(this, arguments); };
   const V0 = VIEWS['@profiles'], _r = V0.render;
   V0.render = function(){ const h = _r.apply(this, arguments), p = pfSel(); if(!p || !p.tbd) return h; return `<div class="pfwarn" style="border:1px solid #e0b252;background:#fff6dc;padding:6px 10px;margin:0 0 8px;border-radius:4px">Bu profil <b>TASLAK</b>: kırılma noktaları yalnız şekil yer tutucusudur, standarttan alınmamıştır. Seviyeleri ve yöntem numarasını uyarlanmış standarttan girdikten sonra işareti kaldırın. <button class="vb" data-pftbd="${p.id}">Seviyeler girildi — taslak işaretini kaldır</button></div>` + h; };
   V0.note += '<br><br><b>Akustik gürültü</b>: 1/3 oktav SPL (dB, ref 20 µPa), frekans log / seviye doğrusal eksen; OASPL standart 1/3 oktav bantlarının enerji toplamıdır. Tolerans toplamsal ±dB, ayrıca ±dB OASPL toleransı.';
@@ -190,7 +189,8 @@ if(typeof MENU_GROUPS !== 'undefined') MENU_GROUPS.req.cls.unshift(['Doğrulama 
 {
   const _ec = envClause;
   envClause = function(p){
-    if(!p || p.tbd || p.ptype !== 'acoustic') return _ec.apply(this, arguments);
+    if(p && p.tbd) return null; /* taslak profilden gereksinim cümlesi üretilmez */
+    if(!p || p.ptype !== 'acoustic') return _ec.apply(this, arguments);
     const m = pfMetrics(p); if(!m.ok) return null; const pts = m.pts, dur = numOf(p.dur);
     return `${trNum(pts[0][0])} Hz ile ${trNum(pts[pts.length - 1][0])} Hz arasında ${trNum(+m.oaspl.toFixed(1))} dB OASPL (ref 20 µPa) seviyesindeki "${p.name}" ${/akustik|gürültü|acoustic/i.test(p.name) ? 'profiline' : 'akustik gürültü ortamına'}${dur != null ? ' ' + trNum(dur) + ' dk' : ''} maruz kaldığında`;
   };

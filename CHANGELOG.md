@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.52.0 — 2026-10-17
+
+- **Sürüklemede kısmi yeniden çizim:** büyük diyagramlarda (≥ 25 şekil) taşıma ve boyutlandırma sırasında yalnız hareket eden şekiller, bağlı kenarları ve seçim çerçevesi yenilenir; bırakınca tam çizim. Ölçüm (hareket başına): 100 şekil 40 → 5 ms, 200 şekil 70–78 → 5 ms
+- Sürükleme sırasında tuval konumu bir kez okunur (her harekette yerleşim hesabı zorlanmaz); sürükleme sırasında kenarlar kaba rota aramasıyla, bırakınca tam aramayla yönlendirilir
+- **Çizim boru hattı** (`DRAW`): katman / varyant gizleme, bölme elemanı gizleme, varyant soluklaştırma, atlama çizgileri ve şüpheli bağlantı işareti artık çekirdek çizim fonksiyonlarını sarmalamıyor, kancalara kayıtlı; çıktılar değişmedi (altın test 31/31)
+- Düzeltme: tarayıcıda art arda hızlı iki kayıtta aynı içerik iki kez yedeklenebiliyordu
+- Regresyon testi 56 adım
+
 ## v1.51.0 — 2026-10-16
 
 - **Akustik gürültü profili:** 1/3 oktav SPL (dB, ref 20 µPa); frekans log / seviye doğrusal eksen, toplamsal ±dB bant toleransı, OASPL (standart 1/3 oktav bantlarının enerji toplamı) ve ±dB OASPL toleransı; karşılaştırma, zarf, ±dB ölçekleme, rapor ve test dokümanları

@@ -2,8 +2,8 @@
 
 _Bu dosya `node tools/ozellik-test.js` ile üretilir; elle düzenlemeyin._
 
-- Özellik: **51**, testle kapsanan: **51**
-- Birim testi adı: 121 (döngüyle üretilenler dahil olmayabilir), uçtan uca test: 55
+- Özellik: **52**, testle kapsanan: **52**
+- Birim testi adı: 121 (döngüyle üretilenler dahil olmayabilir), uçtan uca test: 56
 
 | No | Özellik | Sürüm | Birim testleri | Uçtan uca testler | Durum |
 |---|---|---|---|---|---|
@@ -56,5 +56,6 @@ _Bu dosya `node tools/ozellik-test.js` ile üretilir; elle düzenlemeyin._
 | F49 | Kod sağlığı: kanca listeleri, ilişki önbelleği, durum çubuğu ve depo uyarısı | 1.49 | 3: kancalar: durum, simülasyon çubuğu ve türetme kanca listeleri dolu; sarmalama yok; türetme kabulü arayüzü bir kez yeniden çizer (afterChange tek çağrı); relIdx önbelleği: ekleme/silmeden sonra güncel, aynı revizyonda aynı nesne | Varyant rozeti konfigürasyon kapanınca kalkar; depo kotası aşılınca bir kez uyarı, düzelince sıfırlanır | ✓ |
 | F50 | Temel / Uzman görünüm ve menü denetimi | 1.50 | 3: iş akışı: her adımın düğmesi gerçek bir menü komutuna karşılık gelir; menü düzeni: bilinmeyen öğe "Diğer" altında, boş grup başlığı yok, öğe kaybolmaz; menü düzeni: gerçek menülerde "Diğer" grubu oluşmaz | Temel görünüm: düğmeyle geçiş ve hatırlama, kısa menüler (boş başlık ve yineleme yok), sade palet, Gelişmiş bölümü; Ctrl+K ve iş akışı tüm komutları bulur; Uzman'a dönüş | ✓ |
 | F51 | Akustik profil, zaman verisinden SRS, AECTP-400 şablonu, test prosedürü taslağı | 1.51 | 8: akustik: OASPL = 1/3 oktav enerji toplamı; düz 100 dB, 10 bant → 110 dB; akustik: dB ara değer log-frekansta doğrusal; tolerans toplamsal; akustik ölçüm: bant sapması ve OASPL sapması karara yazılır; SRS: uzun sinüs f0 → SRS(f0) ≈ Q·A; yüksek fn → A; SRS: yarım sinüs darbe — pozitif/negatif ayrımı, düşük örnekleme uyarısı; AECTP-400 şablonu: 3 gereksinim + taslak profil (Refine) + test; seviyeler TBD, çevre kuralı taslağı atlar; test prosedürü taslağı: adımlar eksen başına, hazırlık/kabul doldurulur, dolu alan korunur; çevre cümlesi: akustik profil OASPL ile | Akustik profil (OASPL, dB ekseni); AECTP-400 şablonu (TBD, baskı), taslak uyarısı ve kaldırma; çevresel gereksinimden test prosedürü taslağı (liste, Özellikler düğmesi); ölçümde SRS düğmesi | ✓ |
+| F52 | Çizim boru hattı ve sürüklemede kısmi yeniden çizim | 1.52 | — | Çizim kancaları kayıtlı; büyük diyagramda sürüklerken yalnız taşınan şekil ve kenarları yenilenir, bırakınca tam çizimle aynı, geri al çalışır | ✓ |
 | F41 | Performans (~6000 eleman) | 1.17 | — | ~6000 elemanlı modelde işlemler 2 sn altında | ✓ |
 | F42 | Kararlılık: tüm senaryolarda JavaScript hatası yok | tümü | — | çalışma sırasında JavaScript hatası yok | ✓ |

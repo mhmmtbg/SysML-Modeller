@@ -5,7 +5,7 @@ const BK_DEF = {on:true, keep:10, every:10};
 const bkCfg = () => { try { return Object.assign({}, BK_DEF, JSON.parse(localStorage.getItem('sysml-yedek') || '{}')); } catch(e){ return Object.assign({}, BK_DEF); } };
 const bkSetCfg = c => { try { localStorage.setItem('sysml-yedek', JSON.stringify(c)); } catch(e){ appErr('bkcfg', e); } };
 const bkText = () => JSON.stringify(pack(), clean, 1);
-let BK_LAST = {h:'', t:0}, BK_ERR = false;
+let BK_LAST = {h:'', t:0}, BK_ERR = false, BK_PEND = '';
 /* içerik özeti: kayıt zamanı, açık sekmeler ve sağlama alanı gibi değişken alanlar hariç */
 const bkHash = txt => { try { const o = JSON.parse(txt); delete o.savedAt; delete o.ui; delete o.chk; return String(fnv1a(JSON.stringify(o))); } catch(e){ return String(fnv1a(txt)); } };
 /* ---------- IndexedDB (tarayıcı) ---------- */
@@ -15,7 +15,8 @@ async function idbPut(rec, keep){ const db = await idbOpen(); await new Promise(
 /* ---------- yedek alma ---------- */
 async function backupNow(reason, txt){
   const c = bkCfg(); if(!c.on) return null;
-  txt = txt || bkText(); const h = bkHash(txt); if(h === BK_LAST.h && reason !== 'restore') return null;
+  txt = txt || bkText(); const h = bkHash(txt); if((h === BK_LAST.h || h === BK_PEND) && reason !== 'restore') return null;
+  BK_PEND = h; /* yazım sürerken gelen aynı içerikli ikinci istek (art arda kayıt) yinelenmez */
   try {
     if(NATIVE && typeof window.nativeBackup === 'function'){
       const r = await window.nativeBackup(curPath || 'kaydedilmemis.sysml', txt, c.keep); if(r && r.error) throw new Error(r.error);
@@ -25,6 +26,7 @@ async function backupNow(reason, txt){
     await idbPut({uid:M.uid || 'model', name:E(M.rootId).name, t:Date.now(), n:Object.keys(M.els).length, size:txt.length, reason:reason || '', data:txt}, c.keep);
     BK_LAST = {h, t:Date.now()}; return 'idb';
   } catch(e){ appErr('backup', e); if(!BK_ERR){ BK_ERR = true; toast('Yedek alınamadı: ' + (e.message || e)); } return null; }
+  finally { if(BK_PEND === h) BK_PEND = ''; }
 }
 {
   const _sj = saveJSON;

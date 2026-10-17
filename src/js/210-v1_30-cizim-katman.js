@@ -67,44 +67,32 @@ function jumpPath(pts, segs, R){
   }
   return {d, n};
 }
-{
-  const _de = drawEdge;
-  drawEdge = function(d, ed, SM, pts, exp){
-    let s = _de(d, ed, SM, pts, exp);
-    const k = edgeKind(ed);
-    if(JUMP && JUMP.d === d && jumpsOn(d) && pts && pts.length > 1 && !isMsg(k) && k !== 'Anchor'){
-      const r = ed.el ? E(ed.el) : null;
-      if(!(r && r.fl)){
-        const dstr = 'M' + pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' L');
-        const J = jumpPath(pts, JUMP.segs, 5);
-        if(J.n){ const i = s.indexOf(`d="${dstr}"`), j = i >= 0 ? s.indexOf(`d="${dstr}"`, i + 1) : -1; if(j >= 0) s = s.slice(0, j) + `d="${J.d}"` + s.slice(j + dstr.length + 4); else if(i >= 0 && exp) s = s.slice(0, i) + `d="${J.d}"` + s.slice(i + dstr.length + 4); }
-      }
-      for(let i = 0; i < pts.length - 1; i++) JUMP.segs.push({a:pts[i], b:pts[i + 1]});
-    }
-    return s;
-  };
-}
-{
-  const _d0 = diagramSVG0;
-  diagramSVG0 = function(d, exp){
-    const prevJ = JUMP; JUMP = {d, segs:[]};
-    const hid = layerHiddenSet(d), offL = new Set(dLayers(d).filter(l => l.vis === false).map(l => l.id));
-    if(!hid.size && !offL.size){ try { return _d0(d, exp); } finally { JUMP = prevJ; } }
-    const S0 = d.shapes, E0 = d.edges;
-    d.shapes = S0.filter(s => !hid.has(s.id)); d.edges = E0.filter(e => !hid.has(e.s) && !hid.has(e.t) && !(e.layer && offL.has(e.layer)));
-    try { return _d0(d, exp); } finally { d.shapes = S0; d.edges = E0; JUMP = prevJ; }
-  };
-}
+/* atlama çizgileri ve katman görünürlüğü: çizim boru hattı */
+DRAW.edge.push((s, d, ed, SM, pts, exp) => {
+  const k = edgeKind(ed);
+  if(!(JUMP && JUMP.d === d && jumpsOn(d) && pts && pts.length > 1 && !isMsg(k) && k !== 'Anchor')) return;
+  const r = ed.el ? E(ed.el) : null;
+  if(!(r && r.fl)){
+    const dstr = 'M' + pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' L');
+    const J = jumpPath(pts, JUMP.segs, 5);
+    if(J.n){ const i = s.indexOf(`d="${dstr}"`), j = i >= 0 ? s.indexOf(`d="${dstr}"`, i + 1) : -1; if(j >= 0) s = s.slice(0, j) + `d="${J.d}"` + s.slice(j + dstr.length + 4); else if(i >= 0 && exp) s = s.slice(0, i) + `d="${J.d}"` + s.slice(i + dstr.length + 4); }
+  }
+  for(let i = 0; i < pts.length - 1; i++) JUMP.segs.push({a:pts[i], b:pts[i + 1]});
+  return s;
+});
+DRAW.diagram.push((d, exp) => {
+  const prevJ = JUMP; JUMP = {d, segs:[]};
+  const hid = layerHiddenSet(d), offL = new Set(dLayers(d).filter(l => l.vis === false).map(l => l.id)), done = () => { JUMP = prevJ; };
+  if(!hid.size && !offL.size) return {done};
+  return {shape:s => !hid.has(s.id), edge:e => !hid.has(e.s) && !hid.has(e.t) && !(e.layer && offL.has(e.layer)), done};
+});
 /* ---------- seçmeli bölme elemanları ---------- */
-{
-  const _ds = drawShape;
-  drawShape = function(sh, e, d, SM, exp){
-    if(!sh || !e || !(sh.hideEls && sh.hideEls.length)) return _ds(sh, e, d, SM, exp);
-    const H = new Set(sh.hideEls), ok = kidsOf;
-    kidsOf = id => { const r = ok(id); return id === e.id ? r.filter(k => !H.has(k.id)) : r; };
-    try { return _ds(sh, e, d, SM, exp); } finally { kidsOf = ok; }
-  };
-}
+DRAW.shapeCtx.push((sh, e) => {
+  if(!sh || !e || !(sh.hideEls && sh.hideEls.length)) return null;
+  const H = new Set(sh.hideEls), ok = kidsOf;
+  kidsOf = id => { const r = ok(id); return id === e.id ? r.filter(k => !H.has(k.id)) : r; };
+  return () => { kidsOf = ok; };
+});
 const COMP_GROUPS = [['Part', 'parts', c => c.kind === 'Part' && !c.shared], ['Ref', 'references', c => c.kind === 'Part' && c.shared], ['Value', 'values', c => c.kind === 'Value'], ['Port', 'ports', c => c.kind === 'Port'], ['FlowProp', 'flow properties', c => c.kind === 'FlowProp'], ['Constraint', 'constraints', c => c.kind === 'ConstraintProp']];
 function compElsDialog(sh){
   const e = E(sh.el); if(!e) return;

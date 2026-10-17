@@ -20,15 +20,12 @@ let VAR_IN = false;
     try { return _ru.apply(this, arguments); } finally { kidsOf = ok; VAR_IN = false; }
   };
   /* diyagram: varyant dışı şekiller soluk veya gizli */
-  const _ds2 = drawShape;
-  drawShape = function(sh, e, d, SM, exp){ const s = _ds2.apply(this, arguments); if(!e || !varActiveCfg() || varOn(e)) return s; return `<g opacity="0.25" data-varoff="1">${s}</g>`; };
-  const _d02 = diagramSVG0;
-  diagramSVG0 = function(d, exp){
-    const V = M.variants; if(!V || !V.hide || !varActiveCfg()) return _d02.apply(this, arguments);
-    const off = new Set(d.shapes.filter(s => E(s.el) && !varOn(E(s.el))).map(s => s.id)); if(!off.size) return _d02.apply(this, arguments);
-    const S0 = d.shapes, E0 = d.edges; d.shapes = S0.filter(s => !off.has(s.id) && !(s.parent && off.has(s.parent))); d.edges = E0.filter(x => !off.has(x.s) && !off.has(x.t));
-    try { return _d02.apply(this, arguments); } finally { d.shapes = S0; d.edges = E0; }
-  };
+  DRAW.shape.push((s, sh, e) => (!e || !varActiveCfg() || varOn(e)) ? s : `<g opacity="0.25" data-varoff="1">${s}</g>`);
+  DRAW.diagram.push(d => {
+    const V = M.variants; if(!V || !V.hide || !varActiveCfg()) return null;
+    const off = new Set(d.shapes.filter(s => E(s.el) && !varOn(E(s.el))).map(s => s.id)); if(!off.size) return null;
+    return {shape:s => !off.has(s.id) && !(s.parent && off.has(s.parent))};
+  });
 }
 function withConfig(cfgId, fn){ const V = varM(), keep = V.active; V.active = cfgId || ''; bump(); try { return fn(); } finally { V.active = keep; bump(); } }
 /* ---------- görünüm ---------- */

@@ -853,10 +853,11 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   console.log('9m) Yedekler (tarayıcı): kayıtta yedek, geri yükleme, fark özeti, geri al');
   const bk = await run(async () => {
     const o = {}; const dl0 = download; window.__dl = []; download = (blob, name) => window.__dl.push({ blob, name });
-    localStorage.removeItem('sysml-yedek'); const all0 = await idbAll(M.uid); for(const x of all0){ const db = await idbOpen(); await new Promise(r => { const tx = db.transaction('snap', 'readwrite'); tx.objectStore('snap').delete(x.id); tx.oncomplete = r; }); }
-    BK_LAST = {h:'', t:0}; await saveJSON(false); await new Promise(r => setTimeout(r, 150));
-    let L = await idbAll(M.uid); o.first = L.length === 1 && L[0].n === Object.keys(M.els).length;
-    await saveJSON(false); await new Promise(r => setTimeout(r, 150)); o.dedup = (await idbAll(M.uid)).length === 1;
+    const sleep = ms => new Promise(r => setTimeout(r, ms)), waitL = async (pred) => { let L; for(let i = 0; i < 40; i++){ L = await idbAll(M.uid); if(pred(L)) return L; await sleep(50); } return L; }; /* yedek yazımı eşzamansız: sabit bekleme yerine yokla */
+    localStorage.removeItem('sysml-yedek'); await sleep(300); const all0 = await idbAll(M.uid); for(const x of all0){ const db = await idbOpen(); await new Promise(r => { const tx = db.transaction('snap', 'readwrite'); tx.objectStore('snap').delete(x.id); tx.oncomplete = r; }); }
+    BK_LAST = {h:'', t:0}; await saveJSON(false);
+    let L = await waitL(x => x.length >= 1); o.first = L.length === 1 && L[0].n === Object.keys(M.els).length;
+    await saveJSON(false); await sleep(250); o.dedup = (await idbAll(M.uid)).length === 1;
     const n0 = Object.keys(M.els).length; const pk = mk('Package', M.rootId, { name: 'Yedek testi' }); mk('Block', pk.id, { name: 'YB' }); afterChange();
     await saveJSON(false); await new Promise(r => setTimeout(r, 150)); L = await idbAll(M.uid); o.second = L.length >= 2 && L[0].reason === 'kayıt';
     await restoreDialog(); await new Promise(r => setTimeout(r, 200));
@@ -958,6 +959,28 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
     return o;
   });
   ok('Akustik profil (OASPL, dB ekseni); AECTP-400 şablonu (TBD, baskı), taslak uyarısı ve kaldırma; çevresel gereksinimden test prosedürü taslağı (liste, Özellikler düğmesi); ölçümde SRS düğmesi', Object.values(ev51).every(v => v === true), ev51);
+
+  console.log('9s) Çizim boru hattı ve sürüklemede kısmi yeniden çizim');
+  const dg = await run(() => {
+    const o = {};
+    o.hooks = DRAW.diagram.length >= 2 && DRAW.shape.length >= 1 && DRAW.shapeCtx.length >= 1 && DRAW.edge.length >= 2;
+    const pk = mk('Package', M.rootId, {name:'Sürükleme'}), d = newDiagramCore(pk.id, 'bdd', 'Sürükleme testi');
+    for (let i = 0; i < 60; i++){ const x = mk('Block', pk.id, {name:'S' + i}); addShape(d, x.id, 40 + (i % 10) * 170, 40 + Math.floor(i / 10) * 120); }
+    for (let i = 1; i < 60; i++) connect(d, 'Composition', d.shapes[Math.floor((i - 1) / 3)], d.shapes[i]);
+    d.z = 0.6; d.vx = 20; d.vy = 20; openD(d.id); renderDiagram();
+    const sh = d.shapes[4], r = document.querySelector(`[data-sid="${sh.id}"] rect`).getBoundingClientRect();
+    window.__dg = {x:r.left + 20, y:r.top + 10, id:sh.id, other:d.shapes[40].id, d:d.id};
+    return o;
+  });
+  const dgi = await run(() => window.__dg);
+  await page.mouse.move(dgi.x, dgi.y); await page.mouse.down(); await page.mouse.move(dgi.x + 6, dgi.y + 4); await page.mouse.move(dgi.x + 10, dgi.y + 6);
+  await run(() => document.querySelector(`[data-sk="${window.__dg.other}"]`).setAttribute('data-mark', '1')); /* ilk hareket tam çizimdir; sonrakiler kısmi */
+  for (let i = 2; i <= 10; i++) await page.mouse.move(dgi.x + i * 8, dgi.y + i * 5);
+  const dg2 = await run(() => { const g = window.__dg; return { partial: !!document.querySelector(`[data-sk="${g.other}"][data-mark="1"]`), moved: document.querySelectorAll(`[data-sk="${g.id}"]`).length === 1, sel: !!document.querySelector('#selL rect') }; });
+  await page.mouse.up(); await page.waitForTimeout(120);
+  const dg3 = await run(() => { const g = window.__dg, d = E(g.d), sh = shapeOf(d, g.id), a = document.querySelector('#vp').innerHTML; renderDiagram(); const exact = a === document.querySelector('#vp').innerHTML; undo(); return { exact, undo: shapeOf(E(g.d), g.id).x === 40 + 4 * 170 }; });
+  Object.assign(dg, dg2, dg3);
+  ok('Çizim kancaları kayıtlı; büyük diyagramda sürüklerken yalnız taşınan şekil ve kenarları yenilenir, bırakınca tam çizimle aynı, geri al çalışır', Object.values(dg).every(v => v === true), dg);
 
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });

@@ -1,7 +1,7 @@
 'use strict';
 const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const LSK = 'sysml-modeler-v1';
-const APP_VER = '1.51.0';
+const APP_VER = '1.52.0';
 const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1273,7 +1273,7 @@ function compBox(sh, e, head, comps, fill, SW){
 }
 
 /* ================= SHAPE DRAWING ================= */
-function drawShape(sh, e, d, SM, exp){
+function drawShapeCore(sh, e, d, SM, exp){
   const x = sh.x, y = sh.y, k = e.kind;
   const fill = legendFill(d, e) || sh.fill || stFill(e) || FILL[k] || '#fff';
   const SW = `stroke="${sh.stroke || STROKE}" stroke-width="${sh.stroke ? 1.6 : 1.2}"`;
@@ -1723,19 +1723,19 @@ function routeOrtho(S, T2, ctx0){
   const obs = ctx0.obs.filter(r => r.x < rx1 && r.x + r.w > rx0 && r.y < ry1 && r.y + r.h > ry0);
   const routed = ctx0.routed.filter(g => Math.max(g.a.x, g.b.x) >= rx0 && Math.min(g.a.x, g.b.x) <= rx1 && Math.max(g.a.y, g.b.y) >= ry0 && Math.min(g.a.y, g.b.y) <= ry1);
   const xs = [], ys = []; obs.forEach(o => { xs.push(o.x - 20, o.x + o.w + 20); ys.push(o.y - 20, o.y + o.h + 20); });
-  const ctx = {d:ctx0.d, SM:ctx0.SM, obs, xs, ys, routed};
+  const ctx = {d:ctx0.d, SM:ctx0.SM, obs, xs, ys, routed, quick:ctx0.quick};
   const pr = s0 => s0.parent && ctx0.SM.get(s0.parent);
   const key = [S, T2, pr(S), pr(T2)].map(o => o ? o.x + ',' + o.y + ',' + o.w + ',' + o.h : '-').join('|') + '#' + obs.map(o => o.x + ',' + o.y + ',' + o.w + ',' + o.h).join(';') ;
   const ck = ctx0.d.id + '|' + S.id + '|' + T2.id, hit = ROUTE_CACHE.get(ck);
   if(hit && hit.k === key) return hit.p.map(q => ({x:q.x, y:q.y}));
   const res = routeOrtho0(S, T2, ctx);
   if(ROUTE_CACHE.size > 4000) ROUTE_CACHE.clear();
-  if(res) ROUTE_CACHE.set(ck, {k:key, p:res.map(q => ({x:q.x, y:q.y}))});
+  if(res && !ctx0.quick) ROUTE_CACHE.set(ck, {k:key, p:res.map(q => ({x:q.x, y:q.y}))}); /* kaba rota önbelleğe yazılmaz */
   return res;
 }
 function routeOrtho0(S, T2, ctx){
   const A0 = endInfo(S, T2, ctx), B0 = endInfo(T2, S, ctx);
-  const heavy = ctx.obs.length + ctx.routed.length / 4 > 30, NC = heavy ? 6 : 9, NJ = heavy ? 4 : 6;
+  const heavy = ctx.obs.length + ctx.routed.length / 4 > 30, NC = ctx.quick ? 4 : heavy ? 6 : 9, NJ = ctx.quick ? 2 : heavy ? 4 : 6; /* quick: sürükleme sırasında kaba arama, bırakınca tam */
   const best3 = arr => arr.slice().sort((a, b) => a.pen - b.pen).slice(0, NC);
   const As = best3(A0), Bs = best3(B0);
   const ST = 16;
@@ -1857,7 +1857,7 @@ function head(type, p, q, sc, col){
   return '';
 }
 function edgeKind(ed){ const r = ed.el ? E(ed.el) : null; return r ? r.kind : ed.kind; }
-function drawEdge(d, ed, SM, pts, exp){
+function drawEdgeCore(d, ed, SM, pts, exp){
   const r = ed.el ? E(ed.el) : null, kind = edgeKind(ed), st = ER[kind] || {};
   const flp = r && r.fl && isMsg(kind) && typeof flPts === 'function' ? flPts(r, pts) : null; if(flp) pts = flp;
   const dstr = 'M' + pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' L');
@@ -1928,11 +1928,27 @@ function seqBars(d, SM){
   out.forEach((arr, sid) => arr.forEach(b => { if(b.y2 == null) b.y2 = Math.max(b.y1 + 30, (lastY.get(sid) || b.y1) + 14); }));
   return out;
 }
+/* bir şeklin diyagramdaki tam çıktısı (not rozeti dahil); ekran çiziminde data-sk ile sarılır — sürüklemede yalnız bu grup yenilenir */
+function shapeStr(sh, e, d, SM, exp){
+  let str = drawShape(sh, e, d, SM, exp);
+  if(!exp && e.notes) str += noteBadge(sh, e);
+  return exp ? str : `<g data-sk="${sh.id}">${str}</g>`;
+}
+/* kenar yönlendirme bağlamı ve çizim sırası (bağlantı uçları, paralel kenar kaydırma) */
+function edgeCtx(d, SM, exp){
+  const rctx = routeCtx(d, SM);
+  if(!exp && drag && (drag.type === 'move' || drag.type === 'resize') && d.edges.length > 30) rctx.fast = new Set(drag.type === 'move' ? [...drag.set] : [drag.sh.id]);
+  else if(!exp && deferRoute && deferRoute.d === d.id) rctx.fast = deferRoute.set;
+  const ord = d.edges.slice().sort((a, b) => (edgeKind(a) === 'Anchor') - (edgeKind(b) === 'Anchor'));
+  const pairN = new Map(); ord.forEach(ed => { if(ed.s === ed.t || isMsg(edgeKind(ed))) return; const k = ed.s < ed.t ? ed.s + '|' + ed.t : ed.t + '|' + ed.s; const a = pairN.get(k) || []; a.push(ed); pairN.set(k, a); });
+  rctx.pair = new Map(); pairN.forEach(a => { if(a.length > 1) a.forEach((ed, i) => rctx.pair.set(ed, (i - (a.length - 1) / 2) * 26)); });
+  return {rctx, ord};
+}
 function diagramSVG(d, exp){
   FSC = d.fs || 1;
   try { return diagramSVG0(d, exp); } finally { FSC = 1; }
 }
-function diagramSVG0(d, exp){
+function diagramSVG0Core(d, exp){
   const SM = new Map(d.shapes.map(s => [s.id, s]));
   if(d.dtype === 'sd'){
     const msgs = d.edges.filter(ed => isMsg(edgeKind(ed))).sort((a, b) => (a.y || 0) - (b.y || 0));
@@ -1943,8 +1959,7 @@ function diagramSVG0(d, exp){
   const cont = [], norm = [], ports = [], over = [];
   d.shapes.forEach(sh => {
     const e = E(sh.el); if(!e) return;
-    let str = drawShape(sh, e, d, SM, exp);
-    if(!exp && e.notes) str += noteBadge(sh, e);
+    const str = shapeStr(sh, e, d, SM, exp);
     if(e.kind === 'Fragment') over.push(str);
     else if(CONT.has(e.kind) || isComposite(e)) cont.push([sh.w * sh.h, str]);
     else (BORDER.has(e.kind) && sh.parent ? ports : norm).push(str);
@@ -1962,12 +1977,7 @@ function diagramSVG0(d, exp){
     if(e.kind === 'Actor'){ grow(sh.x - 30, sh.y); grow(sh.x + sh.w + 30, sh.y + sh.h + 14); }
   });
   let edges = '';
-  const rctx = routeCtx(d, SM);
-  if(!exp && drag && (drag.type === 'move' || drag.type === 'resize') && d.edges.length > 30) rctx.fast = new Set(drag.type === 'move' ? [...drag.set] : [drag.sh.id]);
-  else if(!exp && deferRoute && deferRoute.d === d.id) rctx.fast = deferRoute.set;
-  const ord = d.edges.slice().sort((a, b) => (edgeKind(a) === 'Anchor') - (edgeKind(b) === 'Anchor'));
-  const pairN = new Map(); ord.forEach(ed => { if(ed.s === ed.t || isMsg(edgeKind(ed))) return; const k = ed.s < ed.t ? ed.s + '|' + ed.t : ed.t + '|' + ed.s; const a = pairN.get(k) || []; a.push(ed); pairN.set(k, a); });
-  rctx.pair = new Map(); pairN.forEach(a => { if(a.length > 1) a.forEach((ed, i) => rctx.pair.set(ed, (i - (a.length - 1) / 2) * 26)); });
+  const {rctx, ord} = edgeCtx(d, SM, exp);
   ord.forEach(ed => {
     const S = SM.get(ed.s), T2 = SM.get(ed.t); if(!S || !T2) return;
     if(ed.el && !E(ed.el)) return;
@@ -2009,10 +2019,38 @@ function renderDiagram(){
   const {svg, bbox} = diagramSVG(d, false);
   const z = d.z;
   const grid = ST.grid ? `<defs><pattern id="gp" width="${G * 2}" height="${G * 2}" patternUnits="userSpaceOnUse"><circle cx="0.8" cy="0.8" r="0.8" fill="#c9d1dc"/></pattern></defs><rect x="-20000" y="-20000" width="40000" height="40000" fill="url(#gp)"/>` : '';
-  svgEl.innerHTML = `<g id="vp" transform="translate(${d.vx},${d.vy}) scale(${z})">${grid}${svg}${simOverlay(d)}${selSVG(d)}<g id="ovl"></g></g>`;
+  svgEl.innerHTML = `<g id="vp" transform="translate(${d.vx},${d.vy}) scale(${z})">${grid}${svg}${simOverlay(d)}<g id="selL">${selSVG(d)}</g><g id="ovl"></g></g>`;
   $('#zoomLbl').textContent = Math.round(z * 100) + '%';
   renderMini(d, bbox);
   renderStatus();
+}
+/* ---- v1.52: sürükleme / boyutlandırmada kısmi yeniden çizim ----
+   Büyük diyagramda her fare hareketinde tüm SVG yeniden üretilmez: yalnız konumu/boyutu değişen şekillerin
+   <g data-sk> grupları, onlara bağlı kenarlar ve seçim çerçevesi yenilenir. Çerçeve, mini harita, atlama çizgileri
+   ve diğer kenarların rotası bırakınca (mouseup) yapılan tam çizimde güncellenir. */
+let DRAG_FAST_MIN = 25;
+const shapeKey = s => s.x + ',' + s.y + ',' + s.w + ',' + s.h + ',' + (s.parent || '');
+function dragFast(d){
+  if(!drag || !d || d.dtype === 'sd' || d.shapes.length < DRAG_FAST_MIN || (drag.msgs && drag.msgs.size) || isView(ST.cur) || cur() !== d) return false;
+  const vp = $('#vp'); if(!vp) return false;
+  if(!drag.pos){ renderDiagram(); drag.pos = new Map(d.shapes.map(s => [s.id, shapeKey(s)])); return true; }
+  const ov = vp.querySelector('#ovl'); if(ov) ov.innerHTML = '';
+  const ch = d.shapes.filter(s => drag.pos.get(s.id) !== shapeKey(s)); if(!ch.length) return true;
+  FSC = d.fs || 1;
+  try {
+    const SM = new Map(d.shapes.map(s => [s.id, s])), set = new Set(ch.map(s => s.id));
+    const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'g'), swap = (n, str) => { tmp.innerHTML = str; n.replaceWith(...tmp.childNodes); };
+    ch.forEach(sh => { const n = vp.querySelector(`[data-sk="${sh.id}"]`), e = E(sh.el); if(n && e) swap(n, shapeStr(sh, e, d, SM, false)); });
+    const {rctx} = edgeCtx(d, SM, false); rctx.quick = true;
+    d.edges.forEach(ed => {
+      if(!set.has(ed.s) && !set.has(ed.t)) return;
+      const n = vp.querySelector(`[data-eid="${ed.id}"]`), S = SM.get(ed.s), T2 = SM.get(ed.t); if(!n || !S || !T2 || (ed.el && !E(ed.el))) return;
+      const pts = edgeGeom(S, T2, ed, rctx); ed._pts = pts; swap(n, drawEdge(d, ed, SM, pts, false));
+    });
+    const sl = vp.querySelector('#selL'); if(sl) sl.innerHTML = selSVG(d);
+    ch.forEach(s => drag.pos.set(s.id, shapeKey(s)));
+  } finally { FSC = 1; }
+  return true;
 }
 /* ---- mini harita ---- */
 ST.mini = (() => { try { return localStorage.getItem('sysml-mini') !== '0'; } catch(e){ return true; } })();
@@ -2394,7 +2432,7 @@ pal.addEventListener('dragstart', ev => {
 });
 
 /* ================= CANVAS INTERACTION ================= */
-function cpt(ev){ const r = svgEl.getBoundingClientRect(), d = cur(); return {x:(ev.clientX - r.left - d.vx) / d.z, y:(ev.clientY - r.top - d.vy) / d.z}; }
+function cpt(ev){ const r = drag ? (drag.rect || (drag.rect = svgEl.getBoundingClientRect())) : svgEl.getBoundingClientRect(), d = cur(); /* sürükleme boyunca tuval konumu sabit: her harekette yerleşim hesabı zorlanmaz */ return {x:(ev.clientX - r.left - d.vx) / d.z, y:(ev.clientY - r.top - d.vy) / d.z}; }
 function shapeAt(ev){ const el = document.elementFromPoint(ev.clientX, ev.clientY); const g = el && el.closest && el.closest('[data-sid]'); return g ? shapeOf(cur(), g.dataset.sid) : null; }
 function canDrop(d, e){
   if(!e || e.kind === 'Diagram' || KIND[e.kind].rel) return false;
@@ -2679,7 +2717,7 @@ window.addEventListener('mousemove', ev => {
       if(drag.msgs) drag.msgs.forEach((y0, ed) => { ed.y = y0 + dy; });
       if(drag.wps) drag.wps.forEach((w0, ed) => { ed.wp = w0.map(q => ({x:q.x + dx, y:q.y + dy})); });
     }
-    renderDiagram();
+    if(!dragFast(d)) renderDiagram();
     if(drag.gl && drag.gl.length){ const ov = $('#ovl'); if(ov) ov.innerHTML = `<g stroke="#e0457b" stroke-width="${1 / d.z}" stroke-dasharray="${4 / d.z} ${3 / d.z}" pointer-events="none">${drag.gl.join('')}</g>`; }
     return;
   }
@@ -2695,7 +2733,7 @@ window.addEventListener('mousemove', ev => {
     if(y2 - y1 < minH){ if(drag.h.includes('n')) y1 = y2 - minH; else y2 = y1 + minH; }
     sh.x = x1; sh.y = y1; sh.w = x2 - x1; sh.h = y2 - y1;
     drag.kids.forEach(c => snapPort(c, sh, c.x + c.w / 2, c.y + c.h / 2));
-    renderDiagram(); return;
+    if(!dragFast(d)) renderDiagram(); return;
   }
   if(drag.type === 'wp'){ const q = drag.ed.wp[drag.i]; if(q){ q.x = ev.altKey ? Math.round(p.x) : snapv(p.x); q.y = ev.altKey ? Math.round(p.y) : snapv(p.y); } renderDiagram(); return; }
   if(drag.type === 'lab'){ if(!drag.snapped){ snap(); drag.snapped = true; } drag.ed.lo = {x:Math.round(drag.o.x + p.x - drag.start.x), y:Math.round(drag.o.y + p.y - drag.start.y)}; renderDiagram(); return; }
