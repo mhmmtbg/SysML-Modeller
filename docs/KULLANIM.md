@@ -482,6 +482,9 @@ Aynı gereksinim ID'si farklı gereksinimlerde kullanılıyorsa uyarı verilir.
 
 - **ReqIF olarak dışa aktar:** gereksinimler ReqIF 1.2 biçiminde (ForeignID, Name, Text, seviye, alt sistem, durum, doğrulama yöntemi, müşteri isteri ve özel özellikler; Derive/Refine/Trace ilişkileri; sistem ve alt sistem başlıklarıyla hiyerarşi). IBM DOORS, Polarion, Jama gibi araçlara aktarılabilir.
 - **ReqIF içe aktar:** `.reqif` dosyası Excel içe aktarma penceresiyle açılır; öznitelikler sütun olarak eşleşir, ilişkiler üst gereksinim olarak gelir.
+- **ReqIF belge ağacı (v1.53):** DOORS gibi araçlardan gelen dosyada `SPEC-HIERARCHY` okunur. Gereksinimler belgedeki sırayla gelir; başlık nesneleri (`ReqIF.ChapterName` taşıyan ya da türü "Heading / Başlık" olan nesneler) gereksinim olarak aktarılmaz, **Bölüm (ReqIF hiyerarşisi)** sütununda "Performans / Elektriksel" gibi yol olarak görünür. Bu sütun varsayılan olarak **Bölüm yolu → alt paketler** alanına eşlenir: yeni gereksinimler seviye paketinin altında bu yoldaki iç içe paketlere yerleştirilir (güncellenen gereksinimlerin yeri değişmez). Birden fazla spesifikasyon (modül) varsa yolun başına spesifikasyon adı eklenir.
+- **Hiyerarşide üst (ID):** belge ağacında bir gereksinimin altında duran gereksinim için üstün ID'si. Ağaçtaki alt nesne her zaman türetilmiş gereksinim olmadığından varsayılan "yok say"dır; isterseniz eşlemede **Üst gereksinim ID(ler)i → Derive** seçin.
+- Bu uygulamanın ürettiği ReqIF'teki başlıklar seviye / alt sistem bilgisidir; geri aktarılırken bölüm olarak kullanılmaz.
 
 ## 5e. Analiz: parametrik hesap, bütçe, simülasyon, tahsis, tablo, ilişki haritası
 

@@ -982,6 +982,39 @@ const ok = (name, cond, info) => { results.push({ name, ok: !!cond, info }); con
   Object.assign(dg, dg2, dg3);
   ok('Çizim kancaları kayıtlı; büyük diyagramda sürüklerken yalnız taşınan şekil ve kenarları yenilenir, bırakınca tam çizimle aynı, geri al çalışır', Object.values(dg).every(v => v === true), dg);
 
+  console.log('9t) Sıkıştırılmış Word / Excel, kayıpsız PDF, ReqIF hiyerarşisi');
+  const v53 = await run(async () => {
+    const o = {}, dl0 = download, cap = []; download = (blob, name) => cap.push({ blob, name });
+    try {
+      exportReqsXlsx(); const xb = new Uint8Array(await cap.pop().blob.arrayBuffer()); o.xlsxDeflate = new DataView(xb.buffer).getUint16(8, true) === 8; /* ilk ZIP girdisi ([Content_Types].xml) yöntem 8 */
+      const sh = await readXlsx(xb); o.xlsxRead = sh.length >= 1 && sh[0].rows.length > 3; /* kendi okuyucumuz (DecompressionStream) sıkıştırılmış dosyayı okur */
+      const bl = await buildDocx([{ t: 'h', lv: 1, x: 'Başlık' }, { t: 'p', x: 'Metin '.repeat(400) }], { title: 'T', kind: 'report' }); const db = new Uint8Array(await bl.arrayBuffer());
+      let p = 0, n8 = 0; while (p < db.length - 30 && new DataView(db.buffer).getUint32(p, true) === 0x04034b50) { const dv = new DataView(db.buffer, p); if (dv.getUint16(8, true) === 8) n8++; p += 30 + dv.getUint16(26, true) + dv.getUint16(28, true) + dv.getUint32(18, true); }
+      o.docxDeflate = n8 >= 3;
+      const d = Object.values(M.els).find(e => e.kind === 'Diagram' && e.shapes.length > 3); await exportPDF([d.id], { size: 'A4', orient: 'auto' }); const pdf = await cap.pop().blob.text(); o.pdfFlate = /\/FlateDecode \/DecodeParms << \/Predictor 15/.test(pdf) && !/DCTDecode/.test(pdf);
+    } finally { download = dl0; }
+    const H = (id, t) => `<SPEC-OBJECT IDENTIFIER="${id}"><TYPE><SPEC-OBJECT-TYPE-REF>T-H</SPEC-OBJECT-TYPE-REF></TYPE><VALUES><ATTRIBUTE-VALUE-STRING THE-VALUE="${t}"><DEFINITION><ATTRIBUTE-DEFINITION-STRING-REF>A-CH</ATTRIBUTE-DEFINITION-STRING-REF></DEFINITION></ATTRIBUTE-VALUE-STRING></VALUES></SPEC-OBJECT>`;
+    const Q = (id, rid, t) => `<SPEC-OBJECT IDENTIFIER="${id}"><TYPE><SPEC-OBJECT-TYPE-REF>T-R</SPEC-OBJECT-TYPE-REF></TYPE><VALUES><ATTRIBUTE-VALUE-STRING THE-VALUE="${rid}"><DEFINITION><ATTRIBUTE-DEFINITION-STRING-REF>A-ID</ATTRIBUTE-DEFINITION-STRING-REF></DEFINITION></ATTRIBUTE-VALUE-STRING><ATTRIBUTE-VALUE-STRING THE-VALUE="${t}"><DEFINITION><ATTRIBUTE-DEFINITION-STRING-REF>A-TX</ATTRIBUTE-DEFINITION-STRING-REF></DEFINITION></ATTRIBUTE-VALUE-STRING></VALUES></SPEC-OBJECT>`;
+    const N = (ref, kids) => `<SPEC-HIERARCHY IDENTIFIER="h${ref}"><OBJECT><SPEC-OBJECT-REF>${ref}</SPEC-OBJECT-REF></OBJECT>${kids ? '<CHILDREN>' + kids + '</CHILDREN>' : ''}</SPEC-HIERARCHY>`;
+    const xml = `<?xml version="1.0"?><REQ-IF xmlns="http://www.omg.org/spec/ReqIF/20110401/reqif.xsd"><THE-HEADER><REQ-IF-HEADER IDENTIFIER="x"><REQ-IF-TOOL-ID>DOORS</REQ-IF-TOOL-ID></REQ-IF-HEADER></THE-HEADER><CORE-CONTENT><REQ-IF-CONTENT>
+<SPEC-TYPES><SPEC-OBJECT-TYPE IDENTIFIER="T-H" LONG-NAME="Heading"><SPEC-ATTRIBUTES><ATTRIBUTE-DEFINITION-STRING IDENTIFIER="A-CH" LONG-NAME="ReqIF.ChapterName"/></SPEC-ATTRIBUTES></SPEC-OBJECT-TYPE><SPEC-OBJECT-TYPE IDENTIFIER="T-R" LONG-NAME="Requirement"><SPEC-ATTRIBUTES><ATTRIBUTE-DEFINITION-STRING IDENTIFIER="A-ID" LONG-NAME="ReqIF.ForeignID"/><ATTRIBUTE-DEFINITION-STRING IDENTIFIER="A-TX" LONG-NAME="ReqIF.Text"/></SPEC-ATTRIBUTES></SPEC-OBJECT-TYPE></SPEC-TYPES>
+<SPEC-OBJECTS>${Q('o5', 'DR-5', 'Sistem kayıt tutacaktır.')}${H('h1', 'Performans')}${H('h2', 'Elektriksel')}${Q('o1', 'DR-1', 'Sistem 28 V ile çalışacaktır.')}${Q('o2', 'DR-2', 'Sistem 100 W en fazla tüketecektir.')}${Q('o3', 'DR-3', 'Alt madde gerilim dalgalanmasını tolere edecektir.')}${H('h3', 'Çevre')}${Q('o4', 'DR-4', 'Sistem titreşime dayanacaktır.')}</SPEC-OBJECTS>
+<SPECIFICATIONS><SPECIFICATION IDENTIFIER="S1" LONG-NAME="SRS"><CHILDREN>${N('h1', N('h2', N('o1') + N('o2', N('o3'))))}${N('h3', N('o4'))}</CHILDREN></SPECIFICATION></SPECIFICATIONS></REQ-IF-CONTENT></CORE-CONTENT></REQ-IF>`;
+    const S = reqifToSheet(xml)[0], hd = S.rows[0], col = n => hd.indexOf(n), rows = S.rows.slice(1);
+    o.order = rows.map(r => r[col('Gereksinim ID')]).join(',') === 'DR-1,DR-2,DR-3,DR-4,DR-5';
+    o.section = rows[0][col('Bölüm (ReqIF hiyerarşisi)')] === 'Performans / Elektriksel' && rows[3][col('Bölüm (ReqIF hiyerarşisi)')] === 'Çevre' && !rows[4][col('Bölüm (ReqIF hiyerarşisi)')];
+    o.hparent = rows[2][col('Hiyerarşide üst (ID)')] === 'DR-2';
+    const map = hd.map(h => guessTarget(h)); o.guess = map[col('Bölüm (ReqIF hiyerarşisi)')] === '_section' && map[col('Hiyerarşide üst (ID)')] === '';
+    doImport(S.rows, 0, map, 'Sistem', true);
+    const r1 = allReqs().find(r => r.reqId === 'DR-1'), r4 = allReqs().find(r => r.reqId === 'DR-4');
+    o.pkgs = /Sistem Gereksinimleri\W{1,4}Performans\W{1,4}Elektriksel$/.test(pathOf(r1.owner)) && E(r1.owner).name === 'Elektriksel'; o.pkg4 = /Çevre$/.test(pathOf(r4.owner));
+    o.noDerive = !(relIdx().DeriveReqt || []).some(x => E(x.src) && E(x.src).reqId === 'DR-3');
+    undo(); o.undo = !allReqs().some(r => r.reqId === 'DR-1');
+    const own = reqifToSheet(await (async () => { const c2 = []; const d0 = download; download = (b, n) => c2.push(b); exportReqIF(); download = d0; return await c2[0].text(); })())[0]; o.ownNoSection = !own.rows[0].includes('Bölüm (ReqIF hiyerarşisi)');
+    return o;
+  });
+  ok('Word/Excel deflate ile sıkıştırılır ve geri okunur; PDF kayıpsız Flate; ReqIF hiyerarşisi: belge sırası, bölüm → alt paket, hiyerarşi üstü (varsayılan yok say), kendi ReqIF\'imizde bölüm yok', Object.values(v53).every(v => v === true), v53);
+
   console.log('8i) İngilizce arayüz (TR | EN)');
   await run(() => { setLang('en'); openD('@reqtable'); });
   await page.waitForTimeout(150);

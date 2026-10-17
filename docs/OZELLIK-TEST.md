@@ -2,8 +2,8 @@
 
 _Bu dosya `node tools/ozellik-test.js` ile üretilir; elle düzenlemeyin._
 
-- Özellik: **52**, testle kapsanan: **52**
-- Birim testi adı: 121 (döngüyle üretilenler dahil olmayabilir), uçtan uca test: 56
+- Özellik: **53**, testle kapsanan: **53**
+- Birim testi adı: 121 (döngüyle üretilenler dahil olmayabilir), uçtan uca test: 57
 
 | No | Özellik | Sürüm | Birim testleri | Uçtan uca testler | Durum |
 |---|---|---|---|---|---|
@@ -57,5 +57,6 @@ _Bu dosya `node tools/ozellik-test.js` ile üretilir; elle düzenlemeyin._
 | F50 | Temel / Uzman görünüm ve menü denetimi | 1.50 | 3: iş akışı: her adımın düğmesi gerçek bir menü komutuna karşılık gelir; menü düzeni: bilinmeyen öğe "Diğer" altında, boş grup başlığı yok, öğe kaybolmaz; menü düzeni: gerçek menülerde "Diğer" grubu oluşmaz | Temel görünüm: düğmeyle geçiş ve hatırlama, kısa menüler (boş başlık ve yineleme yok), sade palet, Gelişmiş bölümü; Ctrl+K ve iş akışı tüm komutları bulur; Uzman'a dönüş | ✓ |
 | F51 | Akustik profil, zaman verisinden SRS, AECTP-400 şablonu, test prosedürü taslağı | 1.51 | 8: akustik: OASPL = 1/3 oktav enerji toplamı; düz 100 dB, 10 bant → 110 dB; akustik: dB ara değer log-frekansta doğrusal; tolerans toplamsal; akustik ölçüm: bant sapması ve OASPL sapması karara yazılır; SRS: uzun sinüs f0 → SRS(f0) ≈ Q·A; yüksek fn → A; SRS: yarım sinüs darbe — pozitif/negatif ayrımı, düşük örnekleme uyarısı; AECTP-400 şablonu: 3 gereksinim + taslak profil (Refine) + test; seviyeler TBD, çevre kuralı taslağı atlar; test prosedürü taslağı: adımlar eksen başına, hazırlık/kabul doldurulur, dolu alan korunur; çevre cümlesi: akustik profil OASPL ile | Akustik profil (OASPL, dB ekseni); AECTP-400 şablonu (TBD, baskı), taslak uyarısı ve kaldırma; çevresel gereksinimden test prosedürü taslağı (liste, Özellikler düğmesi); ölçümde SRS düğmesi | ✓ |
 | F52 | Çizim boru hattı ve sürüklemede kısmi yeniden çizim | 1.52 | — | Çizim kancaları kayıtlı; büyük diyagramda sürüklerken yalnız taşınan şekil ve kenarları yenilenir, bırakınca tam çizimle aynı, geri al çalışır | ✓ |
+| F53 | Sıkıştırılmış Word/Excel, kayıpsız PDF, ReqIF hiyerarşisi içe aktarma | 1.53 | — | Word/Excel deflate ile sıkıştırılır ve geri okunur; PDF kayıpsız Flate; ReqIF hiyerarşisi: belge sırası, bölüm → alt paket, hiyerarşi üstü (varsayılan yok say), kendi ReqIF'imizde bölüm yok | ✓ |
 | F41 | Performans (~6000 eleman) | 1.17 | — | ~6000 elemanlı modelde işlemler 2 sn altında | ✓ |
 | F42 | Kararlılık: tüm senaryolarda JavaScript hatası yok | tümü | — | çalışma sırasında JavaScript hatası yok | ✓ |

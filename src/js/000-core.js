@@ -1,7 +1,7 @@
 'use strict';
 const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const LSK = 'sysml-modeler-v1';
-const APP_VER = '1.52.0';
+const APP_VER = '1.53.0';
 const $ = s => document.querySelector(s);
 const uid = () => '_' + Math.random().toString(36).slice(2, 9) + (Date.now() % 1e7).toString(36);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -4018,17 +4018,61 @@ function columnManager(){
 /* ---------- XLSX writer (bağımlılıksız) ---------- */
 const CRC_T = (() => { const t = new Uint32Array(256); for(let n = 0; n < 256; n++){ let c = n; for(let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
 function crc32(u8){ let c = 0xFFFFFFFF; for(let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+/* ---- v1.53: senkron DEFLATE (RFC 1951, sabit Huffman + LZ77 karma zinciri) — .docx / .xlsx sıkıştırması için ----
+   Tarayıcının CompressionStream'i eşzamansızdır; Excel / Word üreticileri eşzamanlı çağrıldığından burada küçük bir kodlayıcı vardır. */
+const DFL = (() => {
+  const LB = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258], LE = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+  const DB = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577], DE = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+  const lenCode = new Uint8Array(259), distCode = d => { let i = 0; while(i < 29 && DB[i + 1] <= d) i++; return i; };
+  for(let c = 0; c < 29; c++) for(let l = LB[c]; l < (c < 28 ? LB[c + 1] : 259); l++) lenCode[l] = c;
+  const rev = (v, n) => { let r = 0; for(let i = 0; i < n; i++){ r = (r << 1) | (v & 1); v >>= 1; } return r; };
+  /* sabit Huffman kodları, bit sırası ters çevrilmiş (LSB önce yazım için) */
+  const LC = new Uint16Array(288), LN = new Uint8Array(288);
+  for(let i = 0; i < 288; i++){ let c, n; if(i < 144){ c = 0x30 + i; n = 8; } else if(i < 256){ c = 0x190 + i - 144; n = 9; } else if(i < 280){ c = i - 256; n = 7; } else { c = 0xC0 + i - 280; n = 8; } LC[i] = rev(c, n); LN[i] = n; }
+  const DC = new Uint8Array(30); for(let i = 0; i < 30; i++) DC[i] = rev(i, 5);
+  return function deflateRaw(src){
+    const n = src.length, out = new Uint8Array(n + (n >> 3) + 1024); let op = 0, bb = 0, bc = 0;
+    const put = (v, k) => { bb |= v << bc; bc += k; while(bc >= 8){ out[op++] = bb & 255; bb >>>= 8; bc -= 8; } };
+    const lit = c => put(LC[c], LN[c]);
+    put(1, 1); put(1, 2); /* BFINAL, BTYPE=01 */
+    const HS = 1 << 15, head = new Int32Array(HS).fill(-1), prev = new Int32Array(32768), WM = 32767, MAXC = 48;
+    const hash = i => ((src[i] << 10) ^ (src[i + 1] << 5) ^ src[i + 2]) & (HS - 1);
+    let i = 0;
+    while(i < n){
+      let bl = 0, bd = 0;
+      if(i + 2 < n){
+        const h = hash(i); let j = head[h], ch = MAXC; const lim = Math.min(258, n - i);
+        while(j >= 0 && i - j <= 32768 && ch-- > 0){
+          if(src[j + bl] === src[i + bl]){ let l = 0; while(l < lim && src[j + l] === src[i + l]) l++; if(l > bl){ bl = l; bd = i - j; if(l === lim) break; } }
+          const pj = prev[j & WM]; if(pj >= j) break; j = pj;
+        }
+        prev[i & WM] = head[h]; head[h] = i;
+      }
+      if(bl >= 3){
+        const lc = lenCode[bl]; lit(257 + lc); if(LE[lc]) put(bl - LB[lc], LE[lc]);
+        const dc = distCode(bd); put(DC[dc], 5); if(DE[dc]) put(bd - DB[dc], DE[dc]);
+        for(let k = 1; k < bl; k++){ const q = i + k; if(q + 2 < n){ const h = hash(q); prev[q & WM] = head[h]; head[h] = q; } }
+        i += bl;
+      } else { lit(src[i]); i++; }
+      if(op > out.length - 600) return null; /* sıkışmıyor: çağıran sıkıştırmasız yazar */
+    }
+    lit(256); if(bc) out[op++] = bb & 255;
+    return out.subarray(0, op);
+  };
+})();
 function zipStore(files){
   const enc = new TextEncoder(), parts = [], cen = []; let off = 0;
   files.forEach(f => {
-    const name = enc.encode(f.name), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+    const name = enc.encode(f.name), raw = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(raw);
+    /* metin parçaları sıkıştırılır (yöntem 8); zaten sıkışık görseller veya kazanç yoksa saklanır (yöntem 0) */
+    const z = !/\.(png|jpe?g|gif)$/i.test(f.name) && raw.length > 64 ? DFL(raw) : null, dfl = !!(z && z.length < raw.length * 0.95), data = dfl ? z : raw, meth = dfl ? 8 : 0;
     const h = new DataView(new ArrayBuffer(30));
-    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true); h.setUint16(10, 0, true); h.setUint16(12, 0x21, true);
-    h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, meth, true); h.setUint16(10, 0, true); h.setUint16(12, 0x21, true);
+    h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, raw.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
     parts.push(new Uint8Array(h.buffer), name, data);
     const c = new DataView(new ArrayBuffer(46));
-    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true); c.setUint16(12, 0, true); c.setUint16(14, 0x21, true);
-    c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, meth, true); c.setUint16(12, 0, true); c.setUint16(14, 0x21, true);
+    c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, raw.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
     cen.push(new Uint8Array(c.buffer), name);
     off += 30 + name.length + data.length;
   });
@@ -4312,7 +4356,7 @@ async function importReqs(){
   if(!sheets.length) return toast('Dosyada veri bulunamadı');
   importDialog(sheets, file.name);
 }
-const IMP_TARGETS = [['', '— Yok say —'], ['reqId', 'Gereksinim ID'], ['name', 'Başlık'], ['text', 'Gereksinim metni'], ['level', 'Seviye (Sistem / Alt Sistem)'], ['subsys', 'Alt sistem adı'], ['status', 'Durum (Taslak / Onaylı …)'], ['verif', 'Doğrulama yöntemi'], ['srcNo', 'Müşteri ister no'], ['srcText', 'Müşteri isteri'], ['_parents', 'Üst gereksinim ID(ler)i → Derive'], ['_satisfy', 'Karşılayan model elemanı adları → Satisfy'], ['_funcs', 'Fonksiyon adları → Satisfy'], ['_verifyBy', 'Doğrulayan test adları → Verify'], ['new', '+ Yeni özellik olarak ekle']];
+const IMP_TARGETS = [['', '— Yok say —'], ['reqId', 'Gereksinim ID'], ['name', 'Başlık'], ['text', 'Gereksinim metni'], ['level', 'Seviye (Sistem / Alt Sistem)'], ['subsys', 'Alt sistem adı'], ['status', 'Durum (Taslak / Onaylı …)'], ['verif', 'Doğrulama yöntemi'], ['srcNo', 'Müşteri ister no'], ['srcText', 'Müşteri isteri'], ['_parents', 'Üst gereksinim ID(ler)i → Derive'], ['_satisfy', 'Karşılayan model elemanı adları → Satisfy'], ['_funcs', 'Fonksiyon adları → Satisfy'], ['_verifyBy', 'Doğrulayan test adları → Verify'], ['_section', 'Bölüm yolu (A / B) → alt paketler'], ['new', '+ Yeni özellik olarak ekle']];
 const asciiTr = x => String(x || '').toLocaleLowerCase('tr').replace(/[çğıöşüâîû]/g, c => ({'ç':'c','ğ':'g','ı':'i','ö':'o','ş':'s','ü':'u','â':'a','î':'i','û':'u'}[c])).replace(/\s+/g, ' ').trim();
 function guessTarget(h){
   const n = asciiTr(h);
@@ -4321,6 +4365,8 @@ function guessTarget(h){
   const attr = reqCfg().attrs.find(a => asciiTr(a.label) === n); if(attr) return 'attr:' + attr.key;
   if(has('musteri', 'kaynak', 'source', 'customer', 'ister no') || n === 'ister') return /(^|\s)(no|numara|id|kimlik)\.?$/.test(n) || has(' no ', 'no.') ? 'srcNo' : 'srcText';
   if(has('kapsama', 'alt sistem gereksinimleri', 'children', 'kalite')) return '';
+  if(has('bolum', 'chapter', 'section')) return '_section';
+  if(has('hiyerarside ust')) return ''; /* belge ağacındaki üst nesne her zaman türetme değildir: kullanıcı isterse Derive seçer */
   if(has('durum', 'status', 'onay')) return 'status';
   if((has('alt sistem', 'altsistem', 'subsystem', 'birim', 'unit') && !has('gereksinim', 'requirement')) || n === 'alt sistem') return 'subsys';
   if(has('ust ', 'ust gereksinim', 'parent', 'turetildi', 'derived from')) return '_parents';
@@ -4399,7 +4445,7 @@ function doImport(rows, hr, map, defLevel, update){
     const lvl = parseLevel(get('level'), ssv ? 'Alt Sistem' : defLevel);
     let r = id && update ? byId.get(id) : null;
     if(r) updated++;
-    else { r = mk('Requirement', reqPkgFor(lvl, ssv), {level:lvl, name:'', reqId:id || undefined, subsys:ssv || ''}); if(!id) r.reqId = nextReqId(lvl); byId.set(String(r.reqId), r); added++; }
+    else { const sec = get('_section'); let pk = reqPkgFor(lvl, ssv); if(sec) sec.split(/\s+\/\s+/).filter(Boolean).forEach(nm => { pk = findOrMkPkg(pk, nm.slice(0, 120)); }); r = mk('Requirement', pk, {level:lvl, name:'', reqId:id || undefined, subsys:ssv || ''}); if(!id) r.reqId = nextReqId(lvl); byId.set(String(r.reqId), r); added++; }
     if(ssv !== undefined && ssv !== r.subsys){ r.subsys = ssv; if(ssv && r.level !== 'Alt Sistem' && !get('level')) r.level = 'Alt Sistem'; relocateReq(r); }
     if(get('level') !== undefined && get('level') !== '') { if(r.level !== lvl){ r.level = lvl; const tgtPkg = reqPkgFor(lvl); const o = E(r.owner); if(o && /Gereksinimleri$/.test(o.name)) r.owner = tgtPkg; } }
     ['name', 'text', 'srcNo', 'srcText'].forEach(k => { const v = get(k); if(v !== undefined) r[k] = v; });
@@ -5494,7 +5540,27 @@ function reqifToSheet(txt){
     const s = (tagsNS(r, 'SOURCE')[0] || {}).textContent, t = (tagsNS(r, 'TARGET')[0] || {}).textContent; const so = objs.get((s || '').trim()), to = objs.get((t || '').trim());
     if(so && to && idCol >= 0 && to[idCol]) so[pcol] = (so[pcol] ? so[pcol] + ', ' : '') + to[idCol];
   });
-  const rows = [...objs.values()].filter(r => !(chap >= 0 && r[chap] && r.filter(Boolean).length === 1)).map(r => cols.map((_, i) => r[i] || ''));
+  /* v1.53: SPEC-HIERARCHY ağacı — belge sırası, başlık yolu (bölüm → paket) ve hiyerarşideki üst gereksinim */
+  const tName = {}; tagsNS(doc, 'SPEC-OBJECT-TYPE').forEach(t => tName[t.getAttribute('IDENTIFIER')] = t.getAttribute('LONG-NAME') || '');
+  const oType = new Map(); tagsNS(doc, 'SPEC-OBJECT').forEach(o => { const tr = tagsNS(o, 'SPEC-OBJECT-TYPE-REF')[0]; const row = objs.get(o.getAttribute('IDENTIFIER')); if(row && tr) oType.set(row, tName[tr.textContent.trim()] || ''); });
+  const tCol = cols.indexOf('Gereksinim Metni'), nCol = cols.indexOf('Başlık');
+  const headTitle = r => { if(chap >= 0 && r[chap] && r.filter(Boolean).length === 1) return String(r[chap]).trim(); if(/head|başlık|baslik|chapter|section|bölüm/i.test(oType.get(r) || '') && !(idCol >= 0 && r[idCol] && tCol >= 0 && r[tCol] && nCol >= 0 && r[nCol])) return String((chap >= 0 && r[chap]) || (nCol >= 0 && r[nCol]) || (tCol >= 0 && r[tCol]) || '').trim() || null; return null; };
+  const isHead = r => headTitle(r) != null;
+  const kid = (el, nm) => Array.from(el.children).filter(c => c.localName === nm);
+  const own = tagsNS(doc, 'REQ-IF-TOOL-ID').some(t => /SysML Modelleyici/.test(t.textContent)); /* kendi çıktımızdaki başlıklar seviye/alt sistemdir, bölüm değil */
+  const specs = tagsNS(doc, 'SPECIFICATION'), order = [], seen = new Set(), secCol = own ? -1 : ci('Bölüm (ReqIF hiyerarşisi)'), hpCol = own ? -1 : ci('Hiyerarşide üst (ID)');
+  const walk = (hs, path, parentRow) => hs.forEach(h => {
+    const ref = ((kid(h, 'OBJECT')[0] || h).getElementsByTagNameNS('*', 'SPEC-OBJECT-REF')[0] || {}).textContent, row = objs.get((ref || '').trim());
+    let p2 = path, pr = parentRow;
+    if(row){
+      if(isHead(row)) p2 = path.concat([headTitle(row)]);
+      else { if(!seen.has(row)){ seen.add(row); order.push(row); if(secCol >= 0 && path.length) row[secCol] = path.join(' / '); if(hpCol >= 0 && parentRow && idCol >= 0 && parentRow[idCol]) row[hpCol] = parentRow[idCol]; } pr = row; }
+    }
+    kid(h, 'CHILDREN').forEach(ch => walk(kid(ch, 'SPEC-HIERARCHY'), p2, pr));
+  });
+  specs.forEach(sp => { const nm = sp.getAttribute('LONG-NAME'); kid(sp, 'CHILDREN').forEach(ch => walk(kid(ch, 'SPEC-HIERARCHY'), specs.length > 1 && nm ? [nm] : [], null)); });
+  objs.forEach(r => { if(!seen.has(r)) order.push(r); });
+  const rows = order.filter(r => !isHead(r)).map(r => cols.map((_, i) => r[i] || ''));
   const keep = cols.map((c0, i) => c0 !== '@chapter' && rows.some(r => r[i]));
   return [{name:'ReqIF', rows:[cols.filter((_, i) => keep[i])].concat(rows.map(r => r.filter((_, i) => keep[i])))}];
 }

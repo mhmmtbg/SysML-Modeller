@@ -1,5 +1,13 @@
 # Değişiklik Günlüğü
 
+## v1.53.0 — 2026-10-17
+
+- **Sıkıştırılmış Word ve Excel:** .docx / .xlsx içindeki XML parçaları DEFLATE ile sıkıştırılır (uygulama içinde, eşzamanlı; görseller olduğu gibi saklanır). Örnek: gereksinim Excel'i 77 KB → 17 KB, VCRM 28 KB → 7 KB. LibreOffice, python-docx / openpyxl ve uygulamanın kendi okuyucusuyla doğrulandı
+- **Kayıpsız PDF:** diyagram sayfaları JPEG yerine FlateDecode (PNG "Up" ön kestirimi) ile gömülür; çizgi ve yazılarda JPEG bozulması yok, örnek modelin 13 diyagramı 2,5 MB → 2,1 MB. Metin hâlâ seçilemez (Türkçe karakterler için font gömme gerekir)
+- **ReqIF belge ağacı içe aktarma:** `SPEC-HIERARCHY` okunur — belge sırası korunur, başlıklar "Bölüm" yolu olur ve gereksinimler iç içe paketlere yerleşir; hiyerarşideki üst gereksinim ayrı sütunda (varsayılan yok say, istenirse Derive)
+- Stres modelinde tam Word raporu ~7,8 sn
+- Regresyon testi 57 adım
+
 ## v1.52.0 — 2026-10-17
 
 - **Sürüklemede kısmi yeniden çizim:** büyük diyagramlarda (≥ 25 şekil) taşıma ve boyutlandırma sırasında yalnız hareket eden şekiller, bağlı kenarları ve seçim çerçevesi yenilenir; bırakınca tam çizim. Ölçüm (hareket başına): 100 şekil 40 → 5 ms, 200 şekil 70–78 → 5 ms

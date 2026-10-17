@@ -9,7 +9,27 @@ function fmtPainter(off){
   wrapEl.classList.add('paint'); const b = $('#btnPainter'); if(b) b.classList.add('on');
   toast('Biçim kopyalandı — uygulamak için ' + (sh ? 'şekillere' : 'bağlantılara') + ' tıklayın · Esc veya boş alana tık: çıkış');
 }
-/* ---- PDF: JPEG görüntülü, bağımlılıksız PDF yazıcı ---- */
+/* ---- PDF: bağımlılıksız PDF yazıcı ----
+   v1.53: sayfa görüntüsü kayıpsız (FlateDecode + PNG "Up" ön kestirimi): çizgi ve yazılar JPEG'deki gibi bulanıklaşmaz.
+   CompressionStream yoksa (eski tarayıcı) JPEG'e döner. */
+async function svgToFlate(r, scale){
+  if(typeof CompressionStream === 'undefined') return svgToJpeg(r, scale);
+  const img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('görüntü oluşturulamadı')); im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(r.str); });
+  const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(r.w * scale)); c.height = Math.max(1, Math.round(r.h * scale));
+  const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+  const W = c.width, H = c.height, px = g.getImageData(0, 0, W, H).data, row = W * 3, raw = new Uint8Array((row + 1) * H);
+  let prev = new Uint8Array(row), cur0 = new Uint8Array(row);
+  for(let y = 0; y < H; y++){
+    for(let x = 0, i = y * W * 4, j = 0; x < W; x++, i += 4){ cur0[j++] = px[i]; cur0[j++] = px[i + 1]; cur0[j++] = px[i + 2]; }
+    const o = y * (row + 1); raw[o] = 2; /* Up */
+    for(let j = 0; j < row; j++) raw[o + 1 + j] = (cur0[j] - prev[j]) & 255;
+    const t = prev; prev = cur0; cur0 = t;
+  }
+  c.width = c.height = 1; /* tuval belleğini bırak */
+  const z = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  return {bytes:z, w:W, h:H, flate:true};
+}
+
 function svgToJpeg(r, scale){
   return new Promise((res, rej) => {
     const img = new Image();
@@ -36,7 +56,7 @@ function buildPdf(pages){
   push('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
   objs.forEach((o, i) => {
     offs.push(len); push(`${i + 1} 0 obj\n`);
-    if(o.img){ push(`<< /Type /XObject /Subtype /Image /Width ${o.img.w} /Height ${o.img.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${o.img.bytes.length} >>\nstream\n`); push(o.img.bytes); push('\nendstream'); }
+    if(o.img){ push(`<< /Type /XObject /Subtype /Image /Width ${o.img.w} /Height ${o.img.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 ${o.img.flate ? `/Filter /FlateDecode /DecodeParms << /Predictor 15 /Colors 3 /BitsPerComponent 8 /Columns ${o.img.w} >>` : '/Filter /DCTDecode'} /Length ${o.img.bytes.length} >>\nstream\n`); push(o.img.bytes); push('\nendstream'); }
     else push(o.str);
     push('\nendobj\n');
   });
@@ -57,7 +77,7 @@ async function exportPDF(ids, opt){
     const pw = opt.size === 'A3' ? (land ? 1190.55 : 841.89) : (land ? 841.89 : 595.28), ph = opt.size === 'A3' ? (land ? 841.89 : 1190.55) : (land ? 595.28 : 841.89);
     const m = 28, k = Math.min((pw - 2 * m) / r.w, (ph - 2 * m) / r.h, 1.6);
     const scale = Math.min(3, Math.max(1.2, 2600 / Math.max(r.w, r.h)));
-    const im = await svgToJpeg(r, scale);
+    const im = await svgToFlate(r, scale);
     pages.push(Object.assign(im, {pw, ph, dw:r.w * k, dh:r.h * k, dx:(pw - r.w * k) / 2, dy:(ph - r.h * k) / 2}));
   }
   const name = ds.length === 1 ? fileSafe(ds[0].name) : fileSafe(E(M.rootId).name) + ' - diyagramlar';
